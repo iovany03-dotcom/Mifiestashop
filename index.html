@@ -118,6 +118,32 @@
   .foot{ margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.6; }
   .hidden{ display:none !important; }
   .loading{ color:var(--text-muted); font-size:12.5px; padding:20px; text-align:center; }
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,0.5); display:flex; align-items:center;
+    justify-content:center; padding:24px; z-index:50;
+  }
+  .modal{
+    background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
+    max-width:760px; width:100%; max-height:85vh; overflow:auto; padding:22px 24px;
+  }
+  .modal h2{ margin:0 0 4px; font-size:17px; }
+  .modal .modal-sub{ color:var(--text-muted); font-size:12px; margin-bottom:16px; }
+  .modal-group{ margin-bottom: 16px; }
+  .modal-group h3{
+    font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--series-1);
+    margin:0 0 8px; padding-bottom:4px; border-bottom:1px solid var(--grid);
+  }
+  .modal-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  @media (max-width:640px){ .modal-grid{ grid-template-columns:1fr 1fr; } }
+  .field label{ display:block; font-size:11px; color:var(--text-secondary); margin-bottom:3px; }
+  .field input{
+    width:100%; background:var(--plane); color:var(--text-primary); border:1px solid var(--border);
+    border-radius:6px; padding:6px 8px; font-family:inherit; font-size:12.5px;
+  }
+  .field input:focus{ border-color:var(--series-1); outline:none; }
+  .field.wide{ grid-column: 1 / -1; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:18px; position:sticky; bottom:-22px; background:var(--card-bg); padding:12px 0 0; }
 </style>
 </head>
 <body>
@@ -202,7 +228,7 @@
           <table id="prodTable">
             <thead>
               <tr>
-                <th>Categoría</th><th>Producto</th><th>Precio compra</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Precio volumen</th><th>Precio distribuidor</th><th></th>
+                <th>Categoría</th><th>Producto</th><th>Precio compra</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Precio volumen</th><th>Precio distribuidor</th><th></th><th></th>
               </tr>
             </thead>
             <tbody id="prodBody"></tbody>
@@ -216,10 +242,23 @@
       </div>
 
       <div class="foot">
-        Los cambios se guardan directamente en Supabase (tablas <code>gastos_generales</code> y <code>costos_productos</code>) al presionar "Guardar" en cada fila. Esta clave es una barrera simple de la interfaz, no reemplaza autenticación real — cualquiera con la llave pública de Supabase puede escribir en estas tablas.
+        Los cambios se guardan directamente en Supabase (tablas <code>gastos_generales</code> y <code>costos_productos</code>) al presionar "Guardar" en cada fila, o "Editar todo" para ver y modificar las 78 columnas de un producto. Esta clave es una barrera simple de la interfaz, no reemplaza autenticación real — cualquiera con la llave pública de Supabase puede escribir en estas tablas.
       </div>
     </div>
   </section>
+
+  <div id="prodModalOverlay" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 id="modalTitle">Editar producto</h2>
+      <div class="modal-sub">Todos los campos de <code>costos_productos</code>, agrupados como en la hoja original.</div>
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <span id="modalStatus" class="status"></span>
+        <button class="btn" id="modalCancel">Cancelar</button>
+        <button class="btn primary" id="modalSave">Guardar todo</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -425,7 +464,7 @@ async function loadProdCategories(){
 async function loadProductos(){
   await loadProdCategories();
   const tbody = document.getElementById('prodBody');
-  tbody.innerHTML = '<tr><td colspan="8">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9">Cargando…</td></tr>';
   const search = document.getElementById('prodSearch').value.trim();
   const cat = document.getElementById('prodCat').value;
 
@@ -437,12 +476,12 @@ async function loadProductos(){
     const rows = await sbGet(query);
     tbody.innerHTML = '';
     if (rows.length === 0){
-      tbody.innerHTML = '<tr><td colspan="8">Sin resultados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9">Sin resultados</td></tr>';
     }
     rows.forEach(row => tbody.appendChild(prodRow(row)));
     document.getElementById('prodPageInfo').textContent = `Página ${prodPage+1}`;
   } catch(e){
-    tbody.innerHTML = `<tr><td colspan="8" class="status err">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="status err">${e.message}</td></tr>`;
   }
 }
 
@@ -495,8 +534,138 @@ function prodRow(row){
   });
   tdBtn.appendChild(btn); tdBtn.appendChild(status);
   tr.appendChild(tdBtn);
+
+  const tdAll = document.createElement('td');
+  const allBtn = document.createElement('button');
+  allBtn.className = 'btn small';
+  allBtn.textContent = 'Editar todo';
+  allBtn.addEventListener('click', ()=> openProductModal(row.id));
+  tdAll.appendChild(allBtn);
+  tr.appendChild(tdAll);
+
   return tr;
 }
+
+// ---------------- Modal: editar todas las columnas de un producto ----------------
+const FIELD_GROUPS = [
+  { title: 'Producto', fields: [
+    ['categoria','Categoría'], ['nombre_generico','Nombre genérico'], ['nombre_explicito','Nombre explícito'],
+    ['id_producto_sheet','ID (hoja original)'], ['estado','Estado'], ['fecha_ultima_modificacion','Última modificación'],
+    ['codigo_barra','Código de barra'], ['codigo_pos','Código punto de venta'], ['codigo_2','Código 2'],
+    ['descripcion','Descripción', true], ['referencias','Referencias'], ['titulo_seo','Título SEO'],
+    ['caracteres_titulo','Caracteres título'], ['meta_descripcion','Meta descripción', true],
+    ['caracteres_meta_descripcion','Caracteres meta descripción'], ['link_imagen','Link imagen', true],
+  ]},
+  { title: 'Medidas y empaque', fields: [
+    ['piezas_por_paquete','Piezas por paquete'], ['piezas_por_caja','Piezas por caja'], ['costo_caja','Costo caja'],
+    ['alto_cm','Alto (cm)'], ['ancho_cm','Ancho (cm)'], ['profundidad_cm','Profundidad (cm)'], ['peso_g','Peso (g)'],
+  ]},
+  { title: 'Precio de compra', fields: [
+    ['precio_compra_regular','Regular'], ['precio_compra_alto','Precio más alto'], ['precio_compra_bajo','Precio más bajo'],
+    ['precio_compra_actualizado','Actualizado'], ['fecha_precio_compra','Fecha actualización'],
+  ]},
+  { title: 'Gastos', fields: [
+    ['meta_ventas_mensual','Estimado ventas mensual'], ['pct_gastos','% gastos'], ['gastos_total','Gastos total'],
+    ['gasto_pieza','Gasto por pieza'], ['costo_total_pieza','Costo + gasto'],
+  ]},
+  { title: 'Menudeo', fields: [
+    ['menudeo_pct_utilidad','% utilidad'], ['menudeo_precio','Precio (costo+utilidad)'], ['menudeo_comision_tarjeta','Comisión tarjeta'],
+    ['menudeo_comision_venta','Comisión por venta'], ['menudeo_comision_neta','Comisión neta'], ['menudeo_piezas_envio_gratis','Piezas envío gratis'],
+    ['menudeo_precio_pza_envio_gratis','Precio pza envío gratis'], ['menudeo_envio_costeado_1000','Envío costeado x$1000'],
+    ['menudeo_precio_total','Precio total'], ['menudeo_subtotal','Subtotal'], ['menudeo_precio_iva','Precio con IVA'], ['menudeo_ganancia','Ganancia'],
+  ]},
+  { title: 'Competencia', fields: [
+    ['competidor1_nombre','Competidor 1 — nombre'], ['competidor1_precio','Competidor 1 — precio'], ['competidor1_link','Competidor 1 — link', true],
+    ['competidor2_nombre','Competidor 2 — nombre'], ['competidor2_precio','Competidor 2 — precio'], ['competidor2_link','Competidor 2 — link', true],
+    ['competidor3_nombre','Competidor 3 — nombre'], ['competidor3_precio','Competidor 3 — precio'], ['competidor3_link','Competidor 3 — link', true],
+  ]},
+  { title: 'Mayoreo', fields: [
+    ['mayoreo_cantidad_piezas','Cantidad piezas'], ['mayoreo_pct_utilidad','% utilidad'], ['mayoreo_precio','Precio (costo+utilidad)'],
+    ['mayoreo_pct_tarjeta','% tarjeta'], ['mayoreo_pct_comision_venta','% comisión venta'], ['mayoreo_piezas_envio_gratis','Piezas envío gratis'],
+    ['mayoreo_precio_pza_envio_gratis','Precio pza envío gratis'], ['mayoreo_envio_costeado','Envío costeado'],
+    ['mayoreo_precio_2','Precio 2'], ['mayoreo_ganancia','Ganancia'], ['mayoreo_precio_iva','Precio con IVA'],
+  ]},
+  { title: 'Volumen', fields: [
+    ['volumen_cantidad_piezas','Cantidad piezas'], ['volumen_pct_utilidad','% utilidad'], ['volumen_precio','Precio (costo+utilidad)'],
+    ['volumen_pct_tarjeta','% tarjeta'], ['volumen_comision_venta','Comisión por venta'], ['volumen_comision_neta','Comisión neta'],
+    ['volumen_envio_gratis','Envío gratis'], ['volumen_precio_total','Precio total'], ['volumen_precio_3','Precio 3'],
+    ['volumen_ganancia','Ganancia'], ['volumen_precio_iva','Precio con IVA'],
+  ]},
+  { title: 'Distribuidor / Mayoristas', fields: [
+    ['distribuidor_precio','Precio distribuidor'], ['distribuidor_ganancia','Ganancia distribuidor'],
+  ]},
+];
+
+let modalProductId = null;
+
+async function openProductModal(id){
+  modalProductId = id;
+  const overlay = document.getElementById('prodModalOverlay');
+  const body = document.getElementById('modalBody');
+  const title = document.getElementById('modalTitle');
+  const status = document.getElementById('modalStatus');
+  status.textContent = ''; status.className = 'status';
+  body.innerHTML = 'Cargando…';
+  overlay.classList.remove('hidden');
+  try{
+    const rows = await sbGet(`costos_productos?select=*&id=eq.${id}`);
+    const row = rows[0];
+    if (!row) throw new Error('Producto no encontrado');
+    title.textContent = row.nombre_generico || 'Editar producto';
+    body.innerHTML = '';
+    FIELD_GROUPS.forEach(group=>{
+      const g = document.createElement('div');
+      g.className = 'modal-group';
+      const h3 = document.createElement('h3');
+      h3.textContent = group.title;
+      g.appendChild(h3);
+      const grid = document.createElement('div');
+      grid.className = 'modal-grid';
+      group.fields.forEach(([field, label, wide])=>{
+        const wrap = document.createElement('div');
+        wrap.className = 'field' + (wide ? ' wide' : '');
+        const lbl = document.createElement('label');
+        lbl.textContent = label;
+        const inp = document.createElement('input');
+        inp.value = row[field] ?? '';
+        inp.dataset.field = field;
+        wrap.appendChild(lbl); wrap.appendChild(inp);
+        grid.appendChild(wrap);
+      });
+      g.appendChild(grid);
+      body.appendChild(g);
+    });
+  } catch(e){
+    body.innerHTML = `<div class="status err">${e.message}</div>`;
+  }
+}
+
+document.getElementById('modalCancel').addEventListener('click', ()=>{
+  document.getElementById('prodModalOverlay').classList.add('hidden');
+});
+document.getElementById('prodModalOverlay').addEventListener('click', (e)=>{
+  if (e.target.id === 'prodModalOverlay') document.getElementById('prodModalOverlay').classList.add('hidden');
+});
+document.getElementById('modalSave').addEventListener('click', async ()=>{
+  const status = document.getElementById('modalStatus');
+  const saveBtn = document.getElementById('modalSave');
+  const inputs = document.querySelectorAll('#modalBody input[data-field]');
+  const body = {};
+  inputs.forEach(inp=>{ body[inp.dataset.field] = inp.value === '' ? null : inp.value; });
+  saveBtn.disabled = true;
+  status.textContent = 'Guardando…'; status.className = 'status';
+  try{
+    await sbPatch('costos_productos', modalProductId, body);
+    status.textContent = 'Guardado ✓'; status.className = 'status ok';
+    prodCategoriesLoaded = false; // categoría pudo cambiar
+    loadProductos();
+    setTimeout(()=>{ document.getElementById('prodModalOverlay').classList.add('hidden'); }, 600);
+  } catch(e){
+    status.textContent = 'Error: ' + e.message; status.className = 'status err';
+  } finally {
+    saveBtn.disabled = false;
+  }
+});
 
 document.getElementById('prodSearch').addEventListener('input', debounce(()=>{ prodPage=0; loadProductos(); }, 350));
 document.getElementById('prodCat').addEventListener('change', ()=>{ prodPage=0; loadProductos(); });
