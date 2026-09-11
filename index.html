@@ -4136,8 +4136,8 @@ function renderCatalogTable(category = 'all', query = ''){
         <td>PrestaShop / API</td>
         <td><span class="pill ${pillClass}">${statusText}</span></td>
         <td style="text-align:center; white-space:nowrap;">
-          <button class="btn small primary" onclick="openEditProductModal(${p.id})">✏️ Editar</button>
-          <button class="btn small danger" style="margin-left:4px;" onclick="deleteProduct(${p.id})">🗑️</button>
+          <button class="btn small primary" onclick="openEditProductModal('${p.id}')">✏️ Editar</button>
+          <button class="btn small danger" style="margin-left:4px;" onclick="deleteProduct('${p.id}')">🗑️</button>
         </td>
       </tr>
     `;
@@ -4151,7 +4151,9 @@ function openEditProductModal(pId) {
   if (!modal) return;
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const prod = pId ? dataset.find(p => p.id === pId) : null;
+  const prod = (pId !== null && pId !== undefined && pId !== 'null' && pId !== '') 
+    ? dataset.find(p => String(p.id) === String(pId)) 
+    : null;
 
   document.getElementById('editProdId').value = prod ? prod.id : '';
   document.getElementById('editProdSku').value = prod ? prod.sku : `MF-NEW-${Math.floor(100 + Math.random() * 900)}`;
@@ -4190,8 +4192,7 @@ function saveProductChanges() {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
 
   if (pIdVal) {
-    const pId = parseInt(pIdVal);
-    const prod = dataset.find(p => p.id === pId);
+    const prod = dataset.find(p => String(p.id) === String(pIdVal));
     if (prod) {
       prod.sku = sku;
       prod.name = name;
@@ -4202,7 +4203,7 @@ function saveProductChanges() {
       prod.img = img;
     }
   } else {
-    const newId = dataset.length > 0 ? Math.max(...dataset.map(p => p.id || 0)) + 1 : 1;
+    const newId = dataset.length > 0 ? Math.max(...dataset.map(p => parseInt(p.id) || 0)) + 1 : 1;
     const newProd = {
       id: newId,
       sku: sku,
@@ -4229,7 +4230,7 @@ function saveProductChanges() {
 
 function deleteProduct(pId) {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const index = dataset.findIndex(p => p.id === pId);
+  const index = dataset.findIndex(p => String(p.id) === String(pId));
   if (index === -1) return;
 
   const prod = dataset[index];
