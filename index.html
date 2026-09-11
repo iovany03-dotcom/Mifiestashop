@@ -109,6 +109,7 @@
     border-radius:8px; padding:8px 12px; font-family:inherit; font-size:12.5px;
   }
   .pager{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:12.5px; color:var(--text-secondary); }
+  tr.totals-row td{ background: color-mix(in srgb, var(--series-1) 12%, transparent); border-top: 2px solid var(--series-1); }
 
   .gate{ max-width:360px; margin: 80px auto; text-align:center; }
   .gate input{
@@ -780,6 +781,13 @@ async function sbInsert(table, body){
   const rows = await r.json();
   return rows[0];
 }
+async function sbDelete(table, id){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+  });
+  if (!r.ok) throw new Error(`DELETE ${table} -> ${r.status}`);
+}
 
 // ---------------- Gastos generales ----------------
 // Sucursales son dinámicas: viven en la columna jsonb `sucursales` de cada fila,
@@ -800,7 +808,7 @@ function renderGastosHeader(){
   const thead = document.getElementById('gastosHead');
   thead.innerHTML = '';
   const tr = document.createElement('tr');
-  const heads = ['Concepto', 'Total', ...BRANCHES.map(b=>b.label), '%', 'Total ajustado'];
+  const heads = ['Concepto', ...BRANCHES.map(b=>b.label), '%', ''];
   heads.forEach(h=>{
     const th = document.createElement('th');
     th.textContent = h;
@@ -814,7 +822,7 @@ async function loadGastos(){
   const tbody = document.getElementById('gastosBody');
   tbody.innerHTML = '<tr><td colspan="100">Cargando…</td></tr>';
   try{
-    const rows = await sbGet('gastos_generales?select=*&order=id.asc');
+    const rows = await sbGet('gastos_generales?select=*&order=orden.asc,id.asc');
     // Descubre sucursales que ya existan en los datos pero no estén en BRANCHES aún.
     const known = new Set(BRANCHES.map(b=>b.key));
     rows.forEach(row=>{
@@ -825,6 +833,8 @@ async function loadGastos(){
     renderGastosHeader();
     tbody.innerHTML = '';
     rows.forEach(row => tbody.appendChild(gastoRow(row)));
+    tbody.appendChild(gastosFooterRow());
+    recomputeFooterTotals();
   } catch(e){
     tbody.innerHTML = `<tr><td colspan="100" class="status err">${e.message}</td></tr>`;
   }
@@ -834,6 +844,10 @@ document.getElementById('gastosSaveAll').addEventListener('click', saveAllGastos
 document.getElementById('gastosAddConcepto').addEventListener('click', addConceptoRow);
 document.getElementById('gastosAddSucursal').addEventListener('click', addSucursalColumn);
 
+function dataRows(){
+  return Array.from(document.querySelectorAll('#gastosBody tr')).filter(tr => !tr.classList.contains('totals-row'));
+}
+
 function addSucursalColumn(){
   const name = prompt('Nombre de la nueva sucursal (ej. Atizapan):');
   if (!name || !name.trim()) return;
@@ -842,36 +856,70 @@ function addSucursalColumn(){
   if (BRANCHES.some(b=>b.key === key)){ alert('Esa sucursal ya existe'); return; }
   BRANCHES.push({ key, label: name.trim() });
   renderGastosHeader();
-  // Agrega la celda nueva a cada fila ya renderizada, antes de las columnas % y Total ajustado.
+  // Agrega la celda nueva a cada fila ya renderizada (incluida la de totales), antes de la columna %.
   document.querySelectorAll('#gastosBody tr').forEach(tr=>{
     const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.dataset.branch = key;
-    inp.addEventListener('input', ()=> recomputeTotal(tr));
-    td.appendChild(inp);
+    if (tr.classList.contains('totals-row')){
+      const span = document.createElement('span');
+      span.dataset.footerBranch = key;
+      span.style.fontWeight = '700';
+      td.appendChild(span);
+    } else {
+      const inp = document.createElement('input');
+      inp.dataset.branch = key;
+      inp.addEventListener('input', recomputeFooterTotals);
+      td.appendChild(inp);
+    }
     const tailCells = tr.querySelectorAll('td');
-    const pctCell = tailCells[tailCells.length - 2]; // % está antes de Total ajustado
+    const pctCell = tailCells[tailCells.length - 2]; // % está antes de la columna de acciones
     tr.insertBefore(td, pctCell);
   });
+  recomputeFooterTotals();
 }
 
 function addConceptoRow(){
-  const tr = gastoRow({ concepto: '', sucursales: {}, porcentaje: null, total_ajustado: null });
+  const tr = gastoRow({ concepto: '', sucursales: {}, porcentaje: null });
   tr.dataset.isNew = '1';
   delete tr.dataset.id;
-  document.getElementById('gastosBody').appendChild(tr);
+  const tbody = document.getElementById('gastosBody');
+  tbody.insertBefore(tr, tbody.querySelector('.totals-row'));
   tr.querySelector('input[data-field="concepto"]').focus();
+}
+
+function deleteGastoRow(tr){
+  const concepto = tr.querySelector('input[data-field="concepto"]').value || '(sin nombre)';
+  if (!confirm(`¿Eliminar el concepto "${concepto}"?`)) return;
+  (async ()=>{
+    try{
+      if (tr.dataset.id) await sbDelete('gastos_generales', tr.dataset.id);
+      tr.remove();
+      recomputeFooterTotals();
+    } catch(e){
+      alert('No se pudo eliminar: ' + e.message);
+    }
+  })();
+}
+
+function moveGastoRow(tr, dir){
+  if (dir === 'up'){
+    const prev = tr.previousElementSibling;
+    if (prev && !prev.classList.contains('totals-row')) tr.parentNode.insertBefore(tr, prev);
+  } else {
+    const next = tr.nextElementSibling;
+    if (next && !next.classList.contains('totals-row')) tr.parentNode.insertBefore(next, tr);
+  }
 }
 
 async function saveAllGastos(){
   const btn = document.getElementById('gastosSaveAll');
   const status = document.getElementById('gastosSaveStatus');
-  const rows = Array.from(document.querySelectorAll('#gastosBody tr'));
+  const rows = dataRows();
   btn.disabled = true;
   status.textContent = `Guardando ${rows.length} filas…`; status.className = 'status';
   let ok = 0, failed = [];
-  for (const tr of rows){
-    const body = rowBody(tr);
+  for (let i = 0; i < rows.length; i++){
+    const tr = rows[i];
+    const body = rowBody(tr, i + 1);
     const concepto = tr.querySelector('input[data-field="concepto"]').value;
     try{
       if (tr.dataset.isNew === '1'){
@@ -898,7 +946,7 @@ async function saveAllGastos(){
   }
 }
 
-function rowBody(tr){
+function rowBody(tr, orden){
   const sucursales = {};
   BRANCHES.forEach(b=>{
     const inp = tr.querySelector(`input[data-branch="${b.key}"]`);
@@ -906,13 +954,11 @@ function rowBody(tr){
     if (!isNaN(v)) sucursales[b.key] = v;
   });
   const porcentajeInp = tr.querySelector('input[data-field="porcentaje"]');
-  const ajustadoInp = tr.querySelector('input[data-field="total_ajustado"]');
   return {
     concepto: tr.querySelector('input[data-field="concepto"]').value,
     sucursales,
     porcentaje: porcentajeInp.value === '' ? null : Number(porcentajeInp.value),
-    total_ajustado: ajustadoInp.value === '' ? null : Number(ajustadoInp.value),
-    total: computeRowTotal(tr),
+    orden,
   };
 }
 
@@ -928,49 +974,71 @@ function gastoRow(row){
   tdConcepto.appendChild(inpConcepto);
   tr.appendChild(tdConcepto);
 
-  // Total: computado en vivo a partir de las sucursales — solo lectura, sin botón propio.
-  const tdTotal = document.createElement('td');
-  const totalSpan = document.createElement('span');
-  totalSpan.dataset.role = 'total';
-  totalSpan.style.fontWeight = '600';
-  tdTotal.appendChild(totalSpan);
-  tr.appendChild(tdTotal);
-
   BRANCHES.forEach(b=>{
     const td = document.createElement('td');
     const inp = document.createElement('input');
     inp.value = sucursales[b.key] ?? '';
     inp.dataset.branch = b.key;
-    inp.addEventListener('input', ()=> recomputeTotal(tr));
+    inp.addEventListener('input', recomputeFooterTotals);
     td.appendChild(inp);
     tr.appendChild(td);
   });
 
-  ['porcentaje','total_ajustado'].forEach(f=>{
-    const td = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.value = row[f] ?? '';
-    inp.dataset.field = f;
-    td.appendChild(inp);
-    tr.appendChild(td);
-  });
+  const tdPct = document.createElement('td');
+  const inpPct = document.createElement('input');
+  inpPct.value = row.porcentaje ?? '';
+  inpPct.dataset.field = 'porcentaje';
+  tdPct.appendChild(inpPct);
+  tr.appendChild(tdPct);
 
-  recomputeTotal(tr);
+  const tdActions = document.createElement('td');
+  tdActions.style.whiteSpace = 'nowrap';
+  const upBtn = document.createElement('button');
+  upBtn.className = 'btn small'; upBtn.textContent = '▲'; upBtn.title = 'Subir';
+  upBtn.addEventListener('click', ()=> moveGastoRow(tr, 'up'));
+  const downBtn = document.createElement('button');
+  downBtn.className = 'btn small'; downBtn.textContent = '▼'; downBtn.title = 'Bajar';
+  downBtn.addEventListener('click', ()=> moveGastoRow(tr, 'down'));
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn small'; delBtn.textContent = '🗑'; delBtn.title = 'Eliminar';
+  delBtn.addEventListener('click', ()=> deleteGastoRow(tr));
+  tdActions.appendChild(upBtn); tdActions.appendChild(downBtn); tdActions.appendChild(delBtn);
+  tr.appendChild(tdActions);
+
   return tr;
 }
 
-function computeRowTotal(tr){
-  let sum = 0, any = false;
-  tr.querySelectorAll('input[data-branch]').forEach(inp=>{
-    const v = parseFloat(inp.value);
-    if (!isNaN(v)){ sum += v; any = true; }
+function gastosFooterRow(){
+  const tr = document.createElement('tr');
+  tr.className = 'totals-row';
+  const tdLabel = document.createElement('td');
+  tdLabel.textContent = 'TOTAL';
+  tdLabel.style.fontWeight = '700'; tdLabel.style.color = 'var(--series-1)';
+  tr.appendChild(tdLabel);
+  BRANCHES.forEach(b=>{
+    const td = document.createElement('td');
+    const span = document.createElement('span');
+    span.dataset.footerBranch = b.key;
+    span.style.fontWeight = '700'; span.style.color = 'var(--series-1)';
+    td.appendChild(span);
+    tr.appendChild(td);
   });
-  return any ? sum : null;
+  tr.appendChild(document.createElement('td'));
+  tr.appendChild(document.createElement('td'));
+  return tr;
 }
 
-function recomputeTotal(tr){
-  const total = computeRowTotal(tr);
-  tr.querySelector('span[data-role="total"]').textContent = total === null ? '—' : fmtNum(Math.round(total * 100) / 100);
+function recomputeFooterTotals(){
+  BRANCHES.forEach(b=>{
+    let sum = 0;
+    dataRows().forEach(tr=>{
+      const inp = tr.querySelector(`input[data-branch="${b.key}"]`);
+      const v = inp ? parseFloat(inp.value) : NaN;
+      if (!isNaN(v)) sum += v;
+    });
+    const span = document.querySelector(`.totals-row span[data-footer-branch="${b.key}"]`);
+    if (span) span.textContent = fmtNum(Math.round(sum * 100) / 100);
+  });
 }
 
 // ---------------- Costos de productos ----------------
