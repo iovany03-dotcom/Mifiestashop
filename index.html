@@ -5,7 +5,7 @@
     --surface-1:#fcfcfb; --plane:#f9f9f7;
     --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
     --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
-    --series-cop:#2a78d6; --series-mxn:#eb6834;
+    --series-1:#2a78d6; --series-2:#eb6834;
     --good:#0ca30c; --card-bg:#ffffff;
   }
   @media (prefers-color-scheme: dark){
@@ -14,7 +14,7 @@
       --surface-1:#1a1a19; --plane:#0d0d0d;
       --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
       --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
-      --series-cop:#3987e5; --series-mxn:#d95926;
+      --series-1:#3987e5; --series-2:#d95926;
       --good:#0ca30c; --card-bg:#232322;
     }
   }
@@ -23,7 +23,7 @@
     --surface-1:#1a1a19; --plane:#0d0d0d;
     --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
     --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
-    --series-cop:#3987e5; --series-mxn:#d95926;
+    --series-1:#3987e5; --series-2:#d95926;
     --good:#0ca30c; --card-bg:#232322;
   }
 
@@ -42,6 +42,10 @@
   header.top h1{ font-size: 22px; margin: 0 0 4px; font-weight: 700; }
   header.top p{ margin: 0; color: var(--text-secondary); font-size: 13.5px; }
 
+  h1, h2 { position: relative; }
+  a.anchor-jump{ font-size: 12px; font-weight: 400; color: var(--text-secondary); text-decoration: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; margin-left: 8px; vertical-align: middle; }
+  a.anchor-jump:hover{ color: var(--text-primary); }
+
   .card{
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -55,11 +59,12 @@
     border-left: 4px solid #eda100;
     border-radius: 10px;
     padding: 14px 16px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
     font-size: 13px;
     line-height: 1.55;
     color: var(--text-secondary);
   }
+  .alert.info{ border-left-color: var(--series-1); }
   .alert b{ color: var(--text-primary); }
 
   .kpis{
@@ -73,20 +78,9 @@
   .kpi .sub{ font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
   .kpi .sub.good{ color: var(--good); }
 
-  .filters{
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    margin-bottom: 14px;
-  }
-  .seg{
-    display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
-  }
-  .seg button{
-    appearance: none; border: none; background: transparent; color: var(--text-secondary);
-    font-size: 12.5px; padding: 7px 12px; cursor: pointer; font-family: inherit;
-  }
-  .seg button + button{ border-left: 1px solid var(--border); }
-  .seg button.active{ background: var(--series-cop); color: #fff; }
-  .seg button.active[data-mxn="1"]{ background: var(--series-mxn); }
+  .section-title{ font-size: 17px; font-weight: 700; margin: 30px 0 12px; padding-top: 6px; }
+  .section-title:first-of-type{ margin-top: 0; }
+  .section-title .muted{ font-weight: 400; color: var(--text-muted); font-size: 12.5px; }
 
   .panel{ margin-bottom: 18px; }
   .panel h2{ font-size: 14.5px; margin: 0 0 12px; font-weight: 600; }
@@ -120,13 +114,14 @@
   thead th:hover{ color: var(--text-primary); }
   tbody td{ padding: 7px 10px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
   tbody tr:last-child td{ border-bottom: none; }
-  .tag{ display:inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; }
-  .tag.cop{ background: color-mix(in srgb, var(--series-cop) 16%, transparent); color: var(--series-cop); }
-  .tag.mxn{ background: color-mix(in srgb, var(--series-mxn) 16%, transparent); color: var(--series-mxn); }
+  .pill{ display:inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+  .pill.ok{ background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+  .pill.warn{ background: color-mix(in srgb, #eda100 18%, transparent); color: #a97200; }
+  .pill.bad{ background: color-mix(in srgb, #e34948 16%, transparent); color: #c23c3b; }
 
   .table-wrap{ max-height: 380px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
 
-  .foot{ margin-top: 18px; font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
+  .foot{ margin-top: 22px; font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
   .foot a{ color: var(--text-secondary); }
 </style>
 
@@ -134,35 +129,26 @@
 <div class="wrap">
 
   <header class="top">
-    <h1>Mi Fiestashop — Ventas mensuales</h1>
-    <p>Fuente: API PrestaShop (webservice) de <strong>www.mifiestashop.com</strong> · datos hasta el 10 sep. 2026</p>
+    <h1>Mi Fiestashop — Panel operativo</h1>
+    <p>Fuente: API PrestaShop (webservice) de <strong>www.mifiestashop.com</strong> · datos hasta el 10 sep. 2026 · montos en <strong>MXN</strong> únicamente</p>
   </header>
 
   <div class="alert" id="scopeAlert"></div>
 
-  <div class="kpis" id="kpiRow"></div>
+  <div class="section-title">Ventas mensuales <span class="muted">(MXN, pedidos confirmados)</span></div>
 
-  <div class="filters">
-    <div class="seg" id="rangeSeg">
-      <button data-range="recent" class="active">2026 (actividad reciente)</button>
-      <button data-range="all">Todo el histórico</button>
-    </div>
-    <div class="seg" id="curSeg">
-      <button data-cur="COP" class="active">COP</button>
-      <button data-cur="MXN" data-mxn="1">MXN</button>
-    </div>
-  </div>
+  <div class="kpis" id="kpiRow"></div>
 
   <div class="chart-row">
     <div class="card panel">
-      <h2 id="revTitle">Ingresos por mes <span class="muted">(pedidos confirmados)</span></h2>
+      <h2>Ingresos por mes <span class="muted">(MXN)</span></h2>
       <div style="position:relative">
         <svg id="revChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
         <div class="tooltip" id="revTip"></div>
       </div>
     </div>
     <div class="card panel">
-      <h2 id="ordTitle">Pedidos por mes <span class="muted">(pedidos confirmados)</span></h2>
+      <h2>Pedidos por mes <span class="muted">(MXN)</span></h2>
       <div style="position:relative">
         <svg id="ordChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
         <div class="tooltip" id="ordTip"></div>
@@ -171,9 +157,9 @@
   </div>
 
   <div class="card panel">
-    <h2>Estados de los pedidos confirmados <span class="muted">(3.643 pedidos válidos, todo el histórico)</span></h2>
+    <h2>Estados de los pedidos confirmados <span class="muted">(2.373 pedidos MXN)</span></h2>
     <div style="position:relative">
-      <svg id="stateChart" viewBox="0 0 1040 170" style="width:100%;height:auto;display:block"></svg>
+      <svg id="stateChart" viewBox="0 0 1040 150" style="width:100%;height:auto;display:block"></svg>
       <div class="tooltip" id="stateTip"></div>
     </div>
   </div>
@@ -185,8 +171,7 @@
         <thead>
           <tr>
             <th data-k="month">Mes ▾</th>
-            <th data-k="currency">Moneda</th>
-            <th data-k="revenue">Ingresos</th>
+            <th data-k="revenue">Ingresos (MXN)</th>
             <th data-k="orders">Pedidos</th>
             <th data-k="avg">Ticket promedio</th>
           </tr>
@@ -196,8 +181,39 @@
     </div>
   </div>
 
+  <div class="section-title">Stock por sucursal <span class="muted">(existencias actuales)</span></div>
+
+  <div class="card panel">
+    <h2>Unidades disponibles por sucursal</h2>
+    <div style="position:relative">
+      <svg id="stockChart" viewBox="0 0 1040 220" style="width:100%;height:auto;display:block"></svg>
+      <div class="tooltip" id="stockTip"></div>
+    </div>
+  </div>
+
+  <div class="card panel">
+    <h2>Detalle por sucursal</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-k="name">Sucursal</th>
+            <th data-k="units">Unidades disponibles</th>
+            <th data-k="skus">SKUs con stock registrado</th>
+            <th data-k="out">SKUs agotados</th>
+          </tr>
+        </thead>
+        <tbody id="stockTblBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="alert info">
+    <b>¿Por qué no hay "ventas por sucursal"?</b> Los pedidos de <b>Mi Fiestashop</b> se registran todos bajo una sola tienda en línea (no traen un campo de sucursal o almacén). Se revisaron también los movimientos de inventario (<code>stock_movements</code>) buscando ventas atribuidas a un almacén: existen movimientos de tipo "Pedido del cliente", pero ninguno pertenece a los 5 almacenes de Mi Fiestashop (Puebla, CDMX Rumania, CDMX Popocatepetl, Querétaro, Atizapan) — pertenecen a otros negocios de la plataforma. Por eso este panel solo puede mostrar <b>existencias actuales</b> por sucursal, no ventas históricas por sucursal. Si llevan las ventas de tienda física por otro sistema (POS, Excel, etc.), se podría cruzar esa información aparte.
+  </div>
+
   <div class="foot">
-    Esta clave de API expone únicamente la tienda <b>Mi Fiestashop</b> (id_shop 50) dentro de la plataforma Daiscom — las otras 52 tiendas del listado <code>/api/shops</code> pertenecen a otros comercios y no son accesibles con esta clave, así que este panel no puede comparar "ventas por tienda" entre negocios distintos. Se considera "venta confirmada" un pedido con <code>valid=1</code> (pago aceptado/entregado/etc.); quedan fuera pedidos abandonados o sin confirmar.
+    Se excluyeron montos en COP a pedido del usuario — la actividad en COP existe solo en 2019–2020 y en 2026 es marginal frente a MXN. "Venta confirmada" = pedido con <code>valid=1</code> (pago aceptado/entregado/etc.). El stock por sucursal proviene de <code>/api/stocks</code> filtrado a los 5 almacenes (<code>id_warehouse</code>) de Mi Fiestashop; "Guadalajara" figura como sucursal en el store-locator pero no tiene almacén con existencias asociado en la API.
   </div>
 
 </div>
@@ -206,83 +222,58 @@
 <script>
 const RAW = {
   monthly_sales: [
-    {"month":"2019-04","currency":"COP","revenue":5516.3,"orders":6},
-    {"month":"2019-05","currency":"COP","revenue":10132.62,"orders":8},
-    {"month":"2019-06","currency":"COP","revenue":7996.14,"orders":7},
-    {"month":"2019-07","currency":"COP","revenue":11904.16,"orders":12},
-    {"month":"2019-08","currency":"COP","revenue":6563.38,"orders":6},
-    {"month":"2019-09","currency":"COP","revenue":12894.1,"orders":8},
-    {"month":"2019-10","currency":"COP","revenue":12000.66,"orders":10},
-    {"month":"2019-11","currency":"COP","revenue":19932.0,"orders":18},
-    {"month":"2019-12","currency":"COP","revenue":3494.5,"orders":2},
-    {"month":"2020-01","currency":"COP","revenue":16726.65,"orders":12},
-    {"month":"2020-02","currency":"COP","revenue":7564.58,"orders":6},
-    {"month":"2020-03","currency":"COP","revenue":7580.58,"orders":5},
-    {"month":"2020-05","currency":"COP","revenue":2491.7,"orders":4},
-    {"month":"2020-06","currency":"COP","revenue":1514.4,"orders":2},
-    {"month":"2026-03","currency":"COP","revenue":321754.66,"orders":3},
-    {"month":"2026-03","currency":"MXN","revenue":65871.7,"orders":176},
-    {"month":"2026-04","currency":"COP","revenue":27577.8,"orders":67},
-    {"month":"2026-04","currency":"MXN","revenue":291775.43,"orders":627},
-    {"month":"2026-05","currency":"COP","revenue":312582.0,"orders":572},
-    {"month":"2026-06","currency":"COP","revenue":883352.95,"orders":453},
-    {"month":"2026-06","currency":"MXN","revenue":43745.9,"orders":146},
-    {"month":"2026-07","currency":"COP","revenue":13248440.84,"orders":27},
-    {"month":"2026-07","currency":"MXN","revenue":245583.15,"orders":642},
-    {"month":"2026-08","currency":"COP","revenue":5769321.17,"orders":28},
-    {"month":"2026-08","currency":"MXN","revenue":273923.6,"orders":611},
-    {"month":"2026-09","currency":"COP","revenue":3341508.28,"orders":14},
-    {"month":"2026-09","currency":"MXN","revenue":73480.63,"orders":171}
+    {"month":"2026-03","revenue":65871.7,"orders":176},
+    {"month":"2026-04","revenue":291775.43,"orders":627},
+    {"month":"2026-05","revenue":0,"orders":0},
+    {"month":"2026-06","revenue":43745.9,"orders":146},
+    {"month":"2026-07","revenue":245583.15,"orders":642},
+    {"month":"2026-08","revenue":273923.6,"orders":611},
+    {"month":"2026-09","revenue":73480.63,"orders":171}
   ],
-  state_breakdown_valid: {"Pago aceptado":3348,"Entregado":266,"Nuevo Pedido":16,"Enviado":9,"Pago Realizado":3,"Por Cobrar":1},
-  total_orders_all_time: 28759,
-  total_valid_orders: 3643
+  state_breakdown_valid: {"Pago aceptado":2302,"Entregado":63,"Enviado":5,"Pago Realizado":2,"Por Cobrar":1},
+  total_valid_orders_mxn: 2373,
+  total_revenue_mxn: 994380.41,
+  stock_by_branch: [
+    {"name":"CDMX Rumania","units":720999,"skus":2050,"out":268},
+    {"name":"Querétaro","units":548907,"skus":1373,"out":242},
+    {"name":"Puebla","units":546866,"skus":1262,"out":193},
+    {"name":"Atizapan (Edo. México)","units":383157,"skus":473,"out":35},
+    {"name":"CDMX Popocatepetl","units":5950,"skus":13,"out":2}
+  ]
 };
 
 const root = document.querySelector('.viz-root');
 const css = getComputedStyle(root);
 const cssVar = (name) => css.getPropertyValue(name).trim();
 
-let state = { range: 'recent', currency: 'COP' };
-
-function fmtMoney(v, cur){
-  const digits = cur === 'COP' ? 0 : 2;
-  return '$' + v.toLocaleString('es-CO', {minimumFractionDigits: digits, maximumFractionDigits: digits});
+function fmtMoney(v){
+  return '$' + v.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 function fmtMonth(m){
   const [y,mo] = m.split('-');
   const names = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
   return names[parseInt(mo,10)-1] + ' ' + y.slice(2);
 }
-
-function rowsForRange(range){
-  if (range === 'recent') return RAW.monthly_sales.filter(r => r.month >= '2026-01');
-  return RAW.monthly_sales;
-}
+function fmtNum(v){ return v.toLocaleString('es-MX'); }
 
 // ---------- KPIs ----------
 function renderKPIs(){
-  const rows2026 = RAW.monthly_sales.filter(r => r.month.startsWith('2026'));
-  const cop = rows2026.filter(r=>r.currency==='COP');
-  const mxn = rows2026.filter(r=>r.currency==='MXN');
-  const sum = (arr,k) => arr.reduce((a,r)=>a+r[k],0);
-  const copRev = sum(cop,'revenue'), copOrd = sum(cop,'orders');
-  const mxnRev = sum(mxn,'revenue'), mxnOrd = sum(mxn,'orders');
+  const rows = RAW.monthly_sales.filter(r=>r.orders>0).sort((a,b)=>a.month.localeCompare(b.month));
+  const avgTicket = RAW.total_revenue_mxn / RAW.total_valid_orders_mxn;
 
-  // last two months COP growth (jul->aug->sep are noisy; use orders trend of most recent complete month vs prior)
-  const copSorted = cop.slice().sort((a,b)=>a.month.localeCompare(b.month));
-  let growthTxt = '—';
-  if (copSorted.length >= 2){
-    const last = copSorted[copSorted.length-1], prev = copSorted[copSorted.length-2];
+  let growthTxt = '—', growthSub = '';
+  if (rows.length >= 2){
+    const last = rows[rows.length-1], prev = rows[rows.length-2];
     const pct = prev.revenue > 0 ? ((last.revenue - prev.revenue)/prev.revenue*100) : 0;
-    growthTxt = (pct>=0?'+':'') + pct.toFixed(0) + '% vs ' + fmtMonth(prev.month);
+    growthTxt = (pct>=0?'+':'') + pct.toFixed(0) + '%';
+    growthSub = 'vs ' + fmtMonth(prev.month);
   }
 
   const cards = [
-    {label:'Ingresos COP (2026)', value: fmtMoney(copRev,'COP'), sub: copOrd + ' pedidos confirmados'},
-    {label:'Ingresos MXN (2026)', value: fmtMoney(mxnRev,'MXN'), sub: mxnOrd + ' pedidos confirmados'},
-    {label:'Pedidos confirmados (histórico)', value: RAW.total_valid_orders.toLocaleString('es-CO'), sub: (RAW.total_valid_orders/RAW.total_orders_all_time*100).toFixed(1) + '% de ' + RAW.total_orders_all_time.toLocaleString('es-CO') + ' registros'},
-    {label:'Var. último mes (COP)', value: growthTxt.split(' vs ')[0], sub: growthTxt.includes('vs') ? growthTxt.split(' ').slice(1).join(' ') : '', good: true},
+    {label:'Ingresos MXN (histórico)', value: fmtMoney(RAW.total_revenue_mxn), sub: 'desde mar 26'},
+    {label:'Pedidos confirmados', value: fmtNum(RAW.total_valid_orders_mxn), sub: 'pagados / entregados'},
+    {label:'Ticket promedio', value: fmtMoney(avgTicket), sub: 'por pedido confirmado'},
+    {label:'Var. último mes', value: growthTxt, sub: growthSub, good: growthTxt.startsWith('+')},
   ];
   const el = document.getElementById('kpiRow');
   el.innerHTML = cards.map(c => `
@@ -296,23 +287,22 @@ function renderKPIs(){
 
 function renderAlert(){
   document.getElementById('scopeAlert').innerHTML =
-    `<b>Dato relevante:</b> entre 2021 y febrero de 2026 se crearon miles de pedidos por mes (hasta 800), pero <b>ninguno llegó a un estado confirmado</b> (pago aceptado, entregado, etc.) — todos quedaron sin estado asignado. La actividad de ventas confirmadas solo existe en 2019–2020 y desde marzo de 2026. Vale la pena revisar con el equipo si hay un problema de sincronización de pagos/pasarela en ese periodo, o si esos pedidos se gestionan fuera de PrestaShop.`;
+    `<b>Dato relevante:</b> entre 2021 y febrero de 2026 se crearon miles de pedidos por mes en esta tienda (hasta 800), pero <b>ninguno llegó a un estado confirmado</b> (pago aceptado, entregado, etc.) — todos quedaron sin estado asignado. La venta en MXN arranca en marzo de 2026 y es la única moneda que se muestra aquí (a pedido tuyo se excluyó COP). Vale la pena revisar con el equipo si hubo un problema de sincronización de pagos/pasarela antes de marzo de 2026.`;
 }
 
-// ---------- Bar chart (generic) ----------
-function drawBarChart(svgId, tipId, rows, key, cur, fmtValue){
+// ---------- Bar chart (generic, single series) ----------
+function drawBarChart(svgId, tipId, rows, key, color, fmtValue, labelKey, fmtLabel){
   const svg = document.getElementById(svgId);
   const tip = document.getElementById(tipId);
   const W = 520, H = 260, padL = 54, padR = 12, padT = 12, padB = 34;
   const innerW = W - padL - padR, innerH = H - padT - padB;
-  const color = cur === 'COP' ? cssVar('--series-cop') : cssVar('--series-mxn');
 
   svg.innerHTML = '';
   if (!rows.length){
-    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="${cssVar('--text-muted')}">Sin datos para este filtro</text>`;
+    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="${cssVar('--text-muted')}">Sin datos</text>`;
     return;
   }
-  const maxV = Math.max(...rows.map(r=>r[key])) * 1.12 || 1;
+  const maxV = Math.max(...rows.map(r=>r[key])) * 1.15 || 1;
   const n = rows.length;
   const bw = Math.min(34, innerW/n*0.62);
   const step = innerW/n;
@@ -320,7 +310,6 @@ function drawBarChart(svgId, tipId, rows, key, cur, fmtValue){
   const ns='http://www.w3.org/2000/svg';
   const g = document.createElementNS(ns,'g');
 
-  // gridlines (4)
   for(let i=0;i<=3;i++){
     const y = padT + innerH - (innerH*i/3);
     const line = document.createElementNS(ns,'line');
@@ -335,7 +324,6 @@ function drawBarChart(svgId, tipId, rows, key, cur, fmtValue){
     t.textContent = i===0 ? '0' : (val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0));
     g.appendChild(t);
   }
-  // baseline
   const base = document.createElementNS(ns,'line');
   base.setAttribute('x1',padL); base.setAttribute('x2',padL+innerW);
   base.setAttribute('y1',padT+innerH); base.setAttribute('y2',padT+innerH);
@@ -355,21 +343,18 @@ function drawBarChart(svgId, tipId, rows, key, cur, fmtValue){
     rect.addEventListener('mousemove', (e)=>{
       const rectBox = svg.getBoundingClientRect();
       tip.style.opacity = 1;
-      tip.innerHTML = `<div class="t-title">${fmtMonth(r.month)}</div><div class="t-row">${fmtValue(r[key])}</div>`;
-      tip.style.left = Math.min(rectBox.width-120, (e.clientX-rectBox.left+10)) + 'px';
+      tip.innerHTML = `<div class="t-title">${fmtLabel(r[labelKey])}</div><div class="t-row">${fmtValue(r[key])}</div>`;
+      tip.style.left = Math.min(rectBox.width-140, (e.clientX-rectBox.left+10)) + 'px';
       tip.style.top = (e.clientY-rectBox.top-40) + 'px';
     });
     rect.addEventListener('mouseleave', ()=>{ tip.style.opacity = 0; });
     g.appendChild(rect);
 
-    // x label: show every label if <=12, else every other
-    if (n<=14 || i%2===0 || i===n-1){
-      const t = document.createElementNS(ns,'text');
-      t.setAttribute('x', x+bw/2); t.setAttribute('y', padT+innerH+16);
-      t.setAttribute('text-anchor','middle'); t.setAttribute('class','axis-label');
-      t.textContent = fmtMonth(r.month);
-      g.appendChild(t);
-    }
+    const t = document.createElementNS(ns,'text');
+    t.setAttribute('x', x+bw/2); t.setAttribute('y', padT+innerH+16);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('class','axis-label');
+    t.textContent = fmtLabel(r[labelKey]);
+    g.appendChild(t);
   });
 
   svg.appendChild(g);
@@ -380,7 +365,7 @@ function drawStateChart(){
   const svg = document.getElementById('stateChart');
   const tip = document.getElementById('stateTip');
   const data = Object.entries(RAW.state_breakdown_valid).sort((a,b)=>b[1]-a[1]);
-  const W=1040,H=170,padL=140,padR=50,padT=10,padB=10;
+  const W=1040,H=150,padL=140,padR=50,padT=10,padB=10;
   const innerW=W-padL-padR, innerH=H-padT-padB;
   const max = data[0][1]*1.08;
   const rowH = innerH/data.length;
@@ -400,12 +385,12 @@ function drawStateChart(){
     const rect = document.createElementNS(ns,'rect');
     rect.setAttribute('x',padL); rect.setAttribute('y',y);
     rect.setAttribute('width',Math.max(w,2)); rect.setAttribute('height',h);
-    rect.setAttribute('rx',3); rect.setAttribute('fill', cssVar('--series-cop'));
+    rect.setAttribute('rx',3); rect.setAttribute('fill', cssVar('--series-2'));
     rect.setAttribute('class','bar');
     rect.addEventListener('mousemove',(e)=>{
       const box = svg.getBoundingClientRect();
       tip.style.opacity=1;
-      tip.innerHTML = `<div class="t-title">${name}</div><div class="t-row">${val.toLocaleString('es-CO')} pedidos</div>`;
+      tip.innerHTML = `<div class="t-title">${name}</div><div class="t-row">${fmtNum(val)} pedidos</div>`;
       tip.style.left = Math.min(box.width-140,(e.clientX-box.left+10))+'px';
       tip.style.top = (e.clientY-box.top-36)+'px';
     });
@@ -415,18 +400,64 @@ function drawStateChart(){
     const vt = document.createElementNS(ns,'text');
     vt.setAttribute('x', padL+w+8); vt.setAttribute('y', y+h/2+4);
     vt.setAttribute('font-size','11.5'); vt.setAttribute('fill', cssVar('--text-secondary'));
-    vt.textContent = val.toLocaleString('es-CO');
+    vt.textContent = fmtNum(val);
     g.appendChild(vt);
   });
   svg.appendChild(g);
 }
 
-// ---------- Table ----------
+// ---------- Stock chart (horizontal bars, sorted desc) ----------
+function drawStockChart(){
+  const svg = document.getElementById('stockChart');
+  const tip = document.getElementById('stockTip');
+  const data = RAW.stock_by_branch.slice().sort((a,b)=>b.units-a.units);
+  const W=1040,H=220,padL=180,padR=60,padT=10,padB=10;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const max = data[0].units*1.08;
+  const rowH = innerH/data.length;
+  const ns='http://www.w3.org/2000/svg';
+  svg.innerHTML='';
+  const g = document.createElementNS(ns,'g');
+  data.forEach((d,i)=>{
+    const y = padT + rowH*i + rowH*0.22;
+    const h = rowH*0.56;
+    const w = (d.units/max)*innerW;
+    const label = document.createElementNS(ns,'text');
+    label.setAttribute('x', padL-10); label.setAttribute('y', y+h/2+4);
+    label.setAttribute('text-anchor','end'); label.setAttribute('font-size','12');
+    label.textContent = d.name;
+    g.appendChild(label);
+
+    const rect = document.createElementNS(ns,'rect');
+    rect.setAttribute('x',padL); rect.setAttribute('y',y);
+    rect.setAttribute('width',Math.max(w,2)); rect.setAttribute('height',h);
+    rect.setAttribute('rx',3); rect.setAttribute('fill', cssVar('--series-1'));
+    rect.setAttribute('class','bar');
+    rect.addEventListener('mousemove',(e)=>{
+      const box = svg.getBoundingClientRect();
+      tip.style.opacity=1;
+      tip.innerHTML = `<div class="t-title">${d.name}</div><div class="t-row">${fmtNum(d.units)} unidades</div><div class="t-row">${fmtNum(d.skus)} SKUs · ${fmtNum(d.out)} agotados</div>`;
+      tip.style.left = Math.min(box.width-160,(e.clientX-box.left+10))+'px';
+      tip.style.top = (e.clientY-box.top-46)+'px';
+    });
+    rect.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
+    g.appendChild(rect);
+
+    const vt = document.createElementNS(ns,'text');
+    vt.setAttribute('x', padL+w+8); vt.setAttribute('y', y+h/2+4);
+    vt.setAttribute('font-size','11.5'); vt.setAttribute('fill', cssVar('--text-secondary'));
+    vt.textContent = fmtNum(d.units) + ' u.';
+    g.appendChild(vt);
+  });
+  svg.appendChild(g);
+}
+
+// ---------- Tables ----------
 let sortKey = 'month', sortDir = -1;
 function renderTable(){
-  const rows = rowsForRange(state.range).slice().sort((a,b)=>{
+  const rows = RAW.monthly_sales.slice().sort((a,b)=>{
     let av = a[sortKey], bv = b[sortKey];
-    if (sortKey==='avg'){ av = a.revenue/a.orders; bv = b.revenue/b.orders; }
+    if (sortKey==='avg'){ av = a.orders? a.revenue/a.orders : 0; bv = b.orders? b.revenue/b.orders : 0; }
     if (typeof av === 'string') return av.localeCompare(bv)*sortDir;
     return (av-bv)*sortDir;
   });
@@ -434,49 +465,56 @@ function renderTable(){
   tbody.innerHTML = rows.map(r=>`
     <tr>
       <td>${fmtMonth(r.month)}</td>
-      <td><span class="tag ${r.currency.toLowerCase()}">${r.currency}</span></td>
-      <td>${fmtMoney(r.revenue, r.currency)}</td>
-      <td>${r.orders.toLocaleString('es-CO')}</td>
-      <td>${fmtMoney(r.revenue/r.orders, r.currency)}</td>
+      <td>${fmtMoney(r.revenue)}</td>
+      <td>${fmtNum(r.orders)}</td>
+      <td>${r.orders ? fmtMoney(r.revenue/r.orders) : '—'}</td>
     </tr>
   `).join('');
 }
 
-document.querySelectorAll('#tblBody').forEach(()=>{});
+let stockSortKey = 'units', stockSortDir = -1;
+function renderStockTable(){
+  const rows = RAW.stock_by_branch.slice().sort((a,b)=>{
+    let av = stockSortKey==='name' ? a.name : a[stockSortKey];
+    let bv = stockSortKey==='name' ? b.name : b[stockSortKey];
+    if (typeof av === 'string') return av.localeCompare(bv)*stockSortDir;
+    return (av-bv)*stockSortDir;
+  });
+  const tbody = document.getElementById('stockTblBody');
+  tbody.innerHTML = rows.map(r=>{
+    const pct = r.skus ? (r.out/r.skus*100) : 0;
+    const pillClass = pct >= 20 ? 'bad' : pct >= 8 ? 'warn' : 'ok';
+    return `
+    <tr>
+      <td>${r.name}</td>
+      <td>${fmtNum(r.units)}</td>
+      <td>${fmtNum(r.skus)}</td>
+      <td><span class="pill ${pillClass}">${fmtNum(r.out)} (${pct.toFixed(0)}%)</span></td>
+    </tr>
+  `;}).join('');
+}
+
 document.querySelectorAll('thead th').forEach(th=>{
   th.addEventListener('click', ()=>{
     const k = th.dataset.k;
-    if (sortKey===k) sortDir *= -1; else { sortKey=k; sortDir=-1; }
-    renderTable();
+    const isStockTable = th.closest('table').contains(document.getElementById('stockTblBody'));
+    if (isStockTable){
+      if (stockSortKey===k) stockSortDir *= -1; else { stockSortKey=k; stockSortDir=-1; }
+      renderStockTable();
+    } else {
+      if (sortKey===k) sortDir *= -1; else { sortKey=k; sortDir=-1; }
+      renderTable();
+    }
   });
 });
 
-// ---------- Wiring ----------
-function renderAll(){
-  const rows = rowsForRange(state.range).filter(r=>r.currency===state.currency)
-    .slice().sort((a,b)=>a.month.localeCompare(b.month));
-  document.getElementById('revTitle').innerHTML = `Ingresos por mes <span class="muted">(${state.currency} · pedidos confirmados)</span>`;
-  document.getElementById('ordTitle').innerHTML = `Pedidos por mes <span class="muted">(${state.currency} · pedidos confirmados)</span>`;
-  drawBarChart('revChart','revTip', rows, 'revenue', state.currency, v=>fmtMoney(v,state.currency));
-  drawBarChart('ordChart','ordTip', rows, 'orders', state.currency, v=>v.toLocaleString('es-CO')+' pedidos');
-  renderTable();
-}
-
-document.getElementById('rangeSeg').addEventListener('click', (e)=>{
-  const btn = e.target.closest('button'); if(!btn) return;
-  state.range = btn.dataset.range;
-  document.querySelectorAll('#rangeSeg button').forEach(b=>b.classList.toggle('active', b===btn));
-  renderAll();
-});
-document.getElementById('curSeg').addEventListener('click', (e)=>{
-  const btn = e.target.closest('button'); if(!btn) return;
-  state.currency = btn.dataset.cur;
-  document.querySelectorAll('#curSeg button').forEach(b=>b.classList.toggle('active', b===btn));
-  renderAll();
-});
-
+// ---------- Render ----------
 renderKPIs();
 renderAlert();
+drawBarChart('revChart','revTip', RAW.monthly_sales, 'revenue', cssVar('--series-1'), fmtMoney, 'month', fmtMonth);
+drawBarChart('ordChart','ordTip', RAW.monthly_sales, 'orders', cssVar('--series-1'), v=>fmtNum(v)+' pedidos', 'month', fmtMonth);
 drawStateChart();
-renderAll();
+drawStockChart();
+renderTable();
+renderStockTable();
 </script>
