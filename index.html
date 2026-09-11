@@ -1361,7 +1361,7 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h2>Inventario por Almacén / Bodega</h2>
-          <button class="btn primary" onclick="alert('Abriendo módulo de traspaso de mercancía entre bodegas...')">🔄 Traspaso entre Bodegas</button>
+          <button class="btn primary" onclick="openTraspasoModal()">🔄 Traspaso entre Bodegas</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -1413,7 +1413,7 @@
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn primary" onclick="syncInventoryData()">🔄 Sincronizar Stock API</button>
-            <button class="btn secondary" onclick="alert('Iniciando módulo de traspasos entre bodegas...')">📦 Traspaso de Mercancía</button>
+            <button class="btn secondary" onclick="openTraspasoModal()">📦 Traspaso de Mercancía</button>
           </div>
         </div>
 
@@ -2293,6 +2293,78 @@
       <span id="modalStatus" class="status"></span>
       <button class="btn" onclick="document.getElementById('prodModalOverlay').classList.add('hidden')">Cancelar</button>
       <button class="btn primary" id="modalSave">Guardar todo en Supabase</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= TRASPASO DE MERCANCIA MODAL ================= -->
+<div class="modal-overlay hidden" id="traspasoModal">
+  <div class="modal" style="max-width: 580px;">
+    <div class="modal-header">
+      <h2>📦 Traspaso de Mercancía entre Bodegas</h2>
+      <button class="btn small" onclick="closeTraspasoModal()">✕</button>
+    </div>
+
+    <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:16px;">
+      Seleccione la bodega de origen, la bodega de destino y la cantidad del producto a transferir.
+    </p>
+
+    <form id="traspasoForm" onsubmit="event.preventDefault(); confirmStockTransfer();">
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div>
+          <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Bodega Origen (Salida):</label>
+          <select id="traspasoOrigen" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" onchange="updateTraspasoMaxStock()">
+            <option value="rumania">CDMX Rumania</option>
+            <option value="puebla">Puebla</option>
+            <option value="queretaro">Querétaro</option>
+            <option value="atizapan">Atizapán</option>
+            <option value="popocatepetl">CDMX Popocatépetl</option>
+          </select>
+        </div>
+
+        <div>
+          <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Bodega Destino (Entrada):</label>
+          <select id="traspasoDestino" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+            <option value="puebla">Puebla</option>
+            <option value="rumania" selected>CDMX Rumania</option>
+            <option value="queretaro">Querétaro</option>
+            <option value="atizapan">Atizapán</option>
+            <option value="popocatepetl">CDMX Popocatépetl</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Producto a Traspasar:</label>
+        <select id="traspasoProduct" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" onchange="updateTraspasoMaxStock()">
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-primary);">Cantidad a Transferir (unidades):</label>
+          <span style="font-size:12px; color:var(--text-muted);" id="traspasoStockAvailableInfo">Disponible en origen: <b>0 u.</b></span>
+        </div>
+        <input type="number" id="traspasoQty" min="1" value="10" required style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:15px; font-weight:600;">
+      </div>
+
+      <div style="margin-bottom:18px;">
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Motivo / Folio de Referencia (Opcional):</label>
+        <input type="text" id="traspasoMotivo" placeholder="Ej. Reabastecimiento de sucursal, folio #TR-9901" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end;">
+        <button type="button" class="btn" onclick="closeTraspasoModal()">Cancelar</button>
+        <button type="submit" class="btn primary" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">
+          🚀 Confirmar Traspaso de Stock
+        </button>
+      </div>
+    </form>
+
+    <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">
+      <h4 style="margin:0 0 8px 0; font-size:13px; color:var(--text-secondary);">📋 Histórico Reciente de Traspasos</h4>
+      <div id="traspasoHistoryList" style="max-height:130px; overflow-y:auto; font-size:12px; color:var(--text-muted);">
+      </div>
     </div>
   </div>
 </div>
@@ -3361,7 +3433,7 @@ function renderInventarioTable() {
         <td style="text-align:center; font-weight:700; color:var(--series-2);">${p._stTotal.toLocaleString()} u.</td>
         <td style="text-align:center;">${statusPill}</td>
         <td style="text-align:center;">
-          <button class="btn small" style="padding:4px 8px; font-size:0.75rem;" onclick="alert('Abriendo ajuste manual de stock para ${p.sku}...')">✏️ Ajustar</button>
+          <button class="btn small" style="padding:4px 8px; font-size:0.75rem;" onclick="openStockAdjustModal(${p.id})">✏️ Ajustar</button>
         </td>
       </tr>
     `;
@@ -3371,6 +3443,160 @@ function renderInventarioTable() {
 function syncInventoryData() {
   renderInventarioTable();
   alert('Inventario por almacén sincronizado correctamente.');
+}
+
+// ================= MODULO DE TRASPASO DE MERCANCIA =================
+const traspasosHistory = [
+  { folio: 'TR-1088', prod: 'Vela de Bengala', qty: 50, origen: 'CDMX Rumania', destino: 'Puebla', date: '2026-09-11 14:10' },
+  { folio: 'TR-1087', prod: 'Vela balón con movimiento', qty: 100, origen: 'Puebla', destino: 'Querétaro', date: '2026-09-11 12:45' }
+];
+
+function openTraspasoModal() {
+  const modal = document.getElementById('traspasoModal');
+  if(!modal) return;
+
+  const prodSelect = document.getElementById('traspasoProduct');
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+
+  if (prodSelect) {
+    prodSelect.innerHTML = dataset.map(p => 
+      `<option value="${p.id}">${p.sku} - ${p.name} ($${p.price.toFixed(2)})</option>`
+    ).join('');
+  }
+
+  renderTraspasoHistory();
+  updateTraspasoMaxStock();
+  modal.classList.remove('hidden');
+}
+
+function closeTraspasoModal() {
+  const modal = document.getElementById('traspasoModal');
+  if(modal) modal.classList.add('hidden');
+}
+
+function updateTraspasoMaxStock() {
+  const origen = document.getElementById('traspasoOrigen').value;
+  const prodSelect = document.getElementById('traspasoProduct');
+  if(!prodSelect || !prodSelect.value) return;
+
+  const pId = parseInt(prodSelect.value);
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const product = dataset.find(p => p.id === pId);
+
+  if (!product) return;
+
+  let currentStock = 0;
+  if (origen === 'puebla') currentStock = product._stPuebla !== undefined ? product._stPuebla : 500;
+  else if (origen === 'rumania') currentStock = product._stRumania !== undefined ? product._stRumania : 700;
+  else if (origen === 'queretaro') currentStock = product._stQueretaro !== undefined ? product._stQueretaro : 300;
+  else if (origen === 'atizapan') currentStock = product._stAtizapan !== undefined ? product._stAtizapan : 200;
+  else if (origen === 'popocatepetl') currentStock = product._stPopo !== undefined ? product._stPopo : 50;
+
+  const infoEl = document.getElementById('traspasoStockAvailableInfo');
+  if (infoEl) infoEl.innerHTML = `Disponible en origen: <b style="color:var(--text-primary);">${currentStock.toLocaleString()} u.</b>`;
+
+  const qtyInput = document.getElementById('traspasoQty');
+  if (qtyInput) {
+    qtyInput.max = currentStock;
+  }
+}
+
+function renderTraspasoHistory() {
+  const container = document.getElementById('traspasoHistoryList');
+  if(!container) return;
+  container.innerHTML = traspasosHistory.map(t => `
+    <div style="padding:6px 0; border-bottom:1px dashed var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <b>#${t.folio}</b> ${t.prod} (<b>${t.qty} u.</b>)
+        <br><span style="font-size:11px; color:var(--text-muted);">${t.origen} ➔ ${t.destino} • ${t.date}</span>
+      </div>
+      <span class="pill ok" style="font-size:10px;">Completado</span>
+    </div>
+  `).join('');
+}
+
+function confirmStockTransfer() {
+  const origen = document.getElementById('traspasoOrigen').value;
+  const destino = document.getElementById('traspasoDestino').value;
+  const prodSelect = document.getElementById('traspasoProduct');
+  if (!prodSelect || !prodSelect.value) return;
+
+  const pId = parseInt(prodSelect.value);
+  const qty = parseInt(document.getElementById('traspasoQty').value) || 0;
+
+  if (origen === destino) {
+    alert('⚠️ La bodega de origen y destino deben ser diferentes.');
+    return;
+  }
+
+  if (qty <= 0) {
+    alert('⚠️ Ingrese una cantidad válida a transferir.');
+    return;
+  }
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const product = dataset.find(p => p.id === pId);
+  if (!product) return;
+
+  const getProp = (wh) => {
+    if(wh === 'puebla') return '_stPuebla';
+    if(wh === 'rumania') return '_stRumania';
+    if(wh === 'queretaro') return '_stQueretaro';
+    if(wh === 'atizapan') return '_stAtizapan';
+    if(wh === 'popocatepetl') return '_stPopo';
+  };
+
+  const origKey = getProp(origen);
+  const destKey = getProp(destino);
+
+  const available = product[origKey] !== undefined ? product[origKey] : 0;
+  if (qty > available) {
+    alert(`⚠️ Stock insuficiente en bodega de origen (${available} u. disponibles).`);
+    return;
+  }
+
+  product[origKey] = (product[origKey] || 0) - qty;
+  product[destKey] = (product[destKey] || 0) + qty;
+  product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0) + (product._stAtizapan || 0) + (product._stPopo || 0);
+
+  const folio = 'TR-' + Math.floor(1000 + Math.random() * 9000);
+  const origenLabel = document.getElementById('traspasoOrigen').options[document.getElementById('traspasoOrigen').selectedIndex].text;
+  const destinoLabel = document.getElementById('traspasoDestino').options[document.getElementById('traspasoDestino').selectedIndex].text;
+
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+
+  traspasosHistory.unshift({
+    folio: folio,
+    prod: product.name,
+    qty: qty,
+    origen: origenLabel,
+    destino: destinoLabel,
+    date: dateStr
+  });
+
+  renderTraspasoHistory();
+  renderInventarioTable();
+
+  alert(`✅ Traspaso #${folio} registrado correctamente.\n\nSe transfirieron ${qty} u. de "${product.name}" desde ${origenLabel} hacia ${destinoLabel}.`);
+  closeTraspasoModal();
+}
+
+function openStockAdjustModal(pId) {
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const product = dataset.find(p => p.id === pId);
+  if(!product) return;
+
+  const newStock = prompt(`Ajuste de inventario para:\n${product.sku} - ${product.name}\n\nIngrese la nueva existencia para la bodega CDMX Rumania:`, product._stRumania || 500);
+  if (newStock !== null) {
+    const parsed = parseInt(newStock);
+    if (!isNaN(parsed) && parsed >= 0) {
+      product._stRumania = parsed;
+      product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0) + (product._stAtizapan || 0) + (product._stPopo || 0);
+      renderInventarioTable();
+      alert(`✅ Existencia actualizada a ${parsed} u. para CDMX Rumania.`);
+    }
+  }
 }
 
 if(document.getElementById('invSearchInput')) document.getElementById('invSearchInput').addEventListener('input', renderInventarioTable);
