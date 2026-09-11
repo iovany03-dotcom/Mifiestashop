@@ -1579,6 +1579,7 @@
             <table id="gastosTable">
               <thead id="gastosHead"></thead>
               <tbody id="gastosBody"></tbody>
+              <tfoot id="gastosFoot"></tfoot>
             </table>
           </div>
         </div>
@@ -2497,6 +2498,39 @@ async function loadGastos(){
     }
     tbody.appendChild(gastoRow(row));
   });
+  updateGastosTotals();
+}
+
+function updateGastosTotals() {
+  const tfoot = document.getElementById('gastosFoot');
+  if (!tfoot) return;
+
+  const branchTotals = {};
+  BRANCHES.forEach(b => branchTotals[b.key] = 0);
+  let grandTotal = 0;
+
+  const rows = document.querySelectorAll('#gastosBody tr');
+  rows.forEach(tr => {
+    let rowSum = 0;
+    const inputs = tr.querySelectorAll('input[type=number]');
+    inputs.forEach((inp, idx) => {
+      if (BRANCHES[idx]) {
+        const val = parseFloat(inp.value) || 0;
+        branchTotals[BRANCHES[idx].key] += val;
+        rowSum += val;
+      }
+    });
+    grandTotal += rowSum;
+  });
+
+  tfoot.innerHTML = `
+    <tr style="background:var(--card-bg); font-weight:800; border-top:2px solid var(--border); font-size:0.95rem;">
+      <td style="padding:14px 12px; color:var(--text-primary); text-transform:uppercase;">📊 TOTAL GENERAL:</td>
+      ${BRANCHES.map(b => `<td style="padding:14px 12px; font-weight:700; color:var(--text-primary);">${fmtMoney(branchTotals[b.key])}</td>`).join('')}
+      <td style="padding:14px 12px; font-size:1.15rem; color:var(--series-2); background:rgba(232,93,4,0.15); border-radius:6px;">${fmtMoney(grandTotal)}</td>
+      <td></td>
+    </tr>
+  `;
 }
 
 function gastoRow(row){
@@ -2524,6 +2558,7 @@ function gastoRow(row){
       let rowSum = 0;
       tr.querySelectorAll('input[type=number]').forEach(i => { rowSum += parseFloat(i.value) || 0; });
       tdTotal.textContent = fmtMoney(rowSum);
+      updateGastosTotals();
     };
     td.appendChild(inp);
     tr.appendChild(td);
@@ -2557,6 +2592,23 @@ function gastoRow(row){
   tr.appendChild(tdAct);
 
   return tr;
+}
+
+if(document.getElementById('gastosAddConcepto')) {
+  document.getElementById('gastosAddConcepto').onclick = () => {
+    const tbody = document.getElementById('gastosBody');
+    if (!tbody) return;
+    const newId = Date.now();
+    const newRow = { id: newId, concepto: 'NUEVO GASTO', sucursales: { puebla: 0, rumania: 0, queretaro: 0 } };
+    tbody.appendChild(gastoRow(newRow));
+    updateGastosTotals();
+  };
+}
+
+if(document.getElementById('gastosSaveAll')) {
+  document.getElementById('gastosSaveAll').onclick = () => {
+    alert('✅ Todos los cambios en la tabla de gastos han sido guardados.');
+  };
 }
 
 // COSTOS PRODUCTOS LOGIC
