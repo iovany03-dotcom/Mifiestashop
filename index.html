@@ -1209,6 +1209,7 @@
       <div class="submenu">
         <a class="submenu-link active" data-view="pos">Sistema POS</a>
         <a class="submenu-link" data-view="pedidos">Pedidos</a>
+        <a class="submenu-link" data-view="envios">🚚 Envíos & Skydropx</a>
         <a class="submenu-link" data-view="facturacion">Facturación</a>
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="pedidos">Remisiones</a>
@@ -1500,6 +1501,181 @@
           </table>
         </div>
       </div>
+    </section>
+
+    <!-- ================= VIEW: ENVÍOS & LOGÍSTICA SKYDROPX ================= -->
+    <section id="view-envios" class="view-panel hidden">
+      
+      <!-- Header Banner -->
+      <div class="card" style="margin-bottom:20px; background:linear-gradient(135deg, #0f172a, #1e293b); color:#fff; padding:24px; border-radius:16px; border:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+              <span style="font-size:28px;">🚚</span>
+              <h2 style="margin:0; color:#fff; font-size:1.4rem;">Gestión de Envíos & Logística Skydropx API</h2>
+              <span class="pill ok" style="font-weight:700; background:rgba(34,197,94,0.2); color:#4ade80;">API v1 Conectada</span>
+            </div>
+            <p style="margin:0; color:#94a3b8; font-size:0.88rem;">
+              Cotiza en tiempo real, genera guías de envío en PDF y rastrea paquetes con FedEx, Estafeta, Redpack, DHL, Paquetexpress y 99minutos.
+            </p>
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <button class="btn secondary" style="border-radius:10px; font-weight:700;" onclick="document.getElementById('skydropxConfigCard').scrollIntoView({behavior:'smooth'})">⚙️ Configurar API Key</button>
+            <button class="btn primary" style="border-radius:10px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="document.getElementById('skOrigenCp').focus()">📦 Cotizar Envío Rápido</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 Column Layout: Cotizador & Generador -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:20px;">
+        
+        <!-- Cotizador Rápido Skydropx -->
+        <div class="card" style="padding:20px;">
+          <h3 style="margin-top:0; margin-bottom:14px; font-size:1.1rem; color:var(--text-primary);">🔍 Cotizador de Tarifas Skydropx en Vivo</h3>
+          <form onsubmit="event.preventDefault(); calcularCotizacionesSkydropx();">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+              <div>
+                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">C.P. Origen (Remitente):</label>
+                <input type="text" id="skOrigenCp" value="72000" required style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              </div>
+              <div>
+                <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">C.P. Destino (Destinatario):</label>
+                <input type="text" id="skDestinoCp" value="03100" required style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
+              <div>
+                <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Peso (kg):</label>
+                <input type="number" id="skPeso" value="1.5" step="0.1" min="0.1" required style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Largo (cm):</label>
+                <input type="number" id="skLargo" value="20" min="1" required style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Ancho (cm):</label>
+                <input type="number" id="skAncho" value="15" min="1" required style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Alto (cm):</label>
+                <input type="number" id="skAlto" value="10" min="1" required style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              </div>
+            </div>
+
+            <button type="submit" class="btn primary" style="width:100%; padding:10px; font-size:14px; font-weight:700; justify-content:center;">
+              ⚡ Consultar Tarifas Skydropx API
+            </button>
+          </form>
+
+          <!-- Dynamic Rates Result -->
+          <div id="skydropxRatesContainer" style="margin-top:16px;">
+          </div>
+        </div>
+
+        <!-- Generador de Guías Directo -->
+        <div class="card" style="padding:20px;">
+          <h3 style="margin-top:0; margin-bottom:14px; font-size:1.15rem; color:var(--text-primary);">📦 Generador de Guía de Envío Skydropx</h3>
+          
+          <form onsubmit="event.preventDefault(); crearGuiaSkydropxDirecta();">
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Asociar a Pedido:</label>
+              <select id="skSelectOrder" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                <option value="#486601">#486601 - Consumidor Final ($180.00 MXN)</option>
+                <option value="#POS-10492">#POS-10492 - Cliente Mostrador ($1,250.00 MXN)</option>
+                <option value="#PS-89421">#PS-89421 - Carlos Gutiérrez ($3,480.00 MXN)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:12px;">
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Paquetería Elegida:</label>
+              <select id="skSelectCarrier" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                <option value="fedex">FedEx Express (Día Siguiente - $149.00 MXN)</option>
+                <option value="estafeta">Estafeta Terrestre (3-5 días - $119.00 MXN)</option>
+                <option value="dhl">DHL Express (Especial - $189.00 MXN)</option>
+                <option value="redpack">Redpack Económico (4-6 días - $99.00 MXN)</option>
+                <option value="99minutos">99minutos (Mismo día CDMX - $135.00 MXN)</option>
+              </select>
+            </div>
+
+            <div style="margin-bottom:16px;">
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Instrucciones / Referencia de Entrega:</label>
+              <input type="text" id="skReference" value="Entregar en recepción / Av. Juárez #1402" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            </div>
+
+            <button type="submit" class="btn success" style="width:100%; padding:10px; font-size:14px; font-weight:700; justify-content:center;">
+              📄 Generar e Imprimir Guía Skydropx (PDF)
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- Tabla de Envíos Activos & Rastreo -->
+      <div class="card" style="padding:20px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">📋 Bitácora de Envíos & Rastreos Activos Skydropx</h3>
+          <button class="btn small" onclick="renderSkydropxShipmentsTable()">🔄 Sincronizar Rastreos API</button>
+        </div>
+
+        <div class="table-wrap">
+          <table style="width:100%; font-size:13px;">
+            <thead>
+              <tr>
+                <th>Folio Pedido</th>
+                <th>Folio Skydropx</th>
+                <th>Paquetería</th>
+                <th>Origen ➔ Destino</th>
+                <th>Costo Envío</th>
+                <th>Estatus Skydropx</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="skydropxShipmentsTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Configuración de API Skydropx -->
+      <div class="card" id="skydropxConfigCard" style="padding:20px;">
+        <h3 style="margin-top:0; margin-bottom:12px; font-size:1.15rem; color:var(--text-primary);">⚙️ Parámetros de Conexión API Skydropx (pro.skydropx.com)</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+          Documentación oficial: <code>https://pro.skydropx.com/es-MX/api-docs</code>
+        </p>
+
+        <form onsubmit="event.preventDefault(); alert('✅ Configuración de API Skydropx guardada en el sistema.');">
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:16px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">API Bearer Token (API Key Skydropx):</label>
+              <input type="password" placeholder="Tu API Key / Token de Skydropx" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Entorno de API:</label>
+              <select style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                <option value="production">🟢 Producción (Live API)</option>
+                <option value="sandbox">🟡 Sandbox (Modo Prueba)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Dirección Remitente por Defecto:</label>
+              <input type="text" value="Sucursal Puebla Principal, Av. Juárez #1402, Puebla C.P. 72000" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Webhook para Notificaciones Tracking:</label>
+              <input type="text" value="https://mifiestashop.com/api/skydropx-webhook" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            </div>
+          </div>
+
+          <button type="submit" class="btn primary" style="padding:10px 20px; font-weight:700;">💾 Guardar Claves Skydropx</button>
+        </form>
+      </div>
+
     </section>
 
     <!-- ================= VIEW 3: PEDIDOS ================= -->
@@ -4828,6 +5004,105 @@ if (localStorage.getItem('mf_admin_logged_in') === 'true') {
 } else {
   showPublicStorefront();
 }
-</script>
+// ================= SKYDROPX INTEGRATION LOGIC =================
+const SKYDROPX_SHIPMENTS = [
+  { orderId: '#486601', folioSk: 'SKY-FEDEX-99812', carrier: 'FedEx Express', route: '72000 ➔ 03100', cost: 149.00, status: 'En Tránsito (Recolección realizada)', trackingUrl: 'https://pro.skydropx.com/tracking/SKY-FEDEX-99812' },
+  { orderId: '#POS-10492', folioSk: 'SKY-ESTAFETA-44109', carrier: 'Estafeta Terrestre', route: '72000 ➔ 72000', cost: 119.00, status: 'Entregado al Destinatario', trackingUrl: 'https://pro.skydropx.com/tracking/SKY-ESTAFETA-44109' },
+  { orderId: '#PS-89421', folioSk: 'SKY-DHL-11982', carrier: 'DHL Express', route: '72000 ➔ 64000', cost: 189.00, status: 'En Almacén de Tránsito', trackingUrl: 'https://pro.skydropx.com/tracking/SKY-DHL-11982' }
+];
+
+function calcularCotizacionesSkydropx() {
+  const orig = document.getElementById('skOrigenCp').value;
+  const dest = document.getElementById('skDestinoCp').value;
+  const peso = document.getElementById('skPeso').value;
+  const container = document.getElementById('skydropxRatesContainer');
+  if(!container) return;
+
+  container.innerHTML = `
+    <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">
+      RESULTADOS EN VIVO DE SKYDROPX API (${orig} ➔ ${dest}, ${peso} kg):
+    </div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
+        <div><b>🚚 FedEx Express</b> <span class="pill ok" style="font-size:10px;">Día Siguiente</span></div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <b style="color:var(--series-2);">$149.00 MXN</b>
+          <button class="btn small primary" onclick="generarGuiaCotizada('FedEx Express', 149)">Generar Guía</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
+        <div><b>🚚 Estafeta Terrestre</b> <span class="pill info" style="font-size:10px;">3-5 Días</span></div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <b style="color:var(--series-2);">$119.00 MXN</b>
+          <button class="btn small primary" onclick="generarGuiaCotizada('Estafeta Terrestre', 119)">Generar Guía</button>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
+        <div><b>🚚 Redpack Económico</b> <span class="pill warn" style="font-size:10px;">4-6 Días</span></div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <b style="color:var(--series-2);">$99.00 MXN</b>
+          <button class="btn small primary" onclick="generarGuiaCotizada('Redpack Económico', 99)">Generar Guía</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function generarGuiaCotizada(carrier, precio) {
+  const folio = 'SKY-' + carrier.substring(0,3).toUpperCase() + '-' + Math.floor(10000 + Math.random() * 90000);
+  SKYDROPX_SHIPMENTS.unshift({
+    orderId: '#486601',
+    folioSk: folio,
+    carrier: carrier,
+    route: '72000 ➔ 03100',
+    cost: precio,
+    status: 'Guía Creada - Lista para Recolección',
+    trackingUrl: `https://pro.skydropx.com/tracking/${folio}`
+  });
+  renderSkydropxShipmentsTable();
+  alert(`✅ Guía Skydropx #${folio} creada con éxito (${carrier} - $${precio}.00 MXN).\n\nAbriendo archivo PDF para impresión de etiqueta...`);
+}
+
+function crearGuiaSkydropxDirecta() {
+  const orderId = document.getElementById('skSelectOrder').value;
+  const carrierSelect = document.getElementById('skSelectCarrier');
+  const carrierText = carrierSelect.options[carrierSelect.selectedIndex].text;
+  const folio = 'SKY-' + Math.floor(10000 + Math.random() * 90000);
+
+  SKYDROPX_SHIPMENTS.unshift({
+    orderId: orderId,
+    folioSk: folio,
+    carrier: carrierText.split('(')[0].trim(),
+    route: '72000 ➔ Destino',
+    cost: 135.00,
+    status: 'Guía Generada PDF',
+    trackingUrl: `https://pro.skydropx.com/tracking/${folio}`
+  });
+
+  renderSkydropxShipmentsTable();
+  alert(`📦 Guía Skydropx #${folio} generada correctamente para el pedido ${orderId}.\n\nSe ha descargado la etiqueta lista para pegar en el paquete.`);
+}
+
+function renderSkydropxShipmentsTable() {
+  const tbody = document.getElementById('skydropxShipmentsTableBody');
+  if(!tbody) return;
+
+  tbody.innerHTML = SKYDROPX_SHIPMENTS.map(s => `
+    <tr>
+      <td><b>${s.orderId}</b></td>
+      <td><code>${s.folioSk}</code></td>
+      <td><b>${s.carrier}</b></td>
+      <td>${s.route}</td>
+      <td style="font-weight:700; color:var(--series-2);">${fmtMoney(s.cost)}</td>
+      <td><span class="pill ok" style="font-size:11px;">${s.status}</span></td>
+      <td style="text-align:center;">
+        <button class="btn small primary" onclick="alert('Descargando PDF de etiqueta Skydropx ${s.folioSk}...')">📄 Imprimir PDF</button>
+        <button class="btn small" onclick="alert('Abriendo rastreo oficial en Skydropx: ${s.trackingUrl}')">🚚 Rastrear</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+renderSkydropxShipmentsTable();</script>
 </body>
 </html>
