@@ -808,7 +808,7 @@ function renderGastosHeader(){
   const thead = document.getElementById('gastosHead');
   thead.innerHTML = '';
   const tr = document.createElement('tr');
-  const heads = ['Concepto', ...BRANCHES.map(b=>b.label), '%', ''];
+  const heads = ['Concepto', ...BRANCHES.map(b=>b.label), 'Total', ''];
   heads.forEach(h=>{
     const th = document.createElement('th');
     th.textContent = h;
@@ -856,7 +856,7 @@ function addSucursalColumn(){
   if (BRANCHES.some(b=>b.key === key)){ alert('Esa sucursal ya existe'); return; }
   BRANCHES.push({ key, label: name.trim() });
   renderGastosHeader();
-  // Agrega la celda nueva a cada fila ya renderizada (incluida la de totales), antes de la columna %.
+  // Agrega la celda nueva a cada fila ya renderizada (incluida la de totales), antes de la columna Total.
   document.querySelectorAll('#gastosBody tr').forEach(tr=>{
     const td = document.createElement('td');
     if (tr.classList.contains('totals-row')){
@@ -867,18 +867,18 @@ function addSucursalColumn(){
     } else {
       const inp = document.createElement('input');
       inp.dataset.branch = key;
-      inp.addEventListener('input', recomputeFooterTotals);
+      inp.addEventListener('input', ()=>{ recomputeRowTotal(tr); recomputeFooterTotals(); });
       td.appendChild(inp);
     }
     const tailCells = tr.querySelectorAll('td');
-    const pctCell = tailCells[tailCells.length - 2]; // % está antes de la columna de acciones
-    tr.insertBefore(td, pctCell);
+    const totalCell = tailCells[tailCells.length - 2]; // Total está antes de la columna de acciones
+    tr.insertBefore(td, totalCell);
   });
   recomputeFooterTotals();
 }
 
 function addConceptoRow(){
-  const tr = gastoRow({ concepto: '', sucursales: {}, porcentaje: null });
+  const tr = gastoRow({ concepto: '', sucursales: {} });
   tr.dataset.isNew = '1';
   delete tr.dataset.id;
   const tbody = document.getElementById('gastosBody');
@@ -953,11 +953,10 @@ function rowBody(tr, orden){
     const v = inp ? parseFloat(inp.value) : NaN;
     if (!isNaN(v)) sucursales[b.key] = v;
   });
-  const porcentajeInp = tr.querySelector('input[data-field="porcentaje"]');
   return {
     concepto: tr.querySelector('input[data-field="concepto"]').value,
     sucursales,
-    porcentaje: porcentajeInp.value === '' ? null : Number(porcentajeInp.value),
+    total: computeRowTotal(tr),
     orden,
   };
 }
@@ -979,17 +978,17 @@ function gastoRow(row){
     const inp = document.createElement('input');
     inp.value = sucursales[b.key] ?? '';
     inp.dataset.branch = b.key;
-    inp.addEventListener('input', recomputeFooterTotals);
+    inp.addEventListener('input', ()=>{ recomputeRowTotal(tr); recomputeFooterTotals(); });
     td.appendChild(inp);
     tr.appendChild(td);
   });
 
-  const tdPct = document.createElement('td');
-  const inpPct = document.createElement('input');
-  inpPct.value = row.porcentaje ?? '';
-  inpPct.dataset.field = 'porcentaje';
-  tdPct.appendChild(inpPct);
-  tr.appendChild(tdPct);
+  const tdTotal = document.createElement('td');
+  const totalSpan = document.createElement('span');
+  totalSpan.dataset.role = 'total';
+  totalSpan.style.fontWeight = '600';
+  tdTotal.appendChild(totalSpan);
+  tr.appendChild(tdTotal);
 
   const tdActions = document.createElement('td');
   tdActions.style.whiteSpace = 'nowrap';
@@ -1005,7 +1004,23 @@ function gastoRow(row){
   tdActions.appendChild(upBtn); tdActions.appendChild(downBtn); tdActions.appendChild(delBtn);
   tr.appendChild(tdActions);
 
+  recomputeRowTotal(tr);
   return tr;
+}
+
+function computeRowTotal(tr){
+  let sum = 0, any = false;
+  tr.querySelectorAll('input[data-branch]').forEach(inp=>{
+    const v = parseFloat(inp.value);
+    if (!isNaN(v)){ sum += v; any = true; }
+  });
+  return any ? sum : null;
+}
+
+function recomputeRowTotal(tr){
+  const total = computeRowTotal(tr);
+  const span = tr.querySelector('span[data-role="total"]');
+  if (span) span.textContent = total === null ? '—' : fmtNum(Math.round(total * 100) / 100);
 }
 
 function gastosFooterRow(){
@@ -1023,12 +1038,18 @@ function gastosFooterRow(){
     td.appendChild(span);
     tr.appendChild(td);
   });
-  tr.appendChild(document.createElement('td'));
+  const tdGrandTotal = document.createElement('td');
+  const grandSpan = document.createElement('span');
+  grandSpan.dataset.footerBranch = '__grand_total__';
+  grandSpan.style.fontWeight = '700'; grandSpan.style.color = 'var(--series-1)';
+  tdGrandTotal.appendChild(grandSpan);
+  tr.appendChild(tdGrandTotal);
   tr.appendChild(document.createElement('td'));
   return tr;
 }
 
 function recomputeFooterTotals(){
+  let grand = 0;
   BRANCHES.forEach(b=>{
     let sum = 0;
     dataRows().forEach(tr=>{
@@ -1036,9 +1057,12 @@ function recomputeFooterTotals(){
       const v = inp ? parseFloat(inp.value) : NaN;
       if (!isNaN(v)) sum += v;
     });
+    grand += sum;
     const span = document.querySelector(`.totals-row span[data-footer-branch="${b.key}"]`);
     if (span) span.textContent = fmtNum(Math.round(sum * 100) / 100);
   });
+  const grandSpan = document.querySelector('.totals-row span[data-footer-branch="__grand_total__"]');
+  if (grandSpan) grandSpan.textContent = fmtNum(Math.round(grand * 100) / 100);
 }
 
 // ---------------- Costos de productos ----------------
