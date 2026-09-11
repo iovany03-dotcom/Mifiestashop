@@ -972,6 +972,37 @@
       </div>
     </section>
 
+    <!-- ================= VIEW DE PRODUCTOS ================= -->
+    <section id="view-productos" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <h2>Catálogo de Productos Sincronizado (PrestaShop & Supabase API)</h2>
+          <button class="btn primary" onclick="syncProductsFromPrestaShopAPI()">🔄 Sincronizar API PrestaShop</button>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+          <input type="search" id="catalogSearchInput" placeholder="🔍 Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Imagen</th>
+                <th>SKU / Referencia</th>
+                <th>Nombre del Producto</th>
+                <th>Categoría</th>
+                <th>Precio (MXN)</th>
+                <th>Origen</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="catalogTableBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= VIEW 5: FACTURACIÓN ================= -->
     <section id="view-facturacion" class="view-panel hidden">
       <div class="kpis">
@@ -2109,25 +2140,52 @@ function renderStockTable(){
   `;}).join('');
 }
 
-// DYNAMIC PRODUCTS SYNC FROM SUPABASE API
+// DYNAMIC PRODUCTS SYNC FROM PRESTASHOP & SUPABASE API
 let liveProducts = [];
 
-async function syncProductsFromSupabaseAPI(){
+async function syncProductsFromPrestaShopAPI(){
   try {
-    const data = await sbGet('costos_productos?select=id,nombre_generico,categoria,menudeo_precio,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion&limit=100');
+    const r = await fetch('/api/productos');
+    if (r.ok) {
+      const data = await r.json();
+      if (data.products && data.products.length > 0) {
+        liveProducts = data.products.map(p => ({
+          id: p.id,
+          name: p.name || 'Producto PrestaShop',
+          sku: p.sku || `PS-${p.id}`,
+          price: parseFloat(p.price || 50),
+          cat: 'general',
+          catLabel: 'PrestaShop API',
+          img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
+          desc: p.name
+        }));
+        renderDynamicCatPills();
+        renderProducts('all');
+        renderCatalogTable('all');
+        return;
+      }
+    }
+  } catch(e) {
+    console.log('Consultando Supabase DB como respaldo:', e.message);
+  }
+
+  // Fallback: fetch from Supabase REST DB
+  try {
+    const data = await sbGet('costos_productos?select=id,nombre_generico,categoria,menudeo_precio,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion&limit=200');
     if(Array.isArray(data) && data.length > 0) {
       liveProducts = data.map(item => ({
         id: item.id,
         name: item.nombre_generico || 'Producto Mi Fiestashop',
         sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
-        price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 50),
+        price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 45),
         cat: (item.categoria || 'General').toLowerCase().trim(),
         catLabel: item.categoria || 'General',
-        img: item.link_imagen || PRODUCTS_DATA[0].img,
+        img: item.link_imagen || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
         desc: item.descripcion || ''
       }));
       renderDynamicCatPills();
       renderProducts('all');
+      renderCatalogTable('all');
     }
   } catch(e) {
     console.log('Usando dataset POS por defecto:', e.message);
@@ -2145,7 +2203,44 @@ function renderDynamicCatPills(){
   container.innerHTML = html;
 }
 
-// OVERRIDE POS PRODUCT RENDERER TO USE LIVE PRODUCTS
+// RENDER PRODUCTS TABLE IN CATALOG VIEW
+function renderCatalogTable(category = 'all', query = ''){
+  const tbody = document.getElementById('catalogTableBody');
+  if(!tbody) return;
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const filtered = dataset.filter(p => {
+    const matchCat = category === 'all' || p.cat === category.toLowerCase();
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    return matchCat && matchQ;
+  });
+
+  if(filtered.length === 0){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Sin productos registrados.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => `
+    <tr>
+      <td>
+        <img src="${p.img}" alt="${p.name}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      </td>
+      <td><b>${p.sku}</b></td>
+      <td>${p.name}</td>
+      <td><span class="pill ok">${p.catLabel || p.cat}</span></td>
+      <td style="font-weight:700; color:var(--series-2);">${fmtMoney(p.price)}</td>
+      <td>PrestaShop / API</td>
+      <td><span class="pill ok">Activo</span></td>
+    </tr>
+  `).join('');
+}
+
+if(document.getElementById('catalogSearchInput')){
+  document.getElementById('catalogSearchInput').addEventListener('input', (e)=>{
+    renderCatalogTable('all', e.target.value);
+  });
+}
+
+// OVERRIDE POS PRODUCT RENDERER TO USE LIVE PRODUCTS WITH IMAGE FALLBACK
 function renderProducts(category = 'all', query = '') {
   const grid = document.getElementById('posProductGrid');
   if(!grid) return;
@@ -2169,7 +2264,7 @@ function renderProducts(category = 'all', query = '') {
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
     card.innerHTML = `
-      <img src="${p.img}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${p.name}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
         <div class="p-title">${p.name}</div>
         <div class="p-sku">SKU / Cód: ${p.sku}</div>
@@ -2218,7 +2313,7 @@ drawStateChart();
 drawStockChart();
 renderMonthlyTable();
 renderStockTable();
-syncProductsFromSupabaseAPI();
+syncProductsFromPrestaShopAPI();
 </script>
 </body>
 </html>
