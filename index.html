@@ -572,7 +572,7 @@
       <div class="menu-link active-link">
         <div class="menu-left">
           <span class="menu-icon">📊</span>
-          <span>Tablero</span>
+          <span>Estadísticas</span>
         </div>
       </div>
     </div>
@@ -788,15 +788,102 @@
       </div>
     </section>
 
-    <!-- ================= VIEW 2: TABLERO / DASHBOARD ================= -->
+    <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
     <section id="view-dashboard" class="view-panel hidden">
       <div class="card">
-        <h2>Panel de Ventas en Vivo (PrestaShop API & Snapshot)</h2>
-        <div class="kpis">
-          <div class="kpi-card"><div class="label">Ingresos Totales (MXN)</div><div class="value">$994,380.41</div><div class="sub">Ventas confirmadas</div></div>
-          <div class="kpi-card"><div class="label">Pedidos Confirmados</div><div class="value">2,373</div><div class="sub">Pagados y entregados</div></div>
-          <div class="kpi-card"><div class="label">Ticket Promedio</div><div class="value">$419.04</div><div class="sub">Por pedido</div></div>
-          <div class="kpi-card"><div class="label">Stock Total Unidades</div><div class="value">2,205,821</div><div class="sub">En 5 bodegas</div></div>
+        <h2>Panel de Ventas en Vivo & Estadísticas (PrestaShop API)</h2>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
+          <div class="seg" id="periodSeg" style="display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+            <button data-p="dia" class="active" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Día</button>
+            <button data-p="mes" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Mes</button>
+            <button data-p="anio" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Año</button>
+            <button data-p="dia1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Día-1</button>
+            <button data-p="mes1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Mes-1</button>
+            <button data-p="anio1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Año-1</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary);">
+            Desde <input type="date" id="fromInput" style="padding:6px; border-radius:6px; border:1px solid var(--border);"> hasta <input type="date" id="toInput" style="padding:6px; border-radius:6px; border:1px solid var(--border);">
+            <button class="btn small" id="applyRange">Aplicar</button>
+          </div>
+        </div>
+
+        <div class="kpis" id="ventasKpis">
+          <div class="kpi-card"><div class="label">Ingresos (MXN)</div><div class="value" id="kpiRev">$0.00</div><div class="sub">Período seleccionado</div></div>
+          <div class="kpi-card"><div class="label">Pedidos confirmados</div><div class="value" id="kpiOrd">0</div><div class="sub">Con pago validado</div></div>
+          <div class="kpi-card"><div class="label">Ticket promedio</div><div class="value" id="kpiAvg">$0.00</div><div class="sub">Por pedido</div></div>
+        </div>
+
+        <div id="ventasLoading" class="loading hidden" style="color:var(--text-muted); font-size:12.5px; padding:10px;">Consultando API PrestaShop…</div>
+        <div id="ventasError" class="status err hidden"></div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2>Ventas Mensuales Históricas <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(Pedidos confirmados MXN)</span></h2>
+        <div class="kpis" id="histKpiRow" style="margin-top:14px;"></div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+          <div class="card" style="margin:0; padding:14px;">
+            <h3 style="margin-top:0; font-size:14px;">Ingresos por mes (MXN)</h3>
+            <div style="position:relative;">
+              <svg id="revChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
+              <div class="chart-tooltip" id="revTip" style="position:absolute; pointer-events:none; opacity:0; background:var(--card-bg); border:1px solid var(--border); padding:6px 10px; border-radius:6px; font-size:12px;"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; padding:14px;">
+            <h3 style="margin-top:0; font-size:14px;">Pedidos por mes</h3>
+            <div style="position:relative;">
+              <svg id="ordChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
+              <div class="chart-tooltip" id="ordTip" style="position:absolute; pointer-events:none; opacity:0; background:var(--card-bg); border:1px solid var(--border); padding:6px 10px; border-radius:6px; font-size:12px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px; padding:14px;">
+          <h3 style="margin-top:0; font-size:14px;">Estados de Pedidos Confirmados</h3>
+          <div style="position:relative;">
+            <svg id="stateChart" viewBox="0 0 1040 150" style="width:100%;height:auto;display:block"></svg>
+            <div class="chart-tooltip" id="stateTip"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px; padding:14px;">
+          <h3 style="margin-top:0; font-size:14px;">Detalle Mensual</h3>
+          <div class="table-wrap">
+            <table id="monthlyTable">
+              <thead>
+                <tr>
+                  <th data-k="month" style="cursor:pointer;">Mes ▾</th>
+                  <th data-k="revenue" style="cursor:pointer;">Ingresos (MXN)</th>
+                  <th data-k="orders" style="cursor:pointer;">Pedidos</th>
+                  <th data-k="avg" style="cursor:pointer;">Ticket promedio</th>
+                </tr>
+              </thead>
+              <tbody id="tblBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <h2>Existencias por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(Stock en vivo)</span></h2>
+        <div style="position:relative; margin-top:14px;">
+          <svg id="stockChart" viewBox="0 0 1040 220" style="width:100%;height:auto;display:block"></svg>
+          <div class="chart-tooltip" id="stockTip"></div>
+        </div>
+
+        <div class="table-wrap" style="margin-top:16px;">
+          <table id="stockTable">
+            <thead>
+              <tr>
+                <th data-k="name" style="cursor:pointer;">Sucursal</th>
+                <th data-k="units" style="cursor:pointer;">Unidades disponibles</th>
+                <th data-k="skus" style="cursor:pointer;">SKUs registrados</th>
+                <th data-k="out" style="cursor:pointer;">SKUs agotados</th>
+              </tr>
+            </thead>
+            <tbody id="stockTblBody"></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -1734,28 +1821,404 @@ function reprintTicket(folio, total) {
   document.getElementById('ticketModal').classList.remove('hidden');
 }
 
-// SEARCH & CATEGORY LISTENERS
-document.getElementById('posSearchInput').addEventListener('input', (e) => {
-  renderProducts('all', e.target.value);
-});
+// HISTORICAL DATASET & ESTADÍSTICAS DASHBOARD
+const HIST = {
+  monthly_sales: [
+    {"month":"2026-03","revenue":65871.7,"orders":176},
+    {"month":"2026-04","revenue":291775.43,"orders":627},
+    {"month":"2026-05","revenue":0,"orders":0},
+    {"month":"2026-06","revenue":43745.9,"orders":146},
+    {"month":"2026-07","revenue":245583.15,"orders":642},
+    {"month":"2026-08","revenue":273923.6,"orders":611},
+    {"month":"2026-09","revenue":73480.63,"orders":171}
+  ],
+  state_breakdown_valid: {"Pago aceptado":2302,"Entregado":63,"Enviado":5,"Pago Realizado":2,"Por Cobrar":1},
+  total_valid_orders_mxn: 2373,
+  total_revenue_mxn: 994380.41,
+  stock_by_branch: [
+    {"name":"CDMX Rumania","units":720999,"skus":2050,"out":268},
+    {"name":"Querétaro","units":548907,"skus":1373,"out":242},
+    {"name":"Puebla","units":546866,"skus":1262,"out":193},
+    {"name":"Atizapan (Edo. México)","units":383157,"skus":473,"out":35},
+    {"name":"CDMX Popocatepetl","units":5950,"skus":13,"out":2}
+  ]
+};
 
-document.getElementById('catPillsContainer').addEventListener('click', (e) => {
-  if (e.target.classList.contains('cat-pill')) {
-    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-    e.target.classList.add('active');
-    renderProducts(e.target.dataset.cat);
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtNum(v){ return Number(v || 0).toLocaleString('es-MX'); }
+function fmtMonth(m){
+  const [y,mo] = m.split('-');
+  const names = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return names[parseInt(mo,10)-1] + ' ' + y.slice(2);
+}
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#3699ff'; }
+
+function periodRange(p){
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  switch(p){
+    case 'dia': return [new Date(y,m,d), new Date(y,m,d)];
+    case 'mes': return [new Date(y,m,1), new Date(y,m+1,0)];
+    case 'anio': return [new Date(y,0,1), new Date(y,11,31)];
+    case 'dia1': { const t=new Date(y,m,d-1); return [t,t]; }
+    case 'mes1': return [new Date(y,m-1,1), new Date(y,m,0)];
+    case 'anio1': return [new Date(y-1,0,1), new Date(y-1,11,31)];
   }
-});
+}
+
+async function loadVentas(from, to){
+  const loading = document.getElementById('ventasLoading');
+  const errBox = document.getElementById('ventasError');
+  if(loading) loading.classList.remove('hidden');
+  if(errBox) errBox.classList.add('hidden');
+  try{
+    const r = await fetch(`/api/ventas?from=${from}&to=${to}`);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error de API');
+    document.getElementById('kpiRev').textContent = fmtMoney(data.revenue);
+    document.getElementById('kpiOrd').textContent = fmtNum(data.orders);
+    document.getElementById('kpiAvg').textContent = fmtMoney(data.avgTicket);
+  } catch(e){
+    if(errBox) { errBox.textContent = 'Modo Snapshot: ' + e.message; errBox.classList.remove('hidden'); }
+    document.getElementById('kpiRev').textContent = fmtMoney(HIST.total_revenue_mxn);
+    document.getElementById('kpiOrd').textContent = fmtNum(HIST.total_valid_orders_mxn);
+    document.getElementById('kpiAvg').textContent = fmtMoney(HIST.total_revenue_mxn / HIST.total_valid_orders_mxn);
+  } finally {
+    if(loading) loading.classList.add('hidden');
+  }
+}
+
+function applyPeriod(p){
+  const [from, to] = periodRange(p);
+  if(document.getElementById('fromInput')) document.getElementById('fromInput').value = toISO(from);
+  if(document.getElementById('toInput')) document.getElementById('toInput').value = toISO(to);
+  loadVentas(toISO(from), toISO(to));
+}
+
+if(document.getElementById('periodSeg')){
+  document.getElementById('periodSeg').addEventListener('click', (e)=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.toggle('active', b===btn));
+    applyPeriod(btn.dataset.p);
+  });
+}
+if(document.getElementById('applyRange')){
+  document.getElementById('applyRange').addEventListener('click', ()=>{
+    document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.remove('active'));
+    const from = document.getElementById('fromInput').value;
+    const to = document.getElementById('toInput').value;
+    if (from && to) loadVentas(from, to);
+  });
+}
+
+function renderHistKPIs(){
+  const rows = HIST.monthly_sales.filter(r=>r.orders>0).sort((a,b)=>a.month.localeCompare(b.month));
+  const avgTicket = HIST.total_revenue_mxn / HIST.total_valid_orders_mxn;
+  let growthTxt = '—', growthSub = '';
+  if (rows.length >= 2){
+    const last = rows[rows.length-1], prev = rows[rows.length-2];
+    const pct = prev.revenue > 0 ? ((last.revenue - prev.revenue)/prev.revenue*100) : 0;
+    growthTxt = (pct>=0?'+':'') + pct.toFixed(0) + '%';
+    growthSub = 'vs ' + fmtMonth(prev.month);
+  }
+  const cards = [
+    {label:'Ingresos MXN (histórico)', value: fmtMoney(HIST.total_revenue_mxn), sub: 'desde mar 26'},
+    {label:'Pedidos confirmados', value: fmtNum(HIST.total_valid_orders_mxn), sub: 'pagados / entregados'},
+    {label:'Ticket promedio', value: fmtMoney(avgTicket), sub: 'por pedido confirmado'},
+    {label:'Var. último mes', value: growthTxt, sub: growthSub},
+  ];
+  const container = document.getElementById('histKpiRow');
+  if(container) {
+    container.innerHTML = cards.map(c => `
+      <div class="kpi-card">
+        <div class="label">${c.label}</div>
+        <div class="value">${c.value}</div>
+        <div class="sub">${c.sub}</div>
+      </div>
+    `).join('');
+  }
+}
+
+function drawBarChart(svgId, tipId, rows, key, color, fmtValue, labelKey, fmtLabel){
+  const svg = document.getElementById(svgId);
+  const tip = document.getElementById(tipId);
+  if (!svg) return;
+  const W = 520, H = 260, padL = 54, padR = 12, padT = 12, padB = 34;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  svg.innerHTML = '';
+  if (!rows.length) return;
+  const maxV = Math.max(...rows.map(r=>r[key])) * 1.15 || 1;
+  const n = rows.length;
+  const bw = Math.min(34, innerW/n*0.62);
+  const step = innerW/n;
+  const ns='http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns,'g');
+  for(let i=0;i<=3;i++){
+    const y = padT + innerH - (innerH*i/3);
+    const line = document.createElementNS(ns,'line');
+    line.setAttribute('x1',padL); line.setAttribute('x2',padL+innerW);
+    line.setAttribute('y1',y); line.setAttribute('y2',y);
+    line.setAttribute('stroke', 'var(--grid)');
+    g.appendChild(line);
+    const val = maxV*i/3;
+    const t = document.createElementNS(ns,'text');
+    t.setAttribute('x',padL-8); t.setAttribute('y',y+3); t.setAttribute('text-anchor','end');
+    t.setAttribute('font-size','10'); t.setAttribute('fill','var(--text-muted)');
+    t.textContent = i===0 ? '0' : (val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0));
+    g.appendChild(t);
+  }
+  rows.forEach((r,i)=>{
+    const h = (r[key]/maxV)*innerH;
+    const x = padL + step*i + (step-bw)/2;
+    const y = padT + innerH - h;
+    const rect = document.createElementNS(ns,'rect');
+    rect.setAttribute('x',x); rect.setAttribute('y',y);
+    rect.setAttribute('width',bw); rect.setAttribute('height',Math.max(h,1));
+    rect.setAttribute('rx',3);
+    rect.setAttribute('fill',color);
+    rect.setAttribute('class','bar');
+    rect.style.cursor = 'pointer';
+    rect.addEventListener('mousemove', (e)=>{
+      if(!tip) return;
+      const rectBox = svg.getBoundingClientRect();
+      tip.style.opacity = 1;
+      tip.innerHTML = `<b>${fmtLabel(r[labelKey])}</b><br>${fmtValue(r[key])}`;
+      tip.style.left = Math.min(rectBox.width-140, (e.clientX-rectBox.left+10)) + 'px';
+      tip.style.top = (e.clientY-rectBox.top-40) + 'px';
+    });
+    rect.addEventListener('mouseleave', ()=>{ if(tip) tip.style.opacity = 0; });
+    g.appendChild(rect);
+    const t = document.createElementNS(ns,'text');
+    t.setAttribute('x', x+bw/2); t.setAttribute('y', padT+innerH+16);
+    t.setAttribute('text-anchor','middle'); t.setAttribute('font-size','10'); t.setAttribute('fill','var(--text-muted)');
+    t.textContent = fmtLabel(r[labelKey]);
+    g.appendChild(t);
+  });
+  svg.appendChild(g);
+}
+
+function drawStateChart(){
+  const svg = document.getElementById('stateChart');
+  if(!svg) return;
+  const data = Object.entries(HIST.state_breakdown_valid).sort((a,b)=>b[1]-a[1]);
+  const W=1040,H=150,padL=140,padR=50,padT=10,padB=10;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const max = data[0][1]*1.08;
+  const rowH = innerH/data.length;
+  const ns='http://www.w3.org/2000/svg';
+  svg.innerHTML='';
+  const g = document.createElementNS(ns,'g');
+  data.forEach(([name,val],i)=>{
+    const y = padT + rowH*i + rowH*0.22;
+    const h = rowH*0.56;
+    const w = (val/max)*innerW;
+    const label = document.createElementNS(ns,'text');
+    label.setAttribute('x', padL-10); label.setAttribute('y', y+h/2+4);
+    label.setAttribute('text-anchor','end'); label.setAttribute('font-size','12'); label.setAttribute('fill','var(--text-secondary)');
+    label.textContent = name;
+    g.appendChild(label);
+    const rect = document.createElementNS(ns,'rect');
+    rect.setAttribute('x',padL); rect.setAttribute('y',y);
+    rect.setAttribute('width',Math.max(w,2)); rect.setAttribute('height',h);
+    rect.setAttribute('rx',3); rect.setAttribute('fill', 'var(--series-2)');
+    g.appendChild(rect);
+    const valText = document.createElementNS(ns,'text');
+    valText.setAttribute('x', padL + w + 8); valText.setAttribute('y', y+h/2+4);
+    valText.setAttribute('font-size','11'); valText.setAttribute('fill','var(--text-muted)');
+    valText.textContent = fmtNum(val);
+    g.appendChild(valText);
+  });
+  svg.appendChild(g);
+}
+
+function drawStockChart(){
+  const svg = document.getElementById('stockChart');
+  if(!svg) return;
+  const data = HIST.stock_by_branch.slice().sort((a,b)=>b.units-a.units);
+  const W=1040,H=220,padL=180,padR=60,padT=10,padB=10;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+  const max = data[0].units*1.08;
+  const rowH = innerH/data.length;
+  const ns='http://www.w3.org/2000/svg';
+  svg.innerHTML='';
+  const g = document.createElementNS(ns,'g');
+  data.forEach((d,i)=>{
+    const y = padT + rowH*i + rowH*0.22;
+    const h = rowH*0.56;
+    const w = (d.units/max)*innerW;
+    const label = document.createElementNS(ns,'text');
+    label.setAttribute('x', padL-10); label.setAttribute('y', y+h/2+4);
+    label.setAttribute('text-anchor','end'); label.setAttribute('font-size','12'); label.setAttribute('fill','var(--text-secondary)');
+    label.textContent = d.name;
+    g.appendChild(label);
+    const rect = document.createElementNS(ns,'rect');
+    rect.setAttribute('x',padL); rect.setAttribute('y',y);
+    rect.setAttribute('width',Math.max(w,2)); rect.setAttribute('height',h);
+    rect.setAttribute('rx',3); rect.setAttribute('fill', 'var(--series-1)');
+    g.appendChild(rect);
+    const valText = document.createElementNS(ns,'text');
+    valText.setAttribute('x', padL + w + 8); valText.setAttribute('y', y+h/2+4);
+    valText.setAttribute('font-size','11'); valText.setAttribute('fill','var(--text-muted)');
+    valText.textContent = fmtNum(d.units) + ' u.';
+    g.appendChild(valText);
+  });
+  svg.appendChild(g);
+}
+
+let histSortKey = 'month', histSortDir = -1;
+function renderMonthlyTable(){
+  const tbl = document.getElementById('tblBody');
+  if(!tbl) return;
+  const rows = HIST.monthly_sales.slice().sort((a,b)=>{
+    let av = a[histSortKey], bv = b[histSortKey];
+    if (histSortKey==='avg'){ av = a.orders? a.revenue/a.orders : 0; bv = b.orders? b.revenue/b.orders : 0; }
+    if (typeof av === 'string') return av.localeCompare(bv)*histSortDir;
+    return (av-bv)*histSortDir;
+  });
+  tbl.innerHTML = rows.map(r=>`
+    <tr>
+      <td>${fmtMonth(r.month)}</td>
+      <td>${fmtMoney(r.revenue)}</td>
+      <td>${fmtNum(r.orders)}</td>
+      <td>${r.orders ? fmtMoney(r.revenue/r.orders) : '—'}</td>
+    </tr>
+  `).join('');
+}
+
+let stockSortKey = 'units', stockSortDir = -1;
+function renderStockTable(){
+  const tbl = document.getElementById('stockTblBody');
+  if(!tbl) return;
+  const rows = HIST.stock_by_branch.slice().sort((a,b)=>{
+    let av = stockSortKey==='name' ? a.name : a[stockSortKey];
+    let bv = stockSortKey==='name' ? b.name : b[stockSortKey];
+    if (typeof av === 'string') return av.localeCompare(bv)*stockSortDir;
+    return (av-bv)*stockSortDir;
+  });
+  tbl.innerHTML = rows.map(r=>{
+    const pct = r.skus ? (r.out/r.skus*100) : 0;
+    const pillClass = pct >= 20 ? 'bad' : pct >= 8 ? 'warn' : 'ok';
+    return `
+    <tr>
+      <td>${r.name}</td>
+      <td>${fmtNum(r.units)}</td>
+      <td>${fmtNum(r.skus)}</td>
+      <td><span class="pill ${pillClass}">${fmtNum(r.out)} (${pct.toFixed(0)}%)</span></td>
+    </tr>
+  `;}).join('');
+}
+
+// DYNAMIC PRODUCTS SYNC FROM SUPABASE API
+let liveProducts = [];
+
+async function syncProductsFromSupabaseAPI(){
+  try {
+    const data = await sbGet('costos_productos?select=id,nombre_generico,categoria,menudeo_precio,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion&limit=100');
+    if(Array.isArray(data) && data.length > 0) {
+      liveProducts = data.map(item => ({
+        id: item.id,
+        name: item.nombre_generico || 'Producto Mi Fiestashop',
+        sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
+        price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 50),
+        cat: (item.categoria || 'General').toLowerCase().trim(),
+        catLabel: item.categoria || 'General',
+        img: item.link_imagen || PRODUCTS_DATA[0].img,
+        desc: item.descripcion || ''
+      }));
+      renderDynamicCatPills();
+      renderProducts('all');
+    }
+  } catch(e) {
+    console.log('Usando dataset POS por defecto:', e.message);
+  }
+}
+
+function renderDynamicCatPills(){
+  const container = document.getElementById('catPillsContainer');
+  if(!container || liveProducts.length === 0) return;
+  const catsSet = new Set(liveProducts.map(p => p.catLabel));
+  let html = `<button class="cat-pill active" data-cat="all">Todos (${liveProducts.length})</button>`;
+  catsSet.forEach(c => {
+    html += `<button class="cat-pill" data-cat="${c.toLowerCase()}">${c}</button>`;
+  });
+  container.innerHTML = html;
+}
+
+// OVERRIDE POS PRODUCT RENDERER TO USE LIVE PRODUCTS
+function renderProducts(category = 'all', query = '') {
+  const grid = document.getElementById('posProductGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+
+  const filtered = dataset.filter(p => {
+    const matchCat = category === 'all' || p.cat === category.toLowerCase();
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    return matchCat && matchQ;
+  });
+
+  if(filtered.length === 0){
+    grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
+    return;
+  }
+
+  filtered.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'pos-card';
+    card.onclick = () => addToCart(p);
+    card.innerHTML = `
+      <img src="${p.img}" alt="${p.name}" onerror="this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <div>
+        <div class="p-title">${p.name}</div>
+        <div class="p-sku">SKU / Cód: ${p.sku}</div>
+      </div>
+      <div class="p-bottom">
+        <div class="p-price">${fmtMoney(p.price)}</div>
+        <div class="p-stock">En stock</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// SEARCH & CATEGORY LISTENERS
+if(document.getElementById('posSearchInput')){
+  document.getElementById('posSearchInput').addEventListener('input', (e) => {
+    renderProducts('all', e.target.value);
+  });
+}
+
+if(document.getElementById('catPillsContainer')){
+  document.getElementById('catPillsContainer').addEventListener('click', (e) => {
+    if (e.target.classList.contains('cat-pill')) {
+      document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+      e.target.classList.add('active');
+      renderProducts(e.target.dataset.cat);
+    }
+  });
+}
 
 // THEME TOGGLE
-document.getElementById('toggleThemeBtn').addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-});
+if(document.getElementById('toggleThemeBtn')){
+  document.getElementById('toggleThemeBtn').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+  });
+}
 
-// INITIALIZE
-renderProducts();
+// INITIALIZE ALL
+applyPeriod('dia');
+renderHistKPIs();
+drawBarChart('revChart','revTip', HIST.monthly_sales, 'revenue', '#3699ff', fmtMoney, 'month', fmtMonth);
+drawBarChart('ordChart','ordTip', HIST.monthly_sales, 'orders', '#3699ff', v=>fmtNum(v)+' pedidos', 'month', fmtMonth);
+drawStateChart();
+drawStockChart();
+renderMonthlyTable();
+renderStockTable();
+syncProductsFromSupabaseAPI();
 </script>
 </body>
 </html>
