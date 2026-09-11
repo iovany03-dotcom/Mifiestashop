@@ -645,13 +645,13 @@
         <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       </div>
       <div class="submenu">
-        <a class="submenu-link" data-view="param-tienda">General</a>
-        <a class="submenu-link" data-view="param-tienda">Configuración de Pedidos</a>
-        <a class="submenu-link" data-view="param-tienda">Configuración de Productos</a>
-        <a class="submenu-link" data-view="param-tienda">Ajustes sobre clientes</a>
-        <a class="submenu-link" data-view="param-tienda">Contacto</a>
-        <a class="submenu-link" data-view="param-tienda">Tráfico & SEO</a>
-        <a class="submenu-link" data-view="param-tienda">Buscar</a>
+        <a class="submenu-link" data-view="param-tienda-general">General</a>
+        <a class="submenu-link" data-view="param-tienda-pedidos">Configuración de Pedidos</a>
+        <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
+        <a class="submenu-link" data-view="param-tienda-clientes">Ajustes sobre clientes</a>
+        <a class="submenu-link" data-view="param-tienda-contacto">Contacto</a>
+        <a class="submenu-link" data-view="param-tienda-seo">Tráfico & SEO</a>
+        <a class="submenu-link" data-view="param-tienda-buscar">Buscar</a>
       </div>
     </div>
 
@@ -665,12 +665,12 @@
         <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
       </div>
       <div class="submenu">
-        <a class="submenu-link" data-view="param-avanzados">Rendimiento</a>
-        <a class="submenu-link" data-view="param-avanzados">Correo</a>
-        <a class="submenu-link" data-view="param-avanzados">Importar</a>
-        <a class="submenu-link" data-view="param-avanzados">Equipo</a>
-        <a class="submenu-link" data-view="param-avanzados">Registros</a>
-        <a class="submenu-link" data-view="param-avanzados">Webservice</a>
+        <a class="submenu-link" data-view="param-avanzados-rendimiento">Rendimiento</a>
+        <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
+        <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
+        <a class="submenu-link" data-view="param-avanzados-equipo">Equipo</a>
+        <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
+        <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
       </div>
     </div>
 
@@ -1333,73 +1333,402 @@
       </div>
     </section>
 
-    <!-- ================= VIEW 9: PARÁMETROS DE LA TIENDA ================= -->
-    <section id="view-param-tienda" class="view-panel hidden">
+    <!-- ================= PARÁMETROS DE LA TIENDA ================= -->
+
+    <!-- 1. GENERAL -->
+    <section id="view-param-tienda-general" class="view-panel hidden">
       <div class="card">
-        <h2>⚙️ Parámetros de la Tienda</h2>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">
-          Ajustes generales, reglas de pedidos, catálogo de productos, cuentas de cliente, contacto y SEO.
-        </p>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0; font-size:14px; color:var(--series-2);">General & Contacto</h3>
-            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
-              <label>Modo Demo / Tienda: <select style="padding:4px; border-radius:4px;"><option>Activo</option><option>Mantenimiento</option></select></label>
-              <label>Correo de Contacto: <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:4px;"></label>
-              <label>Teléfono Oficial: <input type="text" value="+52 55 1234 5678" style="width:100%; padding:4px;"></label>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>⚙️ Parámetros de la Tienda — General</h2>
+          <button class="btn primary" onclick="alert('Configuración General guardada con éxito.')">💾 Guardar Cambios</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Identificación & Estado</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Nombre de la Tienda:</b> <input type="text" value="Mi Fiestashop" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Estado de la Tienda:</b> 
+                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                  <option selected>🟢 Tienda Activa en Línea</option>
+                  <option>🟡 Modo Mantenimiento</option>
+                  <option>🔵 Modo Catálogo (Sin ventas)</option>
+                </select>
+              </label>
+              <label><b>Correo Principal de Notificaciones:</b> <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
             </div>
           </div>
 
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0; font-size:14px; color:var(--series-2);">Configuración de Pedidos & Productos</h3>
-            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
-              <label><input type="checkbox" checked> Permitir pedidos de productos sin stock</label>
-              <label><input type="checkbox" checked> Mostrar precios con IVA incluido</label>
-              <label><input type="checkbox" checked> Habilitar compras como invitado (sin registro)</label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0; font-size:14px; color:var(--series-2);">Tráfico & SEO</h3>
-            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
-              <label>Título Meta General: <input type="text" value="Mi Fiestashop — Artículos de Fiesta y Decoración" style="width:100%; padding:4px;"></label>
-              <label>Indexación en buscadores: <span class="pill ok">Activado (Google Ready)</span></label>
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Región & Moneda</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Moneda Predeterminada:</b> <input type="text" value="Peso Mexicano (MXN $)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+              <label><b>Zona Horaria:</b> <input type="text" value="America/Mexico_City (UTC-6)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+              <label><b>Idioma Predeterminado:</b> <input type="text" value="Español (México)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ================= VIEW 10: PARÁMETROS AVANZADOS ================= -->
-    <section id="view-param-avanzados" class="view-panel hidden">
+    <!-- 2. CONFIGURACIÓN DE PEDIDOS -->
+    <section id="view-param-tienda-pedidos" class="view-panel hidden">
       <div class="card">
-        <h2>🛠️ Parámetros Avanzados</h2>
-        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">
-          Rendimiento del sistema, motor de correo, herramientas de importación CSV/JSON, registros del sistema y Webservice.
-        </p>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0; font-size:14px; color:var(--series-1);">🔌 API Webservice PrestaShop</h3>
-            <div style="font-size:12.5px; color:var(--text-secondary);">
-              <div>Estado de conexión: <span class="pill ok">Activo</span></div>
-              <div style="margin-top:6px;">URL Base: <code>https://www.mifiestashop.com</code></div>
-              <div style="margin-top:6px;">Endpoint activo: <code>/api/orders</code></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>🛍️ Configuración de Pedidos</h2>
+          <button class="btn primary" onclick="alert('Reglas de pedidos actualizadas.')">💾 Guardar Reglas</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Reglas de Compra & Carrito</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Habilitar compra como invitado (sin cuenta previa)</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Permitir pedidos de productos sin stock suficiente</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Enviar correo automático de confirmación de pedido</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Exigir aceptación de Términos y Condiciones</label>
             </div>
           </div>
 
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0; font-size:14px; color:var(--series-1);">⚡ Rendimiento & Caché</h3>
-            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
-              <label><input type="checkbox" checked> Caché Smarty / HTML activo</label>
-              <button class="btn small" onclick="alert('Caché limpiado con éxito')">🧹 Limpiar Caché del Sistema</button>
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Límites & Envío Gratis</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Monto Mínimo por Pedido (MXN):</b> <input type="number" value="50" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Monto para Envío Gratis (MXN):</b> <input type="number" value="999" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CONFIGURACIÓN DE PRODUCTOS -->
+    <section id="view-param-tienda-productos" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>📦 Configuración de Productos</h2>
+          <button class="btn primary" onclick="alert('Configuración de productos guardada.')">💾 Guardar Ajustes</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Visualización & Stock</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Mostrar unidades disponibles en la tienda pública</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Descontar stock automáticamente al vender en POS</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Ocultar productos agotados del catálogo</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Precios mostrados con IVA (16%) incluido</label>
             </div>
           </div>
 
-          <div class="card" style="margin:0;">
-            <h3 style="margin-top:0; font-size:14px; color:var(--series-1);">📥 Importar & Registros</h3>
-            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
-              <button class="btn small" onclick="alert('Iniciando importador de datos...')">📁 Importar Catálogo CSV/XML</button>
-              <div>Registros del sistema: <span class="pill ok">0 Errores detectados</span></div>
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Umbral de Alerta de Stock</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Notificar Stock Bajo cuando las unidades bajen de:</b> <input type="number" value="150" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Productos por página en catálogo:</b> <input type="number" value="24" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. AJUSTES SOBRE CLIENTES -->
+    <section id="view-param-tienda-clientes" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>👥 Ajustes sobre Clientes</h2>
+          <button class="btn primary" onclick="alert('Configuración de clientes guardada.')">💾 Guardar Ajustes</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Requisitos de Registro</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Requerir número telefónico en registro</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Enviar correo de bienvenida al registrarse</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Habilitar campo de RFC para facturación</label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Grupos & Descuentos</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Grupo por defecto para nuevos clientes:</b> 
+                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                  <option selected>Cliente Menudeo (General)</option>
+                  <option>Cliente Mayoreo (Descuento 15%)</option>
+                  <option>Cliente VIP (Descuento 20%)</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. CONTACTO -->
+    <section id="view-param-tienda-contacto" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>📞 Información de Contacto & Tiendas</h2>
+          <button class="btn primary" onclick="alert('Datos de contacto actualizados.')">💾 Guardar Contacto</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Datos Fiscales & Legales</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Razón Social:</b> <input type="text" value="Mi Fiestashop S.A. de C.V." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>RFC de la Empresa:</b> <input type="text" value="MFI200815XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Dirección Matriz:</b> <input type="text" value="Av. Juárez 102, Col. Centro, Puebla, Pue." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Atención al Cliente</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Teléfono Directo:</b> <input type="text" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>WhatsApp Oficial:</b> <input type="text" value="+52 55 9876 5432" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Horario de Atención:</b> <input type="text" value="Lun - Sáb: 9:00 AM - 7:00 PM" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. TRÁFICO & SEO -->
+    <section id="view-param-tienda-seo" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>🔍 Tráfico & Optimización SEO</h2>
+          <button class="btn primary" onclick="alert('Configuración SEO guardada con éxito.')">💾 Guardar Meta Tags</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Meta Etiquetas Globales</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Título Meta Principal:</b> <input type="text" value="Mi Fiestashop | Artículos de Fiesta, Globos y Decoración en México" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Meta Descripción:</b> <textarea style="width:100%; height:70px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-family:inherit;">Tienda líder en globos metálicos, látex, pirotecnia fría, veladoras y desechables. Envíos rápidos a todo México.</textarea></label>
+              <label><b>Palabras Clave (Keywords):</b> <input type="text" value="globos, pirotecnia, desechables, velas, fiesta, puebla, cdmx" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Indexación & Analítica</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Estado en Motores de Búsqueda:</b> <span class="pill ok">🟢 Indizable (Google Ready)</span></label>
+              <label><b>Google Analytics / Tag Manager ID:</b> <input type="text" value="G-MIFIEMX2026" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label style="display:flex; align-items:center; gap:8px; margin-top:8px;"><input type="checkbox" checked> Generar mapa del sitio (sitemap.xml) automáticamente</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. BUSCAR -->
+    <section id="view-param-tienda-buscar" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>🔎 Motor de Búsqueda de la Tienda</h2>
+          <button class="btn primary" onclick="alert('Re-indexación del catálogo completada.')">🔄 Re-indexar Catálogo Ahora</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Parámetros de Búsqueda</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Búsqueda difusa / aproximada (Fuzzy Search)</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Buscar en referencias (SKU) y código de barras</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Buscar dentro de la descripción del producto</label>
+              <label><b>Mínimo de caracteres para búsqueda:</b> <input type="number" value="3" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-2);">Estado del Índice</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <div>Productos indexados: <b style="color:var(--series-2);">5,160 SKUs</b></div>
+              <div>Palabras clave en índice: <b>18,420 expresiones</b></div>
+              <div>Última actualización de índice: <span class="pill ok">Hoy 15:18:11</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PARÁMETROS AVANZADOS ================= -->
+
+    <!-- 8. RENDIMIENTO -->
+    <section id="view-param-avanzados-rendimiento" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>⚡ Rendimiento del Sistema & Caché</h2>
+          <button class="btn primary" onclick="alert('Caché del sistema vaciado y optimizado.')">🧹 Limpiar Caché General</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Caché de Plantillas & Assets</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Caché de plantillas Smarty activo</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Minificación y compresión de CSS/JS</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Compresión GZIP / Brotli habilitada</label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Servidor & Memoria</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <div>Límite de Memoria PHP: <b>512 MB</b></div>
+              <div>Versión de Ejecución: <b>Node v20.x / PHP 8.2</b></div>
+              <div>Servidor de Base de Datos: <span class="pill ok">Supabase PostgreSQL 15</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. CORREO -->
+    <section id="view-param-avanzados-correo" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>✉️ Configuración del Servidor de Correo (SMTP)</h2>
+          <div>
+            <button class="btn secondary" onclick="alert('Enviando correo de prueba a admin@mifiestashop.com...')">🧪 Probar Correo</button>
+            <button class="btn primary" onclick="alert('Parámetros SMTP guardados.')">💾 Guardar SMTP</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Servidor SMTP</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Servidor de Salida (Host):</b> <input type="text" value="smtp.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Puerto SMTP:</b> <input type="number" value="587" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Encriptación:</b> 
+                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                  <option selected>TLS / STARTTLS</option>
+                  <option>SSL</option>
+                  <option>Ninguna</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Autenticación</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Usuario SMTP:</b> <input type="email" value="notificaciones@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              <label><b>Contraseña SMTP:</b> <input type="password" value="••••••••••••" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. IMPORTAR -->
+    <section id="view-param-avanzados-importar" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>📥 Herramientas de Importación de Datos</h2>
+          <button class="btn primary" onclick="alert('Seleccione un archivo CSV o XML primero.')">📁 Procesar Archivo</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Cargar Archivo de Datos</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Tipo de Entidad a Importar:</b> 
+                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                  <option selected>📦 Catálogo de Productos</option>
+                  <option>👥 Clientes</option>
+                  <option>🏷️ Categorías</option>
+                  <option>🏬 Inventario por Almacén</option>
+                </select>
+              </label>
+              <label><b>Archivo (CSV / XML / JSON):</b> <input type="file" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Opciones de Importación</h3>
+            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Omitir primera fila (Encabezados de columna)</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Actualizar productos existentes si coincide el SKU</label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Ignorar registros con errores menores</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. EQUIPO -->
+    <section id="view-param-avanzados-equipo" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>👥 Personal & Equipo de Trabajo</h2>
+          <button class="btn primary" onclick="alert('Abriendo formulario para nuevo usuario del equipo...')">➕ Nuevo Empleado</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Empleado</th><th>Correo</th><th>Rol / Perfil</th><th>Almacén Asignado</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>Iovany Fernández</b></td><td>iovany@mifiestashop.com</td><td>Administrador General</td><td>Todas las Bodegas</td><td><span class="pill ok">En Turno</span></td></tr>
+              <tr><td><b>Ana Morales</b></td><td>ana.caja@mifiestashop.com</td><td>Cajero Senior</td><td>Bodega Puebla</td><td><span class="pill ok">En Turno</span></td></tr>
+              <tr><td><b>Roberto Ruiz</b></td><td>roberto@mifiestashop.com</td><td>Encargado Almacén</td><td>CDMX Rumania</td><td><span class="pill ok">Activo</span></td></tr>
+              <tr><td><b>Carlos Mendoza</b></td><td>carlos.qro@mifiestashop.com</td><td>Encargado Almacén</td><td>Querétaro</td><td><span class="pill ok">Activo</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. REGISTROS -->
+    <section id="view-param-avanzados-registros" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>📋 Registros del Sistema (Logs)</h2>
+          <div>
+            <button class="btn secondary" onclick="alert('Descargando archivo de log completo...')">📥 Descargar Log</button>
+            <button class="btn danger" onclick="alert('Historial de logs limpiado.')">🗑️ Limpiar Logs</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
+              <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
+              <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
+              <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. WEBSERVICE -->
+    <section id="view-param-avanzados-webservice" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <h2>🔌 Conexión API Webservice PrestaShop</h2>
+          <div>
+            <button class="btn secondary" onclick="alert('Probando respuesta de API webservice...')">🧪 Probar API</button>
+            <button class="btn primary" onclick="alert('Configuración webservice actualizada.')">💾 Guardar Clave</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Parámetros de la API</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Estado del Webservice:</b> <span class="pill ok">🟢 Habilitado y Conectado</span></label>
+              <label><b>URL Base:</b> <input type="text" value="https://www.mifiestashop.com/api" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+              <label><b>Clave API (Webservice Key):</b> <input type="text" value="PS_API_KEY_CONFIGURED_IN_ENV" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Permisos Activos de Endpoints</h3>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+              <div>✔️ <code>GET/POST /api/products</code> (Catálogo & Imágenes)</div>
+              <div>✔️ <code>GET/POST /api/orders</code> (Pedidos & Ventas)</div>
+              <div>✔️ <code>GET/POST /api/customers</code> (Clientes)</div>
+              <div>✔️ <code>GET/POST /api/categories</code> (Categorías)</div>
+              <div>✔️ <code>GET/POST /api/stock_availables</code> (Inventario)</div>
             </div>
           </div>
         </div>
@@ -1845,8 +2174,19 @@ function switchView(viewName) {
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
     costos: ['Costos & Gastos', 'Gestión Supabase DB'],
     configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
-    'param-tienda': ['Parámetros de la Tienda', 'General, Pedidos, Productos, SEO'],
-    'param-avanzados': ['Parámetros Avanzados', 'Rendimiento, Importar, Webservice']
+    'param-tienda-general': ['Parámetros de la Tienda', 'General & Identificación'],
+    'param-tienda-pedidos': ['Parámetros de la Tienda', 'Configuración de Pedidos'],
+    'param-tienda-productos': ['Parámetros de la Tienda', 'Configuración de Productos'],
+    'param-tienda-clientes': ['Parámetros de la Tienda', 'Ajustes sobre Clientes'],
+    'param-tienda-contacto': ['Parámetros de la Tienda', 'Contacto & Sucursales'],
+    'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
+    'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
+    'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento & Caché'],
+    'param-avanzados-correo': ['Parámetros Avanzados', 'Configuración SMTP de Correo'],
+    'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
+    'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
+    'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
+    'param-avanzados-webservice': ['Parámetros Avanzados', 'API Webservice PrestaShop']
   };
   if (titles[viewName]) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
