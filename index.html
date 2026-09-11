@@ -402,8 +402,35 @@ async function loadGastos(){
 
 function gastoRow(row){
   const tr = document.createElement('tr');
-  const fields = ['concepto','total','cdmx','puebla','queretaro','porcentaje','total_ajustado'];
-  fields.forEach(f=>{
+  const editableFields = ['concepto','cdmx','puebla','queretaro','porcentaje','total_ajustado'];
+  const branchFields = ['cdmx','puebla','queretaro'];
+
+  const tdConcepto = document.createElement('td');
+  const inpConcepto = document.createElement('input');
+  inpConcepto.value = row.concepto ?? '';
+  inpConcepto.dataset.field = 'concepto';
+  tdConcepto.appendChild(inpConcepto);
+  tr.appendChild(tdConcepto);
+
+  // Total: computed live from CDMX + Puebla + Querétaro — read-only, no input, no save button of its own.
+  const tdTotal = document.createElement('td');
+  const totalSpan = document.createElement('span');
+  totalSpan.dataset.role = 'total';
+  totalSpan.style.fontWeight = '600';
+  tdTotal.appendChild(totalSpan);
+  tr.appendChild(tdTotal);
+
+  branchFields.forEach(f=>{
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.value = row[f] ?? '';
+    inp.dataset.field = f;
+    inp.addEventListener('input', ()=> recomputeTotal(tr));
+    td.appendChild(inp);
+    tr.appendChild(td);
+  });
+
+  ['porcentaje','total_ajustado'].forEach(f=>{
     const td = document.createElement('td');
     const inp = document.createElement('input');
     inp.value = row[f] ?? '';
@@ -411,6 +438,7 @@ function gastoRow(row){
     td.appendChild(inp);
     tr.appendChild(td);
   });
+
   const tdBtn = document.createElement('td');
   const btn = document.createElement('button');
   btn.className = 'btn small primary';
@@ -419,12 +447,13 @@ function gastoRow(row){
   status.className = 'status';
   btn.addEventListener('click', async ()=>{
     const body = {};
-    fields.forEach(f=>{
+    editableFields.forEach(f=>{
       const inp = tr.querySelector(`input[data-field="${f}"]`);
       let v = inp.value;
       if (f !== 'concepto'){ v = v === '' ? null : Number(v); }
       body[f] = v;
     });
+    body.total = computeRowTotal(tr);
     btn.disabled = true;
     try{
       await sbPatch('gastos_generales', row.id, body);
@@ -438,7 +467,25 @@ function gastoRow(row){
   });
   tdBtn.appendChild(btn); tdBtn.appendChild(status);
   tr.appendChild(tdBtn);
+
+  recomputeTotal(tr);
   return tr;
+}
+
+function computeRowTotal(tr){
+  const branchFields = ['cdmx','puebla','queretaro'];
+  let sum = 0, any = false;
+  branchFields.forEach(f=>{
+    const inp = tr.querySelector(`input[data-field="${f}"]`);
+    const v = parseFloat(inp.value);
+    if (!isNaN(v)){ sum += v; any = true; }
+  });
+  return any ? sum : null;
+}
+
+function recomputeTotal(tr){
+  const total = computeRowTotal(tr);
+  tr.querySelector('span[data-role="total"]').textContent = total === null ? '—' : fmtNum(Math.round(total * 100) / 100);
 }
 
 // ---------------- Costos de productos ----------------
