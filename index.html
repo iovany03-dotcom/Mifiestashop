@@ -1854,7 +1854,10 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
           <h2>Catálogo de Productos Sincronizado (PrestaShop & Supabase API)</h2>
-          <button class="btn primary" onclick="syncProductsFromPrestaShopAPI()">🔄 Sincronizar API PrestaShop</button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn primary" onclick="openEditProductModal(null)">➕ Crear Nuevo Producto</button>
+            <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">🔄 Sincronizar API PrestaShop</button>
+          </div>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
           <input type="search" id="catalogSearchInput" placeholder="🔍 Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
@@ -1870,6 +1873,7 @@
                 <th>Precio (MXN)</th>
                 <th>Origen</th>
                 <th>Estado</th>
+                <th style="text-align:center;">Acciones</th>
               </tr>
             </thead>
             <tbody id="catalogTableBody">
@@ -2568,6 +2572,59 @@
     <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); text-align:center; font-size:12px; color:var(--text-muted);">
       Usuario: <code>i.ovany.03@gmail.com</code> | Contraseña: <code>Soyelgio02.</code>
     </div>
+  </div>
+<!-- ================= MODAL EDICIÓN Y CREACIÓN DE PRODUCTOS ================= -->
+<div class="modal-overlay hidden" id="editProductModal">
+  <div class="modal" style="max-width: 640px; width:92%; padding: 24px; border-radius:16px;">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:18px;">
+      <h3 style="margin:0; font-size:1.2rem; color:var(--text-primary);" id="editProductModalTitle">✏️ Editar Producto</h3>
+      <button class="btn small" onclick="closeEditProductModal()">✕ Cerrar</button>
+    </div>
+
+    <form onsubmit="event.preventDefault(); saveProductChanges();">
+      <input type="hidden" id="editProdId">
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">SKU / Código Referencia:</label>
+          <input type="text" id="editProdSku" required placeholder="Ej: GLO-MET-001" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Categoría:</label>
+          <input type="text" id="editProdCat" required placeholder="Ej: Globos, Velas, Pirotecnia" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Nombre del Producto:</label>
+        <input type="text" id="editProdName" required placeholder="Ej: Bengala, chispas, vela, pirotecnia" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Precio Menudeo / Venta (MXN $):</label>
+          <input type="number" id="editProdPrice" step="0.50" min="0" required placeholder="10.00" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Estado del Producto:</label>
+          <select id="editProdStatus" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <option value="Activo">🟢 Activo en Venta</option>
+            <option value="Inactivo">🔴 Inactivo / Desactivado</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen:</label>
+        <input type="url" id="editProdImg" placeholder="https://..." style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn secondary" onclick="closeEditProductModal()">Cancelar</button>
+        <button type="submit" class="btn primary" style="font-weight:700;">💾 Guardar Producto</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -4058,23 +4115,132 @@ function renderCatalogTable(category = 'all', query = ''){
   });
 
   if(filtered.length === 0){
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">Sin productos registrados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">Sin productos registrados.</td></tr>';
     return;
   }
 
-  tbody.innerHTML = filtered.map(p => `
-    <tr>
-      <td>
-        <img src="${p.img}" alt="${p.name}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
-      </td>
-      <td><b>${p.sku}</b></td>
-      <td>${p.name}</td>
-      <td><span class="pill ok">${p.catLabel || p.cat}</span></td>
-      <td style="font-weight:700; color:var(--series-2);">${fmtMoney(p.price)}</td>
-      <td>PrestaShop / API</td>
-      <td><span class="pill ok">Activo</span></td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = filtered.map(p => {
+    const isInactive = p.status === 'Inactivo';
+    const pillClass = isInactive ? 'bad' : 'ok';
+    const statusText = p.status || 'Activo';
+
+    return `
+      <tr>
+        <td>
+          <img src="${p.img}" alt="${p.name}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        </td>
+        <td><b>${p.sku}</b></td>
+        <td><b>${p.name}</b></td>
+        <td><span class="pill ok">${p.catLabel || p.cat}</span></td>
+        <td style="font-weight:700; color:var(--series-2);">${fmtMoney(p.price)}</td>
+        <td>PrestaShop / API</td>
+        <td><span class="pill ${pillClass}">${statusText}</span></td>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn small primary" onclick="openEditProductModal(${p.id})">✏️ Editar</button>
+          <button class="btn small danger" style="margin-left:4px;" onclick="deleteProduct(${p.id})">🗑️</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// PRODUCT EDITOR MODAL CONTROLLER
+function openEditProductModal(pId) {
+  const modal = document.getElementById('editProductModal');
+  const title = document.getElementById('editProductModalTitle');
+  if (!modal) return;
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const prod = pId ? dataset.find(p => p.id === pId) : null;
+
+  document.getElementById('editProdId').value = prod ? prod.id : '';
+  document.getElementById('editProdSku').value = prod ? prod.sku : `MF-NEW-${Math.floor(100 + Math.random() * 900)}`;
+  document.getElementById('editProdCat').value = prod ? (prod.catLabel || prod.cat) : 'Globos';
+  document.getElementById('editProdName').value = prod ? prod.name : '';
+  document.getElementById('editProdPrice').value = prod ? prod.price : '25.00';
+  document.getElementById('editProdStatus').value = prod ? (prod.status || 'Activo') : 'Activo';
+  document.getElementById('editProdImg').value = prod ? prod.img : 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
+
+  if (title) {
+    title.textContent = prod ? `✏️ Editar Producto #${prod.id}` : '➕ Registrar Nuevo Producto';
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeEditProductModal() {
+  const modal = document.getElementById('editProductModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function saveProductChanges() {
+  const pIdVal = document.getElementById('editProdId').value;
+  const sku = (document.getElementById('editProdSku').value || '').trim();
+  const cat = (document.getElementById('editProdCat').value || '').trim();
+  const name = (document.getElementById('editProdName').value || '').trim();
+  const price = parseFloat(document.getElementById('editProdPrice').value) || 0;
+  const status = document.getElementById('editProdStatus').value;
+  const img = (document.getElementById('editProdImg').value || '').trim() || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
+
+  if (!name || !sku) {
+    alert('Por favor complete el nombre y el código/SKU del producto.');
+    return;
+  }
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+
+  if (pIdVal) {
+    const pId = parseInt(pIdVal);
+    const prod = dataset.find(p => p.id === pId);
+    if (prod) {
+      prod.sku = sku;
+      prod.name = name;
+      prod.catLabel = cat;
+      prod.cat = cat.toLowerCase();
+      prod.price = price;
+      prod.status = status;
+      prod.img = img;
+    }
+  } else {
+    const newId = dataset.length > 0 ? Math.max(...dataset.map(p => p.id || 0)) + 1 : 1;
+    const newProd = {
+      id: newId,
+      sku: sku,
+      name: name,
+      cat: cat.toLowerCase(),
+      catLabel: cat,
+      price: price,
+      status: status,
+      img: img,
+      desc: name
+    };
+    if (liveProducts.length > 0) liveProducts.unshift(newProd);
+    else PRODUCTS_DATA.unshift(newProd);
+  }
+
+  renderCatalogTable('all');
+  renderProducts('all');
+  renderStorefrontProducts('all');
+  renderInventarioTable();
+
+  closeEditProductModal();
+  alert(`✅ Producto "${name}" guardado con éxito.`);
+}
+
+function deleteProduct(pId) {
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const index = dataset.findIndex(p => p.id === pId);
+  if (index === -1) return;
+
+  const prod = dataset[index];
+  if (confirm(`¿Está seguro de que desea eliminar el producto "${prod.name}" (SKU: ${prod.sku})?`)) {
+    dataset.splice(index, 1);
+    renderCatalogTable('all');
+    renderProducts('all');
+    renderStorefrontProducts('all');
+    renderInventarioTable();
+    alert('🗑️ Producto eliminado del catálogo.');
+  }
 }
 
 if(document.getElementById('catalogSearchInput')){
