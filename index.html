@@ -792,11 +792,14 @@
     </div>
 
     <div class="store-header-actions">
+      <button class="btn secondary" style="border-radius:20px; font-weight:700; background:rgba(255,255,255,0.1); color:#fff; border:1px solid rgba(255,255,255,0.25);" onclick="openClientePortal()">
+        👤 Mi Cuenta / Pedidos
+      </button>
       <button class="btn secondary" style="border-radius:20px; font-weight:700;" onclick="alert('Su carrito tiene ' + cart.length + ' artículos.')">
-        🛒 Mi Carrito (<span id="storeCartBadge">0</span>)
+        🛒 Carrito (<span id="storeCartBadge">0</span>)
       </button>
       <button class="btn primary" style="border-radius:20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="openLoginModal()">
-        🔐 Acceso Dashboard / POS
+        🔐 Acceso POS / Admin
       </button>
     </div>
   </header>
@@ -809,7 +812,8 @@
     <a class="store-nav-link" onclick="renderStorefrontProducts('pirotecnia')">✨ Pirotecnia Fría</a>
     <a class="store-nav-link" onclick="renderStorefrontProducts('velas')">🎂 Velas & Bengala</a>
     <a class="store-nav-link" onclick="renderStorefrontProducts('neon')">🎉 Batucada & Neón</a>
-    <a class="store-nav-link" onclick="renderStorefrontProducts('disfraces')">🎭 Antifaces & Disfraces</a>
+    <a class="store-nav-link" onclick="openClientePortal()">👤 Mis Pedidos</a>
+    <a class="store-nav-link" onclick="openClientePortal(); switchClienteTab('promos');">🏷️ Promociones & Cupones</a>
   </nav>
 
   <!-- Hero Section -->
@@ -953,6 +957,217 @@
     </div>
   </footer>
 
+</div>
+
+<!-- ==================== PORTAL DE CLIENTES (mifiestashop.com/mi-cuenta) ==================== -->
+<div id="view-cliente-portal" class="hidden" style="min-height:100vh; background:var(--bg-main); color:var(--text-primary); padding-bottom:60px;">
+  
+  <!-- Header del Portal -->
+  <header class="store-header">
+    <a href="#" class="store-brand" onclick="closeClientePortal()">
+      <div class="store-brand-logo">MF</div>
+      <div>
+        <div class="store-brand-title">Mi Fiestashop</div>
+        <div class="store-brand-tagline">Portal de Clientes & Pedidos</div>
+      </div>
+    </a>
+
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="btn secondary" style="border-radius:20px; font-weight:700;" onclick="closeClientePortal()">
+        🏪 Volver a la Tienda
+      </button>
+      <button class="btn primary" style="border-radius:20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="openLoginModal()">
+        🔐 Acceso POS / Admin
+      </button>
+    </div>
+  </header>
+
+  <div style="max-width:1180px; margin: 30px auto; padding: 0 20px;">
+    
+    <!-- User Welcome Banner -->
+    <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding: 24px; color: #fff; margin-bottom: 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg, #ff9f1c, #e85d04); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#fff;">
+          JP
+        </div>
+        <div>
+          <h2 style="margin:0 0 4px 0; font-size:1.4rem;">Hola, Juan Pérez 👋</h2>
+          <div style="font-size:0.88rem; color:#94a3b8;">
+            <code>juan.perez@gmail.com</code> • RFC: <b>PERJ890101XXX</b>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <div style="background:rgba(255,255,255,0.08); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); text-align:center;">
+          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Nivel de Cliente</div>
+          <div style="font-size:1.05rem; font-weight:800; color:#ff9f1c;">⭐ Cliente Oro VIP</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.08); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); text-align:center;">
+          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Puntos Fiesta</div>
+          <div style="font-size:1.05rem; font-weight:800; color:#22c55e;">450 Pts ($45 MXN)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portal Navigation Tabs -->
+    <div style="display:flex; gap:10px; border-bottom:2px solid var(--border); margin-bottom:24px; overflow-x:auto; padding-bottom:4px;">
+      <button class="btn primary" id="tabBtnPedidos" onclick="switchClienteTab('pedidos')" style="border-radius:10px 10px 0 0; padding:12px 20px; font-size:0.95rem; font-weight:700;">
+        📦 Mis Pedidos (Historial & Rastro)
+      </button>
+      <button class="btn" id="tabBtnNuevo" onclick="switchClienteTab('nuevo')" style="border-radius:10px 10px 0 0; padding:12px 20px; font-size:0.95rem; font-weight:700;">
+        🛒 Hacer Nuevo Pedido
+      </button>
+      <button class="btn" id="tabBtnPromos" onclick="switchClienteTab('promos')" style="border-radius:10px 10px 0 0; padding:12px 20px; font-size:0.95rem; font-weight:700;">
+        🎉 Promociones & Cupones
+      </button>
+      <button class="btn" id="tabBtnPerfil" onclick="switchClienteTab('perfil')" style="border-radius:10px 10px 0 0; padding:12px 20px; font-size:0.95rem; font-weight:700;">
+        ⚙️ Datos de Facturación
+      </button>
+    </div>
+
+    <!-- TAB 1: MIS PEDIDOS -->
+    <div id="clienteTabPedidos">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0; font-size:1.2rem;">📋 Histórico de Pedidos Realizados</h3>
+        <button class="btn primary" onclick="switchClienteTab('nuevo')" style="font-size:0.85rem; font-weight:700;">
+          ➕ Realizar Nuevo Pedido
+        </button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:16px;" id="clienteOrdersListContainer">
+      </div>
+    </div>
+
+    <!-- TAB 2: HACER NUEVO PEDIDO -->
+    <div id="clienteTabNuevo" class="hidden">
+      <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h3 style="margin:0; font-size:1.2rem;">🛒 Catálogo Express para Clientes</h3>
+            <input type="search" placeholder="🔍 Buscar por producto..." id="clienteCatalogSearch" style="padding:8px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" oninput="renderClienteCatalog(this.value)">
+          </div>
+
+          <div id="clienteCatalogGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:16px;">
+          </div>
+        </div>
+
+        <!-- Sidebar Cart Summary -->
+        <div>
+          <div class="card" style="position:sticky; top:20px; border-radius:16px; padding:20px;">
+            <h3 style="margin-top:0; margin-bottom:14px; font-size:1.1rem; border-bottom:1px solid var(--border); padding-bottom:10px;">
+              🛍️ Resumen de tu Pedido
+            </h3>
+
+            <div id="clienteCartItemsList" style="max-height:260px; overflow-y:auto; font-size:13px; margin-bottom:16px;">
+              <div style="text-align:center; color:var(--text-muted); padding:30px 0;">Tu carrito está vacío.<br>Agrega productos del catálogo.</div>
+            </div>
+
+            <div style="border-top:1px solid var(--border); padding-top:12px; font-size:14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
+                <span>Subtotal:</span>
+                <span id="clienteCartSubtotal">$0.00</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
+                <span>Envío:</span>
+                <span id="clienteCartShipping" style="color:var(--good); font-weight:600;">GRATIS (&gt;$1,000)</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:800; color:var(--series-2); margin-top:6px; border-top:1px dashed var(--border); padding-top:8px;">
+                <span>TOTAL:</span>
+                <span id="clienteCartTotal">$0.00</span>
+              </div>
+            </div>
+
+            <button class="btn primary" style="width:100%; padding:12px; margin-top:16px; font-size:1rem; font-weight:700; justify-content:center; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="processClienteOnlineOrder()">
+              🚀 Enviar & Procesar Pedido
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: PROMOCIONES Y CUPONES -->
+    <div id="clienteTabPromos" class="hidden">
+      <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem;">🎉 Ofertas Exclusivas y Cupones Activos</h3>
+      
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
+        <div style="background:linear-gradient(135deg, rgba(232,93,4,0.12), rgba(249,115,22,0.05)); border:2px dashed #e85d04; border-radius:16px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span class="pill ok" style="font-weight:700;">Válido Septiembre 2026</span>
+            <span style="font-size:24px;">✨</span>
+          </div>
+          <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:var(--series-2);">15% OFF en Pirotecnia Fría</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">Aplica en chisperos para bodas y graduaciones.</p>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <code style="background:var(--card-bg); border:1px solid var(--border); padding:8px 14px; border-radius:8px; font-size:1rem; font-weight:800; color:var(--series-2); flex:1; text-align:center;">PIRO15VIP</code>
+            <button class="btn small primary" onclick="copyCouponCode('PIRO15VIP')">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(16,185,129,0.05)); border:2px dashed #22c55e; border-radius:16px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span class="pill ok" style="font-weight:700; background:rgba(34,197,94,0.2); color:#15803d;">Permanente</span>
+            <span style="font-size:24px;">🚚</span>
+          </div>
+          <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:#15803d;">Envío Gratis Nacional</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">Envío estándar sin costo a todo México en compras mayores a $1,000.00 MXN.</p>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <code style="background:var(--card-bg); border:1px solid var(--border); padding:8px 14px; border-radius:8px; font-size:1rem; font-weight:800; color:#15803d; flex:1; text-align:center;">ENVIOMEX</code>
+            <button class="btn small success" onclick="copyCouponCode('ENVIOMEX')">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(37,99,235,0.05)); border:2px dashed #3b82f6; border-radius:16px; padding:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span class="pill info" style="font-weight:700;">Combo Especial</span>
+            <span style="font-size:24px;">🎉</span>
+          </div>
+          <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:#1d4ed8;">Combo Batucada Fiesta 200 Pzs</h4>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">Incluye 100 antifaces metálicos + 50 pulseras neón + 50 corbatas de fiesta por solo $899.00.</p>
+          <button class="btn primary" style="width:100%; justify-content:center; font-weight:700;" onclick="addPromoComboToCart()">🛒 Agregar Combo al Carrito</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MI PERFIL Y FACTURACIÓN -->
+    <div id="clienteTabPerfil" class="hidden">
+      <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem;">⚙️ Perfil del Cliente & Datos de Envío / Factura</h3>
+
+      <div class="card" style="max-width:700px; padding:24px; border-radius:16px;">
+        <form onsubmit="event.preventDefault(); alert('✅ Datos de perfil actualizados correctamente.');">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Nombre Completo:</label>
+              <input type="text" value="Juan Pérez" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            </div>
+            <div>
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Correo Electrónico:</label>
+              <input type="email" value="juan.perez@gmail.com" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
+            <div>
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Teléfono WhatsApp:</label>
+              <input type="text" value="+52 222 554 4332" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            </div>
+            <div>
+              <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">RFC Facturación:</label>
+              <input type="text" value="PERJ890101XXX" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            </div>
+          </div>
+
+          <div style="margin-bottom:18px;">
+            <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Dirección de Envío Principal:</label>
+            <textarea rows="2" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">Av. Juárez #1402, Col. La Paz, Puebla, Pue. C.P. 72160</textarea>
+          </div>
+
+          <button type="submit" class="btn primary" style="padding:10px 24px; font-weight:700;">💾 Guardar Cambios de Perfil</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- ==================== ADMIN DASHBOARD WRAPPER ==================== -->
@@ -3708,6 +3923,195 @@ function confirmStockTransfer() {
 
   alert(`✅ Movimiento #${folio} registrado correctamente.\n\nTipo: ${currentMovType.toUpperCase()}\nProducto: ${product.name}\nCantidad: ${qty} u.\nDetalle: ${rutaDesc}`);
   closeTraspasoModal();
+}
+
+// ================= PORTAL DE CLIENTES LOGIC =================
+const CUSTOMER_ORDERS = [
+  { id: 'FOL-1004', date: '2026-09-11 15:18', total: 1450, status: 'Pagado - En Preparación', items: ['Vela de Bengala (50 u.)', 'Chisperos Pirotecnia (10 u.)', 'Globos Números (20 u.)'], tracking: 'FEDEX-99120' },
+  { id: 'FOL-1002', date: '2026-09-08 11:45', total: 2120, status: 'Enviado', items: ['Antifaz Cartón Metálico (100 u.)', 'Pulseras Neón (200 u.)', 'Vela Balón (15 u.)'], tracking: 'ESTAFETA-44109' },
+  { id: 'FOL-9854', date: '2026-08-24 18:30', total: 5890, status: 'Entregado', items: ['Platos Biodegradables (500 u.)', 'Vasos Fiesta (300 u.)', 'Manitas Aplaudidoras (100 u.)'], tracking: 'DHL-88901' }
+];
+
+let clienteCart = [];
+
+function openClientePortal() {
+  const portal = document.getElementById('view-cliente-portal');
+  if(portal) portal.classList.remove('hidden');
+  renderClienteOrders();
+  renderClienteCatalog();
+}
+
+function closeClientePortal() {
+  const portal = document.getElementById('view-cliente-portal');
+  if(portal) portal.classList.add('hidden');
+}
+
+function switchClienteTab(tabName) {
+  ['pedidos', 'nuevo', 'promos', 'perfil'].forEach(t => {
+    const tabEl = document.getElementById(`clienteTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    const btnEl = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+    if(tabEl) tabEl.classList.add('hidden');
+    if(btnEl) btnEl.className = 'btn';
+  });
+
+  const targetTab = document.getElementById(`clienteTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+  const targetBtn = document.getElementById(`tabBtn${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+  if(targetTab) targetTab.classList.remove('hidden');
+  if(targetBtn) targetBtn.className = 'btn primary';
+}
+
+function renderClienteOrders() {
+  const container = document.getElementById('clienteOrdersListContainer');
+  if(!container) return;
+
+  container.innerHTML = CUSTOMER_ORDERS.map(o => {
+    let pillClass = 'pill ok';
+    if(o.status.includes('Enviado')) pillClass = 'pill info';
+    else if(o.status.includes('Entregado')) pillClass = 'pill ok';
+    else if(o.status.includes('Preparación')) pillClass = 'pill warn';
+
+    return `
+      <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+          <div>
+            <span style="font-size:1.1rem; font-weight:800; color:var(--text-primary);">Folio: #${o.id}</span>
+            <span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Fecha: ${o.date}</span>
+          </div>
+          <div>
+            <span class="${pillClass}" style="font-size:0.85rem; font-weight:700; padding:4px 12px;">${o.status}</span>
+          </div>
+        </div>
+
+        <div style="background:var(--plane); border-radius:10px; padding:12px; margin-bottom:14px; font-size:0.9rem; color:var(--text-secondary);">
+          <b>Productos incluidos:</b> ${o.items.join(' • ')}
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div style="font-size:1.2rem; font-weight:800; color:var(--series-2);">
+            Total: ${fmtMoney(o.total)}
+          </div>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn small primary" onclick="alert('Descargando comprobante/factura de pedido #${o.id}...')">📄 Ver Ticket / Factura</button>
+            <button class="btn small" onclick="alert('Guía de rastreo ${o.tracking}: En ruta de entrega.')">🚚 Rastrear Guía</button>
+            <button class="btn small secondary" onclick="repeatCustomerOrder('${o.id}')">🔄 Repetir Pedido</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderClienteCatalog(query = '') {
+  const grid = document.getElementById('clienteCatalogGrid');
+  if(!grid) return;
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+
+  const filtered = dataset.filter(p => !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()));
+
+  grid.innerHTML = filtered.slice(0, 12).map(p => `
+    <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
+      <div>
+        <img src="${p.img}" alt="${p.name}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; background:var(--plane); margin-bottom:10px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        <div style="font-weight:700; font-size:0.88rem; line-height:1.2; margin-bottom:4px; color:var(--text-primary);">${p.name}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">SKU: ${p.sku}</div>
+      </div>
+      <div>
+        <div style="font-size:1.05rem; font-weight:800; color:var(--series-2); margin-bottom:8px;">${fmtMoney(p.price)}</div>
+        <button class="btn small primary" style="width:100%; justify-content:center; font-weight:700;" onclick="addToClienteCart(${p.id})">🛒 Agregar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addToClienteCart(pId) {
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const prod = dataset.find(p => p.id === pId);
+  if(!prod) return;
+
+  const existing = clienteCart.find(i => i.id === pId);
+  if(existing) {
+    existing.qty += 1;
+  } else {
+    clienteCart.push({ id: prod.id, name: prod.name, price: prod.price, qty: 1 });
+  }
+  updateClienteCartUI();
+}
+
+function updateClienteCartUI() {
+  const container = document.getElementById('clienteCartItemsList');
+  if(!container) return;
+
+  if (clienteCart.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 0;">Tu carrito está vacío.<br>Agrega productos del catálogo.</div>';
+    document.getElementById('clienteCartSubtotal').textContent = '$0.00';
+    document.getElementById('clienteCartTotal').textContent = '$0.00';
+    return;
+  }
+
+  let sub = 0;
+  container.innerHTML = clienteCart.map(item => {
+    const itemTotal = item.price * item.qty;
+    sub += itemTotal;
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--border);">
+        <div>
+          <b>${item.name}</b>
+          <br><span style="font-size:11px; color:var(--text-muted);">${item.qty} u. x ${fmtMoney(item.price)}</span>
+        </div>
+        <div style="font-weight:700; color:var(--text-primary);">${fmtMoney(itemTotal)}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('clienteCartSubtotal').textContent = fmtMoney(sub);
+  document.getElementById('clienteCartTotal').textContent = fmtMoney(sub);
+}
+
+function processClienteOnlineOrder() {
+  if(clienteCart.length === 0) {
+    alert('⚠️ Tu carrito está vacío. Agrega al menos 1 producto.');
+    return;
+  }
+
+  const folio = 'FOL-' + Math.floor(1000 + Math.random() * 9000);
+  let total = 0;
+  const itemNames = clienteCart.map(i => { total += i.price * i.qty; return `${i.name} (${i.qty} u.)`; });
+
+  CUSTOMER_ORDERS.unshift({
+    id: folio,
+    date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+    total: total,
+    status: 'Pagado - En Preparación',
+    items: itemNames,
+    tracking: 'PENDIENTE'
+  });
+
+  clienteCart = [];
+  updateClienteCartUI();
+  renderClienteOrders();
+  switchClienteTab('pedidos');
+
+  alert(`🎉 ¡Pedido #${folio} realizado con éxito!\n\nSe ha recibido su pago de ${fmtMoney(total)} y estamos preparando su envío.`);
+}
+
+function copyCouponCode(code) {
+  navigator.clipboard.writeText(code);
+  alert(`📋 ¡Código de cupón "${code}" copiado al portapapeles! Usar al realizar tu pedido.`);
+}
+
+function addPromoComboToCart() {
+  switchClienteTab('nuevo');
+  addToClienteCart(1);
+  addToClienteCart(2);
+  alert('🎉 ¡Combo Batucada Fiesta agregado al carrito con descuento!');
+}
+
+function repeatCustomerOrder(orderId) {
+  switchClienteTab('nuevo');
+  addToClienteCart(1);
+  addToClienteCart(3);
+  alert(`🛒 Productos del pedido #${orderId} agregados al carrito.`);
 }
 
 function openStockAdjustModal(pId) {
