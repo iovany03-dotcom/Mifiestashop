@@ -1524,23 +1524,40 @@
               <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Monto Total</th><th>Estado</th><th>Acción</th></tr>
             </thead>
             <tbody id="ordersTableBody">
-              <tr>
+              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#486601')">
+                <td><b>#486601</b> <span style="font-size:11px; color:var(--text-muted);">CPFEGDOQY</span></td>
+                <td>2026-09-11 15:52</td>
+                <td><b>Consumidor Final</b></td>
+                <td><span class="pill ok">Sistema POS</span></td>
+                <td style="font-weight:700; color:var(--series-2);">$180.00</td>
+                <td><span class="pill ok">Pago Aceptado</span></td>
+                <td>
+                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#486601')">👁️ Ver Orden</button>
+                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#486601', 180)">🖨️ Ticket</button>
+                </td>
+              </tr>
+              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#POS-10492')">
                 <td><b>#POS-10492</b></td>
                 <td>2026-09-11 14:10</td>
                 <td>Cliente Mostrador</td>
                 <td><span class="pill ok">Sistema POS</span></td>
-                <td>$1,250.00</td>
+                <td style="font-weight:700; color:var(--series-2);">$1,250.00</td>
                 <td><span class="pill ok">Pago Aceptado</span></td>
-                <td><button class="btn small" onclick="reprintTicket('#POS-10492', 1250)">🖨️ Ticket</button></td>
+                <td>
+                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#POS-10492')">👁️ Ver Orden</button>
+                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#POS-10492', 1250)">🖨️ Ticket</button>
+                </td>
               </tr>
-              <tr>
+              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#PS-89421')">
                 <td><b>#PS-89421</b></td>
                 <td>2026-09-11 11:32</td>
                 <td>Carlos Gutiérrez</td>
                 <td><span class="pill warn">Tienda Online</span></td>
-                <td>$3,480.00</td>
+                <td style="font-weight:700; color:var(--series-2);">$3,480.00</td>
                 <td><span class="pill ok">Entregado</span></td>
-                <td><button class="btn small">Ver Orden</button></td>
+                <td>
+                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#PS-89421')">👁️ Ver Orden</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -2387,6 +2404,294 @@
     <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); text-align:center; font-size:12px; color:var(--text-muted);">
       Usuario: <code>i.ovany.03@gmail.com</code> | Contraseña: <code>Soyelgio02.</code>
     </div>
+  </div>
+</div>
+
+<!-- ================= DETALLE DE PEDIDO COMPLETO (PRESTASHOP STYLE) ================= -->
+<div class="modal-overlay hidden" id="orderDetailModal">
+  <div class="modal" style="max-width: 1120px; width:96%; max-height:92vh; overflow-y:auto; padding: 24px;">
+    
+    <!-- Top Nav breadcrumb & close -->
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:16px;">
+      <div style="font-size:13px; color:var(--text-muted);">
+        Vender &gt; Pedidos &gt; <b style="color:var(--text-primary);" id="odBreadcrumb">#486601 CPFEGDOQY</b>
+      </div>
+      <button class="btn small" onclick="closeOrderDetailModal()">✕ Cerrar</button>
+    </div>
+
+    <!-- Header Title Bar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+      <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+        <h2 style="margin:0; font-size:1.4rem;" id="odTitleHeader">#486601 CPFEGDOQY <span style="font-weight:400; font-size:1rem; color:var(--text-muted);">de Consumidor Final</span></h2>
+        <span style="background:#0f172a; color:#fff; padding:4px 12px; border-radius:6px; font-weight:800; font-size:1.1rem;" id="odTotalBadge">180,00 MXN</span>
+        <span style="font-size:0.85rem; color:var(--text-muted);" id="odDateHeader">2026-09-11 en 15:52:16</span>
+      </div>
+    </div>
+
+    <!-- 2FA Warning Banner -->
+    <div style="background:#fef3c7; border:1px solid #f59e0b; color:#92400e; padding:10px 16px; border-radius:8px; font-size:13px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+      <div>⚠️ Activa la Verificación de dos pasos (2FA) para proteger tu Cuenta <b><a href="#" style="color:#92400e; text-decoration:underline;">haz click</a></b></div>
+      <span style="cursor:pointer; font-weight:bold;" onclick="this.parentElement.style.display='none'">✕</span>
+    </div>
+
+    <!-- Top Action Buttons Bar -->
+    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+      <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="reprintTicket(currentOrderObj ? currentOrderObj.id : '#486601', 180)">📄 Imprimir Ticket</button>
+      <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Generando hoja de alistamiento de pedido...')">📄 Imprimir Alistamiento</button>
+      <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Generando guía de transporte...')">🚚 Guía de Transporte</button>
+    </div>
+
+    <!-- Status Change & Action Toolbar -->
+    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:12px 16px; border-radius:10px; margin-bottom:20px; flex-wrap:wrap; gap:12px; border:1px solid var(--border);">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <select id="odStatusSelect" style="padding:8px 14px; border-radius:6px; border:1px solid #22c55e; background:#22c55e; color:#fff; font-weight:700; font-size:14px; cursor:pointer;">
+          <option value="Pago aceptado">Pago aceptado</option>
+          <option value="Enviado">Enviado</option>
+          <option value="Entregado">Entregado</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+        <button class="btn" style="border-radius:6px; font-size:13px;" onclick="alert('Estado del pedido actualizado ✓')">Actualizar el estado</button>
+        <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="window.print()">🖨️ Imprimir pedido</button>
+        <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Abriendo ventana de devolución parcial...')">🔄 Devolución parcial</button>
+      </div>
+
+      <div style="display:flex; gap:6px;">
+        <button class="btn small" onclick="alert('Navegando a pedido anterior')">←</button>
+        <button class="btn small" onclick="alert('Navegando a siguiente pedido')">→</button>
+      </div>
+    </div>
+
+    <!-- 2 Column Layout -->
+    <div style="display:grid; grid-template-columns: 350px 1fr; gap:20px;">
+      
+      <!-- LEFT COLUMN: Client, Address, Private Note, Delivery Date, Messages -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- CLIENT CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <div style="font-weight:700; font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+            <span>👤</span> <span id="odClientName">Consumidor Final #101973</span>
+          </div>
+          <a href="#" style="font-size:12px; color:var(--series-2); text-decoration:none; display:block; margin-bottom:12px;" onclick="return false;">Ver todos los detalles</a>
+
+          <div style="font-size:12px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+            <div><b>Correo electrónico:</b><br><span id="odClientEmail" style="color:var(--series-2);">consumidorfinal@mifiestashop.com</span></div>
+            <div><b>Cuenta registrada:</b><br><span id="odClientRegDate">2026-03-26 10:15:20</span></div>
+            <div><b>Nit / CC:</b><br><span>22222222222</span></div>
+            <div><b>Pedidos realizados validados:</b><br><span class="pill ok" style="font-weight:800; font-size:11px;">3243</span></div>
+            <div><b>Total gastado desde su registro:</b><br><span style="font-weight:800; color:var(--text-primary); font-size:13px;" id="odClientSpent">$1.267.902,11 MXN</span></div>
+          </div>
+        </div>
+
+        <!-- ADDRESS CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:11px;">
+            <div>
+              <b style="color:var(--text-primary); display:block; margin-bottom:4px;">Dirección de envío:</b>
+              <div id="odShippingAddr" style="color:var(--text-secondary); line-height:1.4;">
+                Consumidor Final<br>México<br><b>CIUDAD DE MÉXICO</b><br>*<br>Rumania 6 13 C<br>1422
+              </div>
+            </div>
+            <div>
+              <b style="color:var(--text-primary); display:block; margin-bottom:4px;">Dirección de facturación:</b>
+              <div id="odBillingAddr" style="color:var(--text-secondary); line-height:1.4;">
+                Consumidor Final<br>México<br><b>CIUDAD DE MÉXICO</b><br>*<br>Rumania 6 13 C<br>1422
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRIVATE NOTE CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <b style="font-size:13px; color:var(--text-primary);">Nota Privada</b>
+            <span style="cursor:pointer; font-weight:bold; font-size:16px;" onclick="document.getElementById('odPrivateNoteInput').focus()">+</span>
+          </div>
+          <textarea id="odPrivateNoteInput" rows="2" placeholder="Escribe una nota interna para este pedido..." style="width:100%; font-size:12px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
+        </div>
+
+        <!-- DELIVERY DATE CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:8px;">Fecha de Entrega</b>
+          <input type="date" id="odDeliveryDate" value="2026-09-12" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; margin-bottom:10px;">
+          <button class="btn primary" style="width:100%; justify-content:center; font-size:13px; font-weight:700;" onclick="alert('Fecha de entrega guardada ✓')">Guardar Fecha de Entrega</button>
+        </div>
+
+        <!-- MESSAGES CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:8px;">Mensajes (0)</b>
+          <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Elige el mensaje de tu pedido:</label>
+          <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; margin-bottom:6px;">
+            <option value="">Seleccionar mensaje predefinido...</option>
+            <option value="1">Su pedido ha sido preparado y enviado</option>
+            <option value="2">Gracias por su compra en Mi Fiestashop</option>
+          </select>
+          <a href="#" style="font-size:11px; color:var(--series-2); text-decoration:none; display:block; margin-bottom:10px;" onclick="return false;">Configurar mensajes predefinidos →</a>
+
+          <label style="display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:10px; cursor:pointer;">
+            <input type="checkbox"> ¿Mostrar al cliente?
+          </label>
+
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">*Mensaje:</label>
+          <textarea rows="3" placeholder="Escriba un mensaje para enviar al cliente..." style="width:100%; padding:8px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:10px;"></textarea>
+          
+          <button class="btn primary" style="width:100%; justify-content:center; font-size:13px; font-weight:700;" onclick="alert('Mensaje enviado al cliente ✓')">Enviar mensaje</button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Products, Tabs, Payments -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        
+        <!-- PRODUCTS TABLE CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <h3 style="margin-top:0; margin-bottom:12px; font-size:1.1rem; color:var(--text-primary);" id="odProdCountTitle">Productos (1)</h3>
+
+          <div class="table-wrap" style="margin-bottom:14px;">
+            <table style="width:100%; font-size:13px;">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th style="text-align:right;">Precio por unidad<br><span style="font-weight:normal; font-size:10px; color:var(--text-muted);">IVA incluido</span></th>
+                  <th style="text-align:center;">Cantidad</th>
+                  <th style="text-align:center;">Disponible</th>
+                  <th style="text-align:right;">Total<br><span style="font-weight:normal; font-size:10px; color:var(--text-muted);">IVA incluido</span></th>
+                  <th style="text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="odProductsTableBody">
+                <!-- Dynamically populated product lines -->
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div>Artículos por página: <b>100 ⚙️</b></div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn small" onclick="alert('Abriendo buscador para añadir producto al pedido...')">➕ Añadir un producto</button>
+              <button class="btn small" onclick="alert('Abriendo ventana para aplicar descuento al pedido...')">🏷️ Añadir un descuento</button>
+            </div>
+          </div>
+
+          <!-- Product Subtotals -->
+          <div style="border-top:1px solid var(--border); padding-top:12px; display:flex; justify-content:flex-end; font-size:14px;">
+            <div style="width:240px; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
+                <span>Productos:</span>
+                <span id="odSubtotalVal">180,00 MXN</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem; color:var(--series-2); border-top:1px dashed var(--border); padding-top:6px;">
+                <span>Total:</span>
+                <span id="odTotalVal">180,00 MXN</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:10px; font-size:11px; color:var(--text-muted); background:var(--plane); padding:8px 12px; border-radius:6px;">
+            Para este grupo de clientes, los precios se muestran con: <b>IVA incluido</b>. Las devoluciones de mercancía están desactivadas.
+          </div>
+        </div>
+
+        <!-- STATUS & CARRIERS TABS CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <!-- Tab Bar -->
+          <div style="display:flex; gap:8px; border-bottom:2px solid var(--border); margin-bottom:14px; overflow-x:auto;">
+            <button class="btn primary" id="tabOdEstado" onclick="switchOdTab('estado')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">📜 Estado (1)</button>
+            <button class="btn" id="tabOdDoc" onclick="switchOdTab('doc')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">📄 Documentos (0)</button>
+            <button class="btn" id="tabOdTrans" onclick="switchOdTab('trans')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">🚚 Transportadoras (1)</button>
+            <button class="btn" id="tabOdDev" onclick="switchOdTab('dev')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">🔄 Devoluciones de mercancía (0)</button>
+          </div>
+
+          <!-- TAB CONTENT: ESTADO -->
+          <div id="contentOdEstado">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span class="pill ok" style="font-weight:700; padding:6px 12px; font-size:13px;" id="odStateBadge">Pago aceptado</span>
+                <span style="font-size:13px; color:var(--text-secondary);" id="odStateBox">Caja Puebla</span>
+                <span style="font-size:12px; color:var(--text-muted);" id="odStateDate">2026-09-11 15:52:16</span>
+              </div>
+              <a href="#" style="font-size:12px; color:var(--series-2); text-decoration:none;" onclick="alert('Email de estado reenviado al cliente ✓'); return false;">Reenviar email</a>
+            </div>
+
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px;">
+              <select style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1;">
+                <option value="Pago aceptado">Pago aceptado</option>
+                <option value="En preparación">En preparación</option>
+                <option value="Enviado">Enviado</option>
+                <option value="Entregado">Entregado</option>
+              </select>
+              <button class="btn primary" style="padding:8px 16px; font-size:13px; font-weight:700;" onclick="alert('Estado del pedido actualizado ✓')">Actualizar el estado</button>
+            </div>
+
+            <div style="border-top:1px dashed var(--border); padding-top:10px; font-size:13px;">
+              <b>Nota del pedido:</b> <span style="color:var(--text-muted); font-size:12px; margin-left:6px; cursor:pointer;">+</span>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: DOCUMENTOS -->
+          <div id="contentOdDoc" class="hidden">
+            <div style="padding:14px; text-align:center; color:var(--text-muted); font-size:13px;">
+              No hay documentos de facturación o remisión asociados a este pedido.
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: TRANSPORTADORAS -->
+          <div id="contentOdTrans" class="hidden">
+            <div style="font-size:13px;">
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+                <span><b>Transportadora:</b> Envío Estándar Mi Fiestashop</span>
+                <span><b>Costo:</b> $0.00 MXN</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0;">
+                <span><b>Número de Guía / Rastreos:</b> FEDEX-9912084</span>
+                <span class="pill ok">En Tránsito</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB CONTENT: DEVOLUCIONES -->
+          <div id="contentOdDev" class="hidden">
+            <div style="padding:14px; text-align:center; color:var(--text-muted); font-size:13px;">
+              Las devoluciones de mercancía están desactivadas para este pedido.
+            </div>
+          </div>
+        </div>
+
+        <!-- PAYMENTS CARD -->
+        <div class="card" style="padding:16px; border-radius:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">Pago (1)</h3>
+            <button class="btn small primary" onclick="alert('Abriendo registro manual de pago...')">Agregar Pago</button>
+          </div>
+
+          <div class="table-wrap">
+            <table style="width:100%; font-size:13px;">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Forma de Pago</th>
+                  <th>ID de Transacción</th>
+                  <th style="text-align:right;">Valor</th>
+                  <th style="text-align:center;">Factura</th>
+                </tr>
+              </thead>
+              <tbody id="odPaymentTableBody">
+                <tr>
+                  <td>2026-09-11 15:52:16</td>
+                  <td><b>Pago En Efectivo</b></td>
+                  <td><code>POS-TX-9901</code></td>
+                  <td style="text-align:right; font-weight:700; color:var(--text-primary);">180,00 MXN</td>
+                  <td style="text-align:center;"><button class="btn small" style="padding:3px 8px; font-size:11px;" onclick="alert('Viendo detalles de factura...')">Detalles</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
   </div>
 </div>
 
@@ -3992,9 +4297,10 @@ function renderClienteOrders() {
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn small primary" onclick="alert('Descargando comprobante/factura de pedido #${o.id}...')">📄 Ver Ticket / Factura</button>
-            <button class="btn small" onclick="alert('Guía de rastreo ${o.tracking}: En ruta de entrega.')">🚚 Rastrear Guía</button>
-            <button class="btn small secondary" onclick="repeatCustomerOrder('${o.id}')">🔄 Repetir Pedido</button>
+            <button class="btn small primary" onclick="openOrderDetailModal('${o.id}')">🔍 Ver Detalle</button>
+            <button class="btn small" onclick="alert('Descargando comprobante/factura de pedido #${o.id}...')">📄 Ticket</button>
+            <button class="btn small" onclick="alert('Guía de rastreo ${o.tracking}: En ruta de entrega.')">🚚 Rastrear</button>
+            <button class="btn small secondary" onclick="repeatCustomerOrder('${o.id}')">🔄 Repetir</button>
           </div>
         </div>
       </div>
@@ -4306,14 +4612,17 @@ async function loadOrdersFromAPI(){
   if(list.length === 0) list = DEFAULT_ORDERS;
 
   tbody.innerHTML = list.map(o => `
-    <tr>
+    <tr style="cursor:pointer;" onclick="openOrderDetailModal('${o.id}')">
       <td><b>${o.id}</b></td>
       <td>${o.date}</td>
       <td><b>${o.customer}</b></td>
       <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${o.channel}</span></td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
       <td><span class="pill ok">${o.status}</span></td>
-      <td><button class="btn small" onclick="reprintTicket('${o.id}', ${o.total})">🖨️ Ticket</button></td>
+      <td>
+        <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('${o.id}')">👁️ Ver Orden</button>
+        <button class="btn small" onclick="event.stopPropagation(); reprintTicket('${o.id}', ${o.total})">🖨️ Ticket</button>
+      </td>
     </tr>
   `).join('');
 }
