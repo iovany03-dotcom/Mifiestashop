@@ -1,520 +1,512 @@
-<title>Mi Fiestashop — Ventas</title>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi Fiestashop — Panel</title>
 <style>
-  .viz-root{
+  :root{
     color-scheme: light;
     --surface-1:#fcfcfb; --plane:#f9f9f7;
     --text-primary:#0b0b0b; --text-secondary:#52514e; --text-muted:#898781;
     --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,0.10);
     --series-1:#2a78d6; --series-2:#eb6834;
-    --good:#0ca30c; --card-bg:#ffffff;
+    --good:#0ca30c; --bad:#e34948; --card-bg:#ffffff;
   }
   @media (prefers-color-scheme: dark){
-    :root:where(:not([data-theme="light"])) .viz-root{
+    :root:not([data-theme="light"]){
       color-scheme: dark;
       --surface-1:#1a1a19; --plane:#0d0d0d;
       --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
       --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
       --series-1:#3987e5; --series-2:#d95926;
-      --good:#0ca30c; --card-bg:#232322;
+      --good:#0ca30c; --bad:#e66767; --card-bg:#232322;
     }
   }
-  :root[data-theme="dark"] .viz-root{
+  :root[data-theme="dark"]{
     color-scheme: dark;
     --surface-1:#1a1a19; --plane:#0d0d0d;
     --text-primary:#ffffff; --text-secondary:#c3c2b7; --text-muted:#898781;
     --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
     --series-1:#3987e5; --series-2:#d95926;
-    --good:#0ca30c; --card-bg:#232322;
+    --good:#0ca30c; --bad:#e66767; --card-bg:#232322;
   }
-
-  .viz-root{
-    background: var(--plane);
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--plane); color:var(--text-primary);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    color: var(--text-primary);
-    padding: 24px;
-    box-sizing: border-box;
-    min-height: 100%;
   }
-  * { box-sizing: border-box; }
-  .wrap{ max-width: 1180px; margin: 0 auto; }
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 24px; }
 
-  header.top{ margin-bottom: 20px; }
-  header.top h1{ font-size: 22px; margin: 0 0 4px; font-weight: 700; }
-  header.top p{ margin: 0; color: var(--text-secondary); font-size: 13.5px; }
+  header.top{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 18px; flex-wrap:wrap; gap:8px; }
+  header.top h1{ font-size: 21px; margin: 0; font-weight: 700; }
+  header.top p{ margin: 2px 0 0; color: var(--text-secondary); font-size: 12.5px; }
 
-  h1, h2 { position: relative; }
-  a.anchor-jump{ font-size: 12px; font-weight: 400; color: var(--text-secondary); text-decoration: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; margin-left: 8px; vertical-align: middle; }
-  a.anchor-jump:hover{ color: var(--text-primary); }
-
-  .card{
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px 18px;
+  nav.tabs{ display:flex; gap: 4px; border-bottom: 1px solid var(--grid); margin-bottom: 20px; }
+  nav.tabs button{
+    appearance:none; border:none; background:transparent; color: var(--text-secondary);
+    font-size: 14px; font-weight: 600; padding: 10px 16px; cursor:pointer; font-family:inherit;
+    border-bottom: 2px solid transparent; margin-bottom:-1px;
   }
+  nav.tabs button.active{ color: var(--series-1); border-bottom-color: var(--series-1); }
 
-  .alert{
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-left: 4px solid #eda100;
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 18px;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--text-secondary);
-  }
-  .alert.info{ border-left-color: var(--series-1); }
-  .alert b{ color: var(--text-primary); }
-
-  .kpis{
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .kpi .label{ font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
-  .kpi .value{ font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
-  .kpi .sub{ font-size: 11.5px; color: var(--text-muted); margin-top: 4px; }
-  .kpi .sub.good{ color: var(--good); }
-
-  .section-title{ font-size: 17px; font-weight: 700; margin: 30px 0 12px; padding-top: 6px; }
-  .section-title:first-of-type{ margin-top: 0; }
-  .section-title .muted{ font-weight: 400; color: var(--text-muted); font-size: 12.5px; }
-
+  .card{ background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
   .panel{ margin-bottom: 18px; }
   .panel h2{ font-size: 14.5px; margin: 0 0 12px; font-weight: 600; }
   .panel h2 .muted{ font-weight: 400; color: var(--text-muted); font-size: 12px; }
 
-  .chart-row{ display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
-  @media (max-width: 860px){ .chart-row{ grid-template-columns: 1fr; } .kpis{ grid-template-columns: repeat(2,1fr); } }
-
-  svg text{ font-family: system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--text-secondary); }
-  .axis-label{ fill: var(--text-muted); font-size: 10px; }
-  .bar{ transition: opacity .12s; }
-  .bar:hover{ opacity: 0.75; }
-  .gridline{ stroke: var(--grid); stroke-width: 1; }
-  .baseline{ stroke: var(--axis); stroke-width: 1; }
-
-  .tooltip{
-    position: absolute; pointer-events: none; z-index: 5;
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 8px 10px; font-size: 12px; line-height: 1.5; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-    opacity: 0; transition: opacity .1s; white-space: nowrap;
+  .filters{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .seg{ display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .seg button{
+    appearance:none; border:none; background:transparent; color:var(--text-secondary);
+    font-size:12.5px; padding:8px 14px; cursor:pointer; font-family:inherit;
   }
-  .tooltip .t-title{ font-weight: 700; margin-bottom: 2px; }
-  .tooltip .t-row{ color: var(--text-secondary); }
+  .seg button+button{ border-left:1px solid var(--border); }
+  .seg button.active{ background: var(--series-1); color:#fff; }
+  input[type=date]{
+    background: var(--card-bg); color: var(--text-primary); border:1px solid var(--border);
+    border-radius:8px; padding:7px 10px; font-family:inherit; font-size:12.5px;
+  }
+  .rangewrap{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--text-secondary); }
 
-  table{ width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  .kpis{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+  .kpi .label{ font-size:12px; color:var(--text-secondary); margin-bottom:6px; }
+  .kpi .value{ font-size:24px; font-weight:700; letter-spacing:-0.01em; }
+  .kpi .sub{ font-size:11.5px; color:var(--text-muted); margin-top:4px; }
+  @media (max-width:700px){ .kpis{ grid-template-columns:1fr; } }
+
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
   thead th{
-    text-align: left; padding: 8px 10px; color: var(--text-muted); font-weight: 600;
-    border-bottom: 1px solid var(--grid); position: sticky; top: 0; background: var(--card-bg);
-    cursor: pointer; user-select: none;
+    text-align:left; padding:8px 10px; color:var(--text-muted); font-weight:600;
+    border-bottom:1px solid var(--grid); position:sticky; top:0; background:var(--card-bg);
   }
-  thead th:hover{ color: var(--text-primary); }
-  tbody td{ padding: 7px 10px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
-  tbody tr:last-child td{ border-bottom: none; }
-  .pill{ display:inline-block; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
-  .pill.ok{ background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
-  .pill.warn{ background: color-mix(in srgb, #eda100 18%, transparent); color: #a97200; }
-  .pill.bad{ background: color-mix(in srgb, #e34948 16%, transparent); color: #c23c3b; }
+  tbody td{ padding:6px 8px; border-bottom:1px solid var(--grid); vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .table-wrap{ max-height:520px; overflow:auto; border:1px solid var(--border); border-radius:10px; }
+  td input, td select{
+    width:100%; background:transparent; color:var(--text-primary); border:1px solid transparent;
+    border-radius:6px; padding:4px 6px; font-family:inherit; font-size:12.5px;
+  }
+  td input:focus, td select:focus{ border-color: var(--series-1); background: var(--card-bg); outline:none; }
+  .btn{
+    appearance:none; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);
+    border-radius:7px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .btn.primary{ background:var(--series-1); border-color:var(--series-1); color:#fff; }
+  .btn.small{ padding:4px 9px; font-size:11px; }
+  .btn:disabled{ opacity:.5; cursor:default; }
+  .status{ font-size:11px; margin-left:8px; }
+  .status.ok{ color:var(--good); }
+  .status.err{ color:var(--bad); }
 
-  .table-wrap{ max-height: 380px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .toolbar{ display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+  .toolbar input[type=search]{
+    background:var(--card-bg); color:var(--text-primary); border:1px solid var(--border);
+    border-radius:8px; padding:8px 12px; font-family:inherit; font-size:12.5px; min-width:220px;
+  }
+  .toolbar select{
+    background:var(--card-bg); color:var(--text-primary); border:1px solid var(--border);
+    border-radius:8px; padding:8px 12px; font-family:inherit; font-size:12.5px;
+  }
+  .pager{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:12.5px; color:var(--text-secondary); }
 
-  .foot{ margin-top: 22px; font-size: 11.5px; color: var(--text-muted); line-height: 1.6; }
-  .foot a{ color: var(--text-secondary); }
+  .gate{ max-width:360px; margin: 80px auto; text-align:center; }
+  .gate input{
+    width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px;
+    background:var(--card-bg); color:var(--text-primary); font-family:inherit; font-size:14px; margin:12px 0;
+  }
+  .foot{ margin-top:18px; font-size:11.5px; color:var(--text-muted); line-height:1.6; }
+  .hidden{ display:none !important; }
+  .loading{ color:var(--text-muted); font-size:12.5px; padding:20px; text-align:center; }
 </style>
-
-<div class="viz-root">
+</head>
+<body>
 <div class="wrap">
 
   <header class="top">
-    <h1>Mi Fiestashop — Panel operativo</h1>
-    <p>Fuente: API PrestaShop (webservice) de <strong>www.mifiestashop.com</strong> · datos hasta el 10 sep. 2026 · montos en <strong>MXN</strong> únicamente</p>
+    <div>
+      <h1>Mi Fiestashop — Panel</h1>
+      <p>Ventas en vivo (PrestaShop) y costos/gastos (Supabase)</p>
+    </div>
   </header>
 
-  <div class="alert" id="scopeAlert"></div>
+  <nav class="tabs">
+    <button class="active" data-tab="ventas">Ventas</button>
+    <button data-tab="costos">Costos y Gastos</button>
+  </nav>
 
-  <div class="section-title">Ventas mensuales <span class="muted">(MXN, pedidos confirmados)</span></div>
-
-  <div class="kpis" id="kpiRow"></div>
-
-  <div class="chart-row">
-    <div class="card panel">
-      <h2>Ingresos por mes <span class="muted">(MXN)</span></h2>
-      <div style="position:relative">
-        <svg id="revChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
-        <div class="tooltip" id="revTip"></div>
+  <!-- ===================== VENTAS ===================== -->
+  <section id="tab-ventas">
+    <div class="filters">
+      <div class="seg" id="periodSeg">
+        <button data-p="dia" class="active">Día</button>
+        <button data-p="mes">Mes</button>
+        <button data-p="anio">Año</button>
+        <button data-p="dia1">Día-1</button>
+        <button data-p="mes1">Mes-1</button>
+        <button data-p="anio1">Año-1</button>
+      </div>
+      <div class="rangewrap">
+        Desde <input type="date" id="fromInput"> hasta <input type="date" id="toInput">
+        <button class="btn small" id="applyRange">Aplicar</button>
       </div>
     </div>
-    <div class="card panel">
-      <h2>Pedidos por mes <span class="muted">(MXN)</span></h2>
-      <div style="position:relative">
-        <svg id="ordChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
-        <div class="tooltip" id="ordTip"></div>
+
+    <div class="kpis" id="ventasKpis">
+      <div class="card kpi"><div class="label">Ingresos (MXN)</div><div class="value">—</div></div>
+      <div class="card kpi"><div class="label">Pedidos confirmados</div><div class="value">—</div></div>
+      <div class="card kpi"><div class="label">Ticket promedio</div><div class="value">—</div></div>
+    </div>
+
+    <div id="ventasLoading" class="loading hidden">Consultando PrestaShop…</div>
+    <div id="ventasError" class="status err hidden"></div>
+
+    <div class="foot">
+      Datos en vivo desde la API de PrestaShop (pedidos confirmados en MXN). Si ves un error aquí, probablemente falten las variables de entorno <code>PS_BASE_URL</code> / <code>PS_API_KEY</code> en Vercel.
+    </div>
+  </section>
+
+  <!-- ===================== COSTOS Y GASTOS ===================== -->
+  <section id="tab-costos" class="hidden">
+
+    <div id="gate" class="gate">
+      <h2>Acceso a edición</h2>
+      <p style="color:var(--text-secondary);font-size:13px;">Esta sección permite editar los datos de Supabase. Ingresa la clave para continuar.</p>
+      <input type="password" id="gatePw" placeholder="Clave">
+      <button class="btn primary" id="gateBtn" style="width:100%;">Entrar</button>
+      <div id="gateErr" class="status err hidden">Clave incorrecta</div>
+    </div>
+
+    <div id="costosContent" class="hidden">
+      <div class="panel card">
+        <h2>Gastos generales <span class="muted">(mensual, por sucursal)</span></h2>
+        <div class="table-wrap">
+          <table id="gastosTable">
+            <thead>
+              <tr>
+                <th>Concepto</th><th>Total</th><th>CDMX</th><th>Puebla</th><th>Taller</th><th>Querétaro</th><th>%</th><th>Total ajustado</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="gastosBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel card">
+        <h2>Costos de productos <span class="muted">(900 productos)</span></h2>
+        <div class="toolbar">
+          <input type="search" id="prodSearch" placeholder="Buscar producto…">
+          <select id="prodCat"><option value="">Todas las categorías</option></select>
+        </div>
+        <div class="table-wrap">
+          <table id="prodTable">
+            <thead>
+              <tr>
+                <th>Categoría</th><th>Producto</th><th>Precio compra</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Precio volumen</th><th>Precio distribuidor</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="prodBody"></tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <button class="btn small" id="prodPrev">← Anterior</button>
+          <span id="prodPageInfo">Página 1</span>
+          <button class="btn small" id="prodNext">Siguiente →</button>
+        </div>
+      </div>
+
+      <div class="foot">
+        Los cambios se guardan directamente en Supabase (tablas <code>gastos_generales</code> y <code>costos_productos</code>) al presionar "Guardar" en cada fila. Esta clave es una barrera simple de la interfaz, no reemplaza autenticación real — cualquiera con la llave pública de Supabase puede escribir en estas tablas.
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="card panel">
-    <h2>Estados de los pedidos confirmados <span class="muted">(2.373 pedidos MXN)</span></h2>
-    <div style="position:relative">
-      <svg id="stateChart" viewBox="0 0 1040 150" style="width:100%;height:auto;display:block"></svg>
-      <div class="tooltip" id="stateTip"></div>
-    </div>
-  </div>
-
-  <div class="card panel">
-    <h2>Detalle mensual</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th data-k="month">Mes ▾</th>
-            <th data-k="revenue">Ingresos (MXN)</th>
-            <th data-k="orders">Pedidos</th>
-            <th data-k="avg">Ticket promedio</th>
-          </tr>
-        </thead>
-        <tbody id="tblBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="section-title">Stock por sucursal <span class="muted">(existencias actuales)</span></div>
-
-  <div class="card panel">
-    <h2>Unidades disponibles por sucursal</h2>
-    <div style="position:relative">
-      <svg id="stockChart" viewBox="0 0 1040 220" style="width:100%;height:auto;display:block"></svg>
-      <div class="tooltip" id="stockTip"></div>
-    </div>
-  </div>
-
-  <div class="card panel">
-    <h2>Detalle por sucursal</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th data-k="name">Sucursal</th>
-            <th data-k="units">Unidades disponibles</th>
-            <th data-k="skus">SKUs con stock registrado</th>
-            <th data-k="out">SKUs agotados</th>
-          </tr>
-        </thead>
-        <tbody id="stockTblBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="alert info">
-    <b>¿Por qué no hay "ventas por sucursal"?</b> Los pedidos de <b>Mi Fiestashop</b> se registran todos bajo una sola tienda en línea (no traen un campo de sucursal o almacén). Se revisaron también los movimientos de inventario (<code>stock_movements</code>) buscando ventas atribuidas a un almacén: existen movimientos de tipo "Pedido del cliente", pero ninguno pertenece a los 5 almacenes de Mi Fiestashop (Puebla, CDMX Rumania, CDMX Popocatepetl, Querétaro, Atizapan) — pertenecen a otros negocios de la plataforma. Por eso este panel solo puede mostrar <b>existencias actuales</b> por sucursal, no ventas históricas por sucursal. Si llevan las ventas de tienda física por otro sistema (POS, Excel, etc.), se podría cruzar esa información aparte.
-  </div>
-
-  <div class="foot">
-    Se excluyeron montos en COP a pedido del usuario — la actividad en COP existe solo en 2019–2020 y en 2026 es marginal frente a MXN. "Venta confirmada" = pedido con <code>valid=1</code> (pago aceptado/entregado/etc.). El stock por sucursal proviene de <code>/api/stocks</code> filtrado a los 5 almacenes (<code>id_warehouse</code>) de Mi Fiestashop; "Guadalajara" figura como sucursal en el store-locator pero no tiene almacén con existencias asociado en la API.
-  </div>
-
-</div>
 </div>
 
 <script>
-const RAW = {
-  monthly_sales: [
-    {"month":"2026-03","revenue":65871.7,"orders":176},
-    {"month":"2026-04","revenue":291775.43,"orders":627},
-    {"month":"2026-05","revenue":0,"orders":0},
-    {"month":"2026-06","revenue":43745.9,"orders":146},
-    {"month":"2026-07","revenue":245583.15,"orders":642},
-    {"month":"2026-08","revenue":273923.6,"orders":611},
-    {"month":"2026-09","revenue":73480.63,"orders":171}
-  ],
-  state_breakdown_valid: {"Pago aceptado":2302,"Entregado":63,"Enviado":5,"Pago Realizado":2,"Por Cobrar":1},
-  total_valid_orders_mxn: 2373,
-  total_revenue_mxn: 994380.41,
-  stock_by_branch: [
-    {"name":"CDMX Rumania","units":720999,"skus":2050,"out":268},
-    {"name":"Querétaro","units":548907,"skus":1373,"out":242},
-    {"name":"Puebla","units":546866,"skus":1262,"out":193},
-    {"name":"Atizapan (Edo. México)","units":383157,"skus":473,"out":35},
-    {"name":"CDMX Popocatepetl","units":5950,"skus":13,"out":2}
-  ]
-};
-
-const root = document.querySelector('.viz-root');
-const css = getComputedStyle(root);
-const cssVar = (name) => css.getPropertyValue(name).trim();
+const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
+const EDIT_PASSWORD = 'fiesta2026';
 
 function fmtMoney(v){
-  return '$' + v.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  return '$' + Number(v || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
-function fmtMonth(m){
-  const [y,mo] = m.split('-');
-  const names = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-  return names[parseInt(mo,10)-1] + ' ' + y.slice(2);
-}
-function fmtNum(v){ return v.toLocaleString('es-MX'); }
+function fmtNum(v){ return Number(v || 0).toLocaleString('es-MX'); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
 
-// ---------- KPIs ----------
-function renderKPIs(){
-  const rows = RAW.monthly_sales.filter(r=>r.orders>0).sort((a,b)=>a.month.localeCompare(b.month));
-  const avgTicket = RAW.total_revenue_mxn / RAW.total_valid_orders_mxn;
-
-  let growthTxt = '—', growthSub = '';
-  if (rows.length >= 2){
-    const last = rows[rows.length-1], prev = rows[rows.length-2];
-    const pct = prev.revenue > 0 ? ((last.revenue - prev.revenue)/prev.revenue*100) : 0;
-    growthTxt = (pct>=0?'+':'') + pct.toFixed(0) + '%';
-    growthSub = 'vs ' + fmtMonth(prev.month);
-  }
-
-  const cards = [
-    {label:'Ingresos MXN (histórico)', value: fmtMoney(RAW.total_revenue_mxn), sub: 'desde mar 26'},
-    {label:'Pedidos confirmados', value: fmtNum(RAW.total_valid_orders_mxn), sub: 'pagados / entregados'},
-    {label:'Ticket promedio', value: fmtMoney(avgTicket), sub: 'por pedido confirmado'},
-    {label:'Var. último mes', value: growthTxt, sub: growthSub, good: growthTxt.startsWith('+')},
-  ];
-  const el = document.getElementById('kpiRow');
-  el.innerHTML = cards.map(c => `
-    <div class="card kpi">
-      <div class="label">${c.label}</div>
-      <div class="value">${c.value}</div>
-      <div class="sub ${c.good?'good':''}">${c.sub}</div>
-    </div>
-  `).join('');
-}
-
-function renderAlert(){
-  document.getElementById('scopeAlert').innerHTML =
-    `<b>Dato relevante:</b> entre 2021 y febrero de 2026 se crearon miles de pedidos por mes en esta tienda (hasta 800), pero <b>ninguno llegó a un estado confirmado</b> (pago aceptado, entregado, etc.) — todos quedaron sin estado asignado. La venta en MXN arranca en marzo de 2026 y es la única moneda que se muestra aquí (a pedido tuyo se excluyó COP). Vale la pena revisar con el equipo si hubo un problema de sincronización de pagos/pasarela antes de marzo de 2026.`;
-}
-
-// ---------- Bar chart (generic, single series) ----------
-function drawBarChart(svgId, tipId, rows, key, color, fmtValue, labelKey, fmtLabel){
-  const svg = document.getElementById(svgId);
-  const tip = document.getElementById(tipId);
-  const W = 520, H = 260, padL = 54, padR = 12, padT = 12, padB = 34;
-  const innerW = W - padL - padR, innerH = H - padT - padB;
-
-  svg.innerHTML = '';
-  if (!rows.length){
-    svg.innerHTML = `<text x="${W/2}" y="${H/2}" text-anchor="middle" font-size="12" fill="${cssVar('--text-muted')}">Sin datos</text>`;
-    return;
-  }
-  const maxV = Math.max(...rows.map(r=>r[key])) * 1.15 || 1;
-  const n = rows.length;
-  const bw = Math.min(34, innerW/n*0.62);
-  const step = innerW/n;
-
-  const ns='http://www.w3.org/2000/svg';
-  const g = document.createElementNS(ns,'g');
-
-  for(let i=0;i<=3;i++){
-    const y = padT + innerH - (innerH*i/3);
-    const line = document.createElementNS(ns,'line');
-    line.setAttribute('x1',padL); line.setAttribute('x2',padL+innerW);
-    line.setAttribute('y1',y); line.setAttribute('y2',y);
-    line.setAttribute('class','gridline');
-    g.appendChild(line);
-    const val = maxV*i/3;
-    const t = document.createElementNS(ns,'text');
-    t.setAttribute('x',padL-8); t.setAttribute('y',y+3); t.setAttribute('text-anchor','end');
-    t.setAttribute('class','axis-label');
-    t.textContent = i===0 ? '0' : (val>=1000 ? (val/1000).toFixed(0)+'k' : val.toFixed(0));
-    g.appendChild(t);
-  }
-  const base = document.createElementNS(ns,'line');
-  base.setAttribute('x1',padL); base.setAttribute('x2',padL+innerW);
-  base.setAttribute('y1',padT+innerH); base.setAttribute('y2',padT+innerH);
-  base.setAttribute('class','baseline');
-  g.appendChild(base);
-
-  rows.forEach((r,i)=>{
-    const h = (r[key]/maxV)*innerH;
-    const x = padL + step*i + (step-bw)/2;
-    const y = padT + innerH - h;
-    const rect = document.createElementNS(ns,'rect');
-    rect.setAttribute('x',x); rect.setAttribute('y',y);
-    rect.setAttribute('width',bw); rect.setAttribute('height',Math.max(h,1));
-    rect.setAttribute('rx',3);
-    rect.setAttribute('fill',color);
-    rect.setAttribute('class','bar');
-    rect.addEventListener('mousemove', (e)=>{
-      const rectBox = svg.getBoundingClientRect();
-      tip.style.opacity = 1;
-      tip.innerHTML = `<div class="t-title">${fmtLabel(r[labelKey])}</div><div class="t-row">${fmtValue(r[key])}</div>`;
-      tip.style.left = Math.min(rectBox.width-140, (e.clientX-rectBox.left+10)) + 'px';
-      tip.style.top = (e.clientY-rectBox.top-40) + 'px';
-    });
-    rect.addEventListener('mouseleave', ()=>{ tip.style.opacity = 0; });
-    g.appendChild(rect);
-
-    const t = document.createElementNS(ns,'text');
-    t.setAttribute('x', x+bw/2); t.setAttribute('y', padT+innerH+16);
-    t.setAttribute('text-anchor','middle'); t.setAttribute('class','axis-label');
-    t.textContent = fmtLabel(r[labelKey]);
-    g.appendChild(t);
-  });
-
-  svg.appendChild(g);
-}
-
-// ---------- State breakdown chart ----------
-function drawStateChart(){
-  const svg = document.getElementById('stateChart');
-  const tip = document.getElementById('stateTip');
-  const data = Object.entries(RAW.state_breakdown_valid).sort((a,b)=>b[1]-a[1]);
-  const W=1040,H=150,padL=140,padR=50,padT=10,padB=10;
-  const innerW=W-padL-padR, innerH=H-padT-padB;
-  const max = data[0][1]*1.08;
-  const rowH = innerH/data.length;
-  const ns='http://www.w3.org/2000/svg';
-  svg.innerHTML='';
-  const g = document.createElementNS(ns,'g');
-  data.forEach(([name,val],i)=>{
-    const y = padT + rowH*i + rowH*0.22;
-    const h = rowH*0.56;
-    const w = (val/max)*innerW;
-    const label = document.createElementNS(ns,'text');
-    label.setAttribute('x', padL-10); label.setAttribute('y', y+h/2+4);
-    label.setAttribute('text-anchor','end'); label.setAttribute('font-size','12');
-    label.textContent = name;
-    g.appendChild(label);
-
-    const rect = document.createElementNS(ns,'rect');
-    rect.setAttribute('x',padL); rect.setAttribute('y',y);
-    rect.setAttribute('width',Math.max(w,2)); rect.setAttribute('height',h);
-    rect.setAttribute('rx',3); rect.setAttribute('fill', cssVar('--series-2'));
-    rect.setAttribute('class','bar');
-    rect.addEventListener('mousemove',(e)=>{
-      const box = svg.getBoundingClientRect();
-      tip.style.opacity=1;
-      tip.innerHTML = `<div class="t-title">${name}</div><div class="t-row">${fmtNum(val)} pedidos</div>`;
-      tip.style.left = Math.min(box.width-140,(e.clientX-box.left+10))+'px';
-      tip.style.top = (e.clientY-box.top-36)+'px';
-    });
-    rect.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
-    g.appendChild(rect);
-
-    const vt = document.createElementNS(ns,'text');
-    vt.setAttribute('x', padL+w+8); vt.setAttribute('y', y+h/2+4);
-    vt.setAttribute('font-size','11.5'); vt.setAttribute('fill', cssVar('--text-secondary'));
-    vt.textContent = fmtNum(val);
-    g.appendChild(vt);
-  });
-  svg.appendChild(g);
-}
-
-// ---------- Stock chart (horizontal bars, sorted desc) ----------
-function drawStockChart(){
-  const svg = document.getElementById('stockChart');
-  const tip = document.getElementById('stockTip');
-  const data = RAW.stock_by_branch.slice().sort((a,b)=>b.units-a.units);
-  const W=1040,H=220,padL=180,padR=60,padT=10,padB=10;
-  const innerW=W-padL-padR, innerH=H-padT-padB;
-  const max = data[0].units*1.08;
-  const rowH = innerH/data.length;
-  const ns='http://www.w3.org/2000/svg';
-  svg.innerHTML='';
-  const g = document.createElementNS(ns,'g');
-  data.forEach((d,i)=>{
-    const y = padT + rowH*i + rowH*0.22;
-    const h = rowH*0.56;
-    const w = (d.units/max)*innerW;
-    const label = document.createElementNS(ns,'text');
-    label.setAttribute('x', padL-10); label.setAttribute('y', y+h/2+4);
-    label.setAttribute('text-anchor','end'); label.setAttribute('font-size','12');
-    label.textContent = d.name;
-    g.appendChild(label);
-
-    const rect = document.createElementNS(ns,'rect');
-    rect.setAttribute('x',padL); rect.setAttribute('y',y);
-    rect.setAttribute('width',Math.max(w,2)); rect.setAttribute('height',h);
-    rect.setAttribute('rx',3); rect.setAttribute('fill', cssVar('--series-1'));
-    rect.setAttribute('class','bar');
-    rect.addEventListener('mousemove',(e)=>{
-      const box = svg.getBoundingClientRect();
-      tip.style.opacity=1;
-      tip.innerHTML = `<div class="t-title">${d.name}</div><div class="t-row">${fmtNum(d.units)} unidades</div><div class="t-row">${fmtNum(d.skus)} SKUs · ${fmtNum(d.out)} agotados</div>`;
-      tip.style.left = Math.min(box.width-160,(e.clientX-box.left+10))+'px';
-      tip.style.top = (e.clientY-box.top-46)+'px';
-    });
-    rect.addEventListener('mouseleave',()=>{tip.style.opacity=0;});
-    g.appendChild(rect);
-
-    const vt = document.createElementNS(ns,'text');
-    vt.setAttribute('x', padL+w+8); vt.setAttribute('y', y+h/2+4);
-    vt.setAttribute('font-size','11.5'); vt.setAttribute('fill', cssVar('--text-secondary'));
-    vt.textContent = fmtNum(d.units) + ' u.';
-    g.appendChild(vt);
-  });
-  svg.appendChild(g);
-}
-
-// ---------- Tables ----------
-let sortKey = 'month', sortDir = -1;
-function renderTable(){
-  const rows = RAW.monthly_sales.slice().sort((a,b)=>{
-    let av = a[sortKey], bv = b[sortKey];
-    if (sortKey==='avg'){ av = a.orders? a.revenue/a.orders : 0; bv = b.orders? b.revenue/b.orders : 0; }
-    if (typeof av === 'string') return av.localeCompare(bv)*sortDir;
-    return (av-bv)*sortDir;
-  });
-  const tbody = document.getElementById('tblBody');
-  tbody.innerHTML = rows.map(r=>`
-    <tr>
-      <td>${fmtMonth(r.month)}</td>
-      <td>${fmtMoney(r.revenue)}</td>
-      <td>${fmtNum(r.orders)}</td>
-      <td>${r.orders ? fmtMoney(r.revenue/r.orders) : '—'}</td>
-    </tr>
-  `).join('');
-}
-
-let stockSortKey = 'units', stockSortDir = -1;
-function renderStockTable(){
-  const rows = RAW.stock_by_branch.slice().sort((a,b)=>{
-    let av = stockSortKey==='name' ? a.name : a[stockSortKey];
-    let bv = stockSortKey==='name' ? b.name : b[stockSortKey];
-    if (typeof av === 'string') return av.localeCompare(bv)*stockSortDir;
-    return (av-bv)*stockSortDir;
-  });
-  const tbody = document.getElementById('stockTblBody');
-  tbody.innerHTML = rows.map(r=>{
-    const pct = r.skus ? (r.out/r.skus*100) : 0;
-    const pillClass = pct >= 20 ? 'bad' : pct >= 8 ? 'warn' : 'ok';
-    return `
-    <tr>
-      <td>${r.name}</td>
-      <td>${fmtNum(r.units)}</td>
-      <td>${fmtNum(r.skus)}</td>
-      <td><span class="pill ${pillClass}">${fmtNum(r.out)} (${pct.toFixed(0)}%)</span></td>
-    </tr>
-  `;}).join('');
-}
-
-document.querySelectorAll('thead th').forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const k = th.dataset.k;
-    const isStockTable = th.closest('table').contains(document.getElementById('stockTblBody'));
-    if (isStockTable){
-      if (stockSortKey===k) stockSortDir *= -1; else { stockSortKey=k; stockSortDir=-1; }
-      renderStockTable();
-    } else {
-      if (sortKey===k) sortDir *= -1; else { sortKey=k; sortDir=-1; }
-      renderTable();
-    }
+// ---------------- Tabs ----------------
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active', b===btn));
+    document.getElementById('tab-ventas').classList.toggle('hidden', btn.dataset.tab!=='ventas');
+    document.getElementById('tab-costos').classList.toggle('hidden', btn.dataset.tab!=='costos');
   });
 });
 
-// ---------- Render ----------
-renderKPIs();
-renderAlert();
-drawBarChart('revChart','revTip', RAW.monthly_sales, 'revenue', cssVar('--series-1'), fmtMoney, 'month', fmtMonth);
-drawBarChart('ordChart','ordTip', RAW.monthly_sales, 'orders', cssVar('--series-1'), v=>fmtNum(v)+' pedidos', 'month', fmtMonth);
-drawStateChart();
-drawStockChart();
-renderTable();
-renderStockTable();
+// ---------------- Ventas ----------------
+function periodRange(p){
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+  switch(p){
+    case 'dia': return [new Date(y,m,d), new Date(y,m,d)];
+    case 'mes': return [new Date(y,m,1), new Date(y,m+1,0)];
+    case 'anio': return [new Date(y,0,1), new Date(y,11,31)];
+    case 'dia1': { const t=new Date(y,m,d-1); return [t,t]; }
+    case 'mes1': return [new Date(y,m-1,1), new Date(y,m,0)];
+    case 'anio1': return [new Date(y-1,0,1), new Date(y-1,11,31)];
+  }
+}
+
+let currentPeriod = 'dia';
+
+async function loadVentas(from, to){
+  const kpis = document.getElementById('ventasKpis');
+  const loading = document.getElementById('ventasLoading');
+  const errBox = document.getElementById('ventasError');
+  loading.classList.remove('hidden');
+  errBox.classList.add('hidden');
+  try{
+    const r = await fetch(`/api/ventas?from=${from}&to=${to}`);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error desconocido');
+    const cards = kpis.querySelectorAll('.kpi .value');
+    cards[0].textContent = fmtMoney(data.revenue);
+    cards[1].textContent = fmtNum(data.orders);
+    cards[2].textContent = fmtMoney(data.avgTicket);
+  } catch(e){
+    errBox.textContent = 'No se pudo cargar: ' + e.message;
+    errBox.classList.remove('hidden');
+    kpis.querySelectorAll('.kpi .value').forEach(c=>c.textContent = '—');
+  } finally {
+    loading.classList.add('hidden');
+  }
+}
+
+function applyPeriod(p){
+  currentPeriod = p;
+  const [from, to] = periodRange(p);
+  document.getElementById('fromInput').value = toISO(from);
+  document.getElementById('toInput').value = toISO(to);
+  loadVentas(toISO(from), toISO(to));
+}
+
+document.getElementById('periodSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.toggle('active', b===btn));
+  applyPeriod(btn.dataset.p);
+});
+document.getElementById('applyRange').addEventListener('click', ()=>{
+  document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.remove('active'));
+  const from = document.getElementById('fromInput').value;
+  const to = document.getElementById('toInput').value;
+  if (from && to) loadVentas(from, to);
+});
+
+applyPeriod('dia');
+
+// ---------------- Costos y Gastos: gate ----------------
+document.getElementById('gateBtn').addEventListener('click', unlockGate);
+document.getElementById('gatePw').addEventListener('keydown', (e)=>{ if(e.key==='Enter') unlockGate(); });
+
+function unlockGate(){
+  const pw = document.getElementById('gatePw').value;
+  if (pw === EDIT_PASSWORD){
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('costosContent').classList.remove('hidden');
+    sessionStorage.setItem('mfs_unlocked','1');
+    loadGastos();
+    loadProductos();
+  } else {
+    document.getElementById('gateErr').classList.remove('hidden');
+  }
+}
+if (sessionStorage.getItem('mfs_unlocked') === '1'){
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('costosContent').classList.remove('hidden');
+  loadGastos();
+  loadProductos();
+}
+
+// ---------------- Supabase REST helpers ----------------
+async function sbGet(path){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+  });
+  if (!r.ok) throw new Error(`GET ${path} -> ${r.status}`);
+  return r.json();
+}
+async function sbPatch(table, id, body){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json', Prefer: 'return=minimal'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`PATCH ${table} -> ${r.status}`);
+}
+
+// ---------------- Gastos generales ----------------
+async function loadGastos(){
+  const tbody = document.getElementById('gastosBody');
+  tbody.innerHTML = '<tr><td colspan="9">Cargando…</td></tr>';
+  try{
+    const rows = await sbGet('gastos_generales?select=*&order=id.asc');
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(gastoRow(row)));
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="9" class="status err">${e.message}</td></tr>`;
+  }
+}
+
+function gastoRow(row){
+  const tr = document.createElement('tr');
+  const fields = ['concepto','total','cdmx','puebla','taller','queretaro','porcentaje','total_ajustado'];
+  fields.forEach(f=>{
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.value = row[f] ?? '';
+    inp.dataset.field = f;
+    td.appendChild(inp);
+    tr.appendChild(td);
+  });
+  const tdBtn = document.createElement('td');
+  const btn = document.createElement('button');
+  btn.className = 'btn small primary';
+  btn.textContent = 'Guardar';
+  const status = document.createElement('span');
+  status.className = 'status';
+  btn.addEventListener('click', async ()=>{
+    const body = {};
+    fields.forEach(f=>{
+      const inp = tr.querySelector(`input[data-field="${f}"]`);
+      let v = inp.value;
+      if (f !== 'concepto'){ v = v === '' ? null : Number(v); }
+      body[f] = v;
+    });
+    btn.disabled = true;
+    try{
+      await sbPatch('gastos_generales', row.id, body);
+      status.textContent = 'Guardado ✓'; status.className = 'status ok';
+    } catch(e){
+      status.textContent = 'Error: ' + e.message; status.className = 'status err';
+    } finally {
+      btn.disabled = false;
+      setTimeout(()=>{ status.textContent=''; }, 3000);
+    }
+  });
+  tdBtn.appendChild(btn); tdBtn.appendChild(status);
+  tr.appendChild(tdBtn);
+  return tr;
+}
+
+// ---------------- Costos de productos ----------------
+let prodPage = 0;
+const PROD_PAGE_SIZE = 40;
+let prodCategoriesLoaded = false;
+
+async function loadProdCategories(){
+  if (prodCategoriesLoaded) return;
+  try{
+    const rows = await sbGet('costos_productos?select=categoria&order=categoria.asc');
+    const cats = [...new Set(rows.map(r=>r.categoria).filter(Boolean))];
+    const sel = document.getElementById('prodCat');
+    cats.forEach(c=>{
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = c;
+      sel.appendChild(opt);
+    });
+    prodCategoriesLoaded = true;
+  } catch(e){ /* ignore */ }
+}
+
+async function loadProductos(){
+  await loadProdCategories();
+  const tbody = document.getElementById('prodBody');
+  tbody.innerHTML = '<tr><td colspan="8">Cargando…</td></tr>';
+  const search = document.getElementById('prodSearch').value.trim();
+  const cat = document.getElementById('prodCat').value;
+
+  let query = `costos_productos?select=id,categoria,nombre_generico,precio_compra_actualizado,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio&order=categoria.asc,nombre_generico.asc&limit=${PROD_PAGE_SIZE}&offset=${prodPage*PROD_PAGE_SIZE}`;
+  if (search) query += `&nombre_generico=ilike.*${encodeURIComponent(search)}*`;
+  if (cat) query += `&categoria=eq.${encodeURIComponent(cat)}`;
+
+  try{
+    const rows = await sbGet(query);
+    tbody.innerHTML = '';
+    if (rows.length === 0){
+      tbody.innerHTML = '<tr><td colspan="8">Sin resultados</td></tr>';
+    }
+    rows.forEach(row => tbody.appendChild(prodRow(row)));
+    document.getElementById('prodPageInfo').textContent = `Página ${prodPage+1}`;
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="8" class="status err">${e.message}</td></tr>`;
+  }
+}
+
+function prodRow(row){
+  const tr = document.createElement('tr');
+
+  const tdCat = document.createElement('td');
+  tdCat.textContent = row.categoria || '';
+  tr.appendChild(tdCat);
+
+  const tdName = document.createElement('td');
+  tdName.textContent = row.nombre_generico || '';
+  tdName.style.maxWidth = '220px';
+  tr.appendChild(tdName);
+
+  const fields = ['precio_compra_actualizado','menudeo_precio','mayoreo_precio_2','volumen_precio_3','distribuidor_precio'];
+  fields.forEach(f=>{
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.value = row[f] ?? '';
+    inp.dataset.field = f;
+    inp.style.maxWidth = '90px';
+    td.appendChild(inp);
+    tr.appendChild(td);
+  });
+
+  const tdBtn = document.createElement('td');
+  const btn = document.createElement('button');
+  btn.className = 'btn small primary';
+  btn.textContent = 'Guardar';
+  const status = document.createElement('span');
+  status.className = 'status';
+  btn.addEventListener('click', async ()=>{
+    const body = {};
+    fields.forEach(f=>{
+      const inp = tr.querySelector(`input[data-field="${f}"]`);
+      const v = inp.value;
+      body[f] = v === '' ? null : v;
+    });
+    btn.disabled = true;
+    try{
+      await sbPatch('costos_productos', row.id, body);
+      status.textContent = 'Guardado ✓'; status.className = 'status ok';
+    } catch(e){
+      status.textContent = 'Error: ' + e.message; status.className = 'status err';
+    } finally {
+      btn.disabled = false;
+      setTimeout(()=>{ status.textContent=''; }, 3000);
+    }
+  });
+  tdBtn.appendChild(btn); tdBtn.appendChild(status);
+  tr.appendChild(tdBtn);
+  return tr;
+}
+
+document.getElementById('prodSearch').addEventListener('input', debounce(()=>{ prodPage=0; loadProductos(); }, 350));
+document.getElementById('prodCat').addEventListener('change', ()=>{ prodPage=0; loadProductos(); });
+document.getElementById('prodPrev').addEventListener('click', ()=>{ if(prodPage>0){ prodPage--; loadProductos(); } });
+document.getElementById('prodNext').addEventListener('click', ()=>{ prodPage++; loadProductos(); });
+
+function debounce(fn, ms){
+  let t;
+  return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), ms); };
+}
 </script>
+</body>
+</html>
