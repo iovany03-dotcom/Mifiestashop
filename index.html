@@ -1351,10 +1351,6 @@
           <div class="value">548,907 u.</div>
           <div class="sub">1,373 SKUs activos</div>
         </div>
-        <div class="kpi-card">
-          <div class="label">📍 Atizapán</div>
-          <div class="value">383,157 u.</div>
-          <div class="sub">473 SKUs activos</div>
         </div>
       </div>
 
@@ -1372,8 +1368,6 @@
               <tr><td><b>CDMX Rumania</b></td><td>CDMX centro</td><td>720,999</td><td>2,050</td><td><span class="pill ok">Operativo</span></td></tr>
               <tr><td><b>Querétaro</b></td><td>Qro. El Marqués</td><td>548,907</td><td>1,373</td><td><span class="pill ok">Operativo</span></td></tr>
               <tr><td><b>Puebla</b></td><td>Puebla Capital</td><td>546,866</td><td>1,262</td><td><span class="pill ok">Operativo</span></td></tr>
-              <tr><td><b>Atizapán</b></td><td>Edo. México</td><td>383,157</td><td>473</td><td><span class="pill ok">Operativo</span></td></tr>
-              <tr><td><b>CDMX Popocatépetl</b></td><td>CDMX sur</td><td>5,950</td><td>13</td><td><span class="pill warn">Stock Bajo</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -1385,8 +1379,8 @@
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">📦 Total Unidades en Stock</div>
-          <div class="value" id="invKpiTotalUnits">2,205,879 u.</div>
-          <div class="sub">Distribuido en 5 almacenes activos</div>
+          <div class="value" id="invKpiTotalUnits">1,816,772 u.</div>
+          <div class="sub">Distribuido en 3 almacenes activos</div>
         </div>
         <div class="kpi-card">
           <div class="label">📍 Bodega Mayor Existencia</div>
@@ -1409,7 +1403,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
           <div>
             <h2 style="margin:0;">Matriz de Inventario por Almacén / Bodega</h2>
-            <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.9rem;">Existencias en tiempo real de cada producto desglosadas por cada una de nuestras 5 sucursales.</p>
+            <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.9rem;">Existencias en tiempo real de cada producto desglosadas por cada una de nuestras 3 sucursales.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn primary" onclick="syncInventoryData()">🔄 Sincronizar Stock API</button>
@@ -1426,8 +1420,6 @@
             <option value="puebla">Bodega Puebla Principal</option>
             <option value="rumania">CDMX Rumania</option>
             <option value="queretaro">Querétaro</option>
-            <option value="atizapan">Atizapán</option>
-            <option value="popocatepetl">CDMX Popocatépetl</option>
           </select>
 
           <select id="invStatusSelect" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); cursor:pointer;">
@@ -1448,8 +1440,6 @@
                 <th style="text-align:center;">Puebla</th>
                 <th style="text-align:center;">CDMX Rumania</th>
                 <th style="text-align:center;">Querétaro</th>
-                <th style="text-align:center;">Atizapán</th>
-                <th style="text-align:center;">Popocatépetl</th>
                 <th style="text-align:center;">Stock Total</th>
                 <th style="text-align:center;">Estado</th>
                 <th style="text-align:center;">Acciones</th>
@@ -2318,8 +2308,6 @@
             <option value="rumania">CDMX Rumania</option>
             <option value="puebla">Puebla</option>
             <option value="queretaro">Querétaro</option>
-            <option value="atizapan">Atizapán</option>
-            <option value="popocatepetl">CDMX Popocatépetl</option>
           </select>
         </div>
 
@@ -2329,8 +2317,6 @@
             <option value="puebla">Puebla</option>
             <option value="rumania" selected>CDMX Rumania</option>
             <option value="queretaro">Querétaro</option>
-            <option value="atizapan">Atizapán</option>
-            <option value="popocatepetl">CDMX Popocatépetl</option>
           </select>
         </div>
       </div>
@@ -3419,19 +3405,15 @@ function renderInventarioTable() {
 
   const filtered = dataset.filter((p, index) => {
     const pId = p.id || index + 1;
-    // Calculate stock breakdown per warehouse
+    // Calculate stock breakdown per warehouse (Puebla, Rumania, Querétaro)
     const stPuebla = (pId * 137 + 450) % 800 + 30;
     const stRumania = (pId * 211 + 620) % 1200 + 50;
     const stQueretaro = (pId * 97 + 310) % 650 + 20;
-    const stAtizapan = (pId * 183 + 120) % 400 + 10;
-    const stPopo = (pId * 43 + 15) % 90;
-    const stTotal = stPuebla + stRumania + stQueretaro + stAtizapan + stPopo;
+    const stTotal = stPuebla + stRumania + stQueretaro;
 
     p._stPuebla = stPuebla;
     p._stRumania = stRumania;
     p._stQueretaro = stQueretaro;
-    p._stAtizapan = stAtizapan;
-    p._stPopo = stPopo;
     p._stTotal = stTotal;
 
     totalUnitsCount += stTotal;
@@ -3444,8 +3426,6 @@ function renderInventarioTable() {
     if (wh === 'puebla') matchWh = stPuebla > 0;
     else if (wh === 'rumania') matchWh = stRumania > 0;
     else if (wh === 'queretaro') matchWh = stQueretaro > 0;
-    else if (wh === 'atizapan') matchWh = stAtizapan > 0;
-    else if (wh === 'popocatepetl') matchWh = stPopo > 0;
 
     let matchSt = true;
     if (stFilter === 'ok') matchSt = stTotal >= 150;
@@ -3461,7 +3441,7 @@ function renderInventarioTable() {
   if (document.getElementById('invKpiTotalValue')) document.getElementById('invKpiTotalValue').textContent = fmtMoney(totalValueSum);
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--text-muted); padding:20px;">No hay existencias que coincidan con los filtros.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-muted); padding:20px;">No hay existencias que coincidan con los filtros.</td></tr>';
     return;
   }
 
@@ -3480,8 +3460,6 @@ function renderInventarioTable() {
         <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stPuebla.toLocaleString()}</span> u.</td>
         <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stRumania.toLocaleString()}</span> u.</td>
         <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stQueretaro.toLocaleString()}</span> u.</td>
-        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stAtizapan.toLocaleString()}</span> u.</td>
-        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stPopo.toLocaleString()}</span> u.</td>
         <td style="text-align:center; font-weight:700; color:var(--series-2);">${p._stTotal.toLocaleString()} u.</td>
         <td style="text-align:center;">${statusPill}</td>
         <td style="text-align:center;">
@@ -3541,8 +3519,6 @@ function updateTraspasoMaxStock() {
   if (origen === 'puebla') currentStock = product._stPuebla !== undefined ? product._stPuebla : 500;
   else if (origen === 'rumania') currentStock = product._stRumania !== undefined ? product._stRumania : 700;
   else if (origen === 'queretaro') currentStock = product._stQueretaro !== undefined ? product._stQueretaro : 300;
-  else if (origen === 'atizapan') currentStock = product._stAtizapan !== undefined ? product._stAtizapan : 200;
-  else if (origen === 'popocatepetl') currentStock = product._stPopo !== undefined ? product._stPopo : 50;
 
   const infoEl = document.getElementById('traspasoStockAvailableInfo');
   if (infoEl) infoEl.innerHTML = `Disponible en origen: <b style="color:var(--text-primary);">${currentStock.toLocaleString()} u.</b>`;
@@ -3594,8 +3570,6 @@ function confirmStockTransfer() {
     if(wh === 'puebla') return '_stPuebla';
     if(wh === 'rumania') return '_stRumania';
     if(wh === 'queretaro') return '_stQueretaro';
-    if(wh === 'atizapan') return '_stAtizapan';
-    if(wh === 'popocatepetl') return '_stPopo';
   };
 
   const origKey = getProp(origen);
@@ -3609,7 +3583,7 @@ function confirmStockTransfer() {
 
   product[origKey] = (product[origKey] || 0) - qty;
   product[destKey] = (product[destKey] || 0) + qty;
-  product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0) + (product._stAtizapan || 0) + (product._stPopo || 0);
+  product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0);
 
   const folio = 'TR-' + Math.floor(1000 + Math.random() * 9000);
   const origenLabel = document.getElementById('traspasoOrigen').options[document.getElementById('traspasoOrigen').selectedIndex].text;
@@ -3644,7 +3618,7 @@ function openStockAdjustModal(pId) {
     const parsed = parseInt(newStock);
     if (!isNaN(parsed) && parsed >= 0) {
       product._stRumania = parsed;
-      product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0) + (product._stAtizapan || 0) + (product._stPopo || 0);
+      product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0);
       renderInventarioTable();
       alert(`✅ Existencia actualizada a ${parsed} u. para CDMX Rumania.`);
     }
