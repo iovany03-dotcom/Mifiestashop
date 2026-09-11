@@ -632,7 +632,46 @@
       </div>
     </div>
 
-    <div class="menu-group-title">SISTEMA</div>
+    <div class="menu-group-title">CONFIGURACIÓN & AVANZADO</div>
+
+    <!-- PARÁMETROS DE LA TIENDA -->
+    <div class="menu-item" id="menu-param-tienda">
+      <div class="menu-link" onclick="toggleSubmenu('menu-param-tienda')">
+        <div class="menu-left">
+          <span class="menu-icon">⚙️</span>
+          <span>Parámetros de la tienda</span>
+        </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="submenu">
+        <a class="submenu-link" data-view="param-tienda">General</a>
+        <a class="submenu-link" data-view="param-tienda">Configuración de Pedidos</a>
+        <a class="submenu-link" data-view="param-tienda">Configuración de Productos</a>
+        <a class="submenu-link" data-view="param-tienda">Ajustes sobre clientes</a>
+        <a class="submenu-link" data-view="param-tienda">Contacto</a>
+        <a class="submenu-link" data-view="param-tienda">Tráfico & SEO</a>
+        <a class="submenu-link" data-view="param-tienda">Buscar</a>
+      </div>
+    </div>
+
+    <!-- PARÁMETROS AVANZADOS -->
+    <div class="menu-item" id="menu-param-avanzados">
+      <div class="menu-link" onclick="toggleSubmenu('menu-param-avanzados')">
+        <div class="menu-left">
+          <span class="menu-icon">🛠️</span>
+          <span>Parámetros Avanzados</span>
+        </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="submenu">
+        <a class="submenu-link" data-view="param-avanzados">Rendimiento</a>
+        <a class="submenu-link" data-view="param-avanzados">Correo</a>
+        <a class="submenu-link" data-view="param-avanzados">Importar</a>
+        <a class="submenu-link" data-view="param-avanzados">Equipo</a>
+        <a class="submenu-link" data-view="param-avanzados">Registros</a>
+        <a class="submenu-link" data-view="param-avanzados">Webservice</a>
+      </div>
+    </div>
 
     <div class="menu-item" data-view="costos">
       <div class="menu-link">
@@ -646,8 +685,8 @@
     <div class="menu-item" data-view="configuracion">
       <div class="menu-link">
         <div class="menu-left">
-          <span class="menu-icon">⚙️</span>
-          <span>Configuración</span>
+          <span class="menu-icon">🔧</span>
+          <span>Ajustes del Sistema</span>
         </div>
       </div>
     </div>
@@ -937,6 +976,79 @@
       </div>
     </section>
 
+    <!-- ================= VIEW 9: PARÁMETROS DE LA TIENDA ================= -->
+    <section id="view-param-tienda" class="view-panel hidden">
+      <div class="card">
+        <h2>⚙️ Parámetros de la Tienda</h2>
+        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">
+          Ajustes generales, reglas de pedidos, catálogo de productos, cuentas de cliente, contacto y SEO.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+          <div class="card" style="margin:0;">
+            <h3 style="margin-top:0; font-size:14px; color:var(--series-2);">General & Contacto</h3>
+            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+              <label>Modo Demo / Tienda: <select style="padding:4px; border-radius:4px;"><option>Activo</option><option>Mantenimiento</option></select></label>
+              <label>Correo de Contacto: <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:4px;"></label>
+              <label>Teléfono Oficial: <input type="text" value="+52 55 1234 5678" style="width:100%; padding:4px;"></label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0;">
+            <h3 style="margin-top:0; font-size:14px; color:var(--series-2);">Configuración de Pedidos & Productos</h3>
+            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+              <label><input type="checkbox" checked> Permitir pedidos de productos sin stock</label>
+              <label><input type="checkbox" checked> Mostrar precios con IVA incluido</label>
+              <label><input type="checkbox" checked> Habilitar compras como invitado (sin registro)</label>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0;">
+            <h3 style="margin-top:0; font-size:14px; color:var(--series-2);">Tráfico & SEO</h3>
+            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+              <label>Título Meta General: <input type="text" value="Mi Fiestashop — Artículos de Fiesta y Decoración" style="width:100%; padding:4px;"></label>
+              <label>Indexación en buscadores: <span class="pill ok">Activado (Google Ready)</span></label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 10: PARÁMETROS AVANZADOS ================= -->
+    <section id="view-param-avanzados" class="view-panel hidden">
+      <div class="card">
+        <h2>🛠️ Parámetros Avanzados</h2>
+        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:20px;">
+          Rendimiento del sistema, motor de correo, herramientas de importación CSV/JSON, registros del sistema y Webservice.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+          <div class="card" style="margin:0;">
+            <h3 style="margin-top:0; font-size:14px; color:var(--series-1);">🔌 API Webservice PrestaShop</h3>
+            <div style="font-size:12.5px; color:var(--text-secondary);">
+              <div>Estado de conexión: <span class="pill ok">Activo</span></div>
+              <div style="margin-top:6px;">URL Base: <code>https://www.mifiestashop.com</code></div>
+              <div style="margin-top:6px;">Endpoint activo: <code>/api/orders</code></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0;">
+            <h3 style="margin-top:0; font-size:14px; color:var(--series-1);">⚡ Rendimiento & Caché</h3>
+            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+              <label><input type="checkbox" checked> Caché Smarty / HTML activo</label>
+              <button class="btn small" onclick="alert('Caché limpiado con éxito')">🧹 Limpiar Caché del Sistema</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0;">
+            <h3 style="margin-top:0; font-size:14px; color:var(--series-1);">📥 Importar & Registros</h3>
+            <div style="font-size:12.5px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
+              <button class="btn small" onclick="alert('Iniciando importador de datos...')">📁 Importar Catálogo CSV/XML</button>
+              <div>Registros del sistema: <span class="pill ok">0 Errores detectados</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -1073,7 +1185,9 @@ function switchView(viewName) {
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
     costos: ['Costos & Supabase', 'Base de Datos de Gastos'],
-    configuracion: ['Configuración', 'Datos de Tienda y Ticket']
+    configuracion: ['Ajustes del Sistema', 'Datos de Tienda y Ticket'],
+    'param-tienda': ['Parámetros de la Tienda', 'General, Pedidos, Productos, SEO'],
+    'param-avanzados': ['Parámetros Avanzados', 'Rendimiento, Importar, Webservice']
   };
   if (titles[viewName]) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
