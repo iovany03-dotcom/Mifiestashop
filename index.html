@@ -611,7 +611,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
-        <a class="submenu-link" data-view="productos">Categorías</a>
+        <a class="submenu-link" data-view="categorias">Categorías</a>
         <a class="submenu-link" data-view="productos">Inventario</a>
       </div>
     </div>
@@ -627,8 +627,8 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
-        <a class="submenu-link" data-view="personal">Clientes</a>
-        <a class="submenu-link" data-view="personal">Proveedores</a>
+        <a class="submenu-link" data-view="clientes">Clientes</a>
+        <a class="submenu-link" data-view="proveedores">Proveedores</a>
         <a class="submenu-link" data-view="personal">Direcciones</a>
       </div>
     </div>
@@ -1117,24 +1117,135 @@
       </div>
     </section>
 
+    <!-- ================= VIEW CATEGORÍAS ================= -->
+    <section id="view-categorias" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <h2>Categorías de Productos (PrestaShop API)</h2>
+          <button class="btn primary" onclick="loadCategoriesFromAPI()">🔄 Recargar Categorías API</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Nombre de Categoría</th><th>Estado</th><th>Origen</th></tr>
+            </thead>
+            <tbody id="categoriesTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW CLIENTES ================= -->
+    <section id="view-clientes" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <h2>Directorio de Clientes (PrestaShop API)</h2>
+          <button class="btn primary" onclick="loadCustomersFromAPI()">🔄 Recargar Clientes API</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
+            </thead>
+            <tbody id="customersTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW PROVEEDORES ================= -->
+    <section id="view-proveedores" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <h2>Directorio de Proveedores (PrestaShop API)</h2>
+          <button class="btn primary" onclick="loadSuppliersFromAPI()">🔄 Recargar Proveedores API</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Nombre del Proveedor</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th>Estado</th></tr>
+            </thead>
+            <tbody id="suppliersTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= VIEW 8: CONFIGURACIÓN ================= -->
     <section id="view-configuracion" class="view-panel hidden">
-      <div class="card" style="max-width: 600px;">
-        <h2>Configuración de la Tienda y Ticket POS</h2>
-        <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
-          <div>
-            <label style="font-size:12px; color:var(--text-secondary);">Nombre Comercial:</label>
-            <input type="text" value="Mi Fiestashop México" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div class="card">
+          <h2>⚙️ Configuración del Ticket de Venta POS</h2>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin-bottom:16px;">
+            Personaliza la apariencia y los datos impresos en los comprobantes y tickets de caja.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Encabezado / Nombre de la Tienda:</label>
+              <input type="text" id="cfgTicketName" value="MI FIESTASHOP" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">RFC Fiscal:</label>
+              <input type="text" id="cfgTicketRfc" value="MFS260101XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Dirección de Sucursal Emisora:</label>
+              <input type="text" id="cfgTicketAddress" value="Sucursal Puebla Principal — Av. Benito Juárez #402" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Teléfono / WhatsApp de Atención:</label>
+              <input type="text" id="cfgTicketPhone" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Pie de Ticket / Mensaje Final:</label>
+              <input type="text" id="cfgTicketFooter" value="¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Ancho de Impresora Térmica:</label>
+              <select id="cfgTicketWidth" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" onchange="updateTicketConfigPreview()">
+                <option value="80mm">80mm (Impresora de Caja Estándar)</option>
+                <option value="58mm">58mm (Impresora Térmica Portátil Bluetooth)</option>
+              </select>
+            </div>
+            <button class="btn primary" style="width:fit-content; margin-top:10px;" onclick="saveTicketConfig()">💾 Guardar Configuración de Ticket</button>
           </div>
-          <div>
-            <label style="font-size:12px; color:var(--text-secondary);">RFC Fiscal:</label>
-            <input type="text" value="MFS260101XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
+        </div>
+
+        <!-- TICKET LIVE PREVIEW -->
+        <div class="card" style="text-align:center;">
+          <h3>Vista Previa del Ticket Impreso</h3>
+          <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
+            <div class="t-center" style="font-weight:bold; font-size:14px;" id="prevTName">MI FIESTASHOP</div>
+            <div class="t-center" id="prevTRfc">RFC: MFS260101XXX</div>
+            <div class="t-center" id="prevTAddr">Sucursal Puebla Principal</div>
+            <div class="t-center" id="prevTPhone">Tel: +52 222 123 4567</div>
+            <div class="ticket-divider"></div>
+            <div>Ticket #: #POS-EXAMPLE</div>
+            <div>Fecha: 2026-09-11 15:15</div>
+            <div>Cliente: Cliente Mostrador</div>
+            <div class="ticket-divider"></div>
+            <div style="display:flex; justify-content:space-between;">
+              <span>1x Paquete Globos #9</span>
+              <span>$85.00</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span>2x Velas Chispero</span>
+              <span>$56.00</span>
+            </div>
+            <div class="ticket-divider"></div>
+            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+              <span>TOTAL:</span>
+              <span>$163.56</span>
+            </div>
+            <div class="ticket-divider"></div>
+            <div class="t-center" id="prevTFoot">¡Gracias por tu compra en Mi Fiestashop!</div>
           </div>
-          <div>
-            <label style="font-size:12px; color:var(--text-secondary);">Pie de Ticket POS:</label>
-            <input type="text" value="¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);">
-          </div>
-          <button class="btn primary" style="width:fit-content; margin-top:10px;">Guardar Configuración</button>
         </div>
       </div>
     </section>
@@ -1273,9 +1384,10 @@
     </div>
 
     <div class="ticket-paper" id="printableTicket">
-      <div class="t-center" style="font-weight:bold; font-size:14px;">MI FIESTASHOP</div>
-      <div class="t-center">RFC: MFS260101XXX</div>
-      <div class="t-center">Sucursal Puebla Principal</div>
+      <div class="t-center" style="font-weight:bold; font-size:14px;" id="tHeaderName">MI FIESTASHOP</div>
+      <div class="t-center" id="tHeaderRfc">RFC: MFS260101XXX</div>
+      <div class="t-center" id="tHeaderAddress">Sucursal Puebla Principal</div>
+      <div class="t-center" id="tHeaderPhone">Tel: +52 222 123 4567</div>
       <div class="ticket-divider"></div>
       <div>Ticket #: <span id="tFolio">#POS-10493</span></div>
       <div>Fecha: <span id="tFecha">2026-09-11 14:22</span></div>
@@ -1298,8 +1410,7 @@
         <span id="tChange">$0.00</span>
       </div>
       <div class="ticket-divider"></div>
-      <div class="t-center">¡Gracias por tu compra!</div>
-      <div class="t-center">www.mifiestashop.com</div>
+      <div class="t-center" id="tFooterMsg">¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com</div>
     </div>
 
     <div style="display:flex; gap:10px; justify-content:center;">
@@ -1639,13 +1750,17 @@ function switchView(viewName) {
   // Update header text
   const titles = {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
-    dashboard: ['Tablero General', 'Resumen de Ventas PrestaShop'],
-    pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
+    dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas PrestaShop'],
+    pedidos: ['Pedidos & Ventas', 'Historial de Transacciones API'],
+    productos: ['Catálogo de Productos', 'Sincronizado con API'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario'],
+    categorias: ['Categorías', 'Sincronizado con API PrestaShop'],
+    clientes: ['Directorio de Clientes', 'PrestaShop API'],
+    proveedores: ['Proveedores', 'Directorio de Insumos API'],
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
     costos: ['Costos & Gastos', 'Gestión Supabase DB'],
-    configuracion: ['Ajustes del Sistema', 'Datos de Tienda y Ticket'],
+    configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
     'param-tienda': ['Parámetros de la Tienda', 'General, Pedidos, Productos, SEO'],
     'param-avanzados': ['Parámetros Avanzados', 'Rendimiento, Importar, Webservice']
   };
@@ -1653,6 +1768,12 @@ function switchView(viewName) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
     document.getElementById('currentViewSub').textContent = '— ' + titles[viewName][1];
   }
+
+  // Auto-fetch API data when opening specific views
+  if (viewName === 'categorias') loadCategoriesFromAPI();
+  if (viewName === 'clientes') loadCustomersFromAPI();
+  if (viewName === 'pedidos') loadOrdersFromAPI();
+  if (viewName === 'proveedores') loadSuppliersFromAPI();
 }
 
 document.querySelectorAll('[data-view]').forEach(el => {
@@ -2304,6 +2425,177 @@ if(document.getElementById('toggleThemeBtn')){
   });
 }
 
+// API LOADERS FOR PRESTASHOP ENDPOINTS
+async function loadCategoriesFromAPI(){
+  const tbody = document.getElementById('categoriesTableBody');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:16px;">Cargando categorías de PrestaShop API…</td></tr>';
+  try {
+    const r = await fetch('/api/categorias');
+    const data = await r.json();
+    const list = data.categories || [];
+    if(list.length === 0){
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:16px;">Sin categorías registradas</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(c => `
+      <tr>
+        <td><b>#${c.id}</b></td>
+        <td>${c.name}</td>
+        <td><span class="pill ok">Activo</span></td>
+        <td>PrestaShop API</td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4" class="status err">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadCustomersFromAPI(){
+  const tbody = document.getElementById('customersTableBody');
+  const select = document.getElementById('posCustomerSelect');
+  if(tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px;">Cargando clientes de PrestaShop API…</td></tr>';
+  try {
+    const r = await fetch('/api/clientes');
+    const data = await r.json();
+    const list = data.customers || [];
+    if(tbody) {
+      tbody.innerHTML = list.map(c => `
+        <tr>
+          <td><b>#${c.id}</b></td>
+          <td>${c.name}</td>
+          <td>${c.email}</td>
+          <td>${c.rfc}</td>
+          <td>${c.date}</td>
+          <td><span class="pill ok">Activo</span></td>
+        </tr>
+      `).join('');
+    }
+    if(select && list.length > 0) {
+      select.innerHTML = list.map(c => `<option value="${c.id}">${c.name} — ${c.email}</option>`).join('');
+    }
+  } catch(e) {
+    if(tbody) tbody.innerHTML = `<tr><td colspan="6" class="status err">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadOrdersFromAPI(){
+  const tbody = document.getElementById('ordersTableBody');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:16px;">Cargando pedidos en vivo de PrestaShop API…</td></tr>';
+  try {
+    const r = await fetch('/api/pedidos');
+    const data = await r.json();
+    const list = data.orders || [];
+    if(list.length === 0){
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:16px;">Sin pedidos recientes</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(o => `
+      <tr>
+        <td><b>${o.id}</b></td>
+        <td>${o.date}</td>
+        <td>${o.customer}</td>
+        <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${o.channel}</span></td>
+        <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
+        <td><span class="pill ok">${o.status}</span></td>
+        <td><button class="btn small" onclick="reprintTicket('${o.id}', ${o.total})">🖨️ Ticket</button></td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="7" class="status err">Error: ${e.message}</td></tr>`;
+  }
+}
+
+async function loadSuppliersFromAPI(){
+  const tbody = document.getElementById('suppliersTableBody');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px;">Cargando proveedores de PrestaShop API…</td></tr>';
+  try {
+    const r = await fetch('/api/proveedores');
+    const data = await r.json();
+    const list = data.suppliers || [];
+    if(list.length === 0){
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px;">Sin proveedores registrados</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(s => `
+      <tr>
+        <td><b>#${s.id}</b></td>
+        <td>${s.name}</td>
+        <td>${s.contact}</td>
+        <td>${s.phone}</td>
+        <td>${s.email}</td>
+        <td><span class="pill ok">${s.status}</span></td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" class="status err">Error: ${e.message}</td></tr>`;
+  }
+}
+
+// TICKET CONFIGURATION & MANAGEMENT
+let ticketConfig = {
+  name: 'MI FIESTASHOP',
+  rfc: 'MFS260101XXX',
+  address: 'Sucursal Puebla Principal — Av. Benito Juárez #402',
+  phone: '+52 222 123 4567',
+  footer: '¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com',
+  width: '80mm'
+};
+
+function loadSavedTicketConfig(){
+  try {
+    const saved = localStorage.getItem('mfs_ticket_config');
+    if(saved) ticketConfig = JSON.parse(saved);
+  } catch(e){}
+  
+  if(document.getElementById('cfgTicketName')) document.getElementById('cfgTicketName').value = ticketConfig.name;
+  if(document.getElementById('cfgTicketRfc')) document.getElementById('cfgTicketRfc').value = ticketConfig.rfc;
+  if(document.getElementById('cfgTicketAddress')) document.getElementById('cfgTicketAddress').value = ticketConfig.address;
+  if(document.getElementById('cfgTicketPhone')) document.getElementById('cfgTicketPhone').value = ticketConfig.phone;
+  if(document.getElementById('cfgTicketFooter')) document.getElementById('cfgTicketFooter').value = ticketConfig.footer;
+  if(document.getElementById('cfgTicketWidth')) document.getElementById('cfgTicketWidth').value = ticketConfig.width;
+
+  applyTicketConfigToDOM();
+}
+
+function updateTicketConfigPreview(){
+  ticketConfig.name = document.getElementById('cfgTicketName').value || 'MI FIESTASHOP';
+  ticketConfig.rfc = document.getElementById('cfgTicketRfc').value || 'MFS260101XXX';
+  ticketConfig.address = document.getElementById('cfgTicketAddress').value || '';
+  ticketConfig.phone = document.getElementById('cfgTicketPhone').value || '';
+  ticketConfig.footer = document.getElementById('cfgTicketFooter').value || '';
+  ticketConfig.width = document.getElementById('cfgTicketWidth').value || '80mm';
+
+  if(document.getElementById('prevTName')) document.getElementById('prevTName').textContent = ticketConfig.name;
+  if(document.getElementById('prevTRfc')) document.getElementById('prevTRfc').textContent = 'RFC: ' + ticketConfig.rfc;
+  if(document.getElementById('prevTAddr')) document.getElementById('prevTAddr').textContent = ticketConfig.address;
+  if(document.getElementById('prevTPhone')) document.getElementById('prevTPhone').textContent = 'Tel: ' + ticketConfig.phone;
+  if(document.getElementById('prevTFoot')) document.getElementById('prevTFoot').textContent = ticketConfig.footer;
+
+  applyTicketConfigToDOM();
+}
+
+function saveTicketConfig(){
+  updateTicketConfigPreview();
+  localStorage.setItem('mfs_ticket_config', JSON.stringify(ticketConfig));
+  alert('¡Configuración del Ticket guardada con éxito! ✓');
+}
+
+function applyTicketConfigToDOM(){
+  if(document.getElementById('tHeaderName')) document.getElementById('tHeaderName').textContent = ticketConfig.name;
+  if(document.getElementById('tHeaderRfc')) document.getElementById('tHeaderRfc').textContent = 'RFC: ' + ticketConfig.rfc;
+  if(document.getElementById('tHeaderAddress')) document.getElementById('tHeaderAddress').textContent = ticketConfig.address;
+  if(document.getElementById('tHeaderPhone')) document.getElementById('tHeaderPhone').textContent = 'Tel: ' + ticketConfig.phone;
+  if(document.getElementById('tFooterMsg')) document.getElementById('tFooterMsg').textContent = ticketConfig.footer;
+
+  const printable = document.getElementById('printableTicket');
+  if(printable) {
+    printable.style.width = ticketConfig.width === '58mm' ? '240px' : '320px';
+  }
+}
+
 // INITIALIZE ALL
 applyPeriod('dia');
 renderHistKPIs();
@@ -2314,6 +2606,11 @@ drawStockChart();
 renderMonthlyTable();
 renderStockTable();
 syncProductsFromPrestaShopAPI();
+loadCategoriesFromAPI();
+loadCustomersFromAPI();
+loadOrdersFromAPI();
+loadSuppliersFromAPI();
+loadSavedTicketConfig();
 </script>
 </body>
 </html>
