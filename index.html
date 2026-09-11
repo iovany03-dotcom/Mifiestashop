@@ -205,20 +205,18 @@
 
     <div id="costosContent" class="hidden">
       <div class="panel card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
           <h2 style="margin:0;">Gastos generales <span class="muted">(mensual, por sucursal)</span></h2>
-          <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn" id="gastosAddSucursal">+ Sucursal</button>
+            <button class="btn" id="gastosAddConcepto">+ Concepto</button>
             <button class="btn primary" id="gastosSaveAll">Guardar cambios</button>
             <span id="gastosSaveStatus" class="status"></span>
           </div>
         </div>
         <div class="table-wrap">
           <table id="gastosTable">
-            <thead>
-              <tr>
-                <th>Concepto</th><th>Total</th><th>CDMX</th><th>Puebla</th><th>Querétaro</th><th>%</th><th>Total ajustado</th>
-              </tr>
-            </thead>
+            <thead id="gastosHead"></thead>
             <tbody id="gastosBody"></tbody>
           </table>
         </div>
@@ -392,44 +390,124 @@ async function sbPatch(table, id, body){
   });
   if (!r.ok) throw new Error(`PATCH ${table} -> ${r.status}`);
 }
+async function sbInsert(table, body){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json', Prefer: 'return=representation'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(`POST ${table} -> ${r.status}`);
+  const rows = await r.json();
+  return rows[0];
+}
 
 // ---------------- Gastos generales ----------------
+// Sucursales son dinámicas: viven en la columna jsonb `sucursales` de cada fila,
+// no como columnas fijas. BRANCHES guarda el orden/etiquetas conocidas hasta ahora.
+let BRANCHES = [
+  { key: 'cdmx', label: 'CDMX' },
+  { key: 'puebla', label: 'Puebla' },
+  { key: 'queretaro', label: 'Querétaro' },
+];
+
+function slugify(s){
+  return s.trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+
+function renderGastosHeader(){
+  const thead = document.getElementById('gastosHead');
+  thead.innerHTML = '';
+  const tr = document.createElement('tr');
+  const heads = ['Concepto', 'Total', ...BRANCHES.map(b=>b.label), '%', 'Total ajustado'];
+  heads.forEach(h=>{
+    const th = document.createElement('th');
+    th.textContent = h;
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);
+}
+
 async function loadGastos(){
+  renderGastosHeader();
   const tbody = document.getElementById('gastosBody');
-  tbody.innerHTML = '<tr><td colspan="7">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="100">Cargando…</td></tr>';
   try{
     const rows = await sbGet('gastos_generales?select=*&order=id.asc');
+    // Descubre sucursales que ya existan en los datos pero no estén en BRANCHES aún.
+    const known = new Set(BRANCHES.map(b=>b.key));
+    rows.forEach(row=>{
+      Object.keys(row.sucursales || {}).forEach(k=>{
+        if (!known.has(k)){ known.add(k); BRANCHES.push({ key: k, label: k }); }
+      });
+    });
+    renderGastosHeader();
     tbody.innerHTML = '';
     rows.forEach(row => tbody.appendChild(gastoRow(row)));
   } catch(e){
-    tbody.innerHTML = `<tr><td colspan="7" class="status err">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="100" class="status err">${e.message}</td></tr>`;
   }
 }
 
 document.getElementById('gastosSaveAll').addEventListener('click', saveAllGastos);
+document.getElementById('gastosAddConcepto').addEventListener('click', addConceptoRow);
+document.getElementById('gastosAddSucursal').addEventListener('click', addSucursalColumn);
+
+function addSucursalColumn(){
+  const name = prompt('Nombre de la nueva sucursal (ej. Atizapan):');
+  if (!name || !name.trim()) return;
+  const key = slugify(name);
+  if (!key){ alert('Nombre inválido'); return; }
+  if (BRANCHES.some(b=>b.key === key)){ alert('Esa sucursal ya existe'); return; }
+  BRANCHES.push({ key, label: name.trim() });
+  renderGastosHeader();
+  // Agrega la celda nueva a cada fila ya renderizada, antes de las columnas % y Total ajustado.
+  document.querySelectorAll('#gastosBody tr').forEach(tr=>{
+    const td = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.dataset.branch = key;
+    inp.addEventListener('input', ()=> recomputeTotal(tr));
+    td.appendChild(inp);
+    const tailCells = tr.querySelectorAll('td');
+    const pctCell = tailCells[tailCells.length - 2]; // % está antes de Total ajustado
+    tr.insertBefore(td, pctCell);
+  });
+}
+
+function addConceptoRow(){
+  const tr = gastoRow({ concepto: '', sucursales: {}, porcentaje: null, total_ajustado: null });
+  tr.dataset.isNew = '1';
+  delete tr.dataset.id;
+  document.getElementById('gastosBody').appendChild(tr);
+  tr.querySelector('input[data-field="concepto"]').focus();
+}
 
 async function saveAllGastos(){
   const btn = document.getElementById('gastosSaveAll');
   const status = document.getElementById('gastosSaveStatus');
-  const rows = Array.from(document.querySelectorAll('#gastosBody tr[data-id]'));
+  const rows = Array.from(document.querySelectorAll('#gastosBody tr'));
   btn.disabled = true;
   status.textContent = `Guardando ${rows.length} filas…`; status.className = 'status';
   let ok = 0, failed = [];
   for (const tr of rows){
-    const id = tr.dataset.id;
-    const body = {};
-    ['concepto','cdmx','puebla','queretaro','porcentaje','total_ajustado'].forEach(f=>{
-      const inp = tr.querySelector(`input[data-field="${f}"]`);
-      let v = inp.value;
-      if (f !== 'concepto'){ v = v === '' ? null : Number(v); }
-      body[f] = v;
-    });
-    body.total = computeRowTotal(tr);
+    const body = rowBody(tr);
+    const concepto = tr.querySelector('input[data-field="concepto"]').value;
     try{
-      await sbPatch('gastos_generales', id, body);
+      if (tr.dataset.isNew === '1'){
+        if (!concepto.trim()) continue; // no guarda filas nuevas totalmente vacías
+        const inserted = await sbInsert('gastos_generales', body);
+        tr.dataset.id = inserted.id;
+        delete tr.dataset.isNew;
+      } else {
+        await sbPatch('gastos_generales', tr.dataset.id, body);
+      }
       ok++;
     } catch(e){
-      failed.push(tr.querySelector('input[data-field="concepto"]').value || id);
+      failed.push(concepto || tr.dataset.id || '(nueva)');
     }
   }
   btn.disabled = false;
@@ -443,10 +521,28 @@ async function saveAllGastos(){
   }
 }
 
+function rowBody(tr){
+  const sucursales = {};
+  BRANCHES.forEach(b=>{
+    const inp = tr.querySelector(`input[data-branch="${b.key}"]`);
+    const v = inp ? parseFloat(inp.value) : NaN;
+    if (!isNaN(v)) sucursales[b.key] = v;
+  });
+  const porcentajeInp = tr.querySelector('input[data-field="porcentaje"]');
+  const ajustadoInp = tr.querySelector('input[data-field="total_ajustado"]');
+  return {
+    concepto: tr.querySelector('input[data-field="concepto"]').value,
+    sucursales,
+    porcentaje: porcentajeInp.value === '' ? null : Number(porcentajeInp.value),
+    total_ajustado: ajustadoInp.value === '' ? null : Number(ajustadoInp.value),
+    total: computeRowTotal(tr),
+  };
+}
+
 function gastoRow(row){
   const tr = document.createElement('tr');
-  tr.dataset.id = row.id;
-  const branchFields = ['cdmx','puebla','queretaro'];
+  if (row.id != null) tr.dataset.id = row.id;
+  const sucursales = row.sucursales || {};
 
   const tdConcepto = document.createElement('td');
   const inpConcepto = document.createElement('input');
@@ -455,7 +551,7 @@ function gastoRow(row){
   tdConcepto.appendChild(inpConcepto);
   tr.appendChild(tdConcepto);
 
-  // Total: computed live from CDMX + Puebla + Querétaro — read-only, no input, no save button of its own.
+  // Total: computado en vivo a partir de las sucursales — solo lectura, sin botón propio.
   const tdTotal = document.createElement('td');
   const totalSpan = document.createElement('span');
   totalSpan.dataset.role = 'total';
@@ -463,11 +559,11 @@ function gastoRow(row){
   tdTotal.appendChild(totalSpan);
   tr.appendChild(tdTotal);
 
-  branchFields.forEach(f=>{
+  BRANCHES.forEach(b=>{
     const td = document.createElement('td');
     const inp = document.createElement('input');
-    inp.value = row[f] ?? '';
-    inp.dataset.field = f;
+    inp.value = sucursales[b.key] ?? '';
+    inp.dataset.branch = b.key;
     inp.addEventListener('input', ()=> recomputeTotal(tr));
     td.appendChild(inp);
     tr.appendChild(td);
@@ -487,10 +583,8 @@ function gastoRow(row){
 }
 
 function computeRowTotal(tr){
-  const branchFields = ['cdmx','puebla','queretaro'];
   let sum = 0, any = false;
-  branchFields.forEach(f=>{
-    const inp = tr.querySelector(`input[data-field="${f}"]`);
+  tr.querySelectorAll('input[data-branch]').forEach(inp=>{
     const v = parseFloat(inp.value);
     if (!isNaN(v)){ sum += v; any = true; }
   });
