@@ -184,7 +184,7 @@
           <table id="gastosTable">
             <thead>
               <tr>
-                <th>Concepto</th><th>Total</th><th>CDMX</th><th>Puebla</th><th>Taller</th><th>Querétaro</th><th>%</th><th>Total ajustado</th><th></th>
+                <th>Concepto</th><th>Total</th><th>CDMX</th><th>Puebla</th><th>Querétaro</th><th>%</th><th>Total ajustado</th><th></th>
               </tr>
             </thead>
             <tbody id="gastosBody"></tbody>
@@ -351,19 +351,19 @@ async function sbPatch(table, id, body){
 // ---------------- Gastos generales ----------------
 async function loadGastos(){
   const tbody = document.getElementById('gastosBody');
-  tbody.innerHTML = '<tr><td colspan="9">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8">Cargando…</td></tr>';
   try{
     const rows = await sbGet('gastos_generales?select=*&order=id.asc');
     tbody.innerHTML = '';
     rows.forEach(row => tbody.appendChild(gastoRow(row)));
   } catch(e){
-    tbody.innerHTML = `<tr><td colspan="9" class="status err">${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="status err">${e.message}</td></tr>`;
   }
 }
 
 function gastoRow(row){
   const tr = document.createElement('tr');
-  const fields = ['concepto','total','cdmx','puebla','taller','queretaro','porcentaje','total_ajustado'];
+  const fields = ['concepto','total','cdmx','puebla','queretaro','porcentaje','total_ajustado'];
   fields.forEach(f=>{
     const td = document.createElement('td');
     const inp = document.createElement('input');
