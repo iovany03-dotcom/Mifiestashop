@@ -3664,10 +3664,12 @@ const FIELD_GROUPS = [
       ['descripcion', 'Descripción', true]
     ]
   },
-  { 
-    title: 'Medidas y Peso', 
+  {
+    title: 'Medidas y Peso',
     fields: [
-      ['medidas', 'Medidas / Dimensiones (Alto x Ancho x Largo cm)'], 
+      ['ancho_cm', 'Ancho (cm)'],
+      ['alto_cm', 'Alto (cm)'],
+      ['profundidad_cm', 'Largo (cm)'],
       ['peso', 'Peso (kg / g)']
     ]
   },
@@ -3801,6 +3803,9 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   const inputs = document.querySelectorAll('#modalBody input[data-field]');
   const body = {};
   inputs.forEach(inp=>{ body[inp.dataset.field] = inp.value === '' ? null : inp.value; });
+  // Mantiene "medidas" (texto combinado usado en la tabla y el catálogo) en sync con los 3 campos separados.
+  const dims = [body.ancho_cm, body.alto_cm, body.profundidad_cm].filter(v => v !== null && v !== undefined && v !== '');
+  body.medidas = dims.length ? dims.join(' x ') + ' cm' : null;
   status.textContent = 'Guardando en Supabase…';
   try{
     await sbPatch('costos_productos', modalProductId, body);
