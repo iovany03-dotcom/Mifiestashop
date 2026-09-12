@@ -24,12 +24,19 @@ module.exports = async function handler(req, res) {
   const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
   const productsUrl = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&limit=0,${limit}&output_format=JSON`;
 
-  // Extrae el primer valor de un campo multi-idioma de PrestaShop (array u objeto).
+  // Extrae el primer valor de un campo multi-idioma de PrestaShop (array u objeto),
+  // garantizando que el resultado sea siempre un string usable (PrestaShop a veces
+  // devuelve `false` en vez de '' cuando el campo está vacío en algún idioma).
   function firstLangValue(field, fallback) {
-    if (!field) return fallback;
-    if (Array.isArray(field)) return field[0]?.value || field[0] || fallback;
-    if (typeof field === 'object') return field.value || Object.values(field)[0] || fallback;
-    return field;
+    let val = field;
+    if (Array.isArray(field)) {
+      val = field[0]?.value;
+      if (val === undefined) val = field[0];
+    } else if (field && typeof field === 'object') {
+      val = field.value !== undefined ? field.value : Object.values(field)[0];
+    }
+    if (typeof val !== 'string' || val === '') return fallback;
+    return val;
   }
 
   try {
