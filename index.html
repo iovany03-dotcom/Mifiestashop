@@ -4413,6 +4413,8 @@ function renderStockTable(){
 let liveProducts = [];
 
 async function syncProductsFromPrestaShopAPI(){
+  let loaded = false;
+
   try {
     const r = await fetch('/api/productos');
     if (r.ok) {
@@ -4428,52 +4430,61 @@ async function syncProductsFromPrestaShopAPI(){
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
           desc: p.name
         }));
-        renderDynamicCatPills();
-        renderProducts('all');
-        renderCatalogTable('all');
-        renderStorefrontProducts('all');
-        return;
+        loaded = true;
       }
     }
   } catch(e) {
     console.log('Consultando Supabase DB como respaldo:', e.message);
   }
 
-  // Fallback: fetch from Supabase REST DB
-  try {
-    const data = await sbGet('costos_productos?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio,precio_compra_regular,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion,link_producto,url_producto&limit=250');
-    if(Array.isArray(data) && data.length > 0) {
-      liveProducts = data.map(item => {
-        const prodUrl = item.link_producto || item.url_producto || `https://mifiestashop.com/producto/${item.codigo_pos || item.id}`;
-        return {
-          id: item.id,
-          name: item.nombre_generico || 'Producto Mi Fiestashop',
-          nombre_explicito: item.nombre_explicito || '',
-          sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
-          barcode: item.codigo_barra || '',
-          price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 45),
-          priceMayoreo: parseFloat(item.mayoreo_precio_2 || 0),
-          priceVolumen: parseFloat(item.volumen_precio_3 || 0),
-          priceDistribuidor: parseFloat(item.distribuidor_precio || 0),
-          costoCompra: parseFloat(item.precio_compra_actualizado || item.precio_compra_regular || 0),
-          cat: (item.categoria || 'General').toLowerCase().trim(),
-          catLabel: item.categoria || 'General',
-          img: item.link_imagen || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
-          url: prodUrl,
-          desc: item.descripcion || '',
-          status: 'Activo'
-        };
-      });
-      renderDynamicCatPills();
-      renderProducts('all');
-      renderCatalogTable('all');
-      renderInventarioTable();
-      renderStorefrontProducts('all');
-      renderTopProductsTable();
+  if (!loaded) {
+    try {
+      const data = await sbGet('costos_productos?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio,precio_compra_regular,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion,link_producto,url_producto&limit=250');
+      if (Array.isArray(data) && data.length > 0) {
+        liveProducts = data.map(item => {
+          const prodUrl = item.link_producto || item.url_producto || `https://mifiestashop.com/producto/${item.codigo_pos || item.id}`;
+          return {
+            id: item.id,
+            name: item.nombre_generico || 'Producto Mi Fiestashop',
+            nombre_explicito: item.nombre_explicito || '',
+            sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
+            barcode: item.codigo_barra || '',
+            price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 45),
+            priceMayoreo: parseFloat(item.mayoreo_precio_2 || 0),
+            priceVolumen: parseFloat(item.volumen_precio_3 || 0),
+            priceDistribuidor: parseFloat(item.distribuidor_precio || 0),
+            costoCompra: parseFloat(item.precio_compra_actualizado || item.precio_compra_regular || 0),
+            cat: (item.categoria || 'General').toLowerCase().trim(),
+            catLabel: item.categoria || 'General',
+            img: item.link_imagen || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
+            url: prodUrl,
+            desc: item.descripcion || '',
+            status: 'Activo'
+          };
+        });
+        loaded = true;
+      }
+    } catch(e) {
+      console.log('Error al consultar Supabase DB:', e.message);
     }
-  } catch(e) {
-    console.log('Usando dataset POS por defecto:', e.message);
   }
+
+  if (!loaded || liveProducts.length === 0) {
+    liveProducts = [
+      { id: '101', name: 'Antifaz Feliz Año Nuevo', sku: 'A-174', price: 6.29, cat: 'año nuevo', catLabel: 'Año Nuevo', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300', status: 'Activo' },
+      { id: '102', name: 'Globo Metálico 40" Dorado', sku: 'GLO-40-DOR', price: 45.00, cat: 'globos', catLabel: 'Globos', img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300', status: 'Activo' },
+      { id: '103', name: 'Paquete Globos Latex Pastel (50 pzs)', sku: 'GLO-LAT-50', price: 85.00, cat: 'globos', catLabel: 'Globos', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300', status: 'Activo' },
+      { id: '104', name: 'Mantel Plástico Fiesta Neón', sku: 'MAN-NEO-01', price: 49.00, cat: 'decoracion', catLabel: 'Decoración', img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300', status: 'Activo' },
+      { id: '105', name: 'Vela Cumpleaños Sparkler', sku: 'VEL-SPK-01', price: 28.00, cat: 'velas', catLabel: 'Velas', img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300', status: 'Activo' }
+    ];
+  }
+
+  renderDynamicCatPills();
+  renderProducts('all');
+  renderCatalogTable('all');
+  renderInventarioTable();
+  renderStorefrontProducts('all');
+  renderTopProductsTable();
 }
 
 function renderDynamicCatPills(){
@@ -5653,13 +5664,11 @@ function renderTopProductsTable() {
   const tbody = document.getElementById('topProductsTbody');
   if (!tbody) return;
 
-  if (liveProducts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Sincronizando productos reales desde Supabase…</td></tr>';
-    syncProductsFromPrestaShopAPI();
+  const dataset = liveProducts;
+  if (!dataset || dataset.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Sin productos registrados.</td></tr>';
     return;
   }
-
-  const dataset = liveProducts;
   const sortMode = document.getElementById('topProductsSortSelect')?.value || 'units';
 
   const processed = dataset.map(p => {
