@@ -1078,6 +1078,7 @@
     <div class="store-prods-grid" id="storefrontProductGrid">
       <!-- Dynamically filled with products -->
     </div>
+    <div id="storefrontLoadMoreWrap"></div>
 
     <!-- Ventajas -->
     <div class="store-features-bar">
@@ -6135,30 +6136,44 @@ function logoutAdmin() {
   showPublicStorefront();
 }
 
-function renderStorefrontProducts(cat = 'all', query = '') {
+const STOREFRONT_PAGE_SIZE = 24;
+let storefrontVisibleCount = STOREFRONT_PAGE_SIZE;
+let currentStorefrontCat = 'all';
+let currentStorefrontQuery = '';
+
+function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
   const grid = document.getElementById('storefrontProductGrid');
   if (!grid) return;
 
   hideStorefrontPages();
   resetStorefrontSeoTags();
 
+  if (!keepPage) {
+    currentStorefrontCat = cat;
+    currentStorefrontQuery = query;
+    storefrontVisibleCount = STOREFRONT_PAGE_SIZE;
+  }
+
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const q = (query || '').toLowerCase();
+  const q = (currentStorefrontQuery || '').toLowerCase();
 
   const filtered = dataset.filter(p => {
-    const matchCat = cat === 'all' || (p.cat || '').toLowerCase().includes(cat.toLowerCase());
+    const matchCat = currentStorefrontCat === 'all' || (p.cat || '').toLowerCase().includes(currentStorefrontCat.toLowerCase());
     const matchQ = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
     return matchCat && matchQ;
   });
 
   if (filtered.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
+    renderStorefrontLoadMore(0, 0);
     return;
   }
 
   currentStorefrontList = filtered;
+  const visibleCount = Math.min(storefrontVisibleCount, filtered.length);
+  const visible = filtered.slice(0, visibleCount);
 
-  grid.innerHTML = filtered.map((p, idx) => `
+  grid.innerHTML = visible.map((p, idx) => `
     <div class="store-prod-card store-reveal" style="transition-delay:${Math.min(idx, 8) * 50}ms;">
       <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
@@ -6179,7 +6194,25 @@ function renderStorefrontProducts(cat = 'all', query = '') {
     </div>
   `).join('');
 
+  renderStorefrontLoadMore(visibleCount, filtered.length);
   initScrollReveal();
+}
+
+function renderStorefrontLoadMore(shown, total){
+  const wrap = document.getElementById('storefrontLoadMoreWrap');
+  if (!wrap) return;
+  if (shown >= total) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `
+    <div style="text-align:center; margin: 4px 0 30px;">
+      <button class="btn-pop" style="padding:12px 28px; border-radius:24px; font-weight:700; background:#fff; border:2px solid var(--mf-pink); color:var(--mf-pink); cursor:pointer;" onclick="loadMoreStorefrontProducts()">
+        Ver más productos (${shown} de ${total})
+      </button>
+    </div>`;
+}
+
+function loadMoreStorefrontProducts(){
+  storefrontVisibleCount += STOREFRONT_PAGE_SIZE;
+  renderStorefrontProducts(currentStorefrontCat, currentStorefrontQuery, true);
 }
 
 let currentStorefrontList = [];
