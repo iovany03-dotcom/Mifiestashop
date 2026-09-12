@@ -4105,6 +4105,13 @@ function confirmPOSSale() {
   `;
   tbody.insertBefore(tr, tbody.firstChild);
 
+  // Record sales per product item
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  cart.forEach(item => {
+    recordSaleForProduct(item.sku || item.id, item.qty, item.price, currentMonthStr);
+  });
+  renderTopProductsTable();
+
   clearCart();
 }
 
@@ -5389,6 +5396,24 @@ async function loadOrdersFromAPI(){
 
   if(list.length === 0) list = DEFAULT_ORDERS;
 
+  // Process line item product sales from API orders
+  list.forEach(o => {
+    const monthStr = (o.date || '2026-09').slice(0, 7);
+    const rows = o.order_details || o.associations?.order_rows || o.items || [];
+    if (Array.isArray(rows)) {
+      rows.forEach(r => {
+        if (typeof r === 'object') {
+          const skuOrId = r.product_reference || r.product_id || r.sku || r.name;
+          const qty = parseInt(r.product_quantity || r.qty || 1) || 1;
+          const price = parseFloat(r.unit_price_tax_excl || r.product_price || r.price || 0) || 0;
+          if (skuOrId) {
+            recordSaleForProduct(skuOrId, qty, price, monthStr);
+          }
+        }
+      });
+    }
+  });
+
   tbody.innerHTML = list.map(o => `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${o.id}')">
       <td><b>${o.id}</b></td>
@@ -5409,6 +5434,8 @@ async function loadOrdersFromAPI(){
     skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' + 
       list.map(o => `<option value="${o.id}">${o.id} - ${o.customer} (${fmtMoney(o.total)})</option>`).join('');
   }
+
+  renderTopProductsTable();
 }
 
 async function loadSuppliersFromAPI(){
@@ -5630,9 +5657,20 @@ function hashCode(str) {
 
 function getProductMonthlySales(p) {
   const months = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
-  const pKeySku = String(p.sku || '');
-  const pKeyId = String(p.id || '');
-  const rec = recordedProductSales[pKeySku] || recordedProductSales[pKeyId] || null;
+  const pKeySku = String(p.sku || '').trim();
+  const pKeyId = String(p.id || '').trim();
+  const pName = String(p.name || '').trim().toLowerCase();
+
+  let rec = recordedProductSales[pKeySku] || recordedProductSales[pKeyId] || null;
+
+  if (!rec && pName) {
+    for (const key in recordedProductSales) {
+      if (key.toLowerCase() === pName) {
+        rec = recordedProductSales[key];
+        break;
+      }
+    }
+  }
 
   if (rec && rec.totalUnits > 0) {
     const monthSales = months.map(m => {
@@ -5642,22 +5680,9 @@ function getProductMonthlySales(p) {
     return { months: monthSales, totalUnits: rec.totalUnits, totalRevenue: rec.totalRevenue };
   }
 
-  // Derive initial realistic monthly activity for real Supabase products
-  const seed = Math.abs(hashCode(String(p.sku || p.id || p.name)));
-  const price = p.price || 45;
-  const monthSales = months.map((m, idx) => {
-    const monthMultipliers = [0.25, 0.85, 0.20, 0.65, 1.15, 1.45, 0.85];
-    const mult = monthMultipliers[idx] || 1.0;
-    const baseVal = ((seed + (idx * 13)) % 40) + 5;
-    const units = Math.max(0, Math.round(baseVal * mult));
-    const revenue = units * price;
-    return { month: m, units, revenue };
-  });
-
-  const totalUnits = monthSales.reduce((sum, item) => sum + item.units, 0);
-  const totalRevenue = monthSales.reduce((sum, item) => sum + item.revenue, 0);
-
-  return { months: monthSales, totalUnits, totalRevenue };
+  // Strictly return 0 units and $0.00 for products without registered sales in API / orders
+  const zeroSales = months.map(m => ({ month: m, units: 0, revenue: 0 }));
+  return { months: zeroSales, totalUnits: 0, totalRevenue: 0 };
 }
 
 function renderTopProductsTable() {
