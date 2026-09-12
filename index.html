@@ -843,7 +843,7 @@
   </nav>
 
   <!-- Hero Section -->
-  <div class="store-hero">
+  <div class="store-hero" id="storefrontHero">
     <div class="store-hero-content">
       <div>
         <span class="store-hero-badge">✨ Venta al Mayoreo y Menudeo en México</span>
@@ -865,8 +865,8 @@
   </div>
 
   <!-- Store Container -->
-  <div class="store-container">
-    
+  <div class="store-container" id="storefrontStoreContainer">
+
     <!-- Categorías Destacadas -->
     <div class="store-section-title">
       <h2>🏷️ Categorías Principales</h2>
@@ -941,6 +941,12 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Dedicated Product Page (own URL, replaces home content) -->
+  <div class="store-container hidden" id="storefrontProductPage">
+    <button class="btn secondary" style="margin:20px 0; border-radius:20px; font-weight:700;" onclick="backToStoreFromProductPage()">← Volver a la tienda</button>
+    <div id="storefrontProductPageBody"></div>
   </div>
 
   <!-- Storefront Footer -->
@@ -5640,6 +5646,15 @@ function renderStorefrontProducts(cat = 'all', query = '') {
   const grid = document.getElementById('storefrontProductGrid');
   if (!grid) return;
 
+  const productPage = document.getElementById('storefrontProductPage');
+  if (productPage && !productPage.classList.contains('hidden')) {
+    productPage.classList.add('hidden');
+    const hero = document.getElementById('storefrontHero');
+    const storeContainer = document.getElementById('storefrontStoreContainer');
+    if (hero) hero.classList.remove('hidden');
+    if (storeContainer) storeContainer.classList.remove('hidden');
+  }
+
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const q = (query || '').toLowerCase();
 
@@ -5702,12 +5717,7 @@ function openStorefrontProductDetail(idx){
   renderProductDetailModal(p);
 }
 
-function renderProductDetailModal(p){
-  if (!p) return;
-  const modal = document.getElementById('storefrontProductModal');
-  const body = document.getElementById('storefrontProductModalBody');
-  if (!modal || !body) return;
-
+function buildProductDetailHTML(p, qtyId, onAddToCart){
   const desc = (p.desc && p.desc.trim() && p.desc.trim() !== p.name) ? p.desc : 'Sin descripción disponible para este producto.';
   const vercelUrl = vercelUrlFor(p);
   const linksHtml = p.url
@@ -5719,7 +5729,7 @@ function renderProductDetailModal(p){
       </div>`
     : '';
 
-  body.innerHTML = `
+  return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
       <div>
         <img src="${p.img}" alt="${p.name}" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
@@ -5731,20 +5741,47 @@ function renderProductDetailModal(p){
         <p style="color:var(--text-secondary); line-height:1.5; font-size:14px;">${desc}</p>
         ${linksHtml}
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
-          <input type="number" id="storefrontDetailQty" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-          <button class="store-prod-btn" style="flex:1;" onclick="const qN=parseInt(document.getElementById('storefrontDetailQty').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); closeStorefrontProductDetail();">
+          <input type="number" id="${qtyId}" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          <button class="store-prod-btn" style="flex:1;" onclick="const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
             🛒 Agregar al Carrito
           </button>
         </div>
       </div>
     </div>
   `;
+}
+
+function renderProductDetailModal(p){
+  if (!p) return;
+  const modal = document.getElementById('storefrontProductModal');
+  const body = document.getElementById('storefrontProductModalBody');
+  if (!modal || !body) return;
+  body.innerHTML = buildProductDetailHTML(p, 'storefrontDetailQty', 'closeStorefrontProductDetail();');
   modal.classList.remove('hidden');
 }
 
 function closeStorefrontProductDetail(){
   const modal = document.getElementById('storefrontProductModal');
   if (modal) modal.classList.add('hidden');
+}
+
+function renderProductFullPage(p){
+  if (!p) return;
+  const hero = document.getElementById('storefrontHero');
+  const storeContainer = document.getElementById('storefrontStoreContainer');
+  const page = document.getElementById('storefrontProductPage');
+  const body = document.getElementById('storefrontProductPageBody');
+  if (!page || !body) return;
+
+  body.innerHTML = buildProductDetailHTML(p, 'storefrontPageQty', '');
+  if (hero) hero.classList.add('hidden');
+  if (storeContainer) storeContainer.classList.add('hidden');
+  page.classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function backToStoreFromProductPage(){
+  window.location.href = '/';
 }
 
 function filterStorefrontProducts(q) {
@@ -6418,7 +6455,7 @@ const productDeepLinkMatch = window.location.pathname.match(/^\/(\d+)-[^\/]+\.ht
 function openProductDeepLinkIfPresent() {
   if (!productDeepLinkMatch) return;
   const p = liveProducts.find(pr => String(pr.id) === productDeepLinkMatch[1]);
-  if (p) renderProductDetailModal(p);
+  if (p) renderProductFullPage(p);
 }
 
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent);
