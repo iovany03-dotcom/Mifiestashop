@@ -1239,7 +1239,7 @@
         <a class="submenu-link" data-view="facturacion">Facturación</a>
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="pedidos">Remisiones</a>
-        <a class="submenu-link" data-view="pedidos">Carritos de Compra</a>
+        <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
       </div>
     </div>
 
@@ -1754,6 +1754,93 @@
       </div>
 
     </section>
+
+    <!-- ================= VIEW: CARRITOS DE COMPRA ================= -->
+    <section id="view-carritos" class="view-panel hidden">
+      <!-- KPI CARDS -->
+      <div class="kpis">
+        <div class="kpi-card">
+          <div class="label">🛒 Carritos Activos Hoy</div>
+          <div class="value" id="cartKpiActive">14</div>
+          <div class="sub">Navegando / En proceso</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">⚠️ Carritos Abandonados</div>
+          <div class="value" id="cartKpiAbandoned" style="color:var(--warning);">42</div>
+          <div class="sub">Sin finalizar (&gt;24 hrs)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">💵 Valor Estimado en Carritos</div>
+          <div class="value" id="cartKpiTotalValue" style="color:#22c55e;">$68,450.00</div>
+          <div class="sub">Total en productos en espera</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">🎯 Tasa de Conversión</div>
+          <div class="value" id="cartKpiConversion">34.8%</div>
+          <div class="sub">Carritos convertidos en venta</div>
+        </div>
+      </div>
+
+      <!-- MAIN CARD -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+          <div>
+            <h2 style="margin:0;">🛒 Carritos de Compra (API PrestaShop & Tienda Online)</h2>
+            <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">Monitoree carritos activos y recupere carritos abandonados con conversión directa a ventas POS.</p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn primary" onclick="loadCartsFromAPI()">🔄 Sincronizar API Carritos</button>
+          </div>
+        </div>
+
+        <!-- FILTROS -->
+        <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+          <input type="search" id="cartSearchInput" placeholder="🔍 Buscar por ID carrito, cliente o producto..." style="padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px; flex:1;" oninput="renderCartsTable()">
+
+          <select id="cartStatusFilter" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); cursor:pointer;" onchange="renderCartsTable()">
+            <option value="all">🌐 Todos los Estados</option>
+            <option value="active">🟢 Carritos Activos</option>
+            <option value="abandoned">🔴 Carritos Abandonados (&gt;24h)</option>
+            <option value="converted">✅ Convertidos a Pedido</option>
+          </select>
+        </div>
+
+        <!-- TABLA -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID Carrito</th>
+                <th>Fecha / Hora</th>
+                <th>Cliente / Usuario</th>
+                <th>Contenido / Artículos</th>
+                <th style="text-align:right;">Monto Total ($)</th>
+                <th style="text-align:center;">Estado</th>
+                <th style="text-align:center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="cartsTableBody">
+              <!-- Dynamically rendered -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL DETALLE DEL CARRITO -->
+    <div class="modal-overlay hidden" id="cartDetailModal">
+      <div class="modal" style="max-width: 680px;">
+        <div class="modal-header">
+          <h2 id="cartDetailModalTitle">🛒 Detalle del Carrito #CR-89410</h2>
+          <button class="btn small" onclick="closeCartDetailModal()">✕</button>
+        </div>
+        <div id="cartDetailModalBody" style="margin-top:14px;"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+          <button class="btn" onclick="closeCartDetailModal()">Cerrar</button>
+          <button class="btn primary" id="btnTransferCartToPOS" style="padding:10px 18px; font-weight:700;">🛒 Cargar Carrito en Sistema POS</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ================= VIEW 3: PEDIDOS ================= -->
     <section id="view-pedidos" class="view-panel hidden">
@@ -3780,6 +3867,7 @@ function switchView(viewName) {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas PrestaShop'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones API'],
+    carritos: ['Carritos de Compra', 'API PrestaShop & Carritos Abandonados'],
     productos: ['Catálogo de Productos', 'Sincronizado con API'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario'],
     inventario: ['Inventario por Almacén / Bodega', 'Desglose y Control Multibodega'],
@@ -5772,6 +5860,267 @@ function goToProductAnalytics(prodId) {
   }, 150);
 }
 
+// ================= CARRITOS DE COMPRA API & ENGINE =================
+let liveCarts = [];
+
+async function loadCartsFromAPI() {
+  const tbody = document.getElementById('cartsTableBody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Consultando API PrestaShop de Carritos…</td></tr>';
+
+  try {
+    const r = await fetch('/api/carritos');
+    if (r.ok) {
+      const data = await r.json();
+      if (data.carts && Array.isArray(data.carts)) {
+        liveCarts = data.carts;
+        renderCartsTable();
+        return;
+      }
+    }
+  } catch (e) {
+    console.log('API /api/carritos no disponible, usando dataset local:', e.message);
+  }
+
+  // Structured fallback dataset for Carritos de Compra
+  liveCarts = [
+    {
+      id: 'CR-89410',
+      date: '2026-09-12 08:35:10',
+      customer: 'Laura Gómez',
+      email: 'laura.gomez@gmail.com',
+      status: 'active',
+      statusText: 'Activo (En Proceso)',
+      items: [
+        { name: 'Globo Metálico Número 40" Dorado', sku: 'GLO-DOR-40', qty: 3, price: 45.00, img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300' },
+        { name: 'Mantel Plástico Fiesta Neón 1.37x2.74m', sku: 'MAN-NEO-01', qty: 2, price: 49.00, img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300' }
+      ]
+    },
+    {
+      id: 'CR-89408',
+      date: '2026-09-11 19:20:45',
+      customer: 'Invitado #93587',
+      email: 'cliente.mostrador@mifiestashop.com',
+      status: 'abandoned',
+      statusText: 'Abandonado (>24h)',
+      items: [
+        { name: 'Paquete Globos Latex #9 Pastel (50 pzs)', sku: 'GLO-LAT-50', qty: 5, price: 85.00, img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' },
+        { name: 'Vela de Cumpleaños Chispero Sparkler', sku: 'VEL-CHI-01', qty: 10, price: 28.00, img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300' },
+        { name: 'Antifaz de Gala Misterio Neón (12 pzs)', sku: 'DIS-ANT-12', qty: 2, price: 110.00, img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' }
+      ]
+    },
+    {
+      id: 'CR-89405',
+      date: '2026-09-11 15:40:12',
+      customer: 'Carlos Gutiérrez',
+      email: 'carlos.g@hotmail.com',
+      status: 'converted',
+      statusText: 'Convertido (#PS-383626)',
+      items: [
+        { name: 'Platos Desechables Biodegradables (20 pzs)', sku: 'DES-PLA-20', qty: 4, price: 62.00, img: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=300' }
+      ]
+    },
+    {
+      id: 'CR-89401',
+      date: '2026-09-11 11:15:30',
+      customer: 'Adriana Silva',
+      email: 'adriana.silva@empresa.com',
+      status: 'abandoned',
+      statusText: 'Abandonado (>24h)',
+      items: [
+        { name: 'Globo Metálico Número 40" Dorado', sku: 'GLO-DOR-40', qty: 12, price: 45.00, img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300' },
+        { name: 'Antifaz de Gala Misterio Neón (12 pzs)', sku: 'DIS-ANT-12', qty: 6, price: 110.00, img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' }
+      ]
+    },
+    {
+      id: 'CR-89398',
+      date: '2026-09-10 18:50:00',
+      customer: 'Invitado #93592',
+      email: 'invitado.web@mifiestashop.com',
+      status: 'active',
+      statusText: 'Activo (En Proceso)',
+      items: [
+        { name: 'Mantel Plástico Fiesta Neón 1.37x2.74m', sku: 'MAN-NEO-01', qty: 4, price: 49.00, img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300' }
+      ]
+    }
+  ];
+
+  renderCartsTable();
+}
+
+function renderCartsTable() {
+  const tbody = document.getElementById('cartsTableBody');
+  if (!tbody) return;
+
+  const search = (document.getElementById('cartSearchInput')?.value || '').trim().toLowerCase();
+  const filterStatus = document.getElementById('cartStatusFilter')?.value || 'all';
+
+  const filtered = liveCarts.filter(c => {
+    const matchStatus = filterStatus === 'all' || c.status === filterStatus;
+    const itemsText = c.items.map(i => i.name + ' ' + i.sku).join(' ').toLowerCase();
+    const matchSearch = !search || 
+      c.id.toLowerCase().includes(search) || 
+      c.customer.toLowerCase().includes(search) || 
+      c.email.toLowerCase().includes(search) ||
+      itemsText.includes(search);
+    return matchStatus && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Sin carritos de compra registrados.</td></tr>';
+    return;
+  }
+
+  const activeCount = liveCarts.filter(c => c.status === 'active').length;
+  const abandonedCount = liveCarts.filter(c => c.status === 'abandoned').length;
+  const totalVal = liveCarts.reduce((acc, c) => acc + c.items.reduce((s, i) => s + (i.qty * i.price), 0), 0);
+
+  if (document.getElementById('cartKpiActive')) document.getElementById('cartKpiActive').textContent = activeCount;
+  if (document.getElementById('cartKpiAbandoned')) document.getElementById('cartKpiAbandoned').textContent = abandonedCount;
+  if (document.getElementById('cartKpiTotalValue')) document.getElementById('cartKpiTotalValue').textContent = fmtMoney(totalVal);
+
+  tbody.innerHTML = filtered.map(c => {
+    const totalAmount = c.items.reduce((sum, item) => sum + (item.qty * item.price), 0);
+    const totalUnits = c.items.reduce((sum, item) => sum + item.qty, 0);
+
+    let statusPill = `<span class="pill ok">🟢 Activo</span>`;
+    if (c.status === 'abandoned') statusPill = `<span class="pill bad">🔴 Abandonado</span>`;
+    else if (c.status === 'converted') statusPill = `<span class="pill warn">✅ Convertido</span>`;
+
+    const itemsSummary = c.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+    const displaySummary = itemsSummary.length > 50 ? itemsSummary.slice(0, 50) + '…' : itemsSummary;
+
+    return `
+      <tr>
+        <td><b>${c.id}</b></td>
+        <td style="font-size:12px;">${c.date}</td>
+        <td>
+          <b>${c.customer}</b>
+          <br><span style="font-size:11px; color:var(--text-muted);">${c.email}</span>
+        </td>
+        <td style="font-size:12px;">
+          <b>${totalUnits} arts:</b> ${displaySummary}
+        </td>
+        <td style="text-align:right; font-weight:700; color:var(--series-2);">${fmtMoney(totalAmount)}</td>
+        <td style="text-align:center;">${statusPill}</td>
+        <td style="text-align:center; white-space:nowrap;">
+          <button class="btn small primary" onclick="openCartDetailModal('${c.id}')">👁️ Detalle</button>
+          <button class="btn small secondary" style="margin-left:4px;" onclick="transferCartToPOS('${c.id}')" title="Cargar en carrito del POS">🛒 POS</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+let activeDetailCartId = null;
+
+function openCartDetailModal(cId) {
+  const modal = document.getElementById('cartDetailModal');
+  const title = document.getElementById('cartDetailModalTitle');
+  const body = document.getElementById('cartDetailModalBody');
+  const btnTransfer = document.getElementById('btnTransferCartToPOS');
+
+  const cartObj = liveCarts.find(c => String(c.id) === String(cId));
+  if (!cartObj || !modal || !body) return;
+
+  activeDetailCartId = cartObj.id;
+  if (title) title.textContent = `🛒 Detalle del Carrito ${cartObj.id}`;
+
+  const totalAmount = cartObj.items.reduce((sum, i) => sum + (i.qty * i.price), 0);
+
+  const itemRows = cartObj.items.map(i => `
+    <tr>
+      <td>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <img src="${i.img}" style="width:32px; height:32px; object-fit:cover; border-radius:4px; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+          <div>
+            <b>${i.name}</b>
+            <br><span style="font-size:11px; color:var(--text-muted);">SKU: ${i.sku}</span>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center; font-weight:700;">${i.qty}</td>
+      <td style="text-align:right;">${fmtMoney(i.price)}</td>
+      <td style="text-align:right; font-weight:700; color:var(--series-2);">${fmtMoney(i.qty * i.price)}</td>
+    </tr>
+  `).join('');
+
+  body.innerHTML = `
+    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <div>
+        <div style="font-size:11px; color:var(--text-muted);">CLIENTE / COMPRADOR</div>
+        <div style="font-size:14px; font-weight:700; color:var(--text-primary);">${cartObj.customer}</div>
+        <div style="font-size:12px; color:var(--text-secondary);">${cartObj.email}</div>
+      </div>
+      <div>
+        <div style="font-size:11px; color:var(--text-muted);">FECHA CREACIÓN</div>
+        <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${cartObj.date}</div>
+        <div style="font-size:12px;"><span class="pill ${cartObj.status === 'abandoned' ? 'bad' : 'ok'}">${cartObj.statusText}</span></div>
+      </div>
+    </div>
+
+    <h4 style="margin:0 0 10px 0; font-size:14px; color:var(--text-primary);">Contenido del Carrito (${cartObj.items.length} productos)</h4>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th style="text-align:center;">Cant.</th>
+            <th style="text-align:right;">Precio Unit.</th>
+            <th style="text-align:right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRows}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; padding-top:12px; border-top:1px solid var(--border);">
+      <span style="font-size:14px; font-weight:600;">Total del Carrito:</span>
+      <span style="font-size:20px; font-weight:800; color:#22c55e;">${fmtMoney(totalAmount)}</span>
+    </div>
+  `;
+
+  if (btnTransfer) {
+    btnTransfer.onclick = () => transferCartToPOS(cartObj.id);
+  }
+
+  modal.classList.remove('hidden');
+}
+
+function closeCartDetailModal() {
+  const modal = document.getElementById('cartDetailModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function transferCartToPOS(cId) {
+  const cartObj = liveCarts.find(c => String(c.id) === String(cId));
+  if (!cartObj) return;
+
+  cart = [];
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+
+  cartObj.items.forEach(item => {
+    let matchProd = dataset.find(p => p.sku === item.sku || p.name === item.name);
+    if (!matchProd) {
+      matchProd = {
+        id: Date.now() + Math.random(),
+        name: item.name,
+        sku: item.sku,
+        price: item.price,
+        cat: 'general',
+        img: item.img
+      };
+    }
+    cart.push({ ...matchProd, qty: item.qty });
+  });
+
+  updateCartUI();
+  closeCartDetailModal();
+  switchView('pos');
+  alert(`🛒 ¡Éxito! Los ${cartObj.items.length} productos del Carrito ${cartObj.id} han sido cargados en el Sistema POS.`);
+}
+
 // INITIALIZE ALL
 applyPeriod('dia');
 renderHistKPIs();
@@ -5786,6 +6135,7 @@ syncProductsFromPrestaShopAPI();
 loadCategoriesFromAPI();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
+loadCartsFromAPI();
 loadSuppliersFromAPI();
 loadSavedTicketConfig();
 
