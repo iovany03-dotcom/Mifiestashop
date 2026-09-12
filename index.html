@@ -5686,9 +5686,19 @@ function vercelUrlFor(p){
   return p.url.replace(/^https?:\/\/[^\/]+/, VERCEL_STORE_ORIGIN);
 }
 
+function productPathFor(p){
+  if (!p || !p.url) return '';
+  try { return new URL(p.url).pathname; } catch(e) { return ''; }
+}
+
 function openStorefrontProductDetail(idx){
   const p = currentStorefrontList[idx];
   if (!p) return;
+  const path = productPathFor(p);
+  if (path) {
+    window.location.href = path;
+    return;
+  }
   renderProductDetailModal(p);
 }
 
