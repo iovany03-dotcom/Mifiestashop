@@ -5679,18 +5679,34 @@ function renderStorefrontProducts(cat = 'all', query = '') {
 }
 
 let currentStorefrontList = [];
+const VERCEL_STORE_ORIGIN = 'https://mifiestashop.vercel.app';
+
+function vercelUrlFor(p){
+  if (!p || !p.url) return '';
+  return p.url.replace(/^https?:\/\/[^\/]+/, VERCEL_STORE_ORIGIN);
+}
 
 function openStorefrontProductDetail(idx){
   const p = currentStorefrontList[idx];
   if (!p) return;
+  renderProductDetailModal(p);
+}
 
+function renderProductDetailModal(p){
+  if (!p) return;
   const modal = document.getElementById('storefrontProductModal');
   const body = document.getElementById('storefrontProductModalBody');
   if (!modal || !body) return;
 
   const desc = (p.desc && p.desc.trim() && p.desc.trim() !== p.name) ? p.desc : 'Sin descripción disponible para este producto.';
-  const officialLinkHtml = p.url
-    ? `<a href="${p.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#e85d04; font-weight:700; text-decoration:none; margin-top:8px;">🔗 Ver en la tienda oficial mifiestashop.com ↗</a>`
+  const vercelUrl = vercelUrlFor(p);
+  const linksHtml = p.url
+    ? `
+      <div style="margin-top:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--plane);">
+        <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;">Este producto también se puede ver en:</div>
+        <a href="${p.url}" target="_blank" rel="noopener" style="display:block; font-size:13px; color:#e85d04; font-weight:700; text-decoration:none; word-break:break-all;">🔗 ${p.url} ↗</a>
+        ${vercelUrl ? `<a href="${vercelUrl}" target="_blank" rel="noopener" style="display:block; font-size:13px; color:#0ea5e9; font-weight:700; text-decoration:none; word-break:break-all; margin-top:6px;">▲ ${vercelUrl} ↗</a>` : ''}
+      </div>`
     : '';
 
   body.innerHTML = `
@@ -5703,7 +5719,7 @@ function openStorefrontProductDetail(idx){
         <h2 style="margin:6px 0 10px; font-size:22px;">${p.name}</h2>
         <div style="font-size:1.6rem; font-weight:800; color:#e85d04; margin-bottom:14px;">${fmtMoney(p.price)}</div>
         <p style="color:var(--text-secondary); line-height:1.5; font-size:14px;">${desc}</p>
-        ${officialLinkHtml}
+        ${linksHtml}
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
           <input type="number" id="storefrontDetailQty" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
           <button class="store-prod-btn" style="flex:1;" onclick="const qN=parseInt(document.getElementById('storefrontDetailQty').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); closeStorefrontProductDetail();">
@@ -6386,7 +6402,16 @@ drawStockChart();
 renderMonthlyTable();
 renderStockTable();
 renderTopProductsTable();
-syncProductsFromPrestaShopAPI();
+
+// ================= DEEP LINK: /{id}-{slug}.html PRODUCT DETAIL =================
+const productDeepLinkMatch = window.location.pathname.match(/^\/(\d+)-[^\/]+\.html$/);
+function openProductDeepLinkIfPresent() {
+  if (!productDeepLinkMatch) return;
+  const p = liveProducts.find(pr => String(pr.id) === productDeepLinkMatch[1]);
+  if (p) renderProductDetailModal(p);
+}
+
+syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent);
 loadCategoriesFromAPI();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
@@ -6396,7 +6421,9 @@ loadSuppliersFromAPI();
 loadSavedTicketConfig();
 
 // Initial view check
-if (localStorage.getItem('mf_admin_logged_in') === 'true') {
+if (productDeepLinkMatch) {
+  showPublicStorefront();
+} else if (localStorage.getItem('mf_admin_logged_in') === 'true') {
   showAdminDashboard();
 } else {
   showPublicStorefront();
