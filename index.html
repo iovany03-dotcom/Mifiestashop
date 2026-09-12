@@ -5476,10 +5476,12 @@ async function loadCustomersFromAPI(){
   }
 }
 
+let loadedOrdersList = [];
+
 async function loadOrdersFromAPI(){
   const tbody = document.getElementById('ordersTableBody');
   if(!tbody) return;
-  
+
   let list = [];
   try {
     const r = await fetch('/api/pedidos');
@@ -5490,6 +5492,7 @@ async function loadOrdersFromAPI(){
   } catch(e) {}
 
   if(list.length === 0) list = DEFAULT_ORDERS;
+  loadedOrdersList = list;
 
   // Nota: las ventas reales por producto ya NO se sacan de aquí (esta lista de pedidos
   // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
@@ -5517,6 +5520,104 @@ async function loadOrdersFromAPI(){
   }
 
   renderTopProductsTable();
+}
+
+let currentOrderObj = null;
+
+function switchOdTab(tab){
+  const map = { estado: 'contentOdEstado', doc: 'contentOdDoc', trans: 'contentOdTrans', dev: 'contentOdDev' };
+  const btnIds = { estado: 'tabOdEstado', doc: 'tabOdDoc', trans: 'tabOdTrans', dev: 'tabOdDev' };
+  Object.keys(map).forEach(key => {
+    const panel = document.getElementById(map[key]);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(btnIds[key]);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+}
+
+function closeOrderDetailModal(){
+  const modal = document.getElementById('orderDetailModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function renderOdProductRows(items){
+  const tbody = document.getElementById('odProductsTableBody');
+  if (!tbody) return;
+  if (!items || items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">Sin líneas de producto disponibles para este pedido.</td></tr>`;
+  } else {
+    tbody.innerHTML = items.map(it => `
+      <tr>
+        <td>${it.name}${it.sku ? `<br><span style="font-size:11px; color:var(--text-muted);">${it.sku}</span>` : ''}</td>
+        <td style="text-align:right;">${fmtMoney(it.price)}</td>
+        <td style="text-align:center;">${it.qty}</td>
+        <td style="text-align:center;"><span class="pill ok">Sí</span></td>
+        <td style="text-align:right; font-weight:700;">${fmtMoney(it.total != null ? it.total : it.price * it.qty)}</td>
+        <td style="text-align:center;">—</td>
+      </tr>
+    `).join('');
+  }
+  const countEl = document.getElementById('odProdCountTitle');
+  if (countEl) countEl.textContent = `Productos (${items ? items.length : 0})`;
+}
+
+function openOrderDetailModal(id){
+  const modal = document.getElementById('orderDetailModal');
+  if (!modal) return;
+
+  const order = loadedOrdersList.find(o => o.id === id)
+    || DEFAULT_ORDERS.find(o => o.id === id)
+    || { id, date: '—', customer: 'Cliente', total: 0, status: 'Pendiente', rawId: null };
+
+  currentOrderObj = order;
+
+  const totalStr = fmtMoney(order.total) + ' MXN';
+  document.getElementById('odBreadcrumb').textContent = order.id;
+  document.getElementById('odTitleHeader').innerHTML = `${order.id} <span style="font-weight:400; font-size:1rem; color:var(--text-muted);">de ${order.customer || 'Cliente'}</span>`;
+  document.getElementById('odTotalBadge').textContent = totalStr;
+  document.getElementById('odDateHeader').textContent = order.date || '—';
+  document.getElementById('odClientName').textContent = order.customer || 'Cliente';
+  document.getElementById('odClientEmail').textContent = 'Cargando…';
+  document.getElementById('odClientRegDate').textContent = '—';
+  document.getElementById('odClientSpent').textContent = '—';
+  document.getElementById('odStateBadge').textContent = order.status || 'Pendiente';
+  document.getElementById('odStateDate').textContent = order.date || '—';
+  document.getElementById('odSubtotalVal').textContent = totalStr;
+  document.getElementById('odTotalVal').textContent = totalStr;
+
+  renderOdProductRows(order.items || null);
+  if (!order.items) {
+    const tbody = document.getElementById('odProductsTableBody');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">Cargando líneas de producto…</td></tr>`;
+  }
+
+  switchOdTab('estado');
+  modal.classList.remove('hidden');
+
+  if (order.rawId) {
+    fetch(`/api/pedido-detalle?id=${order.rawId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (currentOrderObj !== order) return; // user opened another order meanwhile
+        renderOdProductRows(data.items && data.items.length ? data.items : null);
+        if (data.customer) {
+          const emailEl = document.getElementById('odClientEmail');
+          const regEl = document.getElementById('odClientRegDate');
+          if (emailEl) emailEl.textContent = data.customer.email || 'No disponible';
+          if (regEl) regEl.textContent = data.customer.date_add || '—';
+        } else {
+          const emailEl = document.getElementById('odClientEmail');
+          if (emailEl) emailEl.textContent = 'No disponible';
+        }
+      })
+      .catch(() => {
+        const emailEl = document.getElementById('odClientEmail');
+        if (emailEl) emailEl.textContent = 'No disponible';
+        renderOdProductRows(null);
+      });
+  } else {
+    document.getElementById('odClientEmail').textContent = 'No disponible';
+  }
 }
 
 async function loadSuppliersFromAPI(){
