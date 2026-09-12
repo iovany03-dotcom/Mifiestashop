@@ -985,6 +985,17 @@
 
 </div>
 
+<!-- Modal: vista pública de un producto (como se ve en la tienda) -->
+<div id="storefrontProductModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:760px;">
+    <div class="modal-header">
+      <h2 style="font-size:16px;">Vista del producto</h2>
+      <button class="btn small" onclick="closeStorefrontProductDetail()">✕</button>
+    </div>
+    <div id="storefrontProductModalBody"></div>
+  </div>
+</div>
+
 <!-- ==================== PORTAL DE CLIENTES (mifiestashop.com/mi-cuenta) ==================== -->
 <div id="view-cliente-portal" class="hidden" style="min-height:100vh; background:var(--bg-main); color:var(--text-primary); padding-bottom:60px;">
   
@@ -4471,7 +4482,8 @@ async function syncProductsFromPrestaShopAPI(){
           cat: 'general',
           catLabel: 'PrestaShop API',
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
-          desc: p.name
+          desc: p.description && p.description.trim() ? p.description : p.name,
+          url: p.url || ''
         }));
         loaded = true;
       }
@@ -5647,23 +5659,71 @@ function renderStorefrontProducts(cat = 'all', query = '') {
     return;
   }
 
-  grid.innerHTML = filtered.map(p => `
+  currentStorefrontList = filtered;
+
+  grid.innerHTML = filtered.map((p, idx) => `
     <div class="store-prod-card">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${p.name}" class="store-prod-img" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
-          <div class="store-prod-title">${p.name}</div>
+          <div class="store-prod-title" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})">${p.name}</div>
         </div>
         <div>
           <div class="store-prod-price">${fmtMoney(p.price)}</div>
-          <button class="store-prod-btn" onclick="addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
+          <button class="store-prod-btn" style="margin-bottom:6px;" onclick="event.stopPropagation(); addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
             🛒 Agregar al Carrito
+          </button>
+          <button class="btn small" style="width:100%; background:transparent; border:1px solid var(--border);" onclick="event.stopPropagation(); openStorefrontProductDetail(${idx})">
+            👁️ Ver producto
           </button>
         </div>
       </div>
     </div>
   `).join('');
+}
+
+let currentStorefrontList = [];
+
+function openStorefrontProductDetail(idx){
+  const p = currentStorefrontList[idx];
+  if (!p) return;
+
+  const modal = document.getElementById('storefrontProductModal');
+  const body = document.getElementById('storefrontProductModalBody');
+  if (!modal || !body) return;
+
+  const desc = (p.desc && p.desc.trim() && p.desc.trim() !== p.name) ? p.desc : 'Sin descripción disponible para este producto.';
+  const officialLinkHtml = p.url
+    ? `<a href="${p.url}" target="_blank" rel="noopener" style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#e85d04; font-weight:700; text-decoration:none; margin-top:8px;">🔗 Ver en la tienda oficial mifiestashop.com ↗</a>`
+    : '';
+
+  body.innerHTML = `
+    <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
+      <div>
+        <img src="${p.img}" alt="${p.name}" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      </div>
+      <div>
+        <div style="font-size:12px; color:var(--text-muted); font-weight:600;">SKU: ${p.sku}</div>
+        <h2 style="margin:6px 0 10px; font-size:22px;">${p.name}</h2>
+        <div style="font-size:1.6rem; font-weight:800; color:#e85d04; margin-bottom:14px;">${fmtMoney(p.price)}</div>
+        <p style="color:var(--text-secondary); line-height:1.5; font-size:14px;">${desc}</p>
+        ${officialLinkHtml}
+        <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
+          <input type="number" id="storefrontDetailQty" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          <button class="store-prod-btn" style="flex:1;" onclick="const qN=parseInt(document.getElementById('storefrontDetailQty').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); closeStorefrontProductDetail();">
+            🛒 Agregar al Carrito
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+}
+
+function closeStorefrontProductDetail(){
+  const modal = document.getElementById('storefrontProductModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 function filterStorefrontProducts(q) {
