@@ -5932,12 +5932,6 @@ function renderStorefrontProducts(cat = 'all', query = '') {
 }
 
 let currentStorefrontList = [];
-const VERCEL_STORE_ORIGIN = 'https://mifiestashop.vercel.app';
-
-function vercelUrlFor(p){
-  if (!p || !p.url) return '';
-  return p.url.replace(/^https?:\/\/[^\/]+/, VERCEL_STORE_ORIGIN);
-}
 
 function productPathFor(p){
   if (!p || !p.url) return '';
@@ -5958,15 +5952,6 @@ function openStorefrontProductDetail(idx){
 
 function buildProductDetailHTML(p, qtyId, onAddToCart){
   const desc = (p.desc && p.desc.trim() && p.desc.trim() !== p.name) ? p.desc : 'Sin descripción disponible para este producto.';
-  const vercelUrl = vercelUrlFor(p);
-  const linksHtml = p.url
-    ? `
-      <div style="margin-top:10px; padding:10px 12px; border:1px solid #f0e6ef; border-radius:10px; background:var(--mf-cream);">
-        <div style="font-size:11px; color:#8b7d97; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;">Este producto también se puede ver en:</div>
-        <a href="${p.url}" target="_blank" rel="noopener" style="display:block; font-size:13px; color:var(--mf-pink); font-weight:700; text-decoration:none; word-break:break-all;">🔗 ${p.url} ↗</a>
-        ${vercelUrl ? `<a href="${vercelUrl}" target="_blank" rel="noopener" style="display:block; font-size:13px; color:var(--mf-teal); font-weight:700; text-decoration:none; word-break:break-all; margin-top:6px;">▲ ${vercelUrl} ↗</a>` : ''}
-      </div>`
-    : '';
 
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
@@ -5978,7 +5963,10 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         <h2 style="margin:6px 0 10px; font-size:22px; color:#2e1065;">${p.name}</h2>
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-orange); margin-bottom:14px;">${fmtMoney(p.price)}</div>
         <p style="color:#5b4a68; line-height:1.5; font-size:14px;">${desc}</p>
-        ${linksHtml}
+        <div id="productStockByBranch" style="margin-top:10px; padding:12px; border:1px solid #f0e6ef; border-radius:10px; background:var(--mf-cream);">
+          <div style="font-size:11px; color:#8b7d97; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px;">Existencia por sucursal</div>
+          <div id="productStockByBranchBody" style="font-size:13px; color:#5b4a68;">Consultando disponibilidad…</div>
+        </div>
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
           <input type="number" id="${qtyId}" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
           <button class="store-prod-btn" style="flex:1;" onclick="const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
@@ -5990,6 +5978,39 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
   `;
 }
 
+function loadProductStockByBranch(productId){
+  const body = document.getElementById('productStockByBranchBody');
+  if (!body) return;
+  if (!productId) {
+    body.textContent = 'No disponible para este producto.';
+    return;
+  }
+  fetch(`/api/stock-sucursal?id=${productId}`)
+    .then(r => r.json())
+    .then(data => {
+      const el = document.getElementById('productStockByBranchBody');
+      if (!el) return;
+      const branches = Array.isArray(data.branches) ? data.branches : [];
+      if (branches.length === 0) {
+        el.textContent = 'Sin información de existencia disponible.';
+        return;
+      }
+      el.innerHTML = branches.map(b => `
+        <div style="display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #f0e6ef;">
+          <span>📍 ${b.name}</span>
+          <span style="font-weight:700; color:${b.qty > 0 ? '#2e1065' : '#dc2626'};">${b.qty > 0 ? b.qty + ' u.' : 'Agotado'}</span>
+        </div>
+      `).join('') + `
+        <div style="display:flex; justify-content:space-between; padding-top:8px; font-weight:800; color:#2e1065;">
+          <span>Total disponible</span><span>${data.total} u.</span>
+        </div>`;
+    })
+    .catch(() => {
+      const el = document.getElementById('productStockByBranchBody');
+      if (el) el.textContent = 'No se pudo consultar la existencia en este momento.';
+    });
+}
+
 function renderProductDetailModal(p){
   if (!p) return;
   const modal = document.getElementById('storefrontProductModal');
@@ -5997,6 +6018,7 @@ function renderProductDetailModal(p){
   if (!modal || !body) return;
   body.innerHTML = buildProductDetailHTML(p, 'storefrontDetailQty', 'closeStorefrontProductDetail();');
   modal.classList.remove('hidden');
+  loadProductStockByBranch(p.id);
 }
 
 function closeStorefrontProductDetail(){
@@ -6035,6 +6057,7 @@ function renderProductFullPage(p){
   if (!body) return;
   body.innerHTML = buildProductDetailHTML(p, 'storefrontPageQty', '');
   showStorefrontPage('storefrontProductPage');
+  loadProductStockByBranch(p.id);
 }
 
 function goHomeStorefront(){

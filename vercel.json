@@ -3,7 +3,8 @@
     "api/ventas-productos.js": { "maxDuration": 30 },
     "api/ventas.js": { "maxDuration": 30 },
     "api/pedidos.js": { "maxDuration": 30 },
-    "api/pedido-detalle.js": { "maxDuration": 30 }
+    "api/pedido-detalle.js": { "maxDuration": 30 },
+    "api/stock-sucursal.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/:id(\\d+)-:slug*.html", "destination": "/index.html" }
