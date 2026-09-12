@@ -81,6 +81,32 @@
     transition: width 0.2s ease;
     z-index: 40;
   }
+  aside.sidebar.collapsed {
+    width: 68px !important;
+  }
+  aside.sidebar.collapsed .brand-logo > span {
+    display: none !important;
+  }
+  aside.sidebar.collapsed .sidebar-header {
+    padding: 0 10px;
+    justify-content: space-around;
+  }
+  aside.sidebar.collapsed .menu-group-title {
+    display: none !important;
+  }
+  aside.sidebar.collapsed .menu-left > span:not(.menu-icon) {
+    display: none !important;
+  }
+  aside.sidebar.collapsed .chevron-icon {
+    display: none !important;
+  }
+  aside.sidebar.collapsed .submenu {
+    display: none !important;
+  }
+  aside.sidebar.collapsed .sidebar-toggle svg {
+    transform: rotate(180deg);
+    transition: transform 0.2s ease;
+  }
 
   .sidebar-header {
     height: var(--header-h);
@@ -3491,10 +3517,40 @@ function fmtMoney(v){
   return '$' + Number(v || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
-// TOGGLE SUBMENU
+// TOGGLE SUBMENU & SIDEBAR COLLAPSE
 function toggleSubmenu(id) {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar && sidebar.classList.contains('collapsed')) {
+    sidebar.classList.remove('collapsed');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    if (toggleBtn) toggleBtn.title = "Contraer panel";
+    localStorage.setItem('mf_sidebar_collapsed', 'false');
+  }
   const item = document.getElementById(id);
   if (item) item.classList.toggle('expanded');
+}
+
+// SETUP SIDEBAR COLLAPSE LISTENER
+if (document.getElementById('toggleSidebar')) {
+  document.getElementById('toggleSidebar').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    if (sidebar) {
+      sidebar.classList.toggle('collapsed');
+      const isCollapsed = sidebar.classList.contains('collapsed');
+      if (toggleBtn) toggleBtn.title = isCollapsed ? "Expandir panel" : "Contraer panel";
+      localStorage.setItem('mf_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+    }
+  });
+
+  // Restore saved state
+  if (localStorage.getItem('mf_sidebar_collapsed') === 'true') {
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    if (sidebar) sidebar.classList.add('collapsed');
+    if (toggleBtn) toggleBtn.title = "Expandir panel";
+  }
 }
 
 // NAVIGATION
