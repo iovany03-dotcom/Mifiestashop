@@ -2010,7 +2010,7 @@
             <table id="prodTable">
               <thead>
                 <tr>
-                  <th>Categoría</th><th>Producto</th><th>Precio compra</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Precio volumen</th><th>Precio distribuidor</th><th>Acción</th><th>Detalle</th>
+                  <th>Categoría</th><th>Código / Producto</th><th>Precio compra</th><th>Gastos</th><th>Utilidad ($ / %)</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Medidas / Competencia</th><th>Acción</th><th>Detalle</th>
                 </tr>
               </thead>
               <tbody id="prodBody"></tbody>
@@ -3436,11 +3436,11 @@ const PROD_PAGE_SIZE = 15;
 
 async function loadProductos(){
   const tbody = document.getElementById('prodBody');
-  tbody.innerHTML = '<tr><td colspan="9">Cargando productos de Supabase…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10">Cargando productos de Supabase…</td></tr>';
   const search = document.getElementById('prodSearch').value.trim();
   const cat = document.getElementById('prodCat').value;
 
-  let query = `costos_productos?select=id,categoria,nombre_generico,precio_compra_actualizado,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio&order=categoria.asc,nombre_generico.asc&limit=${PROD_PAGE_SIZE}&offset=${prodPage*PROD_PAGE_SIZE}`;
+  let query = `costos_productos?select=*&order=categoria.asc,nombre_generico.asc&limit=${PROD_PAGE_SIZE}&offset=${prodPage*PROD_PAGE_SIZE}`;
   if (search) query += `&nombre_generico=ilike.*${encodeURIComponent(search)}*`;
   if (cat) query += `&categoria=eq.${encodeURIComponent(cat)}`;
 
@@ -3448,44 +3448,103 @@ async function loadProductos(){
     const rows = await sbGet(query);
     tbody.innerHTML = '';
     if (rows.length === 0){
-      tbody.innerHTML = '<tr><td colspan="9">Sin resultados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10">Sin resultados</td></tr>';
       return;
     }
     rows.forEach(row => tbody.appendChild(prodRow(row)));
     document.getElementById('prodPageInfo').textContent = `Página ${prodPage+1}`;
   } catch(e){
-    tbody.innerHTML = `<tr><td colspan="9" class="status err">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="status err">Error: ${e.message}</td></tr>`;
   }
 }
 
 function prodRow(row){
   const tr = document.createElement('tr');
+  const costo = parseFloat(row.precio_compra_actualizado || 0);
+  const gastos = parseFloat(row.gastos || 0);
+  const menudeo = parseFloat(row.menudeo_precio || 0);
+  const costoTotal = costo + gastos;
+  
+  const utilidadVal = (row.utilidad !== null && row.utilidad !== undefined && row.utilidad !== '') 
+    ? parseFloat(row.utilidad) 
+    : (menudeo - costoTotal);
+    
+  const pctUtilidad = costoTotal > 0 ? ((utilidadVal / costoTotal) * 100).toFixed(1) : '0';
+  const utilPillClass = utilidadVal >= 0 ? 'ok' : 'bad';
+  
+  const codigoText = row.codigo_pos || row.codigo_barra || row.codigo || '—';
+  const medidasText = row.medidas || '—';
+  const compText = row.precio_competencia 
+    ? `${fmtMoney(row.precio_competencia)} ${row.competencia ? '(' + row.competencia + ')' : ''}` 
+    : (row.competencia || '—');
+
   tr.innerHTML = `
-    <td>${row.categoria || '—'}</td>
-    <td><b>${row.nombre_generico || '—'}</b></td>
-    <td>${fmtMoney(row.precio_compra_actualizado)}</td>
-    <td>${fmtMoney(row.menudeo_precio)}</td>
+    <td><span class="pill info" style="font-size:11px;">${row.categoria || 'General'}</span></td>
+    <td>
+      <b>${row.nombre_generico || '—'}</b>
+      <br><span style="font-size:11px; color:var(--text-muted);">Cod: ${codigoText}</span>
+    </td>
+    <td>${fmtMoney(costo)}</td>
+    <td style="color:var(--warning); font-weight:600;">${fmtMoney(gastos)}</td>
+    <td><span class="pill ${utilPillClass}">${fmtMoney(utilidadVal)} (${pctUtilidad}%)</span></td>
+    <td style="font-weight:700; color:var(--series-2);">${fmtMoney(menudeo)}</td>
     <td>${fmtMoney(row.mayoreo_precio_2)}</td>
-    <td>${fmtMoney(row.volumen_precio_3)}</td>
-    <td>${fmtMoney(row.distribuidor_precio)}</td>
-    <td><button class="btn small" onclick="openProductModal(${row.id})">✏️ Editar todo</button></td>
+    <td style="font-size:11px; max-width:180px;">
+      <div><b>Medidas:</b> ${medidasText}</div>
+      <div style="margin-top:2px;"><b>Comp:</b> ${compText}</div>
+    </td>
+    <td><button class="btn small primary" onclick="openProductModal(${row.id})">✏️ Editar todo</button></td>
     <td><span class="pill ok">Supabase</span></td>
   `;
   return tr;
 }
 
 const FIELD_GROUPS = [
-  { title: 'Producto', fields: [
-    ['categoria','Categoría'], ['nombre_generico','Nombre genérico'], ['nombre_explicito','Nombre explícito'],
-    ['codigo_barra','Código de barra'], ['codigo_pos','Código punto de venta'], ['descripcion','Descripción', true]
-  ]},
-  { title: 'Precio de compra', fields: [
-    ['precio_compra_regular','Regular'], ['precio_compra_actualizado','Actualizado']
-  ]},
-  { title: 'Precios de venta', fields: [
-    ['menudeo_precio','Precio Menudeo'], ['mayoreo_precio_2','Precio Mayoreo'],
-    ['volumen_precio_3','Precio Volumen'], ['distribuidor_precio','Precio Distribuidor']
-  ]}
+  { 
+    title: 'Producto y Códigos', 
+    fields: [
+      ['categoria', 'Categoría'], 
+      ['nombre_generico', 'Nombre genérico'], 
+      ['nombre_explicito', 'Nombre explícito'],
+      ['codigo_pos', 'Código Punto de Venta (POS) / SKU'], 
+      ['codigo_barra', 'Código de Barra'], 
+      ['codigo', 'Código Adicional / SAT'],
+      ['descripcion', 'Descripción', true]
+    ]
+  },
+  { 
+    title: 'Medidas y Peso', 
+    fields: [
+      ['medidas', 'Medidas / Dimensiones (Alto x Ancho x Largo cm)'], 
+      ['peso', 'Peso (kg / g)']
+    ]
+  },
+  { 
+    title: 'Análisis de Competencia', 
+    fields: [
+      ['competencia', 'Nombre / Tienda de Competencia'], 
+      ['precio_competencia', 'Precio Competencia ($)'],
+      ['link_competencia', 'Enlace de Competencia (URL)', true]
+    ]
+  },
+  { 
+    title: 'Precio de Compra, Gastos y Utilidad', 
+    fields: [
+      ['precio_compra_regular', 'Precio Compra Regular ($)'], 
+      ['precio_compra_actualizado', 'Precio Compra Actualizado ($)'],
+      ['gastos', 'Gastos Directos / Operación / Importación ($)'],
+      ['utilidad', 'Utilidad Estimada ($) (Calculada o manual)']
+    ]
+  },
+  { 
+    title: 'Precios de Venta', 
+    fields: [
+      ['menudeo_precio', 'Precio Menudeo ($)'], 
+      ['mayoreo_precio_2', 'Precio Mayoreo ($)'],
+      ['volumen_precio_3', 'Precio Volumen ($)'], 
+      ['distribuidor_precio', 'Precio Distribuidor ($)']
+    ]
+  }
 ];
 
 let modalProductId = null;
@@ -3505,35 +3564,83 @@ async function openProductModal(id){
     FIELD_GROUPS.forEach(group=>{
       const g = document.createElement('div');
       g.className = 'modal-group';
-      g.style.marginBottom = '16px';
+      g.style.marginBottom = '18px';
+      g.style.padding = '14px';
+      g.style.borderRadius = '8px';
+      g.style.background = 'rgba(255,255,255,0.02)';
+      g.style.border = '1px solid var(--border)';
+
       const h3 = document.createElement('h3');
       h3.textContent = group.title;
       h3.style.color = 'var(--series-2)';
+      h3.style.marginTop = '0';
+      h3.style.marginBottom = '12px';
+      h3.style.fontSize = '14px';
       g.appendChild(h3);
+
       const grid = document.createElement('div');
       grid.className = 'modal-grid';
       grid.style.display = 'grid';
       grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
-      grid.style.gap = '10px';
-      group.fields.forEach(([field, label])=>{
+      grid.style.gap = '12px';
+
+      group.fields.forEach(([field, label, fullWidth])=>{
         const wrap = document.createElement('div');
+        if (fullWidth) wrap.style.gridColumn = '1 / -1';
+
         const lbl = document.createElement('label');
         lbl.textContent = label;
         lbl.style.fontSize = '11px';
+        lbl.style.fontWeight = '600';
+        lbl.style.color = 'var(--text-secondary)';
         lbl.style.display = 'block';
+        lbl.style.marginBottom = '4px';
+
         const inp = document.createElement('input');
         inp.value = row[field] ?? '';
         inp.dataset.field = field;
         inp.style.width = '100%';
-        inp.style.padding = '6px';
-        wrap.appendChild(lbl); wrap.appendChild(inp);
+        inp.style.padding = '8px 10px';
+        inp.style.borderRadius = '6px';
+        inp.style.border = '1px solid var(--border)';
+        inp.style.background = 'var(--card-bg)';
+        inp.style.color = 'var(--text-primary)';
+        inp.style.fontSize = '13px';
+
+        if (field === 'precio_compra_actualizado' || field === 'gastos' || field === 'menudeo_precio') {
+          inp.addEventListener('input', updateCalcUtilidad);
+        }
+        if (field === 'utilidad') {
+          inp.addEventListener('input', () => { inp.dataset.userEdited = 'true'; });
+        }
+
+        wrap.appendChild(lbl); 
+        wrap.appendChild(inp);
         grid.appendChild(wrap);
       });
       g.appendChild(grid);
       body.appendChild(g);
     });
+
+    updateCalcUtilidad();
   } catch(e){
     body.innerHTML = `<div class="status err">${e.message}</div>`;
+  }
+}
+
+function updateCalcUtilidad() {
+  const costoInp = document.querySelector('#modalBody input[data-field="precio_compra_actualizado"]');
+  const gastosInp = document.querySelector('#modalBody input[data-field="gastos"]');
+  const menudeoInp = document.querySelector('#modalBody input[data-field="menudeo_precio"]');
+  const utilidadInp = document.querySelector('#modalBody input[data-field="utilidad"]');
+
+  if (costoInp && gastosInp && menudeoInp && utilidadInp) {
+    if (utilidadInp.dataset.userEdited === 'true' && utilidadInp.value !== '') return;
+    const c = parseFloat(costoInp.value || 0);
+    const g = parseFloat(gastosInp.value || 0);
+    const m = parseFloat(menudeoInp.value || 0);
+    const calc = m - (c + g);
+    utilidadInp.value = calc.toFixed(2);
   }
 }
 
