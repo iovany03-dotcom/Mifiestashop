@@ -51,6 +51,23 @@ module.exports = async function handler(req, res) {
     const count = orders.length;
     const avgTicket = count > 0 ? revenue / count : 0;
 
+    // Desglose para la gráfica: por día si el rango es corto, por mes si es largo.
+    const spanDays = Math.round((new Date(to) - new Date(from)) / 86400000) + 1;
+    const granularity = spanDays > 62 ? 'month' : 'day';
+    const buckets = {};
+    orders.forEach(o => {
+      const d = String(o.date_add || '');
+      const key = granularity === 'month' ? d.slice(0, 7) : d.slice(0, 10);
+      if (!buckets[key]) buckets[key] = { revenue: 0, orders: 0 };
+      buckets[key].revenue += parseFloat(o.total_paid || 0);
+      buckets[key].orders += 1;
+    });
+    const breakdown = Object.keys(buckets).sort().map(key => ({
+      label: key,
+      revenue: Math.round(buckets[key].revenue * 100) / 100,
+      orders: buckets[key].orders,
+    }));
+
     res.status(200).json({
       from,
       to,
@@ -58,6 +75,8 @@ module.exports = async function handler(req, res) {
       orders: count,
       avgTicket: Math.round(avgTicket * 100) / 100,
       currency: 'MXN',
+      granularity,
+      breakdown,
     });
   } catch (err) {
     res.status(500).json({ error: 'Fallo al consultar PrestaShop', detail: String(err) });

@@ -1456,6 +1456,14 @@
 
         <div id="ventasLoading" class="loading hidden" style="color:var(--text-muted); font-size:12.5px; padding:10px;">Consultando API PrestaShop…</div>
         <div id="ventasError" class="status err hidden"></div>
+
+        <div class="card" style="margin-top:16px; padding:14px;">
+          <h3 id="liveVentasChartTitle" style="margin-top:0; font-size:14px;">Ingresos del período seleccionado</h3>
+          <div style="position:relative;">
+            <svg id="liveVentasChart" viewBox="0 0 520 260" style="width:100%;height:auto;display:block"></svg>
+            <div class="chart-tooltip" id="liveVentasTip" style="position:absolute; pointer-events:none; opacity:0; background:var(--card-bg); border:1px solid var(--border); padding:6px 10px; border-radius:6px; font-size:12px;"></div>
+          </div>
+        </div>
       </div>
 
       <div class="card" style="margin-top:20px;">
@@ -4189,11 +4197,13 @@ async function loadVentas(from, to){
     document.getElementById('kpiRev').textContent = fmtMoney(data.revenue);
     document.getElementById('kpiOrd').textContent = fmtNum(data.orders);
     document.getElementById('kpiAvg').textContent = fmtMoney(data.avgTicket);
+    drawLiveVentasChart(data.breakdown || [], data.granularity || 'day');
   } catch(e){
     if(errBox) { errBox.textContent = 'Modo Snapshot: ' + e.message; errBox.classList.remove('hidden'); }
     document.getElementById('kpiRev').textContent = fmtMoney(HIST.total_revenue_mxn);
     document.getElementById('kpiOrd').textContent = fmtNum(HIST.total_valid_orders_mxn);
     document.getElementById('kpiAvg').textContent = fmtMoney(HIST.total_revenue_mxn / HIST.total_valid_orders_mxn);
+    drawLiveVentasChart(HIST.monthly_sales.map(m=>({label:m.month, revenue:m.revenue})), 'month');
   } finally {
     if(loading) loading.classList.add('hidden');
   }
@@ -4248,6 +4258,30 @@ function renderHistKPIs(){
       </div>
     `).join('');
   }
+}
+
+function fmtDayLabel(d){
+  const parts = String(d).split('-');
+  if (parts.length !== 3) return d;
+  const names = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parts[2]} ${names[parseInt(parts[1],10)-1]}`;
+}
+
+function drawLiveVentasChart(breakdown, granularity){
+  const titleEl = document.getElementById('liveVentasChartTitle');
+  if (titleEl) {
+    titleEl.textContent = granularity === 'month'
+      ? 'Ingresos por mes (período seleccionado)'
+      : 'Ingresos por día (período seleccionado)';
+  }
+  const svg = document.getElementById('liveVentasChart');
+  if (!svg) return;
+  if (!breakdown.length){
+    svg.innerHTML = `<text x="260" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>`;
+    return;
+  }
+  const fmtLabel = granularity === 'month' ? fmtMonth : fmtDayLabel;
+  drawBarChart('liveVentasChart', 'liveVentasTip', breakdown, 'revenue', '#3699ff', fmtMoney, 'label', fmtLabel);
 }
 
 function drawBarChart(svgId, tipId, rows, key, color, fmtValue, labelKey, fmtLabel){
