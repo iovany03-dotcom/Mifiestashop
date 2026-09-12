@@ -1452,9 +1452,11 @@
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
           <div class="seg" id="periodSeg" style="display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
             <button data-p="dia" class="active" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Día</button>
+            <button data-p="semana" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Semana</button>
             <button data-p="mes" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Mes</button>
             <button data-p="anio" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Año</button>
             <button data-p="dia1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Día-1</button>
+            <button data-p="semana1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Semana-1</button>
             <button data-p="mes1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Mes-1</button>
             <button data-p="anio1" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Año-1</button>
           </div>
@@ -4188,9 +4190,24 @@ function periodRange(p){
   const y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
   switch(p){
     case 'dia': return [new Date(y,m,d), new Date(y,m,d)];
+    case 'semana': {
+      const day = now.getDay();
+      const diffToMonday = (day === 0 ? -6 : 1) - day;
+      const monday = new Date(y,m,d+diffToMonday);
+      const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate()+6);
+      return [monday, sunday];
+    }
     case 'mes': return [new Date(y,m,1), new Date(y,m+1,0)];
     case 'anio': return [new Date(y,0,1), new Date(y,11,31)];
     case 'dia1': { const t=new Date(y,m,d-1); return [t,t]; }
+    case 'semana1': {
+      const day = now.getDay();
+      const diffToMonday = (day === 0 ? -6 : 1) - day;
+      const mondayThisWeek = new Date(y,m,d+diffToMonday);
+      const mondayLastWeek = new Date(mondayThisWeek.getFullYear(), mondayThisWeek.getMonth(), mondayThisWeek.getDate()-7);
+      const sundayLastWeek = new Date(mondayLastWeek.getFullYear(), mondayLastWeek.getMonth(), mondayLastWeek.getDate()+6);
+      return [mondayLastWeek, sundayLastWeek];
+    }
     case 'mes1': return [new Date(y,m-1,1), new Date(y,m,0)];
     case 'anio1': return [new Date(y-1,0,1), new Date(y-1,11,31)];
   }
