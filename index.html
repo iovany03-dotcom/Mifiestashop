@@ -2675,13 +2675,22 @@
         </div>
       </div>
 
-      <!-- SECTION 3: MULTIMEDIA & DESCRIPCIÓN EXPLICITA -->
+      <!-- SECTION 3: MULTIMEDIA, ENLACES & DESCRIPCIÓN EXPLICITA -->
       <div style="background:var(--plane); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:16px;">
-        <h4 style="margin-top:0; margin-bottom:12px; font-size:13px; color:var(--series-2); text-transform:uppercase; letter-spacing:0.05em;">🖼️ Detalles de Imagen & Descripción Detallada</h4>
+        <h4 style="margin-top:0; margin-bottom:12px; font-size:13px; color:var(--series-2); text-transform:uppercase; letter-spacing:0.05em;">🖼️ Detalles de Imagen, URL de Tienda & Descripción Detallada</h4>
         
-        <div style="margin-bottom:12px;">
-          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen (PrestaShop / CDN):</label>
-          <input type="url" id="editProdImg" placeholder="https://..." style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen (PrestaShop / CDN):</label>
+            <input type="url" id="editProdImg" placeholder="https://..." style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Actual del Producto (Tienda Web):</label>
+            <div style="display:flex; gap:6px;">
+              <input type="url" id="editProdUrl" placeholder="https://mifiestashop.com/producto/..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              <button type="button" class="btn small secondary" onclick="if(document.getElementById('editProdUrl').value) window.open(document.getElementById('editProdUrl').value, '_blank'); else alert('No hay URL definida');" title="Abrir enlace en pestaña nueva">🔗 Abrir</button>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -4172,25 +4181,29 @@ async function syncProductsFromPrestaShopAPI(){
 
   // Fallback: fetch from Supabase REST DB
   try {
-    const data = await sbGet('costos_productos?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio,precio_compra_regular,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion&limit=250');
+    const data = await sbGet('costos_productos?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio,precio_compra_regular,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion,link_producto,url_producto&limit=250');
     if(Array.isArray(data) && data.length > 0) {
-      liveProducts = data.map(item => ({
-        id: item.id,
-        name: item.nombre_generico || 'Producto Mi Fiestashop',
-        nombre_explicito: item.nombre_explicito || '',
-        sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
-        barcode: item.codigo_barra || '',
-        price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 45),
-        priceMayoreo: parseFloat(item.mayoreo_precio_2 || 0),
-        priceVolumen: parseFloat(item.volumen_precio_3 || 0),
-        priceDistribuidor: parseFloat(item.distribuidor_precio || 0),
-        costoCompra: parseFloat(item.precio_compra_actualizado || item.precio_compra_regular || 0),
-        cat: (item.categoria || 'General').toLowerCase().trim(),
-        catLabel: item.categoria || 'General',
-        img: item.link_imagen || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
-        desc: item.descripcion || '',
-        status: 'Activo'
-      }));
+      liveProducts = data.map(item => {
+        const prodUrl = item.link_producto || item.url_producto || `https://mifiestashop.com/producto/${item.codigo_pos || item.id}`;
+        return {
+          id: item.id,
+          name: item.nombre_generico || 'Producto Mi Fiestashop',
+          nombre_explicito: item.nombre_explicito || '',
+          sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
+          barcode: item.codigo_barra || '',
+          price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 45),
+          priceMayoreo: parseFloat(item.mayoreo_precio_2 || 0),
+          priceVolumen: parseFloat(item.volumen_precio_3 || 0),
+          priceDistribuidor: parseFloat(item.distribuidor_precio || 0),
+          costoCompra: parseFloat(item.precio_compra_actualizado || item.precio_compra_regular || 0),
+          cat: (item.categoria || 'General').toLowerCase().trim(),
+          catLabel: item.categoria || 'General',
+          img: item.link_imagen || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
+          url: prodUrl,
+          desc: item.descripcion || '',
+          status: 'Activo'
+        };
+      });
       renderDynamicCatPills();
       renderProducts('all');
       renderCatalogTable('all');
@@ -4233,6 +4246,7 @@ function renderCatalogTable(category = 'all', query = ''){
     const isInactive = p.status === 'Inactivo';
     const pillClass = isInactive ? 'bad' : 'ok';
     const statusText = p.status || 'Activo';
+    const pUrl = p.url || `https://mifiestashop.com/producto/${p.sku || p.id}`;
 
     return `
       <tr>
@@ -4240,13 +4254,17 @@ function renderCatalogTable(category = 'all', query = ''){
           <img src="${p.img}" alt="${p.name}" style="width:40px; height:40px; object-fit:cover; border-radius:6px; background:var(--plane);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
         </td>
         <td><b>${p.sku}</b></td>
-        <td><b>${p.name}</b></td>
+        <td>
+          <b>${p.name}</b>
+          <br><a href="${pUrl}" target="_blank" onclick="event.stopPropagation();" style="font-size:11px; color:var(--series-2); text-decoration:none; font-weight:500;">🔗 Ver página web ↗</a>
+        </td>
         <td><span class="pill ok">${p.catLabel || p.cat}</span></td>
         <td style="font-weight:700; color:var(--series-2);">${fmtMoney(p.price)}</td>
         <td>PrestaShop / API</td>
         <td><span class="pill ${pillClass}">${statusText}</span></td>
         <td style="text-align:center; white-space:nowrap;">
           <button class="btn small primary" onclick="openEditProductModal('${p.id}')">✏️ Editar</button>
+          <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('${pUrl}', '_blank')" title="Abrir URL pública del producto">🔗 URL</button>
           <button class="btn small danger" style="margin-left:4px;" onclick="deleteProduct('${p.id}')">🗑️</button>
         </td>
       </tr>
@@ -4254,7 +4272,7 @@ function renderCatalogTable(category = 'all', query = ''){
   }).join('');
 }
 
-// PRODUCT EDITOR MODAL CONTROLLER (EXTENDED ATTRIBUTES)
+// PRODUCT EDITOR MODAL CONTROLLER (EXTENDED ATTRIBUTES & LIVE URL)
 function openEditProductModal(pId) {
   const modal = document.getElementById('editProductModal');
   const title = document.getElementById('editProductModalTitle');
@@ -4277,6 +4295,7 @@ function openEditProductModal(pId) {
   if (document.getElementById('editProdPriceDistribuidor')) document.getElementById('editProdPriceDistribuidor').value = prod ? (prod.priceDistribuidor || '') : '';
   if (document.getElementById('editProdCosto')) document.getElementById('editProdCosto').value = prod ? (prod.costoCompra || '') : '';
   document.getElementById('editProdImg').value = prod ? prod.img : 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
+  if (document.getElementById('editProdUrl')) document.getElementById('editProdUrl').value = prod ? (prod.url || `https://mifiestashop.com/producto/${prod.sku || prod.id}`) : `https://mifiestashop.com/producto/nuevo`;
   if (document.getElementById('editProdDesc')) document.getElementById('editProdDesc').value = prod ? (prod.desc || '') : '';
 
   if (title) {
@@ -4304,6 +4323,7 @@ function saveProductChanges() {
   const costoCompra = parseFloat(document.getElementById('editProdCosto')?.value || 0);
   const status = document.getElementById('editProdStatus').value;
   const img = (document.getElementById('editProdImg').value || '').trim() || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
+  const prodUrl = (document.getElementById('editProdUrl')?.value || '').trim() || `https://mifiestashop.com/producto/${sku}`;
   const desc = (document.getElementById('editProdDesc')?.value || '').trim();
 
   if (!name || !sku) {
@@ -4329,6 +4349,7 @@ function saveProductChanges() {
       targetProd.costoCompra = costoCompra;
       targetProd.status = status;
       targetProd.img = img;
+      targetProd.url = prodUrl;
       targetProd.desc = desc;
     }
   } else {
@@ -4347,6 +4368,7 @@ function saveProductChanges() {
       costoCompra: costoCompra,
       status: status,
       img: img,
+      url: prodUrl,
       desc: desc
     };
     if (liveProducts.length > 0) liveProducts.unshift(targetProd);
@@ -4366,6 +4388,7 @@ function saveProductChanges() {
       distribuidor_precio: priceDistribuidor || null,
       precio_compra_actualizado: costoCompra || null,
       link_imagen: img,
+      link_producto: prodUrl,
       descripcion: desc
     }).catch(e => console.log('Sincronización Supabase en segundo plano:', e.message));
   }
