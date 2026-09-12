@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
 
   const limit = req.query.limit || 100;
   const fields = '[id,id_customer,total_paid,date_add,payment,valid,current_state]';
-  const url = `${baseUrl}/api/orders?display=${encodeURIComponent(fields)}&limit=0,${limit}&order=[id_DESC]&output_format=JSON`;
+  const url = `${baseUrl}/api/orders?display=${encodeURIComponent(fields)}&limit=0,${limit}&sort=[id_DESC]&output_format=JSON`;
 
   try {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
