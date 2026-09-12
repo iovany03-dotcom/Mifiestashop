@@ -5430,23 +5430,9 @@ async function loadOrdersFromAPI(){
 
   if(list.length === 0) list = DEFAULT_ORDERS;
 
-  // Process line item product sales from API orders
-  list.forEach(o => {
-    const monthStr = (o.date || '2026-09').slice(0, 7);
-    const rows = o.order_details || o.associations?.order_rows || o.items || [];
-    if (Array.isArray(rows)) {
-      rows.forEach(r => {
-        if (typeof r === 'object') {
-          const skuOrId = r.product_reference || r.product_id || r.sku || r.name;
-          const qty = parseInt(r.product_quantity || r.qty || 1) || 1;
-          const price = parseFloat(r.unit_price_tax_excl || r.product_price || r.price || 0) || 0;
-          if (skuOrId) {
-            recordSaleForProduct(skuOrId, qty, price, monthStr);
-          }
-        }
-      });
-    }
-  });
+  // Nota: las ventas reales por producto ya NO se sacan de aquí (esta lista de pedidos
+  // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
+  // que sí agrega datos reales de PrestaShop (ver loadRealProductSales()).
 
   tbody.innerHTML = list.map(o => `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${o.id}')">
@@ -5695,7 +5681,7 @@ function getProductMonthlySales(p) {
   const pKeyId = String(p.id || '').trim();
   const pName = String(p.name || '').trim().toLowerCase();
 
-  let rec = recordedProductSales[pKeySku] || recordedProductSales[pKeyId] || null;
+  let rec = recordedProductSales[pKeySku] || recordedProductSales[pKeyId] || (pName ? recordedProductSales[pName] : null) || null;
 
   if (!rec && pName) {
     for (const key in recordedProductSales) {
@@ -5706,40 +5692,40 @@ function getProductMonthlySales(p) {
     }
   }
 
-  const price = p.price || 15;
-  const pIdNum = typeof p.id === 'number' ? p.id : (parseInt(p.id) || Math.abs(hashCode(p.name || p.sku || '1')));
-
-  // Weight factor for catalog distribution matching store order history (HIST.monthly_sales)
-  const baseQty = ((pIdNum * 37 + 19) % 55) + 12;
-
-  const monthSales = months.map((m, idx) => {
-    let units = 0;
-    let revenue = 0;
-
-    if (rec && rec.byMonth && rec.byMonth[m]) {
-      units += rec.byMonth[m].units;
-      revenue += rec.byMonth[m].revenue;
-    }
-
-    // Historical store sales volume matching HIST.monthly_sales
-    const histMonth = HIST.monthly_sales.find(h => h.month === m);
-    const orderVolume = histMonth ? histMonth.orders : 0;
-
-    if (orderVolume > 0) {
-      const monthMultipliers = [0.25, 0.85, 0.0, 0.35, 0.95, 0.90, 0.40];
-      const mult = monthMultipliers[idx] || 0.4;
-      const histUnits = Math.round(baseQty * mult * (orderVolume / 200));
-      units += histUnits;
-      revenue += histUnits * price;
-    }
-
+  // Datos 100% reales: de /api/ventas-productos (PrestaShop) o de ventas hechas en el
+  // propio POS (recordSaleForProduct). Si no hay coincidencia, se reporta en 0 —
+  // ya no se rellena con una fórmula inventada.
+  const monthSales = months.map(m => {
+    const units = (rec && rec.byMonth && rec.byMonth[m]) ? rec.byMonth[m].units : 0;
+    const revenue = (rec && rec.byMonth && rec.byMonth[m]) ? rec.byMonth[m].revenue : 0;
     return { month: m, units: Math.max(0, units), revenue: Math.max(0, revenue) };
   });
 
-  const totalUnits = monthSales.reduce((sum, item) => sum + item.units, 0);
-  const totalRevenue = monthSales.reduce((sum, item) => sum + item.revenue, 0);
+  const totalUnits = rec ? rec.totalUnits : 0;
+  const totalRevenue = rec ? rec.totalRevenue : 0;
 
-  return { months: monthSales, totalUnits, totalRevenue };
+  return { months: monthSales, totalUnits, totalRevenue, hasRealData: !!rec };
+}
+
+let realProductSalesLoaded = false;
+async function loadRealProductSales(){
+  try{
+    const r = await fetch('/api/ventas-productos');
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    (data.products || []).forEach(p => {
+      const rec = { totalUnits: p.totalUnits, totalRevenue: p.totalRevenue, byMonth: p.byMonth || {} };
+      recordedProductSales[String(p.product_id)] = rec;
+      if (p.product_name) recordedProductSales[String(p.product_name).trim().toLowerCase()] = rec;
+      if (p.product_reference) recordedProductSales[String(p.product_reference).trim()] = rec;
+    });
+    realProductSalesLoaded = true;
+    console.log(`[ventas-productos] ${data.products?.length || 0} productos, ${data.ordersProcessed} pedidos, ${data.lineItemsProcessed} líneas.`);
+  } catch(e){
+    console.warn('No se pudieron cargar ventas reales por producto:', e.message);
+  } finally {
+    if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
+  }
 }
 
 function renderTopProductsTable() {
@@ -6318,6 +6304,7 @@ syncProductsFromPrestaShopAPI();
 loadCategoriesFromAPI();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
+loadRealProductSales();
 loadCartsFromAPI();
 loadSuppliersFromAPI();
 loadSavedTicketConfig();

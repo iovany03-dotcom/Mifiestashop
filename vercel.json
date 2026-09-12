@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/ventas-productos.js": { "maxDuration": 30 },
+    "api/ventas.js": { "maxDuration": 30 },
+    "api/pedidos.js": { "maxDuration": 30 }
+  }
+}
