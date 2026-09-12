@@ -2170,7 +2170,7 @@
             <table id="prodTable">
               <thead>
                 <tr>
-                  <th>Categoría</th><th>Código / Producto</th><th>Precio compra</th><th>Gastos</th><th>Utilidad ($ / %)</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Medidas / Competencia</th><th>Acción</th><th>Detalle</th>
+                  <th>Código / Producto</th><th>Precio compra</th><th>Gastos</th><th>Utilidad ($ / %)</th><th>Precio menudeo</th><th>Precio mayoreo</th><th>Medidas / Competencia</th><th>Acción</th><th>Detalle</th>
                 </tr>
               </thead>
               <tbody id="prodBody"></tbody>
@@ -3596,7 +3596,7 @@ const PROD_PAGE_SIZE = 15;
 
 async function loadProductos(){
   const tbody = document.getElementById('prodBody');
-  tbody.innerHTML = '<tr><td colspan="10">Cargando productos de Supabase…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="9">Cargando productos de Supabase…</td></tr>';
   const search = document.getElementById('prodSearch').value.trim();
   const cat = document.getElementById('prodCat').value;
 
@@ -3608,13 +3608,13 @@ async function loadProductos(){
     const rows = await sbGet(query);
     tbody.innerHTML = '';
     if (rows.length === 0){
-      tbody.innerHTML = '<tr><td colspan="10">Sin resultados</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9">Sin resultados</td></tr>';
       return;
     }
     rows.forEach(row => tbody.appendChild(prodRow(row)));
     document.getElementById('prodPageInfo').textContent = `Página ${prodPage+1}`;
   } catch(e){
-    tbody.innerHTML = `<tr><td colspan="10" class="status err">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="status err">Error: ${e.message}</td></tr>`;
   }
 }
 
@@ -3639,7 +3639,6 @@ function prodRow(row){
     : (row.competencia || '—');
 
   tr.innerHTML = `
-    <td><span class="pill info" style="font-size:11px;">${row.categoria || 'General'}</span></td>
     <td>
       <b>${row.nombre_generico || '—'}</b>
       <br><span style="font-size:11px; color:var(--text-muted);">Cod: ${codigoText}</span>
