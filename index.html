@@ -3,7 +3,40 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mi Fiestashop — Sistema ERP & POS</title>
+<title id="pageTitleTag">Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México</title>
+<meta id="metaDescription" name="description" content="Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#d3007b">
+<link id="canonicalLink" rel="canonical" href="https://mifiestashop.vercel.app/">
+
+<meta property="og:type" content="website">
+<meta id="ogTitle" property="og:title" content="Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo">
+<meta id="ogDescription" property="og:description" content="Miles de artículos para fiesta, batucada y pirotecnia fría al mayoreo y menudeo. Envío a todo México.">
+<meta id="ogUrl" property="og:url" content="https://mifiestashop.vercel.app/">
+<meta property="og:image" content="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
+<meta property="og:locale" content="es_MX">
+<meta name="twitter:card" content="summary">
+<meta id="twitterTitle" name="twitter:title" content="Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo">
+<meta id="twitterDescription" name="twitter:description" content="Miles de artículos para fiesta, batucada y pirotecnia fría al mayoreo y menudeo. Envío a todo México.">
+
+<script id="ldJsonOrg" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Store",
+  "name": "Mi Fiestashop",
+  "url": "https://mifiestashop.vercel.app/",
+  "telephone": "+52-56-1262-2146",
+  "image": "https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp",
+  "priceRange": "$$",
+  "areaServed": "MX",
+  "department": [
+    { "@type": "LocalBusiness", "name": "Mi Fiestashop CDMX Rumania", "address": { "@type": "PostalAddress", "streetAddress": "Rumania 613, Col. Portales", "addressLocality": "Benito Juárez, CDMX", "addressCountry": "MX" } },
+    { "@type": "LocalBusiness", "name": "Mi Fiestashop Querétaro", "address": { "@type": "PostalAddress", "streetAddress": "C. Gral. Lázaro Cárdenas 67, Casa Blanca", "addressLocality": "Querétaro", "addressCountry": "MX" } },
+    { "@type": "LocalBusiness", "name": "Mi Fiestashop Puebla", "address": { "@type": "PostalAddress", "streetAddress": "C. 35 Sur 2901, Sta. Cruz Los Ángeles", "addressLocality": "Puebla", "addressCountry": "MX" } }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -843,6 +876,73 @@
   .store-footer-bottom {
     max-width: 1240px; margin: 0 auto; padding-top: 20px; border-top: 1px solid #e5dce6; text-align: center; font-size: 0.8rem; color: #8b7d97;
   }
+
+  /* ================= FIESTA MOTION SYSTEM (original) ================= */
+  .hero-deco {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    animation: heroFloat 7s ease-in-out infinite;
+    will-change: transform;
+  }
+  @keyframes heroFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-22px) rotate(10deg); }
+  }
+  .hero-deco.tri {
+    border-radius: 4px;
+    animation-name: heroFloatTri;
+  }
+  @keyframes heroFloatTri {
+    0%, 100% { transform: translateY(0) rotate(15deg); }
+    50% { transform: translateY(-16px) rotate(-10deg); }
+  }
+  .hero-shine {
+    background: linear-gradient(90deg, var(--mf-pink), var(--mf-orange), var(--mf-yellow), var(--mf-teal), var(--mf-pink));
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: heroShine 6s linear infinite;
+  }
+  @keyframes heroShine { to { background-position: -300% 0; } }
+
+  .btn-pop { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+  .btn-pop:hover { transform: translateY(-2px) scale(1.03); }
+  .btn-pop:active { transform: translateY(0) scale(0.97); }
+
+  .store-marquee {
+    overflow: hidden; white-space: nowrap; background: #fff;
+    border-top: 1px solid #f0e6ef; border-bottom: 1px solid #f0e6ef; padding: 14px 0;
+  }
+  .store-marquee-track {
+    display: inline-flex; gap: 14px; animation: marqueeScroll 30s linear infinite;
+  }
+  @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  .store-marquee-pill {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 999px;
+    font-weight: 700; font-size: 0.85rem; color: #fff; white-space: nowrap;
+  }
+
+  .store-reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.7s cubic-bezier(.2,.7,.3,1); }
+  .store-reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+  .store-prod-img, .store-cat-icon { transition: transform 0.4s ease; }
+  .store-prod-card:hover .store-prod-img { transform: scale(1.08); }
+  .store-cat-card:hover .store-cat-icon { transform: scale(1.12) rotate(-4deg); }
+
+  .store-stat-value { display: inline-block; }
+
+  .confetti-piece {
+    position: fixed; top: 0; left: 0; width: 8px; height: 8px; border-radius: 2px;
+    pointer-events: none; z-index: 9999; animation: confettiPop 850ms ease-out forwards;
+  }
+  @keyframes confettiPop {
+    0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+    100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-deco, .hero-shine, .store-marquee-track, .confetti-piece { animation: none !important; }
+    .store-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .btn-pop, .store-prod-card, .store-cat-card, .store-prod-img, .store-cat-icon { transition: none !important; }
+  }
 </style>
 </head>
 <body>
@@ -900,16 +1000,22 @@
 
   <!-- Hero Section -->
   <div class="store-hero" id="storefrontHero">
+    <span class="hero-deco" style="width:26px; height:26px; background:var(--mf-yellow); top:14%; left:6%; animation-delay:0s;"></span>
+    <span class="hero-deco" style="width:16px; height:16px; background:var(--mf-teal); top:68%; left:12%; animation-delay:1.2s;"></span>
+    <span class="hero-deco tri" style="width:18px; height:18px; background:var(--mf-orange); top:22%; left:46%; animation-delay:.6s;"></span>
+    <span class="hero-deco" style="width:20px; height:20px; background:var(--mf-pink); top:78%; left:40%; animation-delay:1.8s;"></span>
+    <span class="hero-deco" style="width:14px; height:14px; background:var(--mf-purple); top:10%; left:88%; animation-delay:.9s;"></span>
+    <span class="hero-deco tri" style="width:22px; height:22px; background:var(--mf-teal); top:60%; left:94%; animation-delay:.3s;"></span>
     <div class="store-hero-content">
       <div>
         <span class="store-hero-badge">✨ Venta al Mayoreo y Menudeo en México</span>
-        <h1>¡Todo para tu fiesta y batucada!</h1>
+        <h1>¡Todo para tu <span class="hero-shine">fiesta y batucada</span>!</h1>
         <p>Más de 5,000 artículos disponibles en stock para fiestas, cumpleaños, bodas, graduaciones y eventos masivos. Envíos directos a todo México desde nuestras 5 sucursales.</p>
         <div class="store-hero-btns">
-          <button class="btn primary" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:var(--mf-teal); border:none;" onclick="document.getElementById('storeCatalogSection').scrollIntoView({behavior:'smooth'})">
+          <button class="btn primary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:var(--mf-teal); border:none;" onclick="document.getElementById('storeCatalogSection').scrollIntoView({behavior:'smooth'})">
             🛒 Explorar Catálogo
           </button>
-          <button class="btn secondary" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openLoginModal()">
+          <button class="btn secondary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openLoginModal()">
             🔐 Entrar al Sistema POS
           </button>
         </div>
@@ -920,12 +1026,17 @@
     </div>
   </div>
 
+  <!-- Marquee Strip -->
+  <div class="store-marquee">
+    <div class="store-marquee-track" id="storeMarqueeTrack"></div>
+  </div>
+
   <!-- Stats Bar -->
   <div class="store-stats-bar">
-    <div><div class="store-stat-value">400+</div><div class="store-stat-label">Productos</div></div>
-    <div><div class="store-stat-value">98%</div><div class="store-stat-label">Satisfacción</div></div>
-    <div><div class="store-stat-value">15+</div><div class="store-stat-label">Años</div></div>
-    <div><div class="store-stat-value">24/7</div><div class="store-stat-label">Soporte</div></div>
+    <div><div class="store-stat-value" data-target="400" data-suffix="+">0</div><div class="store-stat-label">Productos</div></div>
+    <div><div class="store-stat-value" data-target="98" data-suffix="%">0</div><div class="store-stat-label">Satisfacción</div></div>
+    <div><div class="store-stat-value" data-target="15" data-suffix="+">0</div><div class="store-stat-label">Años</div></div>
+    <div><div class="store-stat-value" data-static="24/7">24/7</div><div class="store-stat-label">Soporte</div></div>
   </div>
 
   <!-- Store Container -->
@@ -936,27 +1047,27 @@
       <h2>🏷️ Categorías Principales</h2>
     </div>
     <div class="store-cats-grid">
-      <div class="store-cat-card" onclick="renderStorefrontProducts('globos')">
+      <div class="store-cat-card store-reveal" style="transition-delay:0ms;" onclick="renderStorefrontProducts('globos')">
         <div class="store-cat-icon">🎈</div>
         <div class="store-cat-name">Globos Metálicos & Látex</div>
         <div class="store-cat-count">3,240 SKUs en stock</div>
       </div>
-      <div class="store-cat-card" onclick="renderStorefrontProducts('desechables')">
+      <div class="store-cat-card store-reveal" style="transition-delay:60ms;" onclick="renderStorefrontProducts('desechables')">
         <div class="store-cat-icon">🍽️</div>
         <div class="store-cat-name">Desechables & Platos</div>
         <div class="store-cat-count">850 SKUs en stock</div>
       </div>
-      <div class="store-cat-card" onclick="renderStorefrontProducts('pirotecnia')">
+      <div class="store-cat-card store-reveal" style="transition-delay:120ms;" onclick="renderStorefrontProducts('pirotecnia')">
         <div class="store-cat-icon">✨</div>
         <div class="store-cat-name">Pirotecnia Fría & Chisperos</div>
         <div class="store-cat-count">190 SKUs en stock</div>
       </div>
-      <div class="store-cat-card" onclick="renderStorefrontProducts('neon')">
+      <div class="store-cat-card store-reveal" style="transition-delay:180ms;" onclick="renderStorefrontProducts('neon')">
         <div class="store-cat-icon">🎉</div>
         <div class="store-cat-name">Batucada & Luces Neón</div>
         <div class="store-cat-count">420 SKUs en stock</div>
       </div>
-      <div class="store-cat-card" onclick="renderStorefrontProducts('velas')">
+      <div class="store-cat-card store-reveal" style="transition-delay:240ms;" onclick="renderStorefrontProducts('velas')">
         <div class="store-cat-icon">🎂</div>
         <div class="store-cat-name">Velas & Cumpleaños</div>
         <div class="store-cat-count">310 SKUs en stock</div>
@@ -5871,7 +5982,63 @@ function showAdminDashboard() {
   const dash = document.getElementById('adminDashboardWrapper');
   if (sf) sf.classList.add('hidden');
   if (dash) dash.classList.remove('hidden');
+  document.title = 'Mi Fiestashop — Sistema ERP & POS';
   switchView('dashboard');
+}
+
+function resetStorefrontSeoTags() {
+  const defaultTitle = 'Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México';
+  const defaultDesc = 'Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.';
+  document.title = defaultTitle;
+  const metaDesc = document.getElementById('metaDescription');
+  if (metaDesc) metaDesc.setAttribute('content', defaultDesc);
+  const canonical = document.getElementById('canonicalLink');
+  if (canonical) canonical.setAttribute('href', 'https://mifiestashop.vercel.app/');
+  const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', defaultTitle);
+  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', 'https://mifiestashop.vercel.app/');
+  const twTitle = document.getElementById('twitterTitle'); if (twTitle) twTitle.setAttribute('content', defaultTitle);
+  const productLd = document.getElementById('ldJsonProduct');
+  if (productLd) productLd.remove();
+}
+
+function applyProductSeoTags(p) {
+  if (!p) return;
+  const title = `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
+  const desc = (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
+  const path = productPathFor(p) || '/';
+  const url = `https://mifiestashop.vercel.app${path}`;
+
+  document.title = title;
+  const metaDesc = document.getElementById('metaDescription');
+  if (metaDesc) metaDesc.setAttribute('content', desc);
+  const canonical = document.getElementById('canonicalLink');
+  if (canonical) canonical.setAttribute('href', url);
+  const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', title);
+  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', url);
+  const twTitle = document.getElementById('twitterTitle'); if (twTitle) twTitle.setAttribute('content', title);
+
+  let ld = document.getElementById('ldJsonProduct');
+  if (!ld) {
+    ld = document.createElement('script');
+    ld.type = 'application/ld+json';
+    ld.id = 'ldJsonProduct';
+    document.head.appendChild(ld);
+  }
+  ld.textContent = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: p.name,
+    sku: p.sku,
+    image: p.img,
+    description: desc,
+    offers: {
+      '@type': 'Offer',
+      price: Number(p.price || 0).toFixed(2),
+      priceCurrency: 'MXN',
+      availability: 'https://schema.org/InStock',
+      url: url
+    }
+  });
 }
 
 function showPublicStorefront() {
@@ -5880,6 +6047,92 @@ function showPublicStorefront() {
   if (dash) dash.classList.add('hidden');
   if (sf) sf.classList.remove('hidden');
   renderStorefrontProducts('all');
+  initStoreMarquee();
+  initStatsCountUp();
+}
+
+let __storeRevealObserver = null;
+function initScrollReveal(){
+  const items = document.querySelectorAll('.store-reveal:not(.is-visible)');
+  if (!items.length) return;
+  if (!('IntersectionObserver' in window)) { items.forEach(el => el.classList.add('is-visible')); return; }
+  if (!__storeRevealObserver) {
+    __storeRevealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) { entry.target.classList.add('is-visible'); __storeRevealObserver.unobserve(entry.target); }
+      });
+    }, { threshold: 0.15 });
+  }
+  items.forEach(el => __storeRevealObserver.observe(el));
+}
+
+function initStatsCountUp(){
+  const bar = document.querySelector('.store-stats-bar');
+  if (!bar || bar.dataset.animated === '1') return;
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const trigger = () => {
+    bar.dataset.animated = '1';
+    bar.querySelectorAll('.store-stat-value[data-target]').forEach(el => {
+      const target = parseInt(el.dataset.target, 10) || 0;
+      const suffix = el.dataset.suffix || '';
+      if (reduceMotion) { el.textContent = target + suffix; return; }
+      const duration = 1100;
+      const start = performance.now();
+      function step(now){
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(target * eased) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  };
+  if (!('IntersectionObserver' in window)) { trigger(); return; }
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if (entry.isIntersecting) { trigger(); io.disconnect(); } });
+  }, { threshold: 0.4 });
+  io.observe(bar);
+}
+
+function initStoreMarquee(){
+  const track = document.getElementById('storeMarqueeTrack');
+  if (!track || track.dataset.built === '1') return;
+  track.dataset.built = '1';
+  const tags = [
+    { label: '🎈 Globos', color: 'var(--mf-pink)' },
+    { label: '🥁 Batucada', color: 'var(--mf-purple)' },
+    { label: '✨ Pirotecnia Fría', color: 'var(--mf-orange)' },
+    { label: '🎭 Antifaces', color: 'var(--mf-teal)' },
+    { label: '🎂 Velas', color: 'var(--mf-green)' },
+    { label: '🍽️ Desechables', color: 'var(--mf-pink)' },
+    { label: '💡 Neón', color: 'var(--mf-purple)' },
+    { label: '🚚 Envío gratis desde $1,500', color: 'var(--mf-orange)' },
+    { label: '📦 Mayoreo desde 3 piezas', color: 'var(--mf-teal)' }
+  ];
+  const pillsHtml = tags.map(t => `<span class="store-marquee-pill" style="background:${t.color};">${t.label}</span>`).join('');
+  track.innerHTML = pillsHtml + pillsHtml;
+}
+
+function fireConfettiBurst(x, y){
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors = ['#d3007b', '#f9e05c', '#8e3fa8', '#37b6b9', '#f2652e'];
+  const originX = x || window.innerWidth / 2;
+  const originY = y || window.innerHeight / 2;
+  for (let i = 0; i < 14; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 70;
+    el.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--ty', (Math.sin(angle) * dist - 30) + 'px');
+    el.style.setProperty('--rot', Math.round(Math.random() * 360) + 'deg');
+    el.style.left = originX + 'px';
+    el.style.top = originY + 'px';
+    el.style.background = colors[i % colors.length];
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+    setTimeout(() => el.remove(), 1200);
+  }
 }
 
 function logoutAdmin() {
@@ -5892,6 +6145,7 @@ function renderStorefrontProducts(cat = 'all', query = '') {
   if (!grid) return;
 
   hideStorefrontPages();
+  resetStorefrontSeoTags();
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const q = (query || '').toLowerCase();
@@ -5910,8 +6164,8 @@ function renderStorefrontProducts(cat = 'all', query = '') {
   currentStorefrontList = filtered;
 
   grid.innerHTML = filtered.map((p, idx) => `
-    <div class="store-prod-card">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+    <div class="store-prod-card store-reveal" style="transition-delay:${Math.min(idx, 8) * 50}ms;">
+      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
@@ -5919,16 +6173,18 @@ function renderStorefrontProducts(cat = 'all', query = '') {
         </div>
         <div>
           <div class="store-prod-price">${fmtMoney(p.price)}</div>
-          <button class="store-prod-btn" style="margin-bottom:6px;" onclick="event.stopPropagation(); addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
+          <button class="store-prod-btn btn-pop" style="margin-bottom:6px;" onclick="event.stopPropagation(); fireConfettiBurst(event.clientX, event.clientY); addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
             🛒 Agregar al Carrito
           </button>
-          <button class="btn small" style="width:100%; background:transparent; border:1px solid var(--border);" onclick="event.stopPropagation(); openStorefrontProductDetail(${idx})">
+          <button class="btn small" style="width:100%; background:transparent; border:1px solid #e5dce6; color:#2e1065;" onclick="event.stopPropagation(); openStorefrontProductDetail(${idx})">
             👁️ Ver producto
           </button>
         </div>
       </div>
     </div>
   `).join('');
+
+  initScrollReveal();
 }
 
 let currentStorefrontList = [];
@@ -5969,7 +6225,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
           <input type="number" id="${qtyId}" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
-          <button class="store-prod-btn" style="flex:1;" onclick="const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
+          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
             🛒 Agregar al Carrito
           </button>
         </div>
@@ -6058,6 +6314,7 @@ function renderProductFullPage(p){
   body.innerHTML = buildProductDetailHTML(p, 'storefrontPageQty', '');
   showStorefrontPage('storefrontProductPage');
   loadProductStockByBranch(p.id);
+  applyProductSeoTags(p);
 }
 
 function goHomeStorefront(){
