@@ -1267,7 +1267,6 @@
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="categorias">Categorías</a>
-        <a class="submenu-link" data-view="inventario">Inventario por Almacén</a>
       </div>
     </div>
 
@@ -1965,10 +1964,7 @@
           </table>
         </div>
       </div>
-    </section>
 
-    <!-- ================= VIEW 4.5: INVENTARIO MULTI-BODEGA ================= -->
-    <section id="view-inventario" class="view-panel hidden">
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">📦 Total Unidades en Stock</div>
@@ -3904,8 +3900,7 @@ function switchView(viewName) {
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones API'],
     carritos: ['Carritos de Compra', 'API PrestaShop & Carritos Abandonados'],
     productos: ['Catálogo de Productos', 'Sincronizado con API'],
-    bodegas: ['Almacenes & Bodegas', 'Control de Inventario'],
-    inventario: ['Inventario por Almacén / Bodega', 'Desglose y Control Multibodega'],
+    bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     categorias: ['Categorías', 'Sincronizado con API PrestaShop'],
     clientes: ['Directorio de Clientes', 'PrestaShop API'],
     proveedores: ['Proveedores', 'Directorio de Insumos API'],
@@ -3937,7 +3932,7 @@ function switchView(viewName) {
   if (viewName === 'clientes') loadCustomersFromAPI();
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
-  if (viewName === 'inventario') renderInventarioTable();
+  if (viewName === 'bodegas') renderInventarioTable();
 }
 
 document.querySelectorAll('[data-view]').forEach(el => {
