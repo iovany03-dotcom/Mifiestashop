@@ -12,10 +12,35 @@
 //   SKYDROPX_BASE_URL      Opcional, por defecto https://pro.skydropx.com (panel Skydropx Pro)
 //
 // Nota de confianza: la documentación pública de Skydropx Pro (pro.skydropx.com/es-MX/api-docs)
-// no es accesible desde este entorno de desarrollo para verificarla en vivo, así que esta
-// integración intenta automáticamente las variantes más comunes documentadas externamente
-// (content-type del token, formato del cuerpo de la cotización) antes de rendirse, para
-// no depender de adivinar un único formato exacto.
+// no fue accesible desde el entorno de desarrollo para confirmarla en vivo. El formato del
+// cuerpo de la cotización se ajustó a partir de un error real de validación devuelto por la
+// propia API en producción: Skydropx exige, además de country_code y postal_code, los campos
+// area_level1 (estado), area_level2 (municipio) y area_level3 (colonia) en address_from/
+// address_to — por eso esta función resuelve esos datos a partir del código postal usando la
+// API pública y gratuita de SEPOMEX (api-sepomex.hckdrk.mx) antes de cotizar.
+
+// Resuelve estado/municipio/colonia a partir de un código postal mexicano
+// usando la API pública y gratuita de SEPOMEX. Prueba varias formas posibles
+// de la respuesta porque no fue posible confirmar la forma exacta desde este
+// entorno de desarrollo (dominio bloqueado en la sandbox, aunque sí es
+// alcanzable desde Vercel en producción).
+async function resolveAreaLevels(cp) {
+  try {
+    const r = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${encodeURIComponent(cp)}?type=simplified`);
+    if (!r.ok) return null;
+    const data = await r.json();
+    const resp = data?.response || data?.cp?.response || data?.cp || data;
+    if (!resp) return null;
+    const estado = resp.estado || resp.d_estado;
+    const municipio = resp.municipio || resp.d_mnpio;
+    const asentamientoRaw = resp.asentamiento || resp.d_asenta;
+    const asentamiento = Array.isArray(asentamientoRaw) ? asentamientoRaw[0] : asentamientoRaw;
+    if (!estado || !municipio) return null;
+    return { area_level1: estado, area_level2: municipio, area_level3: asentamiento || municipio };
+  } catch (e) {
+    return null;
+  }
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -81,34 +106,15 @@ module.exports = async function handler(req, res) {
     throw lastError || new Error('No se pudo autenticar con Skydropx');
   }
 
-  // El nombre exacto de los campos (postal_code vs. zip_code, packages vs.
-  // parcels) y si el cuerpo va anidado bajo "quotation" o plano varía según
-  // la fuente consultada (la doc oficial no fue accesible desde este
-  // entorno para confirmarlo en vivo). Se prueban las combinaciones más
-  // documentadas, empezando por la mejor evidenciada (postal_code/packages),
-  // hasta que Skydropx acepte una.
-  async function createQuotation(authHeaders) {
-    const fieldSets = [
-      {
-        packageKey: 'packages',
-        addressFrom: { country_code: 'MX', postal_code: cpOrigen },
-        addressTo: { country_code: 'MX', postal_code: cpDestino },
-        pkg: { weight: peso, length: largo, width: ancho, height: alto }
-      },
-      {
-        packageKey: 'parcels',
-        addressFrom: { country_code: 'mx', zip_code: cpOrigen },
-        addressTo: { country_code: 'mx', zip_code: cpDestino },
-        pkg: { weight: peso, length: largo, width: ancho, height: alto }
-      }
-    ];
-
-    const bodies = [];
-    for (const fs of fieldSets) {
-      const flat = { address_from: fs.addressFrom, address_to: fs.addressTo, [fs.packageKey]: [fs.pkg] };
-      bodies.push(flat);
-      bodies.push({ quotation: flat });
-    }
+  // Un intento con el cuerpo aplanado y otro anidado bajo "quotation" (por si
+  // la API depende de uno de los dos formatos); ambos incluyen las claves
+  // "packages" y "parcels" con el mismo contenido, ya que no se pudo
+  // confirmar cuál de los dos nombres espera Skydropx y una clave extra sin
+  // usar no debería causar problemas.
+  async function createQuotation(authHeaders, addressFrom, addressTo) {
+    const pkg = { weight: peso, length: largo, width: ancho, height: alto };
+    const flat = { address_from: addressFrom, address_to: addressTo, packages: [pkg], parcels: [pkg] };
+    const bodies = [flat, { quotation: flat }];
 
     let lastError = null;
     for (const body of bodies) {
@@ -148,9 +154,18 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    const [levelsFrom, levelsTo] = await Promise.all([resolveAreaLevels(cpOrigen), resolveAreaLevels(cpDestino)]);
+    if (!levelsFrom || !levelsTo) {
+      res.status(200).json({ fallback: true, rates: [], error: `No se pudo resolver estado/municipio/colonia para el código postal (servicio de códigos postales no disponible o CP inválido: origen=${cpOrigen}, destino=${cpDestino})` });
+      return;
+    }
+
+    const addressFrom = { country_code: 'MX', postal_code: cpOrigen, ...levelsFrom };
+    const addressTo = { country_code: 'MX', postal_code: cpDestino, ...levelsTo };
+
     const accessToken = await getAccessToken();
     const authHeaders = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
-    const quotationId = await createQuotation(authHeaders);
+    const quotationId = await createQuotation(authHeaders, addressFrom, addressTo);
 
     // La cotización de Skydropx es asíncrona: se consulta hasta que las
     // tarifas estén listas o se agoten los intentos (deja margen dentro del
