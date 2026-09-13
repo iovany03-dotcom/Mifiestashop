@@ -1430,8 +1430,22 @@
     <h2 style="margin-bottom:16px; color:#2e1065;">📦 Finalizar Compra</h2>
     <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px; align-items:start;">
       <div style="background:#fff; border:1px solid #f0e6ef; padding:20px; border-radius:12px;">
-        <h3 style="margin-top:0; color:#2e1065;">Datos de Contacto y Envío</h3>
+        <h3 style="margin-top:0; color:#2e1065;">📍 Dirección de Envío</h3>
+        <p style="margin:0 0 14px; font-size:12.5px; color:#8b7d97;">Primero cotizamos tu envío con tu código postal.</p>
         <div style="display:flex; flex-direction:column; gap:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Código Postal *</label>
+            <input type="text" id="checkoutCP" inputmode="numeric" maxlength="5" placeholder="Ej. 72000" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutCPInput()">
+          </div>
+          <div id="checkoutShippingQuoteBox" class="hidden" style="background:var(--mf-cream); border-radius:8px; padding:10px 12px; font-size:13px; color:#2e1065;"></div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Dirección completa *</label>
+            <textarea id="checkoutAddress" rows="3" placeholder="Calle, número, colonia, ciudad" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
+          </div>
+        </div>
+
+        <h3 style="color:#2e1065; margin:22px 0 0;">Datos de Contacto</h3>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Nombre completo *</label>
             <input type="text" id="checkoutName" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
@@ -1443,10 +1457,6 @@
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Teléfono / WhatsApp *</label>
             <input type="tel" id="checkoutPhone" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
-          </div>
-          <div>
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Dirección de envío *</label>
-            <textarea id="checkoutAddress" rows="3" placeholder="Calle, número, colonia, ciudad, código postal" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:8px; color:#2e1065;">Método de pago *</label>
@@ -1680,36 +1690,80 @@
       <button class="btn secondary" style="border-radius:20px; font-weight:700;" onclick="closeClientePortal()">
         🏪 Volver a la Tienda
       </button>
+      <button class="btn primary hidden" id="clienteLogoutBtn" style="border-radius:20px; font-weight:700;" onclick="logoutCliente()">
+        🚪 Cerrar Sesión
+      </button>
       <button class="btn primary" style="border-radius:20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="goToAdmin()">
         🔐 Acceso POS / Admin
       </button>
     </div>
   </header>
 
-  <div style="max-width:1180px; margin: 30px auto; padding: 0 20px;">
-    
+  <!-- ============ VISTA: SIN SESIÓN (LOGIN / REGISTRO) ============ -->
+  <div id="clientePortalLoggedOut" style="max-width:440px; margin:50px auto; padding:0 20px;">
+    <div class="card" style="border-radius:20px; padding:32px;">
+      <div style="text-align:center; margin-bottom:20px;">
+        <h2 style="margin:0 0 6px; color:#2e1065;" id="clienteAuthTitle">Iniciar Sesión</h2>
+        <p style="margin:0; color:var(--text-muted); font-size:13px;" id="clienteAuthSubtitle">Accede para ver tus pedidos y tus datos.</p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+        <button type="button" class="btn secondary" style="justify-content:center; gap:10px; padding:11px; font-weight:700; border-radius:10px;" onclick="loginClienteWithProvider('google')">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.66-.22-2.45H12v4.63h6.48a5.55 5.55 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.56-5.17 3.56-8.81z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.07 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.94H1.28v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.29 14.29a7.2 7.2 0 0 1 0-4.58v-3.1H1.28a12 12 0 0 0 0 10.78z"/><path fill="#EA4335" d="M12 4.77c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.94 1.19 15.24 0 12 0A12 12 0 0 0 1.28 6.61l4.01 3.1C6.23 6.88 8.88 4.77 12 4.77z"/></svg>
+          Continuar con Google
+        </button>
+        <button type="button" class="btn secondary" style="justify-content:center; gap:10px; padding:11px; font-weight:700; border-radius:10px;" onclick="loginClienteWithProvider('facebook')">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#1877F2" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.95.93-1.95 1.89v2.25h3.32l-.53 3.49h-2.79V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+          Continuar con Facebook
+        </button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:10px; margin:4px 0 18px; color:var(--text-muted); font-size:12px;">
+        <div style="flex:1; height:1px; background:var(--border);"></div>o<div style="flex:1; height:1px; background:var(--border);"></div>
+      </div>
+
+      <div id="clienteAuthErrorMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px; margin-bottom:14px;"></div>
+
+      <div id="clienteRegisterNameBox" class="hidden" style="margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Nombre completo</label>
+        <input type="text" id="clienteAuthName" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Correo electrónico</label>
+        <input type="email" id="clienteAuthEmail" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div id="clienteRegisterPhoneBox" class="hidden" style="margin-bottom:12px;">
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Teléfono / WhatsApp</label>
+        <input type="tel" id="clienteAuthPhone" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Contraseña</label>
+        <input type="password" id="clienteAuthPassword" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+
+      <button type="button" class="btn primary" id="clienteAuthSubmitBtn" style="width:100%; justify-content:center; padding:12px; font-weight:700; border-radius:10px;" onclick="submitClienteAuth()">Iniciar Sesión</button>
+
+      <p style="text-align:center; font-size:13px; margin-top:16px; color:var(--text-secondary);">
+        <span id="clienteAuthToggleText">¿No tienes cuenta?</span>
+        <a href="#" onclick="event.preventDefault(); toggleClienteAuthMode();" style="color:var(--mf-pink); font-weight:700; text-decoration:none;" id="clienteAuthToggleLink">Regístrate</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ============ VISTA: CON SESIÓN INICIADA ============ -->
+  <div id="clientePortalLoggedIn" class="hidden" style="max-width:1180px; margin: 30px auto; padding: 0 20px;">
+
     <!-- User Welcome Banner -->
     <div style="background: linear-gradient(135deg, #1e293b, #0f172a); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding: 24px; color: #fff; margin-bottom: 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
       <div style="display:flex; align-items:center; gap:16px;">
-        <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg, #ff9f1c, #e85d04); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#fff;">
-          JP
+        <div style="width:54px; height:54px; border-radius:50%; background:linear-gradient(135deg, #ff9f1c, #e85d04); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#fff;" id="clienteAvatarInitials">
+          --
         </div>
         <div>
-          <h2 style="margin:0 0 4px 0; font-size:1.4rem;">Hola, Juan Pérez 👋</h2>
+          <h2 style="margin:0 0 4px 0; font-size:1.4rem;" id="clienteWelcomeName">Hola 👋</h2>
           <div style="font-size:0.88rem; color:#94a3b8;">
-            <code>juan.perez@gmail.com</code> • RFC: <b>PERJ890101XXX</b>
+            <code id="clienteWelcomeEmail"></code>
           </div>
-        </div>
-      </div>
-
-      <div style="display:flex; gap:12px; flex-wrap:wrap;">
-        <div style="background:rgba(255,255,255,0.08); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); text-align:center;">
-          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Nivel de Cliente</div>
-          <div style="font-size:1.05rem; font-weight:800; color:#ff9f1c;">⭐ Cliente Oro VIP</div>
-        </div>
-        <div style="background:rgba(255,255,255,0.08); padding:10px 18px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); text-align:center;">
-          <div style="font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:700;">Puntos Fiesta</div>
-          <div style="font-size:1.05rem; font-weight:800; color:#22c55e;">450 Pts ($45 MXN)</div>
         </div>
       </div>
     </div>
@@ -1838,34 +1892,35 @@
       <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem;">⚙️ Perfil del Cliente & Datos de Envío / Factura</h3>
 
       <div class="card" style="max-width:700px; padding:24px; border-radius:16px;">
-        <form onsubmit="event.preventDefault(); alert('✅ Datos de perfil actualizados correctamente.');">
+        <form onsubmit="event.preventDefault(); saveClienteProfile();">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
             <div>
               <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Nombre Completo:</label>
-              <input type="text" value="Juan Pérez" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <input type="text" id="clienteProfileName" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
             </div>
             <div>
               <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Correo Electrónico:</label>
-              <input type="email" value="juan.perez@gmail.com" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <input type="email" id="clienteProfileEmail" disabled style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); opacity:0.7;">
             </div>
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
             <div>
               <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Teléfono WhatsApp:</label>
-              <input type="text" value="+52 222 554 4332" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <input type="text" id="clienteProfilePhone" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
             </div>
             <div>
               <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">RFC Facturación:</label>
-              <input type="text" value="PERJ890101XXX" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <input type="text" id="clienteProfileRfc" placeholder="Opcional" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
             </div>
           </div>
 
           <div style="margin-bottom:18px;">
             <label style="font-size:13px; font-weight:600; display:block; margin-bottom:6px;">Dirección de Envío Principal:</label>
-            <textarea rows="2" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">Av. Juárez #1402, Col. La Paz, Puebla, Pue. C.P. 72160</textarea>
+            <textarea id="clienteProfileAddress" rows="2" placeholder="Calle, número, colonia, ciudad, código postal" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
           </div>
 
+          <div id="clienteProfileMsg" class="hidden" style="margin-bottom:14px; font-size:13px; font-weight:600;"></div>
           <button type="submit" class="btn primary" style="padding:10px 24px; font-weight:700;">💾 Guardar Cambios de Perfil</button>
         </form>
       </div>
@@ -5911,12 +5966,212 @@ function confirmStockTransfer() {
   closeTraspasoModal();
 }
 
-// ================= PORTAL DE CLIENTES LOGIC =================
-const CUSTOMER_ORDERS = [
-  { id: 'FOL-1004', date: '2026-09-11 15:18', total: 1450, status: 'Pagado - En Preparación', items: ['Vela de Bengala (50 u.)', 'Chisperos Pirotecnia (10 u.)', 'Globos Números (20 u.)'], tracking: 'FEDEX-99120' },
-  { id: 'FOL-1002', date: '2026-09-08 11:45', total: 2120, status: 'Enviado', items: ['Antifaz Cartón Metálico (100 u.)', 'Pulseras Neón (200 u.)', 'Vela Balón (15 u.)'], tracking: 'ESTAFETA-44109' },
-  { id: 'FOL-9854', date: '2026-08-24 18:30', total: 5890, status: 'Entregado', items: ['Platos Biodegradables (500 u.)', 'Vasos Fiesta (300 u.)', 'Manitas Aplaudidoras (100 u.)'], tracking: 'DHL-88901' }
-];
+// ================= PORTAL DE CLIENTES: AUTENTICACIÓN REAL (Supabase Auth) =================
+// Registro/inicio de sesión reales contra el mismo proyecto de Supabase que ya
+// usa el sitio (SUPABASE_URL/SUPABASE_ANON_KEY). Los botones de Google y
+// Facebook redirigen al flujo OAuth de Supabase: solo funcionan una vez que
+// esos proveedores estén habilitados en el panel de Supabase (Authentication →
+// Providers) con sus propias credenciales de Google/Facebook — sin eso,
+// Supabase responderá con un error al intentar usarlos.
+let clienteSession = null;
+let clienteAuthMode = 'login';
+
+function loadClienteSession() {
+  try {
+    const saved = localStorage.getItem('mf_cliente_session');
+    if (saved) clienteSession = JSON.parse(saved);
+  } catch (e) { clienteSession = null; }
+}
+
+function saveClienteSession(session) {
+  clienteSession = session;
+  localStorage.setItem('mf_cliente_session', JSON.stringify(session));
+}
+
+function clearClienteSession() {
+  clienteSession = null;
+  localStorage.removeItem('mf_cliente_session');
+}
+
+async function supabaseAuthRequest(path, body) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error_description || data.msg || data.error || 'No se pudo completar la solicitud.');
+  return data;
+}
+
+async function registerCliente(name, email, phone, password) {
+  const data = await supabaseAuthRequest('signup', { email, password, data: { full_name: name, phone } });
+  try {
+    await sbInsert('clientes_web_perfil', { user_id: data.user?.id || data.id, nombre: name, email, telefono: phone });
+  } catch (e) {
+    // Si la tabla de perfil no existe todavía, la cuenta de autenticación ya quedó creada.
+  }
+  if (data.access_token) {
+    saveClienteSession({ access_token: data.access_token, user: data.user });
+    return { confirmed: true };
+  }
+  return { confirmed: false };
+}
+
+async function loginCliente(email, password) {
+  const data = await supabaseAuthRequest('token?grant_type=password', { email, password });
+  saveClienteSession({ access_token: data.access_token, user: data.user });
+}
+
+function loginClienteWithProvider(provider) {
+  const redirectTo = encodeURIComponent(window.location.origin + window.location.pathname);
+  window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirectTo}`;
+}
+
+async function handleOAuthRedirect() {
+  if (!window.location.hash.includes('access_token')) return;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const access_token = params.get('access_token');
+  if (!access_token) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${access_token}` }
+    });
+    const user = await r.json();
+    if (r.ok && user) {
+      saveClienteSession({ access_token, user });
+      history.replaceState({}, '', window.location.pathname);
+      openClientePortal();
+    }
+  } catch (e) {}
+}
+
+function logoutCliente() {
+  clearClienteSession();
+  renderClientePortalAuthState();
+}
+
+function toggleClienteAuthMode() {
+  clienteAuthMode = clienteAuthMode === 'login' ? 'register' : 'login';
+  renderClienteAuthMode();
+}
+
+function renderClienteAuthMode() {
+  const isRegister = clienteAuthMode === 'register';
+  document.getElementById('clienteAuthTitle').textContent = isRegister ? 'Crear Cuenta' : 'Iniciar Sesión';
+  document.getElementById('clienteAuthSubtitle').textContent = isRegister ? 'Regístrate para hacer seguimiento a tus pedidos.' : 'Accede para ver tus pedidos y tus datos.';
+  document.getElementById('clienteRegisterNameBox').classList.toggle('hidden', !isRegister);
+  document.getElementById('clienteRegisterPhoneBox').classList.toggle('hidden', !isRegister);
+  document.getElementById('clienteAuthSubmitBtn').textContent = isRegister ? 'Crear Cuenta' : 'Iniciar Sesión';
+  document.getElementById('clienteAuthToggleText').textContent = isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
+  document.getElementById('clienteAuthToggleLink').textContent = isRegister ? 'Inicia sesión' : 'Regístrate';
+  const errEl = document.getElementById('clienteAuthErrorMsg');
+  errEl.classList.add('hidden');
+}
+
+function showClienteAuthMessage(text, isError) {
+  const errEl = document.getElementById('clienteAuthErrorMsg');
+  errEl.textContent = text;
+  errEl.style.color = isError ? '#dc2626' : '#15803d';
+  errEl.style.background = isError ? 'rgba(220,38,38,0.08)' : 'rgba(21,128,61,0.08)';
+  errEl.classList.remove('hidden');
+}
+
+async function submitClienteAuth() {
+  const email = document.getElementById('clienteAuthEmail').value.trim();
+  const password = document.getElementById('clienteAuthPassword').value;
+
+  if (!email || !password) {
+    showClienteAuthMessage('Ingresa tu correo y contraseña.', true);
+    return;
+  }
+
+  try {
+    if (clienteAuthMode === 'register') {
+      const name = document.getElementById('clienteAuthName').value.trim();
+      const phone = document.getElementById('clienteAuthPhone').value.trim();
+      if (!name) { showClienteAuthMessage('Ingresa tu nombre completo.', true); return; }
+      const result = await registerCliente(name, email, phone, password);
+      if (!result.confirmed) {
+        clienteAuthMode = 'login';
+        renderClienteAuthMode();
+        showClienteAuthMessage('✅ Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesión.', false);
+        return;
+      }
+    } else {
+      await loginCliente(email, password);
+    }
+    renderClientePortalAuthState();
+  } catch (e) {
+    showClienteAuthMessage(e.message, true);
+  }
+}
+
+function renderClienteWelcomeBanner() {
+  const user = clienteSession?.user;
+  if (!user) return;
+  const name = user.user_metadata?.full_name || (user.email || '').split('@')[0] || 'Cliente';
+  const initials = name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'U';
+  const avatarEl = document.getElementById('clienteAvatarInitials');
+  const nameEl = document.getElementById('clienteWelcomeName');
+  const emailEl = document.getElementById('clienteWelcomeEmail');
+  if (avatarEl) avatarEl.textContent = initials;
+  if (nameEl) nameEl.textContent = `Hola, ${name} 👋`;
+  if (emailEl) emailEl.textContent = user.email || '';
+
+  if (document.getElementById('clienteProfileName')) document.getElementById('clienteProfileName').value = name;
+  if (document.getElementById('clienteProfileEmail')) document.getElementById('clienteProfileEmail').value = user.email || '';
+  if (document.getElementById('clienteProfilePhone')) document.getElementById('clienteProfilePhone').value = user.user_metadata?.phone || '';
+  if (document.getElementById('clienteProfileRfc')) document.getElementById('clienteProfileRfc').value = user.user_metadata?.rfc || '';
+  if (document.getElementById('clienteProfileAddress')) document.getElementById('clienteProfileAddress').value = user.user_metadata?.address || '';
+}
+
+async function saveClienteProfile() {
+  const msgEl = document.getElementById('clienteProfileMsg');
+  if (!clienteSession) return;
+  const name = document.getElementById('clienteProfileName').value.trim();
+  const phone = document.getElementById('clienteProfilePhone').value.trim();
+  const rfc = document.getElementById('clienteProfileRfc').value.trim();
+  const address = document.getElementById('clienteProfileAddress').value.trim();
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${clienteSession.access_token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ data: { full_name: name, phone, rfc, address } })
+    });
+    const user = await r.json();
+    if (!r.ok) throw new Error(user.msg || 'No se pudo guardar tu perfil.');
+    saveClienteSession({ ...clienteSession, user });
+    renderClienteWelcomeBanner();
+    msgEl.textContent = '✅ Datos de perfil actualizados correctamente.';
+    msgEl.style.color = '#15803d';
+    msgEl.classList.remove('hidden');
+  } catch (e) {
+    msgEl.textContent = '❌ ' + e.message;
+    msgEl.style.color = '#dc2626';
+    msgEl.classList.remove('hidden');
+  }
+}
+
+function renderClientePortalAuthState() {
+  const loggedIn = !!clienteSession;
+  document.getElementById('clientePortalLoggedOut')?.classList.toggle('hidden', loggedIn);
+  document.getElementById('clientePortalLoggedIn')?.classList.toggle('hidden', !loggedIn);
+  document.getElementById('clienteLogoutBtn')?.classList.toggle('hidden', !loggedIn);
+  if (loggedIn) {
+    renderClienteWelcomeBanner();
+    renderClienteOrders();
+    renderClienteCatalog();
+  } else {
+    clienteAuthMode = 'login';
+    renderClienteAuthMode();
+  }
+}
 
 let clienteCart = [];
 
@@ -5927,8 +6182,7 @@ function openClientePortal() {
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.remove('hidden');
   window.scrollTo(0, 0);
-  renderClienteOrders();
-  renderClienteCatalog();
+  renderClientePortalAuthState();
 }
 
 function closeClientePortal() {
@@ -5954,30 +6208,52 @@ function switchClienteTab(tabName) {
   if(targetBtn) targetBtn.className = 'btn primary';
 }
 
-function renderClienteOrders() {
-  const container = document.getElementById('clienteOrdersListContainer');
-  if(!container) return;
+let clienteOrdersCache = [];
 
-  container.innerHTML = CUSTOMER_ORDERS.map(o => {
-    let pillClass = 'pill ok';
-    if(o.status.includes('Enviado')) pillClass = 'pill info';
-    else if(o.status.includes('Entregado')) pillClass = 'pill ok';
-    else if(o.status.includes('Preparación')) pillClass = 'pill warn';
+async function renderClienteOrders() {
+  const container = document.getElementById('clienteOrdersListContainer');
+  if(!container || !clienteSession?.user?.email) return;
+  container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 0;">Cargando tus pedidos…</div>';
+
+  let orders = [];
+  try {
+    const email = clienteSession.user.email;
+    orders = await sbGet(`pedidos_online?customer_email=eq.${encodeURIComponent(email)}&order=id.desc`);
+    if (!Array.isArray(orders)) orders = [];
+  } catch (e) {
+    orders = [];
+  }
+  clienteOrdersCache = orders;
+
+  if (orders.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:40px 0;">Todavía no tienes pedidos. ¡Anímate a hacer el primero! 🎉</div>';
+    return;
+  }
+
+  container.innerHTML = orders.map(o => {
+    const status = o.status || 'Pendiente';
+    let pillClass = 'pill warn';
+    if(status.includes('Enviado')) pillClass = 'pill info';
+    else if(status.includes('Entregado') || status.includes('Pagado')) pillClass = 'pill ok';
+
+    const items = Array.isArray(o.items) ? o.items : [];
+    const itemsText = items.map(i => `${i.qty}x ${i.name}`).join(' • ') || 'Sin detalle';
+    const date = (o.created_at || '').slice(0, 16).replace('T', ' ');
 
     return `
       <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
           <div>
-            <span style="font-size:1.1rem; font-weight:800; color:var(--text-primary);">Folio: #${o.id}</span>
-            <span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Fecha: ${o.date}</span>
+            <span style="font-size:1.1rem; font-weight:800; color:var(--text-primary);">Folio: #${o.folio}</span>
+            ${date ? `<span style="font-size:0.85rem; color:var(--text-muted); margin-left:10px;">Fecha: ${date}</span>` : ''}
           </div>
           <div>
-            <span class="${pillClass}" style="font-size:0.85rem; font-weight:700; padding:4px 12px;">${o.status}</span>
+            <span class="${pillClass}" style="font-size:0.85rem; font-weight:700; padding:4px 12px;">${status}</span>
           </div>
         </div>
 
         <div style="background:var(--plane); border-radius:10px; padding:12px; margin-bottom:14px; font-size:0.9rem; color:var(--text-secondary);">
-          <b>Productos incluidos:</b> ${o.items.join(' • ')}
+          <b>Productos incluidos:</b> ${itemsText}
         </div>
 
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
@@ -5986,10 +6262,7 @@ function renderClienteOrders() {
           </div>
 
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn small primary" onclick="openOrderDetailModal('${o.id}')">🔍 Ver Detalle</button>
-            <button class="btn small" onclick="alert('Descargando comprobante/factura de pedido #${o.id}...')">📄 Ticket</button>
-            <button class="btn small" onclick="alert('Guía de rastreo ${o.tracking}: En ruta de entrega.')">🚚 Rastrear</button>
-            <button class="btn small secondary" onclick="repeatCustomerOrder('${o.id}')">🔄 Repetir</button>
+            <button class="btn small secondary" onclick="repeatCustomerOrder('${o.folio}')">🔄 Repetir Pedido</button>
           </div>
         </div>
       </div>
@@ -6063,31 +6336,46 @@ function updateClienteCartUI() {
   document.getElementById('clienteCartTotal').textContent = fmtMoney(sub);
 }
 
-function processClienteOnlineOrder() {
+async function processClienteOnlineOrder() {
   if(clienteCart.length === 0) {
     alert('⚠️ Tu carrito está vacío. Agrega al menos 1 producto.');
     return;
   }
+  if (!clienteSession?.user) {
+    alert('Inicia sesión para poder realizar tu pedido.');
+    return;
+  }
 
-  const folio = 'FOL-' + Math.floor(1000 + Math.random() * 9000);
-  let total = 0;
-  const itemNames = clienteCart.map(i => { total += i.price * i.qty; return `${i.name} (${i.qty} u.)`; });
+  const folio = 'FOL-' + Date.now().toString().slice(-6);
+  const total = clienteCart.reduce((s, i) => s + i.price * i.qty, 0);
+  const user = clienteSession.user;
 
-  CUSTOMER_ORDERS.unshift({
-    id: folio,
-    date: new Date().toISOString().replace('T', ' ').substring(0, 16),
-    total: total,
-    status: 'Pagado - En Preparación',
-    items: itemNames,
-    tracking: 'PENDIENTE'
-  });
+  const orderPayload = {
+    folio,
+    customer_name: user.user_metadata?.full_name || user.email,
+    customer_email: user.email,
+    customer_phone: user.user_metadata?.phone || '',
+    shipping_address: user.user_metadata?.address || '',
+    items: clienteCart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
+    subtotal: total,
+    total,
+    status: 'Pendiente'
+  };
+
+  try {
+    await sbInsert('pedidos_online', orderPayload);
+  } catch (e) {
+    alert('❌ No se pudo registrar tu pedido. Intenta de nuevo en unos minutos.');
+    return;
+  }
 
   clienteCart = [];
   updateClienteCartUI();
-  renderClienteOrders();
+  await renderClienteOrders();
   switchClienteTab('pedidos');
 
-  alert(`🎉 ¡Pedido #${folio} realizado con éxito!\n\nSe ha recibido su pago de ${fmtMoney(total)} y estamos preparando su envío.`);
+  notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${orderPayload.customer_name} por ${fmtMoney(total)}.`);
+  alert(`🎉 ¡Pedido #${folio} realizado con éxito!\n\nTotal: ${fmtMoney(total)}. Te contactaremos para confirmar tu envío.`);
 }
 
 function copyCouponCode(code) {
@@ -6102,11 +6390,21 @@ function addPromoComboToCart() {
   alert('🎉 ¡Combo Batucada Fiesta agregado al carrito con descuento!');
 }
 
-function repeatCustomerOrder(orderId) {
+function repeatCustomerOrder(folio) {
+  const order = clienteOrdersCache.find(o => o.folio === folio);
+  const items = Array.isArray(order?.items) ? order.items : [];
+  if (items.length === 0) {
+    alert('No se encontraron los productos de este pedido.');
+    return;
+  }
+  items.forEach(item => {
+    const existing = clienteCart.find(i => i.id === item.id);
+    if (existing) existing.qty += item.qty;
+    else clienteCart.push({ id: item.id, name: item.name, price: item.price, qty: item.qty });
+  });
+  updateClienteCartUI();
   switchClienteTab('nuevo');
-  addToClienteCart(1);
-  addToClienteCart(3);
-  alert(`🛒 Productos del pedido #${orderId} agregados al carrito.`);
+  alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
 }
 
 function openStockAdjustModal(pId) {
@@ -7461,10 +7759,59 @@ function setCheckoutPayMethod(method){
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Tarjeta en línea');
 }
 
+// Cotización de envío por código postal. No hay todavía una integración en
+// vivo con la paquetería (Skydropx), así que se simula el costo de la guía
+// por zona a partir del CP; en cuanto se conecte una API real de cotización,
+// solo hay que reemplazar el cuerpo de esta función.
+function estimateShippingGuideCost(cp) {
+  const prefix = parseInt(cp.slice(0, 2), 10);
+  let base;
+  if (prefix >= 1 && prefix <= 16) base = 120;                 // CDMX
+  else if (prefix >= 50 && prefix <= 57) base = 150;            // Estado de México
+  else if (prefix >= 72 && prefix <= 75) base = 110;            // Puebla (bodega)
+  else if (prefix === 76) base = 110;                           // Querétaro (bodega)
+  else if ([42, 62, 90].includes(prefix)) base = 160;           // Hidalgo / Morelos / Tlaxcala
+  else if ([21, 22, 23, 77, 97, 98, 29, 30, 86, 80].includes(prefix)) base = 280; // zonas lejanas
+  else base = 210;                                              // resto del país
+  const variacion = parseInt(cp.slice(-2), 10) % 40;
+  return base + variacion;
+}
+
+let checkoutShippingCost = null;
+
+function onCheckoutCPInput() {
+  const cpInput = document.getElementById('checkoutCP');
+  const box = document.getElementById('checkoutShippingQuoteBox');
+  const cp = (cpInput?.value || '').replace(/\D/g, '').slice(0, 5);
+  if (cpInput) cpInput.value = cp;
+
+  if (cp.length !== 5) {
+    checkoutShippingCost = null;
+    if (box) box.classList.add('hidden');
+    renderCheckoutSummary();
+    return;
+  }
+
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const guideCost = estimateShippingGuideCost(cp);
+  const envioGratis = guideCost < 250 && subtotal > 1500;
+  checkoutShippingCost = envioGratis ? 0 : guideCost;
+
+  if (box) {
+    box.classList.remove('hidden');
+    box.innerHTML = envioGratis
+      ? `🎉 <b>¡Envío gratis!</b> Tu pedido califica por ser mayor a $1,500 MXN.`
+      : `🚚 Costo de envío estimado a este código postal: <b>${fmtMoney(guideCost)}</b>`;
+  }
+  renderCheckoutSummary();
+}
+
 function renderCheckoutSummary(){
   const el = document.getElementById('checkoutOrderSummary');
   if (!el) return;
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const shippingKnown = checkoutShippingCost !== null;
+  const total = subtotal + (checkoutShippingCost || 0);
   el.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px; max-height:260px; overflow-y:auto;">
       ${cart.map(i => `
@@ -7474,8 +7821,16 @@ function renderCheckoutSummary(){
         </div>
       `).join('')}
     </div>
-    <div style="border-top:1px dashed var(--border); padding-top:10px; display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem;">
-      <span>Total:</span><span style="color:#e85d04;">${fmtMoney(subtotal)}</span>
+    <div style="border-top:1px dashed var(--border); padding-top:10px; display:flex; flex-direction:column; gap:6px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
+        <span>Subtotal:</span><span>${fmtMoney(subtotal)}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
+        <span>Envío:</span><span>${!shippingKnown ? 'Ingresa tu C.P.' : (checkoutShippingCost === 0 ? 'Gratis' : fmtMoney(checkoutShippingCost))}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem; margin-top:4px;">
+        <span>Total:</span><span style="color:#e85d04;">${fmtMoney(total)}</span>
+      </div>
     </div>
   `;
 }
@@ -7483,22 +7838,33 @@ function renderCheckoutSummary(){
 function goToStorefrontCheckout(){
   if (cart.length === 0) return;
   checkoutPayMethod = '';
+  checkoutShippingCost = null;
   setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), false);
   const errEl = document.getElementById('checkoutErrorMsg');
   if (errEl) errEl.classList.add('hidden');
+  const cpInput = document.getElementById('checkoutCP');
+  if (cpInput) cpInput.value = '';
+  const quoteBox = document.getElementById('checkoutShippingQuoteBox');
+  if (quoteBox) quoteBox.classList.add('hidden');
   renderCheckoutSummary();
   showStorefrontPage('storefrontCheckoutPage');
 }
 
 async function submitStorefrontOrder(){
+  const cp = document.getElementById('checkoutCP').value.trim();
   const name = document.getElementById('checkoutName').value.trim();
   const email = document.getElementById('checkoutEmail').value.trim();
   const phone = document.getElementById('checkoutPhone').value.trim();
   const address = document.getElementById('checkoutAddress').value.trim();
   const errEl = document.getElementById('checkoutErrorMsg');
 
+  if (cp.length !== 5 || checkoutShippingCost === null) {
+    errEl.textContent = 'Ingresa tu código postal para cotizar el envío.';
+    errEl.classList.remove('hidden');
+    return;
+  }
   if (!name || !email || !phone || !address || !checkoutPayMethod) {
     errEl.textContent = 'Completa todos los campos y selecciona un método de pago.';
     errEl.classList.remove('hidden');
@@ -7507,6 +7873,8 @@ async function submitStorefrontOrder(){
   errEl.classList.add('hidden');
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const shippingCost = checkoutShippingCost;
+  const total = subtotal + shippingCost;
   const folio = 'WEB-' + Date.now().toString().slice(-6);
 
   const orderPayload = {
@@ -7515,10 +7883,12 @@ async function submitStorefrontOrder(){
     customer_email: email,
     customer_phone: phone,
     shipping_address: address,
+    shipping_cp: cp,
+    shipping_cost: shippingCost,
     payment_method: checkoutPayMethod,
     items: cart.map(i => ({ id: i.id, name: i.name, sku: i.sku, price: i.price, qty: i.qty })),
     subtotal,
-    total: subtotal,
+    total,
     status: 'Pendiente'
   };
 
@@ -7529,9 +7899,9 @@ async function submitStorefrontOrder(){
   }
 
   document.getElementById('confirmFolio').textContent = folio;
-  document.getElementById('confirmTotal').textContent = fmtMoney(subtotal);
+  document.getElementById('confirmTotal').textContent = fmtMoney(total);
 
-  notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(subtotal)}.`);
+  notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(total)}.`);
 
   cart = [];
   updateStoreCartBadge();
@@ -8269,6 +8639,8 @@ loadCartsFromAPI();
 loadSuppliersFromAPI();
 loadSavedTicketConfig();
 loadNotificationPrefs();
+loadClienteSession();
+handleOAuthRedirect();
 loadCmsPagesForFooter();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
