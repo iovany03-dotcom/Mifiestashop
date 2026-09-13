@@ -100,10 +100,28 @@ const FALLBACK_CONTENT = [
   }
 ];
 
+// Contenido genérico para las páginas de aterrizaje tipo "Accesorios neon
+// para fiestas CDMX" / "Cosas para fiestas Puebla" (SEO programático por
+// ciudad/categoría) cuando PrestaShop tiene la página creada pero sin
+// redactar. Usa el propio título como base ("su página original") y datos
+// reales de la tienda; el grid de productos relacionados se agrega aparte
+// en el front (ver renderCmsRelatedProducts en index.html).
+function genericFallbackContent(title) {
+  return `
+    <p>Encuentra <b>${title}</b> en <b>Mi Fiestashop</b>: artículos de fiesta, globos, decoración, accesorios y pirotecnia fría al mayoreo y menudeo, con envío a toda la República Mexicana.</p>
+    <ul>
+      <li>Envío gratis en compras mayores a $1,500 MXN.</li>
+      <li>Recolección sin costo en nuestras sucursales de Ciudad de México, Querétaro y Puebla.</li>
+      <li>Atención y asesoría personalizada por WhatsApp.</li>
+    </ul>
+    <p>Explora los productos relacionados con <b>${title}</b> más abajo, o escríbenos por WhatsApp al <a href="https://wa.me/525612622146">561 262 2146</a> si buscas algo en específico.</p>
+  `;
+}
+
 function fallbackContentFor(title) {
   const norm = normalize(title);
   const match = FALLBACK_CONTENT.find(f => norm.includes(f.keyword));
-  return match ? match.html : '';
+  return match ? match.html : genericFallbackContent(title);
 }
 
 module.exports = async function handler(req, res) {

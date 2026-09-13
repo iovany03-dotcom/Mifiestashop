@@ -7229,7 +7229,10 @@ async function openCmsPage(slug, pushState) {
     document.title = data.page.title + ' | Mi Fiestashop';
     const metaDesc = document.getElementById('metaDescription');
     if (metaDesc && data.page.description) metaDesc.setAttribute('content', data.page.description);
-    body.innerHTML = `<h1 style="margin-top:0; color:#2e1065; font-size:1.6rem;">${data.page.title}</h1><div class="cms-page-content">${data.page.content}</div>`;
+    body.innerHTML = `<h1 style="margin-top:0; color:#2e1065; font-size:1.6rem;">${data.page.title}</h1><div class="cms-page-content">${data.page.content}</div><div id="cmsPageRelatedGrid"></div>`;
+
+    if (liveProducts.length === 0) await syncProductsFromPrestaShopAPI();
+    renderRelatedProductsInto('cmsPageRelatedGrid', data.page.title, null, `Productos relacionados con ${data.page.title}`);
   } catch (e) {
     body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se pudo cargar esta página en este momento.</div>';
   }
@@ -7621,6 +7624,7 @@ function openStorefrontProductDetail(idx){
 
 function buildProductDetailHTML(p, qtyId, onAddToCart){
   const desc = (p.desc && p.desc.trim() && p.desc.trim() !== p.name) ? p.desc : 'Sin descripción disponible para este producto.';
+  const relatedGridId = 'relatedGrid_' + qtyId;
 
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
@@ -7644,7 +7648,86 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         </div>
       </div>
     </div>
+    <div id="${relatedGridId}"></div>
   `;
+}
+
+// ================= PRODUCTOS RELACIONADOS (por palabras clave) =================
+// Se usa tanto en la ficha de producto ("También te puede interesar") como en
+// las páginas CMS de aterrizaje ("Accesorios neon para fiestas CDMX", etc.)
+// para mostrar un grid de productos reales relevantes, reutilizando el mismo
+// diseño de tarjeta que el catálogo principal.
+const ES_STOPWORDS = new Set(['de','la','el','los','las','para','con','en','a','y','del','al','un','una','unos','unas','tu','su','como','mas','más','que','por','se','tus','sus','este','esta','estos','estas']);
+
+function normalizeEs(str){
+  return String(str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function extractKeywordsEs(text){
+  // Longitud mínima de 4 para evitar falsos positivos por coincidencias de
+  // substring dentro de otras palabras (p.ej. "ano" dentro de "cumpleanos").
+  return normalizeEs(text).split(/[^a-z0-9]+/).filter(w => w.length > 3 && !ES_STOPWORDS.has(w));
+}
+
+function findRelatedProducts(sourceText, excludeId, limit){
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const keywords = extractKeywordsEs(sourceText);
+  if (keywords.length === 0 || !Array.isArray(dataset)) return [];
+  // Coincidencia por palabra completa (no substring) para evitar falsos
+  // positivos entre palabras distintas que comparten letras.
+  return dataset
+    .filter(p => String(p.id) !== String(excludeId))
+    .map(p => {
+      const hayWords = normalizeEs(`${p.name} ${p.catLabel || ''} ${p.desc || ''}`).split(/[^a-z0-9]+/);
+      const score = keywords.reduce((s, k) => s + (hayWords.includes(k) ? 1 : 0), 0);
+      return { p, score };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(x => x.p);
+}
+
+function openRelatedProduct(productId){
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const idx = dataset.findIndex(pr => String(pr.id) === String(productId));
+  if (idx === -1) return;
+  currentStorefrontList = dataset;
+  openStorefrontProductDetail(idx);
+}
+
+function buildRelatedProductCardHTML(p){
+  return `
+    <div class="store-prod-card store-reveal" style="cursor:pointer;" onclick="openRelatedProduct('${p.id}')">
+      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <div class="store-prod-body">
+        <div>
+          <div class="store-prod-sku">SKU: ${p.sku}</div>
+          <div class="store-prod-title">${p.name}</div>
+        </div>
+        <div>
+          <div class="store-prod-price">${fmtMoney(p.price)}</div>
+          <button class="store-prod-btn btn-pop" onclick="event.stopPropagation(); fireConfettiBurst(event.clientX, event.clientY); addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
+            🛒 Agregar al Carrito
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRelatedProductsInto(containerId, sourceText, excludeId, heading){
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const related = findRelatedProducts(sourceText, excludeId, 4);
+  if (related.length === 0) { container.innerHTML = ''; return; }
+  container.innerHTML = `
+    <h3 style="margin:26px 0 14px; font-size:1.15rem; color:#2e1065;">${heading || 'También te puede interesar'}</h3>
+    <div class="store-prods-grid">
+      ${related.map(p => buildRelatedProductCardHTML(p)).join('')}
+    </div>
+  `;
+  initScrollReveal();
 }
 
 function loadProductStockByBranch(productId){
@@ -7688,6 +7771,7 @@ function renderProductDetailModal(p){
   body.innerHTML = buildProductDetailHTML(p, 'storefrontDetailQty', 'closeStorefrontProductDetail();');
   modal.classList.remove('hidden');
   loadProductStockByBranch(p.id);
+  renderRelatedProductsInto('relatedGrid_storefrontDetailQty', p.name, p.id);
 }
 
 function closeStorefrontProductDetail(){
@@ -7728,6 +7812,7 @@ function renderProductFullPage(p){
   showStorefrontPage('storefrontProductPage');
   loadProductStockByBranch(p.id);
   applyProductSeoTags(p);
+  renderRelatedProductsInto('relatedGrid_storefrontPageQty', p.name, p.id);
 }
 
 function goHomeStorefront(){
