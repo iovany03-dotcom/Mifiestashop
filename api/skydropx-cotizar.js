@@ -27,18 +27,21 @@
 async function resolveAreaLevels(cp) {
   try {
     const r = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${encodeURIComponent(cp)}?type=simplified`);
-    if (!r.ok) return null;
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      return { ok: false, reason: `SEPOMEX HTTP ${r.status}${detail ? ': ' + detail.slice(0, 200) : ''}` };
+    }
     const data = await r.json();
     const resp = data?.response || data?.cp?.response || data?.cp || data;
-    if (!resp) return null;
+    if (!resp) return { ok: false, reason: `SEPOMEX respuesta vacía: ${JSON.stringify(data).slice(0, 200)}` };
     const estado = resp.estado || resp.d_estado;
     const municipio = resp.municipio || resp.d_mnpio;
     const asentamientoRaw = resp.asentamiento || resp.d_asenta;
     const asentamiento = Array.isArray(asentamientoRaw) ? asentamientoRaw[0] : asentamientoRaw;
-    if (!estado || !municipio) return null;
-    return { area_level1: estado, area_level2: municipio, area_level3: asentamiento || municipio };
+    if (!estado || !municipio) return { ok: false, reason: `SEPOMEX sin estado/municipio: ${JSON.stringify(resp).slice(0, 200)}` };
+    return { ok: true, levels: { area_level1: estado, area_level2: municipio, area_level3: asentamiento || municipio } };
   } catch (e) {
-    return null;
+    return { ok: false, reason: `SEPOMEX error: ${e.message}` };
   }
 }
 
@@ -154,14 +157,15 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const [levelsFrom, levelsTo] = await Promise.all([resolveAreaLevels(cpOrigen), resolveAreaLevels(cpDestino)]);
-    if (!levelsFrom || !levelsTo) {
-      res.status(200).json({ fallback: true, rates: [], error: `No se pudo resolver estado/municipio/colonia para el código postal (servicio de códigos postales no disponible o CP inválido: origen=${cpOrigen}, destino=${cpDestino})` });
+    const [resFrom, resTo] = await Promise.all([resolveAreaLevels(cpOrigen), resolveAreaLevels(cpDestino)]);
+    if (!resFrom.ok || !resTo.ok) {
+      const reasons = [!resFrom.ok ? `origen ${cpOrigen}: ${resFrom.reason}` : null, !resTo.ok ? `destino ${cpDestino}: ${resTo.reason}` : null].filter(Boolean).join(' | ');
+      res.status(200).json({ fallback: true, rates: [], error: `No se pudo resolver estado/municipio/colonia para el código postal (${reasons})` });
       return;
     }
 
-    const addressFrom = { country_code: 'MX', postal_code: cpOrigen, ...levelsFrom };
-    const addressTo = { country_code: 'MX', postal_code: cpDestino, ...levelsTo };
+    const addressFrom = { country_code: 'MX', postal_code: cpOrigen, ...resFrom.levels };
+    const addressTo = { country_code: 'MX', postal_code: cpDestino, ...resTo.levels };
 
     const accessToken = await getAccessToken();
     const authHeaders = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
