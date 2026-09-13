@@ -935,7 +935,7 @@
   }
   .hero-banner-link { display: block; overflow: hidden; transition: filter 0.25s ease; }
   .hero-banner-link:hover { filter: brightness(1.04); }
-  .hero-banner-img { width: 100%; display: block; transition: transform 0.4s ease; }
+  .hero-banner-img { width: 100%; height: auto; display: block; transition: transform 0.4s ease; }
   .hero-banner-link:hover .hero-banner-img { transform: scale(1.015); }
   .store-hero-content {
     max-width: 1200px; margin: 0 auto;
@@ -1119,26 +1119,6 @@
   .store-whatsapp-bubble::after {
     content: ''; position: absolute; right: 22px; bottom: -8px; width: 0; height: 0;
     border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid #fff;
-  }
-  .store-install-float {
-    position: fixed; left: 18px; bottom: 18px; z-index: 500;
-    display: flex; align-items: center; gap: 8px;
-    background: #fff; color: #2e1065; font-weight: 700; font-size: 0.85rem;
-    padding: 12px 16px; border-radius: 999px; border: none; cursor: pointer;
-    box-shadow: 0 8px 20px rgba(46,16,101,0.22);
-    transition: transform 0.2s ease;
-  }
-  .store-install-float:hover { transform: translateY(-2px); }
-  .store-install-tip {
-    position: fixed; left: 18px; bottom: 72px; z-index: 501;
-    background: #fff; color: #2e1065; font-size: 0.85rem; line-height: 1.5;
-    padding: 14px 16px; border-radius: 14px; box-shadow: 0 8px 22px rgba(46,16,101,0.22);
-    max-width: 260px;
-  }
-  .store-install-tip b { color: var(--mf-pink); }
-  .store-install-tip button {
-    display: block; margin-top: 8px; background: none; border: none; color: #8b7d97;
-    font-size: 0.78rem; font-weight: 700; cursor: pointer; padding: 0;
   }
   @keyframes waFloatBounce {
     0%, 100% { transform: translateY(0); }
@@ -1648,54 +1628,7 @@
     })();
   </script>
 
-  <button class="store-install-float hidden" id="installAppBtn" aria-label="Instalar la app" title="Instalar la app">
-    📲 Instalar App
-  </button>
-  <div class="store-install-tip hidden" id="installAppTip">
-    Para instalar la app en tu iPhone: toca <b>Compartir</b> <span style="font-size:1.1em;">⬆️</span> y luego <b>"Agregar a pantalla de inicio"</b>.
-    <button onclick="document.getElementById('installAppTip').classList.add('hidden')">Entendido</button>
-  </div>
   <script>
-    (function initInstallPrompt(){
-      const btn = document.getElementById('installAppBtn');
-      const tip = document.getElementById('installAppTip');
-      if (!btn || !tip) return;
-
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-      if (isStandalone) return;
-      if (localStorage.getItem('mf_install_dismissed') === 'true') return;
-
-      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-      let deferredPrompt = null;
-
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        btn.classList.remove('hidden');
-      });
-
-      if (isIOS) {
-        btn.classList.remove('hidden');
-      }
-
-      btn.addEventListener('click', async () => {
-        if (deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          deferredPrompt = null;
-          if (outcome === 'accepted') btn.classList.add('hidden');
-        } else if (isIOS) {
-          tip.classList.toggle('hidden');
-        }
-      });
-
-      window.addEventListener('appinstalled', () => {
-        btn.classList.add('hidden');
-        tip.classList.add('hidden');
-        localStorage.setItem('mf_install_dismissed', 'true');
-      });
-    })();
-
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
