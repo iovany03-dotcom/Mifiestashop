@@ -19,7 +19,10 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const url = `${baseUrl}/api/customers?display=[id,firstname,lastname,email,date_add,active]&limit=0,200&output_format=JSON`;
+  // Sin "sort", PrestaShop devuelve los clientes en su orden de creación
+  // (los primeros 200 de siempre, es decir los más antiguos) — se ordena
+  // por fecha de alta descendente para traer a los clientes más recientes.
+  const url = `${baseUrl}/api/customers?display=[id,firstname,lastname,email,date_add,active]&sort=[date_add_DESC]&limit=0,200&output_format=JSON`;
   // El RFC/identificador fiscal en PrestaShop se guarda en la dirección del
   // cliente (campo "dni"), no en el propio recurso "customers".
   const addressesUrl = `${baseUrl}/api/addresses?display=[id_customer,dni]&limit=0,500&output_format=JSON`;
