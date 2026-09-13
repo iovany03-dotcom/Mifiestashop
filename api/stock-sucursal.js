@@ -9,6 +9,9 @@ const WAREHOUSES = {
   '58': 'Atizapán'
 };
 
+// Sucursales que ya no deben mostrarse en "Existencia por sucursal" del sitio público.
+const HIDDEN_WAREHOUSES = ['54', '58'];
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -38,7 +41,8 @@ module.exports = async function handler(req, res) {
     }
 
     const data = await r.json();
-    const rows = Array.isArray(data.stocks) ? data.stocks : [];
+    const rows = (Array.isArray(data.stocks) ? data.stocks : [])
+      .filter(s => !HIDDEN_WAREHOUSES.includes(String(s.id_warehouse)));
 
     const branches = rows.map(s => ({
       warehouseId: s.id_warehouse,

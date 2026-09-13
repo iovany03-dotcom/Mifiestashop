@@ -5562,8 +5562,14 @@ const CUSTOMER_ORDERS = [
 let clienteCart = [];
 
 function openClientePortal() {
+  hideStorefrontPages();
+  const hero = document.getElementById('storefrontHero');
+  const storeContainer = document.getElementById('storefrontStoreContainer');
+  if (hero) hero.classList.add('hidden');
+  if (storeContainer) storeContainer.classList.add('hidden');
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.remove('hidden');
+  window.scrollTo(0, 0);
   renderClienteOrders();
   renderClienteCatalog();
 }
@@ -5571,6 +5577,8 @@ function openClientePortal() {
 function closeClientePortal() {
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.add('hidden');
+  hideStorefrontPages();
+  window.scrollTo(0, 0);
 }
 
 function switchClienteTab(tabName) {
