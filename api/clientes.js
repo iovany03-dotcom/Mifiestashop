@@ -20,20 +20,38 @@ module.exports = async function handler(req, res) {
   }
 
   const url = `${baseUrl}/api/customers?display=[id,firstname,lastname,email,date_add,active]&limit=0,200&output_format=JSON`;
+  // El RFC/identificador fiscal en PrestaShop se guarda en la dirección del
+  // cliente (campo "dni"), no en el propio recurso "customers".
+  const addressesUrl = `${baseUrl}/api/addresses?display=[id_customer,dni]&limit=0,500&output_format=JSON`;
 
   try {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+    const headers = { Authorization: `Basic ${auth}` };
+    const r = await fetch(url, { headers });
     if (!r.ok) throw new Error(`PrestaShop API error ${r.status}`);
 
     const data = await r.json();
     const rawCust = Array.isArray(data.customers) ? data.customers : [];
 
+    const rfcByCustomer = {};
+    try {
+      const ra = await fetch(addressesUrl, { headers });
+      if (ra.ok) {
+        const adata = await ra.json();
+        const rawAddr = Array.isArray(adata.addresses) ? adata.addresses : [];
+        rawAddr.forEach(a => {
+          if (a.dni && !rfcByCustomer[a.id_customer]) rfcByCustomer[a.id_customer] = a.dni;
+        });
+      }
+    } catch (e) {
+      // Si falla la consulta de direcciones, seguimos sin RFC en vez de inventar uno.
+    }
+
     const customers = rawCust.map(c => ({
       id: c.id,
       name: `${c.firstname || ''} ${c.lastname || ''}`.trim() || 'Cliente PrestaShop',
       email: c.email || '—',
-      rfc: `RFC-PS-${c.id}`,
+      rfc: rfcByCustomer[c.id] || '—',
       date: c.date_add ? c.date_add.slice(0, 10) : '—',
       active: c.active === '1' || c.active === 1
     }));
