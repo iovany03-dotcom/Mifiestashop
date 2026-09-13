@@ -1,4 +1,4 @@
-// Vercel serverless function: cotiza envíos reales con la API de Skydropx
+// Vercel serverless function: cotiza envíos reales con la API de Skydropx Pro
 // (OAuth2 client_credentials + cotización asíncrona por polling).
 //
 // GET/POST /api/skydropx-cotizar?cp_origen=72000&cp_destino=76000&peso=1&largo=30&ancho=25&alto=15
@@ -7,9 +7,15 @@
 //
 // Requires env vars (configúralas en Vercel → Settings → Environment Variables,
 // nunca en el código fuente):
-//   SKYDROPX_API_KEY       Clave de cliente (API Key) de Skydropx
-//   SKYDROPX_API_SECRET    Clave secreta del cliente (API Secret key) de Skydropx
-//   SKYDROPX_BASE_URL      Opcional, por defecto https://api.skydropx.com
+//   SKYDROPX_API_KEY       Clave de cliente (Client ID) de Skydropx Pro
+//   SKYDROPX_API_SECRET    Clave secreta del cliente (Client Secret) de Skydropx Pro
+//   SKYDROPX_BASE_URL      Opcional, por defecto https://pro.skydropx.com (panel Skydropx Pro)
+//
+// Nota de confianza: la documentación pública de Skydropx Pro (pro.skydropx.com/es-MX/api-docs)
+// no es accesible desde este entorno de desarrollo para verificarla en vivo, así que esta
+// integración intenta automáticamente las variantes más comunes documentadas externamente
+// (content-type del token, formato del cuerpo de la cotización) antes de rendirse, para
+// no depender de adivinar un único formato exacto.
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -17,7 +23,7 @@ module.exports = async function handler(req, res) {
 
   const clientId = process.env.SKYDROPX_API_KEY;
   const clientSecret = process.env.SKYDROPX_API_SECRET;
-  const baseUrl = process.env.SKYDROPX_BASE_URL || 'https://api.skydropx.com';
+  const baseUrl = process.env.SKYDROPX_BASE_URL || 'https://pro.skydropx.com';
 
   if (!clientId || !clientSecret) {
     res.status(200).json({ fallback: true, rates: [], error: 'Skydropx no configurado (faltan SKYDROPX_API_KEY / SKYDROPX_API_SECRET en Vercel)' });
@@ -37,39 +43,98 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  try {
-    // 1) Autenticación OAuth2 client_credentials
-    const tokenResp = await fetch(`${baseUrl}/api/v1/oauth/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret })
-    });
-    if (!tokenResp.ok) throw new Error(`Skydropx auth error ${tokenResp.status}`);
-    const tokenData = await tokenResp.json();
-    const accessToken = tokenData.access_token;
-    if (!accessToken) throw new Error('Skydropx no devolvió access_token');
-
-    const authHeaders = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
-
-    // 2) Crear cotización
-    const quotationBody = {
-      quotation: {
-        address_from: { country_code: 'mx', zip_code: cpOrigen },
-        address_to: { country_code: 'mx', zip_code: cpDestino },
-        parcels: [{ weight: peso, length: largo, width: ancho, height: alto }]
+  // El formato exacto del cuerpo de autenticación (JSON vs. form-urlencoded)
+  // varía según la fuente consultada; se intenta primero el formato estándar
+  // de OAuth2 (form-urlencoded, RFC 6749) y si falla se reintenta con JSON.
+  async function getAccessToken() {
+    const attempts = [
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret }).toString()
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grant_type: 'client_credentials', client_id: clientId, client_secret: clientSecret })
       }
-    };
-    const createResp = await fetch(`${baseUrl}/api/v1/quotations`, {
-      method: 'POST',
-      headers: authHeaders,
-      body: JSON.stringify(quotationBody)
-    });
-    if (!createResp.ok) throw new Error(`Skydropx quotation error ${createResp.status}`);
-    const createData = await createResp.json();
-    const quotationId = createData.id || createData.data?.id;
-    if (!quotationId) throw new Error('Skydropx no devolvió id de cotización');
+    ];
 
-    // 3) La cotización de Skydropx es asíncrona: se consulta hasta que las
+    let lastError = null;
+    for (const attempt of attempts) {
+      try {
+        const tokenResp = await fetch(`${baseUrl}/api/v1/oauth/token`, {
+          method: 'POST',
+          headers: attempt.headers,
+          body: attempt.body
+        });
+        if (!tokenResp.ok) {
+          lastError = new Error(`Skydropx auth error ${tokenResp.status}`);
+          continue;
+        }
+        const tokenData = await tokenResp.json();
+        if (tokenData.access_token) return tokenData.access_token;
+        lastError = new Error('Skydropx no devolvió access_token');
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError || new Error('No se pudo autenticar con Skydropx');
+  }
+
+  // Igual que con la autenticación, se intenta primero el cuerpo anidado bajo
+  // "quotation" (formato más común en la documentación) y, si la API lo
+  // rechaza, se reintenta con el cuerpo plano.
+  async function createQuotation(authHeaders) {
+    const parcel = { weight: peso, length: largo, width: ancho, height: alto };
+    const addressFrom = { country_code: 'mx', zip_code: cpOrigen };
+    const addressTo = { country_code: 'mx', zip_code: cpDestino };
+
+    const bodies = [
+      { quotation: { address_from: addressFrom, address_to: addressTo, parcels: [parcel] } },
+      { address_from: addressFrom, address_to: addressTo, parcels: [parcel] }
+    ];
+
+    let lastError = null;
+    for (const body of bodies) {
+      try {
+        const createResp = await fetch(`${baseUrl}/api/v1/quotations`, {
+          method: 'POST',
+          headers: authHeaders,
+          body: JSON.stringify(body)
+        });
+        if (!createResp.ok) {
+          lastError = new Error(`Skydropx quotation error ${createResp.status}`);
+          continue;
+        }
+        const createData = await createResp.json();
+        const quotationId = createData.id || createData.data?.id;
+        if (quotationId) return quotationId;
+        lastError = new Error('Skydropx no devolvió id de cotización');
+      } catch (err) {
+        lastError = err;
+      }
+    }
+    throw lastError || new Error('No se pudo crear la cotización en Skydropx');
+  }
+
+  function parseRates(rawRates) {
+    return rawRates
+      .filter((r) => r.success !== false)
+      .map((r) => ({
+        carrier: r.provider_name || r.carrier_name || r.carrier || 'Paquetería',
+        service: r.provider_service_name || r.service_level_name || r.service || '',
+        price: parseFloat(r.total_pricing || r.total || r.amount || 0),
+        days: r.days || r.delivery_estimate || null
+      }))
+      .filter((r) => r.price > 0)
+      .sort((a, b) => a.price - b.price);
+  }
+
+  try {
+    const accessToken = await getAccessToken();
+    const authHeaders = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+    const quotationId = await createQuotation(authHeaders);
+
+    // La cotización de Skydropx es asíncrona: se consulta hasta que las
     // tarifas estén listas o se agoten los intentos (deja margen dentro del
     // maxDuration de la función).
     let rates = [];
@@ -80,16 +145,7 @@ module.exports = async function handler(req, res) {
       const pollData = await pollResp.json();
       const rawRates = pollData.rates || pollData.data?.rates || [];
       if (Array.isArray(rawRates) && rawRates.length > 0) {
-        rates = rawRates
-          .filter((r) => r.success !== false)
-          .map((r) => ({
-            carrier: r.provider_name || r.carrier || 'Paquetería',
-            service: r.provider_service_name || r.service_level_name || '',
-            price: parseFloat(r.total_pricing || r.amount || 0),
-            days: r.days || r.delivery_estimate || null
-          }))
-          .filter((r) => r.price > 0)
-          .sort((a, b) => a.price - b.price);
+        rates = parseRates(rawRates);
         break;
       }
     }
