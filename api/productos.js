@@ -25,7 +25,7 @@ module.exports = async function handler(req, res) {
   const category = req.query.category;
   const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
   const sort = SORT_MAP[req.query.sort];
-  const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
+  const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite]';
   let filters = 'filter[active]=1';
   if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
   if (sort) filters += `&sort=${sort}`;
@@ -60,7 +60,11 @@ module.exports = async function handler(req, res) {
 
     const products = rawProducts.map(p => {
       const nameStr = firstLangValue(p.name, 'Producto PrestaShop');
-      const descStr = firstLangValue(p.description_short, '').replace(/<[^>]*>/g, '').trim();
+      // La descripción corta no siempre está llena en PrestaShop; si falta,
+      // se usa la descripción larga del producto como respaldo.
+      const shortDesc = firstLangValue(p.description_short, '').replace(/<[^>]*>/g, '').trim();
+      const longDesc = firstLangValue(p.description, '').replace(/<[^>]*>/g, '').trim();
+      const descStr = shortDesc || longDesc;
       const linkRewrite = firstLangValue(p.link_rewrite, '');
 
       const imgId = p.id_default_image;
