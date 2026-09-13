@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
   const sort = SORT_MAP[req.query.sort];
   const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
   let filters = 'filter[active]=1';
-  if (category) filters += `&filter[id_category_default]=${encodeURIComponent(category)}`;
+  if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
   if (sort) filters += `&sort=${sort}`;
   const productsUrl = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${offset},${limit}&output_format=JSON`;
 

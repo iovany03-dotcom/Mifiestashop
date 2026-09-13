@@ -17,9 +17,9 @@ const CATEGORIES = [
   { id: 285, name: 'Navidad', slug: 'navidad' },
   { id: 280, name: 'Pirotecnia Fría', slug: 'pirotecnia' },
   { id: 270, name: 'Velas', slug: 'velas' },
-  { id: 307, name: 'XV Años', slug: 'xv-anos' },
+  { id: 286, name: 'Año Nuevo', slug: 'ano-nuevo' },
   { id: 305, name: 'Sombreros', slug: 'sombreros' },
-  { id: 329, name: 'Piñatas', slug: 'pinatas' }
+  { id: 272, name: 'Poolparty', slug: 'poolparty' }
 ];
 
 module.exports = async function handler(req, res) {
