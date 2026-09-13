@@ -2120,6 +2120,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="param-avanzados-rendimiento">Rendimiento</a>
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
+        <a class="submenu-link" data-view="plantillas-correo">📧 Plantillas de Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
         <a class="submenu-link" data-view="param-avanzados-equipo">Equipo</a>
         <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
@@ -3493,6 +3494,19 @@
       </div>
     </section>
 
+    <!-- 9b. PLANTILLAS DE CORREO -->
+    <section id="view-plantillas-correo" class="view-panel hidden">
+      <div class="card">
+        <h2 style="margin-top:0;">📧 Plantillas de Correo Transaccional</h2>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+          Estas son las plantillas reales que se envían a los clientes (mismo diseño y contenido que recibirán). Se envían automáticamente en el momento indicado en cada tarjeta; usa "Vista previa" para verlas como las recibe el cliente, o "Enviar prueba" para mandarte una copia a un correo tuyo.
+        </p>
+        <div id="emailTemplatesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+          <!-- Dynamically populated by renderEmailTemplatesGrid() -->
+        </div>
+      </div>
+    </section>
+
     <!-- 10. IMPORTAR -->
     <section id="view-param-avanzados-importar" class="view-panel hidden">
       <div class="card">
@@ -4154,6 +4168,24 @@
     </div>
     <div id="cmsPageAdminModalBody" class="cms-page-content" style="color:var(--text-secondary);">
       Cargando…
+    </div>
+  </div>
+</div>
+
+<!-- ================= EMAIL TEMPLATE PREVIEW MODAL ================= -->
+<div id="emailTemplatePreviewModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:640px; max-height:88vh; display:flex; flex-direction:column;">
+    <div class="modal-header">
+      <h2 id="emailTemplatePreviewTitle">Plantilla de correo</h2>
+      <button class="btn small" onclick="closeEmailTemplatePreviewModal()">✕</button>
+    </div>
+    <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+      Asunto: <b id="emailTemplatePreviewSubject" style="color:var(--text-primary);">—</b>
+    </div>
+    <iframe id="emailTemplatePreviewFrame" style="flex:1; min-height:420px; width:100%; border:1px solid var(--border); border-radius:10px; background:#fff;"></iframe>
+    <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+      <input type="email" id="emailTemplateTestAddress" placeholder="tu-correo@ejemplo.com" style="flex:1; min-width:200px; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <button class="btn primary" onclick="sendTestEmailTemplate()">🧪 Enviar prueba</button>
     </div>
   </div>
 </div>
@@ -4843,6 +4875,7 @@ function switchView(viewName) {
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
     'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento & Caché'],
     'param-avanzados-correo': ['Parámetros Avanzados', 'Configuración SMTP de Correo'],
+    'plantillas-correo': ['Parámetros Avanzados', 'Plantillas de Correo Transaccional'],
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
@@ -4861,6 +4894,7 @@ function switchView(viewName) {
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') renderInventarioTable();
+  if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
 }
@@ -6068,6 +6102,11 @@ async function registerCliente(name, email, phone, password) {
   } catch (e) {
     // Si la tabla de perfil no existe todavía, la cuenta de autenticación ya quedó creada.
   }
+  fetch('/api/enviar-correo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to: email, tipo: 'bienvenida', datos: { nombre: name } }),
+  }).catch(e => console.log('No se pudo enviar el correo de bienvenida:', e.message));
   if (data.access_token) {
     saveClienteSession({ access_token: data.access_token, user: data.user });
     return { confirmed: true };
@@ -6996,6 +7035,17 @@ function updateOrderDetailStatus() {
   if (status === 'Cancelado') {
     notifyEvent('cancelled', '❌ Ticket cancelado', `El pedido ${folio} fue marcado como cancelado.`);
   }
+  if (status === 'Enviado') {
+    const email = document.getElementById('odClientEmail')?.textContent?.trim();
+    const nombre = currentOrderObj?.customer || '';
+    if (email && email.includes('@')) {
+      fetch('/api/enviar-correo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: email, tipo: 'envio', datos: { nombre, pedidoId: folio } }),
+      }).catch(e => console.log('No se pudo enviar el correo de envío:', e.message));
+    }
+  }
   alert('Estado del pedido actualizado ✓');
 }
 
@@ -7325,6 +7375,82 @@ async function previewCmsPageAdmin(id) {
 
 function closeCmsPageAdminModal() {
   document.getElementById('cmsPageAdminModal')?.classList.add('hidden');
+}
+
+// ================= PLANTILLAS DE CORREO (Backoffice) =================
+// Muestra las plantillas reales enviadas por api/enviar-correo.js — la
+// vista previa se pide al mismo endpoint (?preview=tipo) para garantizar
+// que lo que se ve aquí es exactamente lo que recibe el cliente.
+const EMAIL_TEMPLATES_META = [
+  { tipo: 'bienvenida', icon: '👋', title: 'Persona registrada', trigger: 'Se envía automáticamente cuando alguien crea una cuenta nueva en "Mi Perfil".' },
+  { tipo: 'recuperacion', icon: '🔑', title: 'Recuperación de cuenta', trigger: 'Diseño de referencia para el correo de "¿Olvidaste tu contraseña?". Hoy el envío real lo hace Supabase Auth con su propia plantilla configurable desde el panel de Supabase.' },
+  { tipo: 'pedido', icon: '🧾', title: 'Pedido realizado', trigger: 'Se envía automáticamente al confirmar un pedido en el checkout de la tienda.' },
+  { tipo: 'envio', icon: '🚚', title: 'Notificación de envío', trigger: 'Se envía automáticamente cuando cambias el estado de un pedido a "Enviado" desde el detalle del pedido.' },
+];
+
+function renderEmailTemplatesGrid(){
+  const grid = document.getElementById('emailTemplatesGrid');
+  if (!grid) return;
+  grid.innerHTML = EMAIL_TEMPLATES_META.map(t => `
+    <div class="card" style="margin:0; background:var(--plane); display:flex; flex-direction:column;">
+      <div style="font-size:28px; margin-bottom:8px;">${t.icon}</div>
+      <h3 style="margin:0 0 8px; color:var(--series-1);">${t.title}</h3>
+      <p style="font-size:12.5px; color:var(--text-secondary); flex:1; margin:0 0 16px;">${t.trigger}</p>
+      <button class="btn primary" style="width:100%; justify-content:center;" onclick="previewEmailTemplate('${t.tipo}')">👁️ Vista previa</button>
+    </div>
+  `).join('');
+}
+
+let currentEmailPreviewTipo = null;
+
+async function previewEmailTemplate(tipo){
+  currentEmailPreviewTipo = tipo;
+  const meta = EMAIL_TEMPLATES_META.find(t => t.tipo === tipo);
+  document.getElementById('emailTemplatePreviewTitle').textContent = meta ? `${meta.icon} ${meta.title}` : 'Plantilla de correo';
+  document.getElementById('emailTemplatePreviewSubject').textContent = 'Cargando…';
+  document.getElementById('emailTemplatePreviewFrame').srcdoc = '<p style="font-family:Arial,sans-serif; color:#8b7d97; text-align:center; padding-top:40px;">Cargando vista previa…</p>';
+  document.getElementById('emailTemplatePreviewModal').classList.remove('hidden');
+  try {
+    const r = await fetch(`/api/enviar-correo?preview=${encodeURIComponent(tipo)}`);
+    const data = await r.json();
+    if (!r.ok || !data.html) throw new Error(data.error || 'No se pudo generar la vista previa');
+    document.getElementById('emailTemplatePreviewSubject').textContent = data.subject || '—';
+    document.getElementById('emailTemplatePreviewFrame').srcdoc = data.html;
+  } catch (e) {
+    document.getElementById('emailTemplatePreviewSubject').textContent = '—';
+    document.getElementById('emailTemplatePreviewFrame').srcdoc = `<p style="font-family:Arial,sans-serif; color:#dc2626; text-align:center; padding-top:40px;">No se pudo cargar la vista previa: ${e.message}</p>`;
+  }
+}
+
+function closeEmailTemplatePreviewModal(){
+  document.getElementById('emailTemplatePreviewModal')?.classList.add('hidden');
+  currentEmailPreviewTipo = null;
+}
+
+async function sendTestEmailTemplate(){
+  const to = document.getElementById('emailTemplateTestAddress').value.trim();
+  if (!to || !to.includes('@')) {
+    alert('Ingresa un correo válido para la prueba.');
+    return;
+  }
+  if (!currentEmailPreviewTipo) return;
+  try {
+    const r = await fetch('/api/enviar-correo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, tipo: currentEmailPreviewTipo, datos: {} }),
+    });
+    const data = await r.json();
+    if (data.fallback) {
+      alert('⚠️ El servidor SMTP todavía no está configurado en Vercel, así que no se pudo enviar el correo de prueba. La vista previa sigue siendo real.');
+    } else if (data.sent) {
+      alert(`✅ Correo de prueba enviado a ${to}.`);
+    } else {
+      alert('❌ No se pudo enviar el correo de prueba: ' + (data.error || 'error desconocido'));
+    }
+  } catch (e) {
+    alert('❌ No se pudo enviar el correo de prueba: ' + e.message);
+  }
 }
 
 let __storeRevealObserver = null;
