@@ -387,6 +387,15 @@
     .content-body { padding: 14px; }
     .kpis { grid-template-columns: repeat(2, 1fr); }
     .modal-overlay { padding: 16px; }
+
+    /* Muchas secciones del panel usan grid-template-columns de 2+ columnas
+       en estilos en línea (gráficas, tablas de detalle, etc.) sin ajuste
+       para móvil. Con contenido ancho (tablas, SVGs) esas columnas fuerzan
+       el ancho del grid más allá de la pantalla y desbordan toda la página.
+       Se apilan a una sola columna dentro del Backoffice. */
+    #adminDashboardWrapper [style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
   }
   @media (max-width: 480px) {
     .kpis { grid-template-columns: 1fr; }
@@ -1974,10 +1983,6 @@
       <span class="sub" id="currentViewSub">— Punto de Venta en vivo</span>
     </div>
     <div class="header-actions">
-      <div class="status-badge">
-        <span class="status-dot"></span>
-        <span>Supabase Conectado</span>
-      </div>
       <button class="btn secondary small" onclick="goToStorefront()">🌐 Tienda Pública</button>
       <button class="btn danger small" onclick="logoutAdmin()">🚪 Cerrar Sesión</button>
       <button class="btn small" id="toggleThemeBtn">☀️ / 🌙</button>
@@ -2066,7 +2071,7 @@
     <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
     <section id="view-dashboard" class="view-panel hidden">
       <div class="card">
-        <h2>Panel de Ventas en Vivo & Estadísticas (PrestaShop API)</h2>
+        <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
           <div class="seg" id="periodSeg" style="display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
             <button data-p="dia" class="active" style="padding:8px 14px; border:none; background:transparent; color:var(--text-secondary); cursor:pointer;">Día</button>
@@ -2090,7 +2095,7 @@
           <div class="kpi-card"><div class="label">Ticket promedio</div><div class="value" id="kpiAvg">$0.00</div><div class="sub">Por pedido</div></div>
         </div>
 
-        <div id="ventasLoading" class="loading hidden" style="color:var(--text-muted); font-size:12.5px; padding:10px;">Consultando API PrestaShop…</div>
+        <div id="ventasLoading" class="loading hidden" style="color:var(--text-muted); font-size:12.5px; padding:10px;">Cargando…</div>
         <div id="ventasError" class="status err hidden"></div>
 
         <div class="card" style="margin-top:16px; padding:14px;">
@@ -2337,7 +2342,7 @@
       <div class="card" style="padding:20px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
           <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">📋 Bitácora de Envíos & Rastreos Activos Skydropx</h3>
-          <button class="btn small" onclick="renderSkydropxShipmentsTable()">🔄 Sincronizar Rastreos API</button>
+          <button class="btn small" onclick="renderSkydropxShipmentsTable()">🔄 Actualizar Rastreos</button>
         </div>
 
         <div class="table-wrap">
@@ -2429,11 +2434,11 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
           <div>
-            <h2 style="margin:0;">🛒 Carritos de Compra (API PrestaShop & Tienda Online)</h2>
+            <h2 style="margin:0;">🛒 Carritos de Compra</h2>
             <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px;">Monitoree carritos activos y recupere carritos abandonados con conversión directa a ventas POS.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn primary" onclick="loadCartsFromAPI()">🔄 Sincronizar API Carritos</button>
+            <button class="btn primary" onclick="loadCartsFromAPI()">🔄 Actualizar Carritos</button>
           </div>
         </div>
 
@@ -2621,7 +2626,7 @@
             <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.9rem;">Existencias en tiempo real de cada producto desglosadas por cada una de nuestras 3 sucursales.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn primary" onclick="syncInventoryData()">🔄 Sincronizar Stock API</button>
+            <button class="btn primary" onclick="syncInventoryData()">🔄 Actualizar Stock</button>
             <button class="btn secondary" onclick="openTraspasoModal()">📦 Movimientos & Traspasos</button>
           </div>
         </div>
@@ -2672,10 +2677,10 @@
     <section id="view-productos" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Catálogo de Productos Sincronizado (PrestaShop & Supabase API)</h2>
+          <h2>Catálogo de Productos</h2>
           <div style="display:flex; gap:10px;">
             <button class="btn primary" onclick="openEditProductModal(null)">➕ Crear Nuevo Producto</button>
-            <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">🔄 Sincronizar API PrestaShop</button>
+            <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">🔄 Actualizar Catálogo</button>
           </div>
         </div>
         <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
@@ -2822,7 +2827,7 @@
     <section id="view-categorias" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Categorías de Productos (PrestaShop API)</h2>
+          <h2>Categorías de Productos</h2>
           <button class="btn primary" onclick="loadCategoriesFromAPI()">🔄 Recargar Categorías API</button>
         </div>
         <div class="table-wrap">
@@ -2842,7 +2847,7 @@
     <section id="view-clientes" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Directorio de Clientes (PrestaShop API)</h2>
+          <h2>Directorio de Clientes</h2>
           <button class="btn primary" onclick="loadCustomersFromAPI()">🔄 Recargar Clientes API</button>
         </div>
         <div class="table-wrap">
@@ -2862,7 +2867,7 @@
     <section id="view-proveedores" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Directorio de Proveedores (PrestaShop API)</h2>
+          <h2>Directorio de Proveedores</h2>
           <button class="btn primary" onclick="loadSuppliersFromAPI()">🔄 Recargar Proveedores API</button>
         </div>
         <div class="table-wrap">
@@ -3493,8 +3498,7 @@
         </div>
       </div>
 
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
-        <span style="font-size:11.5px; color:var(--text-muted);">Sincronización bidireccional lista con Supabase & PrestaShop API</span>
+      <div style="display:flex; justify-content:flex-end; align-items:center; margin-top:20px;">
         <div style="display:flex; gap:10px;">
           <button type="button" class="btn secondary" onclick="closeEditProductModal()">Cancelar</button>
           <button type="submit" class="btn primary" style="font-weight:700; padding:10px 20px;">💾 Guardar Todos los Cambios</button>
@@ -4551,17 +4555,17 @@ function switchView(viewName) {
   // Update header text
   const titles = {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
-    dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas PrestaShop'],
-    pedidos: ['Pedidos & Ventas', 'Historial de Transacciones API'],
-    carritos: ['Carritos de Compra', 'API PrestaShop & Carritos Abandonados'],
-    productos: ['Catálogo de Productos', 'Sincronizado con API'],
+    dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
+    pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
+    carritos: ['Carritos de Compra', 'Carritos Abandonados'],
+    productos: ['Catálogo de Productos', 'Gestión del Catálogo'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
-    categorias: ['Categorías', 'Sincronizado con API PrestaShop'],
-    clientes: ['Directorio de Clientes', 'PrestaShop API'],
-    proveedores: ['Proveedores', 'Directorio de Insumos API'],
+    categorias: ['Categorías', 'Organización del Catálogo'],
+    clientes: ['Directorio de Clientes', 'Base de Clientes'],
+    proveedores: ['Proveedores', 'Directorio de Insumos'],
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
-    costos: ['Costos & Gastos', 'Gestión Supabase DB'],
+    costos: ['Costos & Gastos', 'Control de Gastos'],
     configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
     'param-tienda-general': ['Parámetros de la Tienda', 'General & Identificación'],
     'param-tienda-pedidos': ['Parámetros de la Tienda', 'Configuración de Pedidos'],
@@ -4575,7 +4579,7 @@ function switchView(viewName) {
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
-    'param-avanzados-webservice': ['Parámetros Avanzados', 'API Webservice PrestaShop']
+    'param-avanzados-webservice': ['Parámetros Avanzados', 'Conexión con PrestaShop']
   };
   if (titles[viewName]) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
@@ -5163,11 +5167,11 @@ async function syncProductsFromPrestaShopAPI(){
       if (data.products && data.products.length > 0) {
         liveProducts = data.products.map(p => ({
           id: p.id,
-          name: p.name || 'Producto PrestaShop',
+          name: p.name || 'Producto',
           sku: p.sku || `PS-${p.id}`,
           price: parseFloat(p.price || 50),
           cat: 'general',
-          catLabel: 'PrestaShop API',
+          catLabel: 'General',
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
           desc: p.description && p.description.trim() ? p.description : p.name,
           url: p.url || ''
@@ -5274,7 +5278,7 @@ function renderCatalogTable(category = 'all', query = ''){
         </td>
         <td><span class="pill ok">${p.catLabel || p.cat}</span></td>
         <td style="font-weight:700; color:var(--series-2);">${fmtMoney(p.price)}</td>
-        <td>PrestaShop / API</td>
+        <td>Catálogo</td>
         <td><span class="pill ${pillClass}">${statusText}</span></td>
         <td style="text-align:center; white-space:nowrap;">
           <button class="btn small primary" onclick="openEditProductModal('${p.id}')">✏️ Editar</button>
@@ -6115,7 +6119,7 @@ async function loadCategoriesFromAPI(){
       <td><b>#${c.id}</b></td>
       <td><b>${c.name}</b></td>
       <td><span class="pill ok">Activo</span></td>
-      <td>${c.count ? c.count + ' — PrestaShop' : 'PrestaShop API'}</td>
+      <td>${c.count || '—'}</td>
     </tr>
   `).join('');
 }
@@ -7547,7 +7551,7 @@ let liveCarts = [];
 
 async function loadCartsFromAPI() {
   const tbody = document.getElementById('cartsTableBody');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Consultando API PrestaShop de Carritos…</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando carritos…</td></tr>';
 
   try {
     const r = await fetch('/api/carritos');

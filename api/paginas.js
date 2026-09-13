@@ -1,15 +1,31 @@
 // Vercel serverless function: fetches PrestaShop CMS pages
-// (resource "content_management_system") — used to list and render
-// pages like "Quiénes somos", "Aviso de privacidad", "Términos y
-// condiciones", etc. on the public storefront with its own design.
+// (resource "content_management_system") — used to render pages like
+// "Aviso de privacidad", "Políticas de devolución", etc. on the public
+// storefront with its own design.
 //
 // GET /api/paginas            -> { pages: [{ id, title, slug }] }
 // GET /api/paginas?slug=xyz   -> { page: { id, title, description, content, slug } }
 // GET /api/paginas?id=5       -> { page: { id, title, description, content, slug } }
 //
+// El listado (sin slug/id) solo devuelve las páginas de "Ayuda y Legal"
+// que deben aparecer en el footer de la tienda — se filtra por palabras
+// clave en el título para no traer TODAS las páginas CMS que existan en
+// PrestaShop. Ajusta FOOTER_PAGE_KEYWORDS si agregas o quitas páginas.
+//
 // Requires env vars:
 //   PS_BASE_URL   e.g. https://www.mifiestashop.com
 //   PS_API_KEY    the PrestaShop webservice key
+
+// Palabras clave (sin acentos, en minúsculas) que debe contener el título
+// de una página para mostrarse en el footer de la tienda.
+const FOOTER_PAGE_KEYWORDS = ['envio gratis', 'privacidad', 'devolucion'];
+
+function normalize(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '');
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate');
@@ -104,7 +120,8 @@ module.exports = async function handler(req, res) {
         title: firstLangValue(p.meta_title, 'Página'),
         slug: firstLangValue(p.link_rewrite, '')
       }))
-      .filter(p => p.slug);
+      .filter(p => p.slug)
+      .filter(p => FOOTER_PAGE_KEYWORDS.some(kw => normalize(p.title).includes(kw)));
 
     res.status(200).json({ pages });
   } catch (err) {
