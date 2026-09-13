@@ -662,18 +662,49 @@
   /* TICKET PREVIEW */
   .ticket-paper {
     background: #fff;
-    color: #000;
+    color: #161616;
     font-family: 'Courier New', Courier, monospace;
-    padding: 20px;
-    border-radius: 6px;
+    padding: 18px 20px 16px;
+    border-radius: 10px;
     width: 320px;
     margin: 0 auto 16px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-    font-size: 12px;
-    line-height: 1.4;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.16);
+    border: 1px solid #e9e9ef;
+    font-size: 12.5px;
+    line-height: 1.55;
+    text-align: left;
   }
-  .ticket-paper .t-center { text-anchor: middle; text-align: center; }
-  .ticket-divider { border-bottom: 1px dashed #000; margin: 8px 0; }
+  .ticket-paper .t-center { text-align: center; }
+  .ticket-brand-bar {
+    height: 4px;
+    margin: -18px -20px 14px;
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(90deg, #d3007b, #ff6fb3);
+  }
+  .ticket-store-name { font-weight: 800; font-size: 15.5px; letter-spacing: 0.01em; }
+  .ticket-sub { color: #666; font-size: 11px; }
+  .ticket-divider { border-top: 1px dashed #b0b0b8; margin: 10px 0; }
+  .ticket-item { margin-bottom: 7px; }
+  .ticket-item-row { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; }
+  .ticket-item-sub { display: flex; justify-content: space-between; gap: 10px; color: #666; font-size: 11px; margin-top: 1px; }
+  .ticket-total-row { display: flex; justify-content: space-between; padding: 2px 0; }
+  .ticket-total-row.grand { font-size: 14.5px; font-weight: 800; padding-top: 6px; }
+  .ticket-thanks { font-weight: 700; margin-bottom: 2px; }
+  .ticket-note { color: #777; font-size: 10.5px; }
+  .ticket-scissors { text-align: center; color: #aaa; font-size: 11px; letter-spacing: 3px; margin-top: 14px; }
+
+  @media print {
+    body * { visibility: hidden; }
+    #printableTicket, #printableTicket * { visibility: visible; }
+    #printableTicket {
+      position: fixed; top: 0; left: 0;
+      width: 100% !important;
+      margin: 0; padding: 6px 10px 14px;
+      box-shadow: none; border: none; border-radius: 0;
+    }
+    #printableTicket .ticket-brand-bar { background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    @page { margin: 3mm; }
+  }
 
   .hidden { display: none !important; }
 
@@ -2859,30 +2890,31 @@
         <div class="card" style="text-align:center;">
           <h3>Vista Previa del Ticket Impreso</h3>
           <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
-            <div class="t-center" style="font-weight:bold; font-size:14px;" id="prevTName">MI FIESTASHOP</div>
-            <div class="t-center" id="prevTRfc">RFC: MFS260101XXX</div>
-            <div class="t-center" id="prevTAddr">Sucursal Puebla Principal</div>
-            <div class="t-center" id="prevTPhone">Tel: +52 222 123 4567</div>
+            <div class="ticket-brand-bar"></div>
+            <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
+            <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
+            <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
+            <div class="t-center ticket-sub" id="prevTPhone">Tel: +52 222 123 4567</div>
             <div class="ticket-divider"></div>
-            <div>Ticket #: #POS-EXAMPLE</div>
-            <div>Fecha: 2026-09-11 15:15</div>
-            <div>Cliente: Cliente Mostrador</div>
+            <div class="ticket-total-row"><span>Ticket #:</span><span>#POS-EXAMPLE</span></div>
+            <div class="ticket-total-row"><span>Fecha:</span><span>11/09/2026 15:15</span></div>
+            <div class="ticket-total-row"><span>Cliente:</span><span>Mostrador</span></div>
             <div class="ticket-divider"></div>
-            <div style="display:flex; justify-content:space-between;">
-              <span>1x Paquete Globos #9</span>
-              <span>$85.00</span>
+            <div class="ticket-item">
+              <div class="ticket-item-row"><span>Paquete Globos #9</span><span>$85.00</span></div>
             </div>
-            <div style="display:flex; justify-content:space-between;">
-              <span>2x Velas Chispero</span>
-              <span>$56.00</span>
-            </div>
-            <div class="ticket-divider"></div>
-            <div style="display:flex; justify-content:space-between; font-weight:bold;">
-              <span>TOTAL:</span>
-              <span>$163.56</span>
+            <div class="ticket-item">
+              <div class="ticket-item-row"><span>Velas Chispero</span><span>$56.00</span></div>
+              <div class="ticket-item-sub"><span>2 x $28.00</span><span></span></div>
             </div>
             <div class="ticket-divider"></div>
-            <div class="t-center" id="prevTFoot">¡Gracias por tu compra en Mi Fiestashop!</div>
+            <div class="ticket-total-row"><span>Subtotal:</span><span>$141.00</span></div>
+            <div class="ticket-total-row"><span>IVA (16%):</span><span>$22.56</span></div>
+            <div class="ticket-total-row grand"><span>TOTAL:</span><span>$163.56</span></div>
+            <div class="ticket-divider"></div>
+            <div class="t-center ticket-thanks" id="prevTFoot">¡Gracias por tu compra en Mi Fiestashop!</div>
+            <div class="t-center ticket-note">Conserva tu ticket por si necesitas una aclaración.</div>
+            <div class="ticket-scissors">✂ - - - - - - - - - - - - - -</div>
           </div>
         </div>
       </div>
@@ -3786,37 +3818,40 @@
     </div>
 
     <div class="ticket-paper" id="printableTicket">
-      <div class="t-center" style="font-weight:bold; font-size:14px;" id="tHeaderName">MI FIESTASHOP</div>
-      <div class="t-center" id="tHeaderRfc">RFC: MFS260101XXX</div>
-      <div class="t-center" id="tHeaderAddress">Sucursal Puebla Principal</div>
-      <div class="t-center" id="tHeaderPhone">Tel: +52 222 123 4567</div>
+      <div class="ticket-brand-bar"></div>
+      <div class="t-center ticket-store-name" id="tHeaderName">MI FIESTASHOP</div>
+      <div class="t-center ticket-sub" id="tHeaderRfc">RFC: MFS260101XXX</div>
+      <div class="t-center ticket-sub" id="tHeaderAddress">Sucursal Puebla Principal</div>
+      <div class="t-center ticket-sub" id="tHeaderPhone">Tel: +52 222 123 4567</div>
       <div class="ticket-divider"></div>
-      <div>Ticket #: <span id="tFolio">#POS-10493</span></div>
-      <div>Fecha: <span id="tFecha">2026-09-11 14:22</span></div>
-      <div>Cliente: <span id="tCliente">Cliente Mostrador</span></div>
+      <div class="ticket-total-row"><span>Ticket #:</span><span id="tFolio">#POS-10493</span></div>
+      <div class="ticket-total-row"><span>Fecha:</span><span id="tFecha">—</span></div>
+      <div class="ticket-total-row"><span>Cliente:</span><span id="tCliente">Cliente Mostrador</span></div>
       <div class="ticket-divider"></div>
       <div id="tItemsList">
         <!-- Item lines -->
       </div>
       <div class="ticket-divider"></div>
-      <div style="display:flex; justify-content:space-between; font-weight:bold;">
+      <div class="ticket-total-row grand">
         <span>TOTAL:</span>
         <span id="tTotal">$0.00</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
+      <div class="ticket-total-row">
         <span>Recibido:</span>
         <span id="tPaid">$0.00</span>
       </div>
-      <div style="display:flex; justify-content:space-between;">
+      <div class="ticket-total-row">
         <span>Cambio:</span>
         <span id="tChange">$0.00</span>
       </div>
       <div class="ticket-divider"></div>
-      <div class="t-center" id="tFooterMsg">¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com</div>
+      <div class="t-center ticket-thanks" id="tFooterMsg">¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com</div>
+      <div class="t-center ticket-note">Conserva tu ticket por si necesitas una aclaración.</div>
+      <div class="ticket-scissors">✂ - - - - - - - - - - - - - -</div>
     </div>
 
     <div style="display:flex; gap:10px; justify-content:center;">
-      <button class="btn primary" onclick="window.print()">🖨️ Imprimir Ticket</button>
+      <button class="btn primary" onclick="printTicket()">🖨️ Imprimir Ticket</button>
       <button class="btn" onclick="closeTicketModal()">Aceptar</button>
     </div>
   </div>
@@ -4684,17 +4719,12 @@ function confirmPOSSale() {
 
   // Populate Ticket Modal
   document.getElementById('tFolio').textContent = folio;
+  document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
   document.getElementById('tChange').textContent = fmtMoney(change);
 
-  const tItems = document.getElementById('tItemsList');
-  tItems.innerHTML = cart.map(i => `
-    <div style="display:flex; justify-content:space-between;">
-      <span>${i.qty}x ${i.name.slice(0, 18)}</span>
-      <span>${fmtMoney(i.price * i.qty)}</span>
-    </div>
-  `).join('');
+  document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(cart);
 
   closeCheckoutModal();
   document.getElementById('ticketModal').classList.remove('hidden');
@@ -4727,12 +4757,37 @@ function closeTicketModal() {
   document.getElementById('ticketModal').classList.add('hidden');
 }
 
+function buildTicketItemsHTML(items) {
+  return items.map(i => {
+    const lineTotal = fmtMoney(i.price * i.qty);
+    const name = i.name.length > 26 ? i.name.slice(0, 26) + '…' : i.name;
+    return `
+    <div class="ticket-item">
+      <div class="ticket-item-row"><span>${i.qty > 1 ? i.qty + 'x ' : ''}${name}</span><span>${lineTotal}</span></div>
+      ${i.qty > 1 ? `<div class="ticket-item-sub"><span>${i.qty} x ${fmtMoney(i.price)}</span><span></span></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function printTicket() {
+  const width = ticketConfig.width === '58mm' ? 58 : 80;
+  let pageStyle = document.getElementById('printPageSize');
+  if (!pageStyle) {
+    pageStyle = document.createElement('style');
+    pageStyle.id = 'printPageSize';
+    document.head.appendChild(pageStyle);
+  }
+  pageStyle.textContent = `@media print { @page { size: ${width}mm auto; margin: 3mm; } }`;
+  window.print();
+}
+
 function reprintTicket(folio, total) {
   document.getElementById('tFolio').textContent = folio;
+  document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(total);
   document.getElementById('tChange').textContent = '$0.00';
-  document.getElementById('tItemsList').innerHTML = '<div>1x Venta Registrada POS</div>';
+  document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML([{ name: 'Venta Registrada POS', qty: 1, price: total }]);
   document.getElementById('ticketModal').classList.remove('hidden');
 }
 
