@@ -7850,8 +7850,25 @@ function estimateShippingGuideCost(cp) {
 }
 
 let checkoutShippingCost = null;
+let checkoutCpRequestSeq = 0;
 
-function onCheckoutCPInput() {
+// Intenta cotizar el envío con la API real de Skydropx; si no hay
+// credenciales configuradas o la consulta falla, cae en la estimación por
+// zona (estimateShippingGuideCost) para que el checkout nunca se bloquee.
+async function quoteShippingGuideCost(cp) {
+  try {
+    const r = await fetch(`/api/skydropx-cotizar?cp_origen=72000&cp_destino=${encodeURIComponent(cp)}&peso=1&largo=30&ancho=25&alto=15`);
+    const data = await r.json();
+    if (Array.isArray(data.rates) && data.rates.length > 0) {
+      return Math.round(Math.min(...data.rates.map(r => Number(r.price))));
+    }
+  } catch (e) {
+    // Sin conexión con Skydropx: se usa la estimación local.
+  }
+  return estimateShippingGuideCost(cp);
+}
+
+async function onCheckoutCPInput() {
   const cpInput = document.getElementById('checkoutCP');
   const box = document.getElementById('checkoutShippingQuoteBox');
   const cp = (cpInput?.value || '').replace(/\D/g, '').slice(0, 5);
@@ -7864,8 +7881,16 @@ function onCheckoutCPInput() {
     return;
   }
 
+  const requestId = ++checkoutCpRequestSeq;
+  if (box) {
+    box.classList.remove('hidden');
+    box.innerHTML = `⏳ Cotizando envío a este código postal…`;
+  }
+
+  const guideCost = await quoteShippingGuideCost(cp);
+  if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió el CP
+
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const guideCost = estimateShippingGuideCost(cp);
   const envioGratis = guideCost < 250 && subtotal > 1500;
   checkoutShippingCost = envioGratis ? 0 : guideCost;
 
@@ -8799,10 +8824,13 @@ function goToAdmin() {
 // ================= SKYDROPX INTEGRATION LOGIC =================
 const SKYDROPX_SHIPMENTS = [];
 
-function calcularCotizacionesSkydropx() {
+async function calcularCotizacionesSkydropx() {
   const orig = (document.getElementById('skOrigenCp').value || '').trim();
   const dest = (document.getElementById('skDestinoCp').value || '').trim();
   const peso = (document.getElementById('skPeso').value || '1.0').trim();
+  const largo = (document.getElementById('skLargo').value || '30').trim();
+  const ancho = (document.getElementById('skAncho').value || '25').trim();
+  const alto = (document.getElementById('skAlto').value || '15').trim();
   const container = document.getElementById('skydropxRatesContainer');
   if(!container) return;
 
@@ -8811,32 +8839,48 @@ function calcularCotizacionesSkydropx() {
     return;
   }
 
-  container.innerHTML = `
-    <div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">
-      RESULTADOS EN VIVO DE SKYDROPX API (${orig} ➔ ${dest}, ${peso} kg):
-    </div>
+  container.innerHTML = `<div style="font-size:12.5px; color:var(--text-muted); padding:10px 0;">⏳ Consultando tarifas reales con Skydropx…</div>`;
+
+  let rates = [];
+  let usedFallback = false;
+  try {
+    const url = `/api/skydropx-cotizar?cp_origen=${encodeURIComponent(orig)}&cp_destino=${encodeURIComponent(dest)}&peso=${encodeURIComponent(peso)}&largo=${encodeURIComponent(largo)}&ancho=${encodeURIComponent(ancho)}&alto=${encodeURIComponent(alto)}`;
+    const r = await fetch(url);
+    const data = await r.json();
+    if (Array.isArray(data.rates) && data.rates.length > 0) {
+      rates = data.rates;
+    } else {
+      usedFallback = true;
+    }
+  } catch (e) {
+    usedFallback = true;
+  }
+
+  if (usedFallback) {
+    // Sin cotización real disponible (credenciales no configuradas o sin
+    // cobertura para este destino): se muestra una estimación de referencia.
+    rates = [
+      { carrier: 'FedEx Express', service: 'Día Siguiente', price: 149, days: 1 },
+      { carrier: 'Estafeta Terrestre', service: '3-5 Días', price: 119, days: 4 },
+      { carrier: 'Redpack Económico', service: '4-6 Días', price: 99, days: 5 }
+    ];
+  }
+
+  const badge = usedFallback
+    ? `<div style="font-size:11px; font-weight:700; color:var(--warn, #b8860b); margin-bottom:8px;">⚠️ Tarifas de referencia (Skydropx no disponible para esta consulta)</div>`
+    : `<div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">RESULTADOS EN VIVO DE SKYDROPX API (${orig} ➔ ${dest}, ${peso} kg):</div>`;
+
+  container.innerHTML = badge + `
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
-        <div><b>🚚 FedEx Express</b> <span class="pill ok" style="font-size:10px;">Día Siguiente</span></div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <b style="color:var(--series-2);">$149.00 MXN</b>
-          <button class="btn small primary" onclick="generarGuiaCotizada('FedEx Express', 149, '${orig}', '${dest}')">Generar Guía</button>
+      ${rates.map(r => `
+        <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
+          <div><b>🚚 ${r.carrier}</b> ${r.service ? `<span class="pill info" style="font-size:10px;">${r.service}${r.days ? ' · ' + r.days + 'd' : ''}</span>` : ''}</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <b style="color:var(--series-2);">$${Number(r.price).toFixed(2)} MXN</b>
+            <button class="btn small primary" onclick="generarGuiaCotizada('${r.carrier.replace(/'/g,"\\'")}', ${Number(r.price)}, '${orig}', '${dest}')">Generar Guía</button>
+          </div>
         </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
-        <div><b>🚚 Estafeta Terrestre</b> <span class="pill info" style="font-size:10px;">3-5 Días</span></div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <b style="color:var(--series-2);">$119.00 MXN</b>
-          <button class="btn small primary" onclick="generarGuiaCotizada('Estafeta Terrestre', 119, '${orig}', '${dest}')">Generar Guía</button>
-        </div>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
-        <div><b>🚚 Redpack Económico</b> <span class="pill warn" style="font-size:10px;">4-6 Días</span></div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <b style="color:var(--series-2);">$99.00 MXN</b>
-          <button class="btn small primary" onclick="generarGuiaCotizada('Redpack Económico', 99, '${orig}', '${dest}')">Generar Guía</button>
-        </div>
-      </div>
+      `).join('')}
     </div>
   `;
 }
