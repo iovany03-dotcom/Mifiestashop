@@ -118,6 +118,16 @@ function genericFallbackContent(title) {
   `;
 }
 
+// Algunas páginas (sobre todo las de aterrizaje por ciudad/categoría creadas
+// en lote) tienen el link_rewrite bien puesto pero el meta_title vacío en
+// PrestaShop. En vez de mostrar el título genérico "Página", se arma un
+// título legible a partir del propio slug.
+function titleFromSlug(slug) {
+  const words = String(slug || '').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!words) return 'Página';
+  return words.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function fallbackContentFor(title) {
   const norm = normalize(title);
   const match = FALLBACK_CONTENT.find(f => norm.includes(f.keyword));
@@ -189,7 +199,8 @@ module.exports = async function handler(req, res) {
         return;
       }
 
-      const title = firstLangValue(page.meta_title, 'Página');
+      const linkRewrite = firstLangValue(page.link_rewrite, '');
+      const title = firstLangValue(page.meta_title, '') || titleFromSlug(linkRewrite);
       let content = firstLangValue(page.content, '');
       if (!content.trim()) content = fallbackContentFor(title);
 
@@ -199,7 +210,7 @@ module.exports = async function handler(req, res) {
           title,
           description: firstLangValue(page.meta_description, ''),
           content,
-          slug: firstLangValue(page.link_rewrite, '')
+          slug: linkRewrite
         }
       });
       return;
@@ -216,11 +227,14 @@ module.exports = async function handler(req, res) {
     const rows = Array.isArray(data.content_management_system) ? data.content_management_system : [];
     let pages = rows
       .filter(p => String(p.active) !== '0')
-      .map(p => ({
-        id: p.id,
-        title: firstLangValue(p.meta_title, 'Página'),
-        slug: firstLangValue(p.link_rewrite, '')
-      }))
+      .map(p => {
+        const slug = firstLangValue(p.link_rewrite, '');
+        return {
+          id: p.id,
+          title: firstLangValue(p.meta_title, '') || titleFromSlug(slug),
+          slug
+        };
+      })
       .filter(p => p.slug);
 
     if (all) {
