@@ -3,14 +3,17 @@
 // "Aviso de privacidad", "Políticas de devolución", etc. on the public
 // storefront with its own design.
 //
-// GET /api/paginas            -> { pages: [{ id, title, slug }] }
+// GET /api/paginas            -> { pages: [{ id, title, slug }] }            (solo Ayuda y Legal, para el footer)
+// GET /api/paginas?all=1      -> { pages: [{ id, title, slug, inFooter }] }  (todas, para el Backoffice)
 // GET /api/paginas?slug=xyz   -> { page: { id, title, description, content, slug } }
 // GET /api/paginas?id=5       -> { page: { id, title, description, content, slug } }
 //
-// El listado (sin slug/id) solo devuelve las páginas de "Ayuda y Legal"
-// que deben aparecer en el footer de la tienda — se filtra por palabras
-// clave en el título para no traer TODAS las páginas CMS que existan en
-// PrestaShop. Ajusta FOOTER_PAGE_KEYWORDS si agregas o quitas páginas.
+// El listado por defecto (sin slug/id/all) solo devuelve las páginas de
+// "Ayuda y Legal" que deben aparecer en el footer de la tienda — se
+// filtra por palabras clave en el título para no traer TODAS las
+// páginas CMS que existan en PrestaShop. Ajusta FOOTER_PAGE_KEYWORDS si
+// agregas o quitas páginas. El Backoffice usa ?all=1 para listarlas
+// todas (marcando cuáles están en el footer) y poder revisarlas.
 //
 // Requires env vars:
 //   PS_BASE_URL   e.g. https://www.mifiestashop.com
@@ -55,7 +58,7 @@ module.exports = async function handler(req, res) {
 
   const auth = Buffer.from(`${apiKey}:`).toString('base64');
   const headers = { Authorization: `Basic ${auth}` };
-  const { id, slug } = req.query;
+  const { id, slug, all } = req.query;
 
   try {
     if (id || slug) {
@@ -113,15 +116,20 @@ module.exports = async function handler(req, res) {
     }
     const data = await r.json();
     const rows = Array.isArray(data.content_management_system) ? data.content_management_system : [];
-    const pages = rows
+    let pages = rows
       .filter(p => String(p.active) !== '0')
       .map(p => ({
         id: p.id,
         title: firstLangValue(p.meta_title, 'Página'),
         slug: firstLangValue(p.link_rewrite, '')
       }))
-      .filter(p => p.slug)
-      .filter(p => FOOTER_PAGE_KEYWORDS.some(kw => normalize(p.title).includes(kw)));
+      .filter(p => p.slug);
+
+    if (all) {
+      pages = pages.map(p => ({ ...p, inFooter: FOOTER_PAGE_KEYWORDS.some(kw => normalize(p.title).includes(kw)) }));
+    } else {
+      pages = pages.filter(p => FOOTER_PAGE_KEYWORDS.some(kw => normalize(p.title).includes(kw)));
+    }
 
     res.status(200).json({ pages });
   } catch (err) {
