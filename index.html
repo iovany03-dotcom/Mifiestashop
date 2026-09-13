@@ -706,6 +706,16 @@
     @page { margin: 3mm; }
   }
 
+  .cms-page-content { color: #4a3a5a; line-height: 1.7; font-size: 0.95rem; }
+  .cms-page-content h1, .cms-page-content h2, .cms-page-content h3 { color: #2e1065; margin-top: 26px; margin-bottom: 10px; }
+  .cms-page-content p { margin: 0 0 14px; }
+  .cms-page-content ul, .cms-page-content ol { margin: 0 0 14px; padding-left: 22px; }
+  .cms-page-content li { margin-bottom: 6px; }
+  .cms-page-content a { color: var(--mf-pink); }
+  .cms-page-content img { max-width: 100%; height: auto; border-radius: 10px; }
+  .cms-page-content table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+  .cms-page-content table td, .cms-page-content table th { border: 1px solid #f0e6ef; padding: 8px 10px; }
+
   .hidden { display: none !important; }
 
   /* STOREFRONT STYLES (mifiestashop.com design) */
@@ -1525,6 +1535,11 @@
           <li><a href="#" onclick="goToAdmin(); return false;">Acceso Administrativo</a></li>
         </ul>
       </div>
+      <div class="store-footer-col hidden" id="cmsFooterCol">
+        <h4>Ayuda y Legal</h4>
+        <ul id="cmsFooterList">
+        </ul>
+      </div>
       <div class="store-footer-col">
         <h4>Información</h4>
         <div class="info-line">
@@ -1791,6 +1806,23 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ==================== PÁGINA CMS (PrestaShop content_management_system) ==================== -->
+<div id="view-cms-page" class="hidden" style="min-height:100vh; background:var(--mf-cream, #fdf9fb); color:#2e1065;">
+  <header class="store-header">
+    <a href="#" class="store-brand" onclick="closeCmsPage(); return false;">
+      <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+    </a>
+    <button class="btn secondary" style="border-radius:20px; font-weight:700; margin-left:auto;" onclick="closeCmsPage(); return false;">
+      🏪 Volver a la Tienda
+    </button>
+  </header>
+  <div class="store-container" style="max-width:900px;">
+    <div id="cmsPageBody" style="background:#fff; border:1px solid #f0e6ef; border-radius:16px; padding:32px; margin:30px 0; min-height:300px;">
+      <div style="text-align:center; color:#8b7d97; padding:60px 0;">Cargando…</div>
+    </div>
   </div>
 </div>
 
@@ -6454,9 +6486,75 @@ function applyProductSeoTags(p) {
 function showPublicStorefront() {
   const sf = document.getElementById('view-storefront');
   const dash = document.getElementById('adminDashboardWrapper');
+  const portal = document.getElementById('view-cliente-portal');
+  const cms = document.getElementById('view-cms-page');
   if (dash) dash.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
+  if (cms) cms.classList.add('hidden');
   if (sf) sf.classList.remove('hidden');
   renderStorefrontProducts('all');
+}
+
+// ================= PÁGINAS CMS (PrestaShop content_management_system) =================
+async function openCmsPage(slug, pushState) {
+  const sf = document.getElementById('view-storefront');
+  const portal = document.getElementById('view-cliente-portal');
+  const dash = document.getElementById('adminDashboardWrapper');
+  const cms = document.getElementById('view-cms-page');
+  if (sf) sf.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
+  if (dash) dash.classList.add('hidden');
+  if (cms) cms.classList.remove('hidden');
+  window.scrollTo(0, 0);
+
+  if (pushState !== false) {
+    const target = '/pagina/' + encodeURIComponent(slug);
+    if (window.location.pathname !== target) history.pushState({}, '', target);
+  }
+
+  const body = document.getElementById('cmsPageBody');
+  if (!body) return;
+  body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">Cargando…</div>';
+
+  try {
+    const r = await fetch('/api/paginas?slug=' + encodeURIComponent(slug));
+    const data = await r.json();
+    if (!r.ok || !data.page) {
+      body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se encontró esta página.</div>';
+      return;
+    }
+    document.title = data.page.title + ' | Mi Fiestashop';
+    const metaDesc = document.getElementById('metaDescription');
+    if (metaDesc && data.page.description) metaDesc.setAttribute('content', data.page.description);
+    body.innerHTML = `<h1 style="margin-top:0; color:#2e1065; font-size:1.6rem;">${data.page.title}</h1><div class="cms-page-content">${data.page.content}</div>`;
+  } catch (e) {
+    body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se pudo cargar esta página en este momento.</div>';
+  }
+}
+
+function closeCmsPage() {
+  if (window.location.pathname !== '/') history.pushState({}, '', '/');
+  resetStorefrontSeoTags();
+  showPublicStorefront();
+  window.scrollTo(0, 0);
+}
+
+let cmsPagesList = [];
+async function loadCmsPagesForFooter() {
+  const list = document.getElementById('cmsFooterList');
+  if (!list) return;
+  try {
+    const r = await fetch('/api/paginas');
+    const data = await r.json();
+    cmsPagesList = Array.isArray(data.pages) ? data.pages : [];
+    if (cmsPagesList.length === 0) return;
+    list.innerHTML = cmsPagesList.map(p => `
+      <li><a href="#" onclick="event.preventDefault(); openCmsPage('${p.slug}');">${p.title}</a></li>
+    `).join('');
+    document.getElementById('cmsFooterCol')?.classList.remove('hidden');
+  } catch (e) {
+    // Sin páginas CMS configuradas o sin conexión: se deja la columna oculta.
+  }
 }
 
 let __storeRevealObserver = null;
@@ -7771,11 +7869,17 @@ loadRealProductSales();
 loadCartsFromAPI();
 loadSuppliersFromAPI();
 loadSavedTicketConfig();
+loadCmsPagesForFooter();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
 function routeApp() {
   if (productDeepLinkMatch) {
     showPublicStorefront();
+    return;
+  }
+  const cmsMatch = window.location.pathname.match(/^\/pagina\/([^\/]+)\/?$/);
+  if (cmsMatch) {
+    openCmsPage(decodeURIComponent(cmsMatch[1]), false);
     return;
   }
   if (window.location.pathname.startsWith('/admin')) {
