@@ -767,20 +767,6 @@
     display: flex; gap: 12px; flex-wrap: wrap;
   }
 
-  .store-stats-bar {
-    background: linear-gradient(90deg, var(--mf-purple-dark), var(--mf-purple));
-    color: #fff;
-    padding: 32px 24px;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    text-align: center;
-    max-width: 1240px;
-    margin: 0 auto;
-  }
-  @media (max-width: 700px) { .store-stats-bar { grid-template-columns: repeat(2, 1fr); } }
-  .store-stat-value { font-size: 2rem; font-weight: 800; }
-  .store-stat-label { font-size: 0.85rem; opacity: 0.85; margin-top: 2px; }
 
   .store-container {
     max-width: 1240px; margin: 0 auto; padding: 40px 20px 40px;
@@ -912,27 +898,12 @@
   .btn-pop:hover { transform: translateY(-2px) scale(1.03); }
   .btn-pop:active { transform: translateY(0) scale(0.97); }
 
-  .store-marquee {
-    overflow: hidden; white-space: nowrap; background: #fff;
-    border-top: 1px solid #f0e6ef; border-bottom: 1px solid #f0e6ef; padding: 14px 0;
-  }
-  .store-marquee-track {
-    display: inline-flex; gap: 14px; animation: marqueeScroll 30s linear infinite;
-  }
-  @keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-  .store-marquee-pill {
-    display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 999px;
-    font-weight: 700; font-size: 0.85rem; color: #fff; white-space: nowrap;
-  }
-
   .store-reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.7s cubic-bezier(.2,.7,.3,1), transform 0.7s cubic-bezier(.2,.7,.3,1); }
   .store-reveal.is-visible { opacity: 1; transform: translateY(0); }
 
   .store-prod-img, .store-cat-icon { transition: transform 0.4s ease; }
   .store-prod-card:hover .store-prod-img { transform: scale(1.08); }
   .store-cat-card:hover .store-cat-icon { transform: scale(1.12) rotate(-4deg); }
-
-  .store-stat-value { display: inline-block; }
 
   .confetti-piece {
     position: fixed; top: 0; left: 0; width: 8px; height: 8px; border-radius: 2px;
@@ -944,7 +915,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero-deco, .hero-shine, .store-marquee-track, .confetti-piece { animation: none !important; }
+    .hero-deco, .hero-shine, .confetti-piece { animation: none !important; }
     .store-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
     .btn-pop, .store-prod-card, .store-cat-card, .store-prod-img, .store-cat-icon { transition: none !important; }
   }
@@ -1054,19 +1025,6 @@
         <img src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600" alt="Mi Fiestashop Banner" style="max-width:100%; border-radius:20px; box-shadow:0 15px 30px rgba(46,16,101,0.18);">
       </div>
     </div>
-  </div>
-
-  <!-- Marquee Strip -->
-  <div class="store-marquee">
-    <div class="store-marquee-track" id="storeMarqueeTrack"></div>
-  </div>
-
-  <!-- Stats Bar -->
-  <div class="store-stats-bar">
-    <div><div class="store-stat-value" data-target="400" data-suffix="+">0</div><div class="store-stat-label">Productos</div></div>
-    <div><div class="store-stat-value" data-target="98" data-suffix="%">0</div><div class="store-stat-label">Satisfacción</div></div>
-    <div><div class="store-stat-value" data-target="15" data-suffix="+">0</div><div class="store-stat-label">Años</div></div>
-    <div><div class="store-stat-value" data-static="24/7">24/7</div><div class="store-stat-label">Soporte</div></div>
   </div>
 
   <!-- Store Container -->
@@ -6124,8 +6082,6 @@ function showPublicStorefront() {
   if (dash) dash.classList.add('hidden');
   if (sf) sf.classList.remove('hidden');
   renderStorefrontProducts('all');
-  initStoreMarquee();
-  initStatsCountUp();
 }
 
 let __storeRevealObserver = null;
@@ -6141,53 +6097,6 @@ function initScrollReveal(){
     }, { threshold: 0.15 });
   }
   items.forEach(el => __storeRevealObserver.observe(el));
-}
-
-function initStatsCountUp(){
-  const bar = document.querySelector('.store-stats-bar');
-  if (!bar || bar.dataset.animated === '1') return;
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const trigger = () => {
-    bar.dataset.animated = '1';
-    bar.querySelectorAll('.store-stat-value[data-target]').forEach(el => {
-      const target = parseInt(el.dataset.target, 10) || 0;
-      const suffix = el.dataset.suffix || '';
-      if (reduceMotion) { el.textContent = target + suffix; return; }
-      const duration = 1100;
-      const start = performance.now();
-      function step(now){
-        const p = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - p, 3);
-        el.textContent = Math.round(target * eased) + suffix;
-        if (p < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    });
-  };
-  if (!('IntersectionObserver' in window)) { trigger(); return; }
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(entry => { if (entry.isIntersecting) { trigger(); io.disconnect(); } });
-  }, { threshold: 0.4 });
-  io.observe(bar);
-}
-
-function initStoreMarquee(){
-  const track = document.getElementById('storeMarqueeTrack');
-  if (!track || track.dataset.built === '1') return;
-  track.dataset.built = '1';
-  const tags = [
-    { label: '🎈 Globos', color: 'var(--mf-pink)' },
-    { label: '🥁 Batucada', color: 'var(--mf-purple)' },
-    { label: '✨ Pirotecnia Fría', color: 'var(--mf-orange)' },
-    { label: '🎭 Antifaces', color: 'var(--mf-teal)' },
-    { label: '🎂 Velas', color: 'var(--mf-green)' },
-    { label: '🍽️ Desechables', color: 'var(--mf-pink)' },
-    { label: '💡 Neón', color: 'var(--mf-purple)' },
-    { label: '🚚 Envío gratis desde $1,500', color: 'var(--mf-orange)' },
-    { label: '📦 Mayoreo desde 3 piezas', color: 'var(--mf-teal)' }
-  ];
-  const pillsHtml = tags.map(t => `<span class="store-marquee-pill" style="background:${t.color};">${t.label}</span>`).join('');
-  track.innerHTML = pillsHtml + pillsHtml;
 }
 
 function fireConfettiBurst(x, y){
