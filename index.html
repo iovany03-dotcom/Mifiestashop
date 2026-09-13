@@ -5586,10 +5586,8 @@ let clienteCart = [];
 
 function openClientePortal() {
   hideStorefrontPages();
-  const hero = document.getElementById('storefrontHero');
-  const storeContainer = document.getElementById('storefrontStoreContainer');
-  if (hero) hero.classList.add('hidden');
-  if (storeContainer) storeContainer.classList.add('hidden');
+  const sf = document.getElementById('view-storefront');
+  if (sf) sf.classList.add('hidden');
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.remove('hidden');
   window.scrollTo(0, 0);
@@ -5600,6 +5598,8 @@ function openClientePortal() {
 function closeClientePortal() {
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.add('hidden');
+  const sf = document.getElementById('view-storefront');
+  if (sf) sf.classList.remove('hidden');
   hideStorefrontPages();
   window.scrollTo(0, 0);
 }
@@ -6243,11 +6243,14 @@ function handleAdminLogin() {
 
 function showAdminDashboard() {
   const sf = document.getElementById('view-storefront');
+  const portal = document.getElementById('view-cliente-portal');
   const dash = document.getElementById('adminDashboardWrapper');
   if (sf) sf.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
   if (dash) dash.classList.remove('hidden');
   document.title = 'Mi Fiestashop — Sistema ERP & POS';
   switchView('dashboard');
+  window.scrollTo(0, 0);
 }
 
 function resetStorefrontSeoTags() {
