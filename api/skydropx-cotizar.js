@@ -81,18 +81,34 @@ module.exports = async function handler(req, res) {
     throw lastError || new Error('No se pudo autenticar con Skydropx');
   }
 
-  // Igual que con la autenticación, se intenta primero el cuerpo anidado bajo
-  // "quotation" (formato más común en la documentación) y, si la API lo
-  // rechaza, se reintenta con el cuerpo plano.
+  // El nombre exacto de los campos (postal_code vs. zip_code, packages vs.
+  // parcels) y si el cuerpo va anidado bajo "quotation" o plano varía según
+  // la fuente consultada (la doc oficial no fue accesible desde este
+  // entorno para confirmarlo en vivo). Se prueban las combinaciones más
+  // documentadas, empezando por la mejor evidenciada (postal_code/packages),
+  // hasta que Skydropx acepte una.
   async function createQuotation(authHeaders) {
-    const parcel = { weight: peso, length: largo, width: ancho, height: alto };
-    const addressFrom = { country_code: 'mx', zip_code: cpOrigen };
-    const addressTo = { country_code: 'mx', zip_code: cpDestino };
-
-    const bodies = [
-      { quotation: { address_from: addressFrom, address_to: addressTo, parcels: [parcel] } },
-      { address_from: addressFrom, address_to: addressTo, parcels: [parcel] }
+    const fieldSets = [
+      {
+        packageKey: 'packages',
+        addressFrom: { country_code: 'MX', postal_code: cpOrigen },
+        addressTo: { country_code: 'MX', postal_code: cpDestino },
+        pkg: { weight: peso, length: largo, width: ancho, height: alto }
+      },
+      {
+        packageKey: 'parcels',
+        addressFrom: { country_code: 'mx', zip_code: cpOrigen },
+        addressTo: { country_code: 'mx', zip_code: cpDestino },
+        pkg: { weight: peso, length: largo, width: ancho, height: alto }
+      }
     ];
+
+    const bodies = [];
+    for (const fs of fieldSets) {
+      const flat = { address_from: fs.addressFrom, address_to: fs.addressTo, [fs.packageKey]: [fs.pkg] };
+      bodies.push(flat);
+      bodies.push({ quotation: flat });
+    }
 
     let lastError = null;
     for (const body of bodies) {
