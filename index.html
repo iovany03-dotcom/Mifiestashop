@@ -709,34 +709,43 @@
     position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
     font-size: 1.1rem; opacity: 0.6;
   }
-  .store-header-actions {
-    display: flex; align-items: center; gap: 12px;
+  .store-header-left {
+    display: flex; align-items: center; gap: 30px;
   }
+  .store-header-nav {
+    display: flex; gap: 22px;
+  }
+  .store-header-nav a {
+    color: #2e1065; text-decoration: none; font-weight: 800; font-size: 0.82rem;
+    text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer;
+    padding: 4px 0; border-bottom: 2px solid transparent;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .store-header-nav a:hover { color: var(--mf-pink); border-color: var(--mf-pink); }
 
-  .store-nav {
-    background: #fff;
-    padding: 0 24px;
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    border-bottom: 1px solid #f0e6ef;
+  .store-header-icons { display: flex; align-items: center; gap: 18px; }
+  .store-currency { font-weight: 700; font-size: 0.85rem; color: #2e1065; }
+  .store-icon-btn {
+    background: none; border: none; cursor: pointer; color: #2e1065; position: relative;
+    display: flex; align-items: center; justify-content: center; padding: 4px;
+    transition: transform 0.2s ease, color 0.2s ease;
   }
-  .store-nav-link {
-    color: #2e1065;
-    text-decoration: none;
-    padding: 12px 16px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    display: flex; align-items: center; gap: 6px;
-    border-bottom: 3px solid transparent;
-    transition: all 0.2s;
-    cursor: pointer;
+  .store-icon-btn:hover { transform: translateY(-2px) scale(1.1); color: var(--mf-pink); }
+  .store-icon-btn svg { width: 22px; height: 22px; }
+  .store-cart-badge {
+    position: absolute; top: -6px; right: -8px; background: var(--mf-pink); color: #fff;
+    font-size: 0.65rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 999px;
+    display: flex; align-items: center; justify-content: center; padding: 0 3px;
   }
-  .store-nav-link:hover, .store-nav-link.active {
-    color: var(--mf-pink); border-bottom-color: var(--mf-pink);
+  .store-cart-badge.bump { animation: cartBump 0.4s ease; }
+  @keyframes cartBump { 0% { transform: scale(1); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
+  .store-brand-logo { animation: logoWiggle 1.3s ease 0.4s 1; }
+  @keyframes logoWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(-8deg); }
+    40% { transform: rotate(6deg); }
+    60% { transform: rotate(-4deg); }
+    80% { transform: rotate(2deg); }
   }
 
   .store-hero {
@@ -747,6 +756,10 @@
     overflow: hidden;
     margin-bottom: 0;
   }
+  .hero-banner-link { display: block; overflow: hidden; transition: filter 0.25s ease; }
+  .hero-banner-link:hover { filter: brightness(1.04); }
+  .hero-banner-img { width: 100%; display: block; transition: transform 0.4s ease; }
+  .hero-banner-link:hover .hero-banner-img { transform: scale(1.015); }
   .store-hero-content {
     max-width: 1200px; margin: 0 auto;
     display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 32px; align-items: center;
@@ -915,9 +928,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .hero-deco, .hero-shine, .confetti-piece { animation: none !important; }
+    .hero-deco, .hero-shine, .confetti-piece, .store-brand-logo, .store-cart-badge.bump { animation: none !important; }
     .store-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-    .btn-pop, .store-prod-card, .store-cat-card, .store-prod-img, .store-cat-icon { transition: none !important; }
+    .btn-pop, .store-prod-card, .store-cat-card, .store-prod-img, .store-cat-icon, .store-icon-btn, .hero-banner-img, .hero-banner-link { transition: none !important; }
   }
 
   /* ================= FULL CATALOG BROWSE PANEL ================= */
@@ -966,65 +979,43 @@
 
   <!-- Header -->
   <header class="store-header">
-    <a href="#" class="store-brand" onclick="renderStorefrontProducts('all')">
-      <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
-      <div>
+    <div class="store-header-left">
+      <a href="#" class="store-brand" onclick="renderStorefrontProducts('all')">
+        <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
         <div class="store-brand-title">MI FIESTA SHOP</div>
-        <div class="store-brand-tagline">Artículos para fiesta y batucada al mayoreo</div>
-      </div>
-    </a>
+      </a>
+      <nav class="store-header-nav">
+        <a onclick="openStorefrontCatalog('all')">Productos</a>
+        <a onclick="openClientePortal()">Mis Pedidos</a>
+        <a onclick="openClientePortal(); switchClienteTab('promos');">Promociones</a>
+      </nav>
+    </div>
 
     <div class="store-search-box">
       <span class="store-search-icon">🔍</span>
-      <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento? (ej. globos, chisperos, desechables...)" oninput="filterStorefrontProducts(this.value)">
+      <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento?" oninput="filterStorefrontProducts(this.value)">
     </div>
 
-    <div class="store-header-actions">
-      <button class="btn secondary" style="border-radius:20px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openClientePortal()">
-        👤 Mi Cuenta / Pedidos
+    <div class="store-header-icons">
+      <span class="store-currency">MXN</span>
+      <button class="store-icon-btn" onclick="openClientePortal()" aria-label="Mi cuenta" title="Mi cuenta">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
       </button>
-      <button class="btn secondary" style="border-radius:20px; font-weight:700; background:var(--mf-teal-light); color:#2e1065; border:none;" onclick="openStorefrontCart()">
-        🛒 Carrito (<span id="storeCartBadge">0</span>)
+      <button class="store-icon-btn" onclick="openLoginModal()" aria-label="Acceso administrativo" title="Acceso administrativo">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.7"/></svg>
       </button>
-      <button class="btn primary" style="border-radius:20px; font-weight:700; background:var(--mf-pink); border:none;" onclick="openLoginModal()">
-        🔐 Acceso POS / Admin
+      <button class="store-icon-btn" onclick="openStorefrontCart()" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span class="store-cart-badge" id="storeCartBadge">0</span>
       </button>
     </div>
   </header>
 
-  <!-- Category Nav -->
-  <nav class="store-nav">
-    <a class="store-nav-link active" onclick="openStorefrontCatalog('all')">🏠 Todos los Productos</a>
-    <a class="store-nav-link" onclick="openClientePortal()">👤 Mis Pedidos</a>
-    <a class="store-nav-link" onclick="openClientePortal(); switchClienteTab('promos');">🏷️ Promociones & Cupones</a>
-  </nav>
-
   <!-- Hero Section -->
-  <div class="store-hero" id="storefrontHero">
-    <span class="hero-deco" style="width:26px; height:26px; background:var(--mf-yellow); top:14%; left:6%; animation-delay:0s;"></span>
-    <span class="hero-deco" style="width:16px; height:16px; background:var(--mf-teal); top:68%; left:12%; animation-delay:1.2s;"></span>
-    <span class="hero-deco tri" style="width:18px; height:18px; background:var(--mf-orange); top:22%; left:46%; animation-delay:.6s;"></span>
-    <span class="hero-deco" style="width:20px; height:20px; background:var(--mf-pink); top:78%; left:40%; animation-delay:1.8s;"></span>
-    <span class="hero-deco" style="width:14px; height:14px; background:var(--mf-purple); top:10%; left:88%; animation-delay:.9s;"></span>
-    <span class="hero-deco tri" style="width:22px; height:22px; background:var(--mf-teal); top:60%; left:94%; animation-delay:.3s;"></span>
-    <div class="store-hero-content">
-      <div>
-        <span class="store-hero-badge">✨ Venta al Mayoreo y Menudeo en México</span>
-        <h1>¡Todo para tu <span class="hero-shine">fiesta y batucada</span>!</h1>
-        <p>Más de 5,000 artículos disponibles en stock para fiestas, cumpleaños, bodas, graduaciones y eventos masivos. Envíos directos a todo México desde nuestras 5 sucursales.</p>
-        <div class="store-hero-btns">
-          <button class="btn primary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:var(--mf-teal); border:none;" onclick="openStorefrontCatalog('all')">
-            🛒 Explorar Catálogo
-          </button>
-          <button class="btn secondary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openLoginModal()">
-            🔐 Entrar al Sistema POS
-          </button>
-        </div>
-      </div>
-      <div style="text-align:center;">
-        <img src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600" alt="Mi Fiestashop Banner" style="max-width:100%; border-radius:20px; box-shadow:0 15px 30px rgba(46,16,101,0.18);">
-      </div>
-    </div>
+  <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
+    <a href="#" class="hero-banner-link" onclick="openStorefrontCatalog('all'); return false;">
+      <img src="img/hero-banner.png" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
+    </a>
   </div>
 
   <!-- Store Container -->
@@ -6649,6 +6640,9 @@ function updateStoreCartBadge() {
   if (badge) {
     const total = cart.reduce((sum, item) => sum + item.qty, 0);
     badge.textContent = total;
+    badge.classList.remove('bump');
+    void badge.offsetWidth;
+    badge.classList.add('bump');
   }
 }
 
