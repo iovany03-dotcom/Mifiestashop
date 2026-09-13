@@ -7,8 +7,12 @@
     "api/stock-sucursal.js": { "maxDuration": 30 },
     "api/sitemap.js": { "maxDuration": 30 },
     "api/categorias-tienda.js": { "maxDuration": 30 },
+    "api/categorias.js": { "maxDuration": 30 },
     "api/productos.js": { "maxDuration": 30 },
-    "api/paginas.js": { "maxDuration": 30 }
+    "api/paginas.js": { "maxDuration": 30 },
+    "api/clientes.js": { "maxDuration": 30 },
+    "api/inventario.js": { "maxDuration": 30 },
+    "api/proveedores.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
