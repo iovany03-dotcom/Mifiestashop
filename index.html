@@ -7,6 +7,7 @@
 <meta id="metaDescription" name="description" content="Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#d3007b">
+<link rel="icon" type="image/webp" href="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
 <link id="canonicalLink" rel="canonical" href="https://mifiestashop.vercel.app/">
 
 <meta property="og:type" content="website">
@@ -638,6 +639,10 @@
     --mf-green: #4fa83c;
     --mf-orange: #f2652e;
     --mf-cream: #fff3de;
+    --mf-pink-ghost: #fbe1ee;
+    --mf-gold-ghost: #fceacb;
+    --mf-teal-ghost: #ddf3f0;
+    --mf-green-ghost: #e4f1dc;
   }
   #view-storefront, #view-storefront input, #view-storefront textarea, #view-storefront button {
     font-family: 'Poppins', system-ui, -apple-system, sans-serif;
@@ -943,6 +948,36 @@
     .store-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
     .btn-pop, .store-prod-card, .store-cat-card, .store-prod-img, .store-cat-icon { transition: none !important; }
   }
+
+  /* ================= FULL CATALOG BROWSE PANEL ================= */
+  .catalog-layout { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 820px) { .catalog-layout { grid-template-columns: 1fr; } }
+  .catalog-sidebar { background: #fff; border: 1px solid #f0e6ef; border-radius: 16px; overflow: hidden; }
+  .catalog-sidebar-head { background: var(--mf-teal-light); color: #2e1065; font-weight: 800; padding: 14px 16px; font-size: 0.85rem; }
+  .catalog-sidebar-title { padding: 14px 16px 6px; font-weight: 800; color: #2e1065; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .catalog-cat-list { list-style: none; margin: 0; padding: 0 0 10px; }
+  .catalog-cat-list li { border-top: 1px solid #f4ecf3; }
+  .catalog-cat-list a { display: flex; justify-content: space-between; gap: 8px; padding: 11px 16px; color: #4a3a5a; text-decoration: none; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+  .catalog-cat-list a:hover, .catalog-cat-list a.active { color: var(--mf-pink); background: #fdf1f7; }
+  .catalog-cat-list .count { color: #a996b8; font-weight: 600; }
+
+  .catalog-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 10px; justify-content: space-between; }
+  .catalog-view-toggle { display: flex; gap: 6px; }
+  .catalog-view-toggle button { width: 38px; height: 38px; border-radius: 8px; border: 1px solid #e5dce6; background: #fff; cursor: pointer; font-size: 1rem; color: #2e1065; }
+  .catalog-view-toggle button.active { background: var(--mf-purple-dark); color: #fff; border-color: var(--mf-purple-dark); }
+  .catalog-pager { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; flex-wrap: wrap; }
+  .catalog-pager button { min-width: 30px; height: 30px; border-radius: 6px; border: 1px solid #e5dce6; background: #fff; cursor: pointer; font-weight: 700; color: #2e1065; }
+  .catalog-pager button.active { background: var(--mf-pink); color: #fff; border-color: var(--mf-pink); }
+  .catalog-pager button:disabled { opacity: 0.4; cursor: default; }
+  .catalog-sort { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #4a3a5a; font-weight: 600; }
+  .catalog-sort select { padding: 8px 12px; border-radius: 8px; border: 1px solid #e5dce6; background: #fff; color: #2e1065; font-weight: 600; }
+  .store-prods-grid.list-view { grid-template-columns: 1fr; }
+  .store-prods-grid.list-view .store-prod-card { flex-direction: row; }
+  .store-prods-grid.list-view .store-prod-img { width: 140px; height: 140px; flex-shrink: 0; }
+  .store-prods-grid.list-view .store-prod-body { flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+  .store-prods-grid.list-view .store-prod-body > div:last-child { display: flex; align-items: center; gap: 10px; }
+  .store-prods-grid.list-view .store-prod-btn { width: auto; white-space: nowrap; }
+  .store-prods-grid.list-view .btn.small { width: auto; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -988,7 +1023,7 @@
 
   <!-- Category Nav -->
   <nav class="store-nav">
-    <a class="store-nav-link active" onclick="renderStorefrontProducts('all')">🏠 Todos los Productos</a>
+    <a class="store-nav-link active" onclick="openStorefrontCatalog('all')">🏠 Todos los Productos</a>
     <a class="store-nav-link" onclick="openClientePortal()">👤 Mis Pedidos</a>
     <a class="store-nav-link" onclick="openClientePortal(); switchClienteTab('promos');">🏷️ Promociones & Cupones</a>
   </nav>
@@ -1007,7 +1042,7 @@
         <h1>¡Todo para tu <span class="hero-shine">fiesta y batucada</span>!</h1>
         <p>Más de 5,000 artículos disponibles en stock para fiestas, cumpleaños, bodas, graduaciones y eventos masivos. Envíos directos a todo México desde nuestras 5 sucursales.</p>
         <div class="store-hero-btns">
-          <button class="btn primary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:var(--mf-teal); border:none;" onclick="document.getElementById('storeCatalogSection').scrollIntoView({behavior:'smooth'})">
+          <button class="btn primary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:var(--mf-teal); border:none;" onclick="openStorefrontCatalog('all')">
             🛒 Explorar Catálogo
           </button>
           <button class="btn secondary btn-pop" style="padding:14px 28px; font-size:1rem; border-radius:24px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openLoginModal()">
@@ -1042,28 +1077,38 @@
       <h2>🏷️ Categorías Principales</h2>
     </div>
     <div class="store-cats-grid">
-      <div class="store-cat-card store-reveal" style="transition-delay:0ms;" onclick="renderStorefrontProducts('globos')">
-        <div class="store-cat-icon">🎈</div>
+      <div class="store-cat-card store-reveal" style="transition-delay:0ms;" onclick="openStorefrontCatalog('269')">
+        <div class="store-cat-icon" style="background:var(--mf-pink-ghost);">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M12 2C7 2 5 6 5 9.5C5 13.5 8 16 8 18c0 1 .5 1.5 1.5 1.5h5C15.5 19.5 16 19 16 18c0-2 3-4.5 3-8.5C19 6 17 2 12 2Z" stroke="var(--mf-pink)" stroke-width="1.6"/><path d="M12 19.5V22" stroke="var(--mf-pink)" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
         <div class="store-cat-name">Globos Metálicos & Látex</div>
         <div class="store-cat-count">3,240 SKUs en stock</div>
       </div>
-      <div class="store-cat-card store-reveal" style="transition-delay:60ms;" onclick="renderStorefrontProducts('desechables')">
-        <div class="store-cat-icon">🍽️</div>
+      <div class="store-cat-card store-reveal" style="transition-delay:60ms;" onclick="openStorefrontCatalog('325|326|327')">
+        <div class="store-cat-icon" style="background:var(--mf-teal-ghost);">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M7 3v7a2 2 0 0 0 4 0V3M7 6H5m2 3H5M9 10v11M15 3c-1.4 1.6-2 3.2-2 5s.6 3.4 2 5c1.4-1.6 2-3.2 2-5s-.6-3.4-2-5Z" stroke="var(--mf-teal)" stroke-width="1.6" stroke-linecap="round"/><path d="M15 13v8" stroke="var(--mf-teal)" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
         <div class="store-cat-name">Desechables & Platos</div>
         <div class="store-cat-count">850 SKUs en stock</div>
       </div>
-      <div class="store-cat-card store-reveal" style="transition-delay:120ms;" onclick="renderStorefrontProducts('pirotecnia')">
-        <div class="store-cat-icon">✨</div>
+      <div class="store-cat-card store-reveal" style="transition-delay:120ms;" onclick="openStorefrontCatalog('280')">
+        <div class="store-cat-icon" style="background:var(--mf-gold-ghost);">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M4 10L12 4l8 6" stroke="var(--mf-orange)" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 4v13m-5-5.5v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-6" stroke="var(--mf-orange)" stroke-width="1.6"/></svg>
+        </div>
         <div class="store-cat-name">Pirotecnia Fría & Chisperos</div>
         <div class="store-cat-count">190 SKUs en stock</div>
       </div>
-      <div class="store-cat-card store-reveal" style="transition-delay:180ms;" onclick="renderStorefrontProducts('neon')">
-        <div class="store-cat-icon">🎉</div>
+      <div class="store-cat-card store-reveal" style="transition-delay:180ms;" onclick="openStorefrontCatalog('273|284|268')">
+        <div class="store-cat-icon" style="background:var(--mf-green-ghost);">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28"><rect x="4" y="10" width="16" height="10" rx="2" stroke="var(--mf-green)" stroke-width="1.6"/><path d="M9 10V7a3 3 0 0 1 6 0v3" stroke="var(--mf-green)" stroke-width="1.6"/><circle cx="12" cy="15" r="1.6" fill="var(--mf-green)"/></svg>
+        </div>
         <div class="store-cat-name">Batucada & Luces Neón</div>
         <div class="store-cat-count">420 SKUs en stock</div>
       </div>
-      <div class="store-cat-card store-reveal" style="transition-delay:240ms;" onclick="renderStorefrontProducts('velas')">
-        <div class="store-cat-icon">🎂</div>
+      <div class="store-cat-card store-reveal" style="transition-delay:240ms;" onclick="openStorefrontCatalog('270')">
+        <div class="store-cat-icon" style="background:var(--mf-pink-ghost);">
+          <svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M12 3c-1.5 1.6-1.5 3 0 4.4C13.5 6 13.5 4.6 12 3Z" fill="var(--mf-pink)"/><path d="M6 21v-6a6 6 0 0 1 12 0v6" stroke="var(--mf-pink)" stroke-width="1.6"/><path d="M4 21h16" stroke="var(--mf-pink)" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
         <div class="store-cat-name">Velas & Cumpleaños</div>
         <div class="store-cat-count">310 SKUs en stock</div>
       </div>
@@ -1072,7 +1117,10 @@
     <!-- Catálogo de Productos Público -->
     <div class="store-section-title" id="storeCatalogSection">
       <h2>📦 Productos Destacados (PrestaShop API)</h2>
-      <span style="font-size:0.9rem; color:#8b7d97;">Mostrando catálogo oficial en vivo</span>
+      <span style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+        <span style="font-size:0.9rem; color:#8b7d97;">Mostrando catálogo oficial en vivo</span>
+        <a href="#" onclick="openStorefrontCatalog('all'); return false;" style="font-size:0.85rem; font-weight:800; color:var(--mf-pink); text-decoration:none;">Ver catálogo completo →</a>
+      </span>
     </div>
 
     <div class="store-prods-grid" id="storefrontProductGrid">
@@ -1185,6 +1233,39 @@
     </div>
   </div>
 
+  <!-- Full Catalog Browse Panel -->
+  <div class="store-container hidden" id="storefrontCatalogPage">
+    <button class="btn secondary btn-pop" style="margin:20px 0; border-radius:20px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="goHomeStorefront()">← Volver al inicio</button>
+    <div class="catalog-layout">
+      <aside class="catalog-sidebar">
+        <div class="catalog-sidebar-head">🔎 Buscar por</div>
+        <div class="catalog-sidebar-title">Categorías</div>
+        <ul class="catalog-cat-list" id="catalogCatList"></ul>
+      </aside>
+      <div class="catalog-main">
+        <div class="catalog-toolbar">
+          <div class="catalog-view-toggle">
+            <button id="catalogViewGrid" class="active" onclick="setCatalogView('grid')" aria-label="Vista de cuadrícula" title="Cuadrícula">▦</button>
+            <button id="catalogViewList" onclick="setCatalogView('list')" aria-label="Vista de lista" title="Lista">☰</button>
+          </div>
+          <div class="catalog-pager" id="catalogPagerTop"></div>
+          <div class="catalog-sort">
+            <label for="catalogSortSelect">Ordenar por:</label>
+            <select id="catalogSortSelect" onchange="onCatalogSortChange(this.value)">
+              <option value="relevance">Relevancia</option>
+              <option value="price_asc">Precio: menor a mayor</option>
+              <option value="price_desc">Precio: mayor a menor</option>
+              <option value="name_asc">Nombre A-Z</option>
+            </select>
+          </div>
+        </div>
+        <div id="catalogStatus" style="font-size:13px; color:#8b7d97; margin-bottom:14px;"></div>
+        <div class="store-prods-grid" id="catalogGrid"></div>
+        <div class="catalog-pager" id="catalogPagerBottom" style="margin-top:24px; justify-content:center;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Storefront Footer -->
   <footer class="store-footer">
     <div class="store-footer-inner">
@@ -1196,10 +1277,10 @@
       <div class="store-footer-col">
         <h4>Categorías Populares</h4>
         <ul>
-          <li><a href="#" onclick="renderStorefrontProducts('globos')">Globos de Números 40"</a></li>
-          <li><a href="#" onclick="renderStorefrontProducts('desechables')">Platos Biodegradables</a></li>
-          <li><a href="#" onclick="renderStorefrontProducts('pirotecnia')">Chisperos Pirotecnia Fría</a></li>
-          <li><a href="#" onclick="renderStorefrontProducts('neon')">Antifaces y Luces Neón</a></li>
+          <li><a href="#" onclick="openStorefrontCatalog('269')">Globos de Números 40"</a></li>
+          <li><a href="#" onclick="openStorefrontCatalog('325|326|327')">Platos Biodegradables</a></li>
+          <li><a href="#" onclick="openStorefrontCatalog('280')">Chisperos Pirotecnia Fría</a></li>
+          <li><a href="#" onclick="openStorefrontCatalog('273|284|268')">Antifaces y Luces Neón</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
@@ -6173,7 +6254,14 @@ function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
   const visibleCount = Math.min(storefrontVisibleCount, filtered.length);
   const visible = filtered.slice(0, visibleCount);
 
-  grid.innerHTML = visible.map((p, idx) => `
+  grid.innerHTML = visible.map((p, idx) => buildStorefrontProductCardHTML(p, idx)).join('');
+
+  renderStorefrontLoadMore(visibleCount, filtered.length);
+  initScrollReveal();
+}
+
+function buildStorefrontProductCardHTML(p, idx){
+  return `
     <div class="store-prod-card store-reveal" style="transition-delay:${Math.min(idx, 8) * 50}ms;">
       <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
@@ -6192,10 +6280,7 @@ function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
         </div>
       </div>
     </div>
-  `).join('');
-
-  renderStorefrontLoadMore(visibleCount, filtered.length);
-  initScrollReveal();
+  `;
 }
 
 function renderStorefrontLoadMore(shown, total){
@@ -6213,6 +6298,131 @@ function renderStorefrontLoadMore(shown, total){
 function loadMoreStorefrontProducts(){
   storefrontVisibleCount += STOREFRONT_PAGE_SIZE;
   renderStorefrontProducts(currentStorefrontCat, currentStorefrontQuery, true);
+}
+
+// ================= FULL CATALOG BROWSE PANEL (real PrestaShop categories) =================
+let catalogCategories = [];
+let catalogState = { catId: 'all', page: 1, pageSize: 24, sort: 'relevance', view: 'grid', total: 0 };
+
+async function openStorefrontCatalog(catId){
+  showStorefrontPage('storefrontCatalogPage');
+  resetStorefrontSeoTags();
+  catalogState.catId = catId || 'all';
+  catalogState.page = 1;
+  if (catalogCategories.length === 0) await loadCatalogCategories();
+  renderCatalogSidebar();
+  await loadCatalogPage();
+}
+
+async function loadCatalogCategories(){
+  try {
+    const r = await fetch('/api/categorias-tienda');
+    const data = await r.json();
+    catalogCategories = Array.isArray(data.categories) ? data.categories : [];
+  } catch (e) {
+    catalogCategories = [];
+  }
+}
+
+function renderCatalogSidebar(){
+  const list = document.getElementById('catalogCatList');
+  if (!list) return;
+  list.innerHTML = `
+    <li><a class="${catalogState.catId === 'all' ? 'active' : ''}" onclick="selectCatalogCategory('all')">Todos los productos</a></li>
+    ` + catalogCategories.map(c => `
+    <li><a class="${String(catalogState.catId) === String(c.id) ? 'active' : ''}" onclick="selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
+  `).join('');
+}
+
+function selectCatalogCategory(catId){
+  catalogState.catId = catId;
+  catalogState.page = 1;
+  renderCatalogSidebar();
+  loadCatalogPage();
+}
+
+function onCatalogSortChange(sort){
+  catalogState.sort = sort;
+  catalogState.page = 1;
+  loadCatalogPage();
+}
+
+function setCatalogView(view){
+  catalogState.view = view;
+  const gridBtn = document.getElementById('catalogViewGrid');
+  const listBtn = document.getElementById('catalogViewList');
+  if (gridBtn) gridBtn.classList.toggle('active', view === 'grid');
+  if (listBtn) listBtn.classList.toggle('active', view === 'list');
+  const grid = document.getElementById('catalogGrid');
+  if (grid) grid.classList.toggle('list-view', view === 'list');
+}
+
+async function loadCatalogPage(){
+  const grid = document.getElementById('catalogGrid');
+  const statusEl = document.getElementById('catalogStatus');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:#8b7d97;">Cargando productos…</div>';
+
+  const offset = (catalogState.page - 1) * catalogState.pageSize;
+  const params = new URLSearchParams({ limit: catalogState.pageSize, offset });
+  if (catalogState.catId !== 'all') params.set('category', catalogState.catId);
+  if (catalogState.sort !== 'relevance') params.set('sort', catalogState.sort);
+
+  let products = [];
+  try {
+    const r = await fetch('/api/productos?' + params.toString());
+    const data = await r.json();
+    products = Array.isArray(data.products) ? data.products.map(p => ({
+      id: p.id, name: p.name, sku: p.sku, price: p.price, img: p.img, url: p.url, desc: p.description, cat: 'general'
+    })) : [];
+  } catch (e) {
+    products = [];
+  }
+
+  currentStorefrontList = products;
+
+  const total = catalogState.catId === 'all'
+    ? catalogCategories.reduce((s, c) => s + (c.count || 0), 0)
+    : (catalogCategories.find(c => String(c.id) === String(catalogState.catId))?.count || products.length);
+  catalogState.total = total;
+
+  if (products.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:#8b7d97;">No se encontraron productos en esta categoría.</div>';
+  } else {
+    grid.innerHTML = products.map((p, idx) => buildStorefrontProductCardHTML(p, idx)).join('');
+  }
+  initScrollReveal();
+
+  const from = total === 0 ? 0 : offset + 1;
+  const to = Math.min(offset + products.length, total);
+  if (statusEl) statusEl.textContent = total > 0 ? `Mostrando ${from}–${to} de ${total} productos` : '';
+
+  renderCatalogPager(total);
+}
+
+function renderCatalogPager(total){
+  const pages = Math.max(1, Math.ceil(total / catalogState.pageSize));
+  const cur = catalogState.page;
+  let html = `<button ${cur <= 1 ? 'disabled' : ''} onclick="goCatalogPage(${cur - 1})">‹</button>`;
+  const spread = 2;
+  for (let p = 1; p <= pages; p++) {
+    if (p === 1 || p === pages || Math.abs(p - cur) <= spread) {
+      html += `<button class="${p === cur ? 'active' : ''}" onclick="goCatalogPage(${p})">${p}</button>`;
+    } else if (p === cur - spread - 1 || p === cur + spread + 1) {
+      html += `<span style="padding:0 4px; color:#a996b8;">…</span>`;
+    }
+  }
+  html += `<button ${cur >= pages ? 'disabled' : ''} onclick="goCatalogPage(${cur + 1})">›</button>`;
+  const top = document.getElementById('catalogPagerTop'); if (top) top.innerHTML = html;
+  const bottom = document.getElementById('catalogPagerBottom'); if (bottom) bottom.innerHTML = html;
+}
+
+function goCatalogPage(p){
+  const pages = Math.max(1, Math.ceil(catalogState.total / catalogState.pageSize));
+  if (p < 1 || p > pages) return;
+  catalogState.page = p;
+  loadCatalogPage();
+  document.getElementById('storefrontCatalogPage')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 let currentStorefrontList = [];
@@ -6310,7 +6520,7 @@ function closeStorefrontProductDetail(){
   if (modal) modal.classList.add('hidden');
 }
 
-const STOREFRONT_PAGE_IDS = ['storefrontProductPage', 'storefrontCartPage', 'storefrontCheckoutPage', 'storefrontOrderConfirmPage'];
+const STOREFRONT_PAGE_IDS = ['storefrontProductPage', 'storefrontCartPage', 'storefrontCheckoutPage', 'storefrontOrderConfirmPage', 'storefrontCatalogPage'];
 
 function hideStorefrontPages(){
   STOREFRONT_PAGE_IDS.forEach(id => {

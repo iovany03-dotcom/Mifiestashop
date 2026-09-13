@@ -20,9 +20,16 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const limit = req.query.limit || 500;
+  const limit = parseInt(req.query.limit, 10) || 500;
+  const offset = parseInt(req.query.offset, 10) || 0;
+  const category = req.query.category;
+  const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
+  const sort = SORT_MAP[req.query.sort];
   const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
-  const productsUrl = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&limit=0,${limit}&output_format=JSON`;
+  let filters = 'filter[active]=1';
+  if (category) filters += `&filter[id_category_default]=${encodeURIComponent(category)}`;
+  if (sort) filters += `&sort=${sort}`;
+  const productsUrl = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${offset},${limit}&output_format=JSON`;
 
   // Extrae el primer valor de un campo multi-idioma de PrestaShop (array u objeto),
   // garantizando que el resultado sea siempre un string usable (PrestaShop a veces

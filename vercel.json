@@ -5,7 +5,9 @@
     "api/pedidos.js": { "maxDuration": 30 },
     "api/pedido-detalle.js": { "maxDuration": 30 },
     "api/stock-sucursal.js": { "maxDuration": 30 },
-    "api/sitemap.js": { "maxDuration": 30 }
+    "api/sitemap.js": { "maxDuration": 30 },
+    "api/categorias-tienda.js": { "maxDuration": 30 },
+    "api/productos.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
