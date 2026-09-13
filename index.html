@@ -887,7 +887,10 @@
     border: 1px solid #f0e6ef; transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .store-branch-card:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(46,16,101,0.12); }
-  .store-branch-icon { font-size: 2rem; margin-bottom: 10px; }
+  .store-branch-icon {
+    width: 56px; height: 56px; border-radius: 16px; background: var(--mf-pink-ghost);
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
+  }
   .store-branch-city { font-weight: 800; font-size: 1.1rem; color: #2e1065; margin-bottom: 6px; }
   .store-branch-address { font-size: 0.85rem; color: #8b7d97; margin-bottom: 12px; line-height: 1.4; min-height: 40px; }
   .store-branch-link { font-size: 0.85rem; font-weight: 700; color: var(--mf-pink); text-decoration: none; }
@@ -1196,19 +1199,19 @@
     </div>
     <div class="store-branches-grid">
       <div class="store-branch-card">
-        <div class="store-branch-icon">🏬</div>
+        <div class="store-branch-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M12 22s7-7.4 7-12.5A7 7 0 0 0 5 9.5C5 14.6 12 22 12 22Z" stroke="var(--mf-pink)" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.5" stroke="var(--mf-pink)" stroke-width="1.6"/></svg></div>
         <div class="store-branch-city">Ciudad de México</div>
         <div class="store-branch-address">Rumania 613, Col. Portales, Benito Juárez</div>
         <a class="store-branch-link" href="https://www.google.com/maps/search/?api=1&query=Rumania+613+Colonia+Portales+Benito+Juarez+CDMX" target="_blank" rel="noopener">Cómo llegar →</a>
       </div>
       <div class="store-branch-card">
-        <div class="store-branch-icon">🏬</div>
+        <div class="store-branch-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M12 22s7-7.4 7-12.5A7 7 0 0 0 5 9.5C5 14.6 12 22 12 22Z" stroke="var(--mf-pink)" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.5" stroke="var(--mf-pink)" stroke-width="1.6"/></svg></div>
         <div class="store-branch-city">Querétaro</div>
         <div class="store-branch-address">C. Gral. Lázaro Cárdenas 67, Casa Blanca</div>
         <a class="store-branch-link" href="https://www.google.com/maps/search/?api=1&query=C.+Gral.+Lazaro+Cardenas+67+Casa+Blanca+Queretaro" target="_blank" rel="noopener">Cómo llegar →</a>
       </div>
       <div class="store-branch-card">
-        <div class="store-branch-icon">🏬</div>
+        <div class="store-branch-icon"><svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M12 22s7-7.4 7-12.5A7 7 0 0 0 5 9.5C5 14.6 12 22 12 22Z" stroke="var(--mf-pink)" stroke-width="1.6"/><circle cx="12" cy="9.5" r="2.5" stroke="var(--mf-pink)" stroke-width="1.6"/></svg></div>
         <div class="store-branch-city">Puebla</div>
         <div class="store-branch-address">C. 35 Sur 2901, Sta. Cruz Los Ángeles</div>
         <a class="store-branch-link" href="https://www.google.com/maps/search/?api=1&query=C.+35+Sur+2901+Santa+Cruz+Los+Angeles+Puebla" target="_blank" rel="noopener">Cómo llegar →</a>
