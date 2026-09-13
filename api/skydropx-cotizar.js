@@ -19,30 +19,56 @@
 // address_to — por eso esta función resuelve esos datos a partir del código postal usando la
 // API pública y gratuita de SEPOMEX (api-sepomex.hckdrk.mx) antes de cotizar.
 
-// Resuelve estado/municipio/colonia a partir de un código postal mexicano
-// usando la API pública y gratuita de SEPOMEX. Prueba varias formas posibles
-// de la respuesta porque no fue posible confirmar la forma exacta desde este
-// entorno de desarrollo (dominio bloqueado en la sandbox, aunque sí es
-// alcanzable desde Vercel en producción).
+// Extrae estado/municipio/colonia de una fila de datos SEPOMEX, sin importar
+// si usa nombres "amigables" (estado/municipio/asentamiento) o los nombres
+// crudos originales del padrón (d_estado/d_mnpio/d_asenta).
+function extractLevelsFromRow(resp) {
+  if (!resp) return null;
+  const estado = resp.estado || resp.d_estado;
+  const municipio = resp.municipio || resp.d_mnpio;
+  const asentamientoRaw = resp.asentamiento || resp.d_asenta;
+  const asentamiento = Array.isArray(asentamientoRaw) ? asentamientoRaw[0] : asentamientoRaw;
+  if (!estado || !municipio) return null;
+  return { area_level1: estado, area_level2: municipio, area_level3: asentamiento || municipio };
+}
+
+// Resuelve estado/municipio/colonia a partir de un código postal mexicano.
+// Se intentan dos fuentes públicas y gratuitas independientes (por si una de
+// las dos está caída) porque no fue posible confirmar cuál es más confiable
+// desde este entorno de desarrollo (ambos dominios están bloqueados en la
+// sandbox, aunque sí son alcanzables desde Vercel en producción).
 async function resolveAreaLevels(cp) {
-  try {
-    const r = await fetch(`https://api-sepomex.hckdrk.mx/query/info_cp/${encodeURIComponent(cp)}?type=simplified`);
-    if (!r.ok) {
-      const detail = await r.text().catch(() => '');
-      return { ok: false, reason: `SEPOMEX HTTP ${r.status}${detail ? ': ' + detail.slice(0, 200) : ''}` };
+  const sources = [
+    {
+      name: 'sepomex.nitrostudio.com.mx',
+      url: `https://sepomex.nitrostudio.com.mx/api/latest/cp/${encodeURIComponent(cp)}.json`,
+      extract: (data) => extractLevelsFromRow(Array.isArray(data) ? data[0] : (Array.isArray(data?.data) ? data.data[0] : data))
+    },
+    {
+      name: 'api-sepomex.hckdrk.mx',
+      url: `https://api-sepomex.hckdrk.mx/query/info_cp/${encodeURIComponent(cp)}?type=simplified`,
+      extract: (data) => extractLevelsFromRow(data?.response || data?.cp?.response || data?.cp || data)
     }
-    const data = await r.json();
-    const resp = data?.response || data?.cp?.response || data?.cp || data;
-    if (!resp) return { ok: false, reason: `SEPOMEX respuesta vacía: ${JSON.stringify(data).slice(0, 200)}` };
-    const estado = resp.estado || resp.d_estado;
-    const municipio = resp.municipio || resp.d_mnpio;
-    const asentamientoRaw = resp.asentamiento || resp.d_asenta;
-    const asentamiento = Array.isArray(asentamientoRaw) ? asentamientoRaw[0] : asentamientoRaw;
-    if (!estado || !municipio) return { ok: false, reason: `SEPOMEX sin estado/municipio: ${JSON.stringify(resp).slice(0, 200)}` };
-    return { ok: true, levels: { area_level1: estado, area_level2: municipio, area_level3: asentamiento || municipio } };
-  } catch (e) {
-    return { ok: false, reason: `SEPOMEX error: ${e.message}` };
+  ];
+
+  const reasons = [];
+  for (const source of sources) {
+    try {
+      const r = await fetch(source.url);
+      if (!r.ok) {
+        const detail = await r.text().catch(() => '');
+        reasons.push(`${source.name} HTTP ${r.status}${detail ? ': ' + detail.slice(0, 150) : ''}`);
+        continue;
+      }
+      const data = await r.json();
+      const levels = source.extract(data);
+      if (levels) return { ok: true, levels };
+      reasons.push(`${source.name} respuesta sin estado/municipio: ${JSON.stringify(data).slice(0, 150)}`);
+    } catch (e) {
+      reasons.push(`${source.name} error: ${e.message}`);
+    }
   }
+  return { ok: false, reason: reasons.join(' / ') };
 }
 
 module.exports = async function handler(req, res) {
