@@ -11,6 +11,8 @@
   },
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/:id(\\d+)-:slug*.html", "destination": "/index.html" }
+    { "source": "/:id(\\d+)-:slug*.html", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/:path*", "destination": "/index.html" }
   ]
 }
