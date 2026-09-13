@@ -183,6 +183,24 @@
   }
   .sidebar-toggle:hover { color: #fff; background: var(--sidebar-hover); }
 
+  .mobile-sidebar-toggle {
+    display: none;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 6px;
+    margin-right: 4px;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 190;
+  }
+
   .sidebar-menu {
     flex: 1;
     overflow-y: auto;
@@ -334,6 +352,44 @@
     flex: 1;
     overflow-y: auto;
     padding: 24px;
+  }
+
+  /* ---------------- BACKOFFICE RESPONSIVE (MOBILE) ---------------- */
+  @media (max-width: 900px) {
+    aside.sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; z-index: 200;
+      width: var(--sidebar-w) !important;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 0 0 40px rgba(0,0,0,0.35);
+    }
+    aside.sidebar.mobile-open { transform: translateX(0); }
+    /* On mobile the sidebar is an off-canvas drawer: ignore the desktop icon-only "collapsed" state */
+    aside.sidebar.collapsed { width: var(--sidebar-w) !important; }
+    aside.sidebar.collapsed .brand-logo > span,
+    aside.sidebar.collapsed .menu-group-title,
+    aside.sidebar.collapsed .menu-left > span:not(.menu-icon),
+    aside.sidebar.collapsed .chevron-icon { display: revert !important; }
+    aside.sidebar.collapsed .submenu { display: block !important; }
+    .sidebar-backdrop.visible { display: block; }
+    .mobile-sidebar-toggle { display: inline-flex; align-items: center; justify-content: center; }
+
+    header.main-header {
+      height: auto; min-height: var(--header-h);
+      padding: 10px 14px;
+      flex-wrap: wrap; gap: 8px;
+    }
+    .header-path { font-size: 14px; }
+    .header-actions { gap: 8px; flex-wrap: wrap; }
+    .header-actions .status-badge span:last-child { display: none; }
+    .header-actions .btn.small { padding: 6px 9px; font-size: 11px; }
+
+    .content-body { padding: 14px; }
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .modal-overlay { padding: 16px; }
+  }
+  @media (max-width: 480px) {
+    .kpis { grid-template-columns: 1fr; }
   }
 
   /* ---------------- UI COMPONENTS ---------------- */
@@ -1710,6 +1766,8 @@
 <!-- ==================== ADMIN DASHBOARD WRAPPER ==================== -->
 <div id="adminDashboardWrapper" class="hidden">
 
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
 <!-- ==================== SIDEBAR ==================== -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
@@ -1845,6 +1903,9 @@
 <div class="main-wrapper">
 
   <header class="main-header">
+    <button class="mobile-sidebar-toggle" id="mobileSidebarToggle" aria-label="Abrir menú" title="Abrir menú">
+      <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round"/></svg>
+    </button>
     <div class="header-path">
       <span id="currentViewTitle">Sistema POS</span>
       <span class="sub" id="currentViewSub">— Punto de Venta en vivo</span>
@@ -4389,6 +4450,31 @@ if (document.getElementById('toggleSidebar')) {
   }
 }
 
+// MOBILE SIDEBAR DRAWER (Backoffice)
+function openMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar) sidebar.classList.add('mobile-open');
+  if (backdrop) backdrop.classList.add('visible');
+}
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (backdrop) backdrop.classList.remove('visible');
+}
+if (document.getElementById('mobileSidebarToggle')) {
+  document.getElementById('mobileSidebarToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar && sidebar.classList.contains('mobile-open')) closeMobileSidebar();
+    else openMobileSidebar();
+  });
+}
+if (document.getElementById('sidebarBackdrop')) {
+  document.getElementById('sidebarBackdrop').addEventListener('click', closeMobileSidebar);
+}
+
 // NAVIGATION
 function switchView(viewName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
@@ -4435,6 +4521,8 @@ function switchView(viewName) {
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') renderInventarioTable();
+
+  if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
 }
 
 document.querySelectorAll('[data-view]').forEach(el => {
@@ -5586,10 +5674,8 @@ let clienteCart = [];
 
 function openClientePortal() {
   hideStorefrontPages();
-  const hero = document.getElementById('storefrontHero');
-  const storeContainer = document.getElementById('storefrontStoreContainer');
-  if (hero) hero.classList.add('hidden');
-  if (storeContainer) storeContainer.classList.add('hidden');
+  const sf = document.getElementById('view-storefront');
+  if (sf) sf.classList.add('hidden');
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.remove('hidden');
   window.scrollTo(0, 0);
@@ -5600,6 +5686,8 @@ function openClientePortal() {
 function closeClientePortal() {
   const portal = document.getElementById('view-cliente-portal');
   if(portal) portal.classList.add('hidden');
+  const sf = document.getElementById('view-storefront');
+  if (sf) sf.classList.remove('hidden');
   hideStorefrontPages();
   window.scrollTo(0, 0);
 }
@@ -6243,11 +6331,14 @@ function handleAdminLogin() {
 
 function showAdminDashboard() {
   const sf = document.getElementById('view-storefront');
+  const portal = document.getElementById('view-cliente-portal');
   const dash = document.getElementById('adminDashboardWrapper');
   if (sf) sf.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
   if (dash) dash.classList.remove('hidden');
   document.title = 'Mi Fiestashop — Sistema ERP & POS';
   switchView('dashboard');
+  window.scrollTo(0, 0);
 }
 
 function resetStorefrontSeoTags() {
