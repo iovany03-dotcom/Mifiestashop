@@ -817,10 +817,27 @@
   .store-brand {
     display: flex; align-items: center; gap: 12px; text-decoration: none;
   }
+  .store-brand-logo-wrap {
+    position: relative; width: 92px; height: 92px; flex-shrink: 0;
+  }
   .store-brand-logo {
     width: 92px; height: 92px;
     border-radius: 12px;
     object-fit: cover;
+  }
+  .store-brand-logo-wrap .store-brand-logo {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .store-brand-logo-wrap .store-brand-logo-mask {
+    opacity: 0; transform: scale(0.8) rotate(-8deg);
+    object-fit: contain; border-radius: 0;
+  }
+  html.mf-scrolled .store-brand-logo-wrap .store-brand-logo-face {
+    opacity: 0; transform: scale(0.8) rotate(8deg);
+  }
+  html.mf-scrolled .store-brand-logo-wrap .store-brand-logo-mask {
+    opacity: 1; transform: scale(1) rotate(0deg);
   }
   .store-brand-title {
     font-size: 1.87rem; font-weight: 800; color: #2e1065; margin: 0; line-height: 1.1; letter-spacing: 0.02em;
@@ -910,7 +927,7 @@
       gap: 10px;
     }
     .store-header-left { gap: 10px; }
-    .store-brand-logo { width: 48px; height: 48px; }
+    .store-brand-logo-wrap, .store-brand-logo { width: 48px; height: 48px; }
     .store-brand-tagline { display: none; }
     .store-header-nav { display: none; }
     .store-search-box {
@@ -1239,7 +1256,10 @@
   <header class="store-header">
     <div class="store-header-left">
       <a href="#" class="store-brand" onclick="renderStorefrontProducts('all')">
-        <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+        <span class="store-brand-logo-wrap">
+          <img class="store-brand-logo store-brand-logo-face" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.png" alt="Mi Fiestashop">
+        </span>
       </a>
       <nav class="store-header-nav">
         <a onclick="openStorefrontCatalog('all')">Productos</a>
@@ -1649,6 +1669,19 @@
       floatBtn.addEventListener('mouseleave', () => {
         hideTimer = setTimeout(() => bubble.classList.add('wa-bubble-hidden'), 2500);
       });
+    })();
+
+    (function initLogoMaskOnScroll(){
+      const THRESHOLD = 60;
+      let ticking = false;
+      function apply(){
+        document.documentElement.classList.toggle('mf-scrolled', window.scrollY > THRESHOLD);
+        ticking = false;
+      }
+      window.addEventListener('scroll', () => {
+        if (!ticking) { requestAnimationFrame(apply); ticking = true; }
+      }, { passive: true });
+      apply();
     })();
   </script>
 
