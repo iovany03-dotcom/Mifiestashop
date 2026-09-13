@@ -817,10 +817,27 @@
   .store-brand {
     display: flex; align-items: center; gap: 12px; text-decoration: none;
   }
+  .store-brand-logo-wrap {
+    position: relative; width: 92px; height: 92px; flex-shrink: 0;
+  }
   .store-brand-logo {
     width: 92px; height: 92px;
     border-radius: 12px;
     object-fit: cover;
+  }
+  .store-brand-logo-wrap .store-brand-logo {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    transition: opacity 0.45s ease, transform 0.45s ease;
+  }
+  .store-brand-logo-wrap .store-brand-logo-mask {
+    opacity: 0; transform: scale(0.8) rotate(-8deg);
+    object-fit: contain; border-radius: 0;
+  }
+  html.mf-scrolled .store-brand-logo-wrap .store-brand-logo-face {
+    opacity: 0; transform: scale(0.8) rotate(8deg);
+  }
+  html.mf-scrolled .store-brand-logo-wrap .store-brand-logo-mask {
+    opacity: 1; transform: scale(1) rotate(0deg);
   }
   .store-brand-title {
     font-size: 1.87rem; font-weight: 800; color: #2e1065; margin: 0; line-height: 1.1; letter-spacing: 0.02em;
@@ -910,7 +927,7 @@
       gap: 10px;
     }
     .store-header-left { gap: 10px; }
-    .store-brand-logo { width: 48px; height: 48px; }
+    .store-brand-logo-wrap, .store-brand-logo { width: 48px; height: 48px; }
     .store-brand-tagline { display: none; }
     .store-header-nav { display: none; }
     .store-search-box {
@@ -1098,6 +1115,22 @@
   }
   .store-social-icon:hover { transform: translateY(-3px) scale(1.08); }
   .store-social-icon svg { width: 36px; height: 36px; }
+  .store-newsletter-form {
+    display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; max-width: 460px; margin: 26px auto 0;
+  }
+  .store-newsletter-form input {
+    flex: 1; min-width: 220px; padding: 12px 16px; border-radius: 24px; border: 2px solid #e5dce6;
+    background: #fff; color: #2e1065; font-size: 0.9rem; outline: none;
+  }
+  .store-newsletter-form input:focus { border-color: var(--mf-pink); }
+  .store-newsletter-form button {
+    padding: 12px 22px; border-radius: 24px; border: none; background: var(--mf-pink); color: #fff;
+    font-weight: 700; font-size: 0.9rem; cursor: pointer; white-space: nowrap;
+  }
+  .store-newsletter-form button:hover { opacity: 0.9; }
+  .store-newsletter-msg { margin-top: 12px; font-size: 0.85rem; font-weight: 600; }
+  .store-newsletter-msg.ok { color: var(--mf-teal); }
+  .store-newsletter-msg.err { color: var(--mf-pink); }
   .store-footer-inner {
     max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 28px;
     padding: 40px 24px 30px;
@@ -1239,7 +1272,10 @@
   <header class="store-header">
     <div class="store-header-left">
       <a href="#" class="store-brand" onclick="renderStorefrontProducts('all')">
-        <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+        <span class="store-brand-logo-wrap">
+          <img class="store-brand-logo store-brand-logo-face" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.png" alt="Mi Fiestashop">
+        </span>
       </a>
       <nav class="store-header-nav">
         <a onclick="openStorefrontCatalog('all')">Productos</a>
@@ -1546,6 +1582,11 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="#000"/><path fill="#fff" d="M15.6 6.2c.4.9 1.2 1.6 2.2 1.9v1.9a4.4 4.4 0 0 1-2.3-.7v4.4a3.9 3.9 0 1 1-3.9-3.9c.2 0 .4 0 .6.05v1.95a1.95 1.95 0 1 0 1.4 1.87V4.5h1.9c0 .58.04 1.17.1 1.7z"/></svg>
         </a>
       </div>
+      <form class="store-newsletter-form" onsubmit="event.preventDefault(); submitNewsletterSignup();">
+        <input type="email" id="newsletterEmail" placeholder="Tu correo para promociones y novedades" required>
+        <button type="submit">Suscribirme</button>
+      </form>
+      <div id="newsletterMsg" class="store-newsletter-msg hidden"></div>
     </div>
     <div class="store-footer-inner">
       <div class="store-footer-col">
@@ -1650,6 +1691,19 @@
         hideTimer = setTimeout(() => bubble.classList.add('wa-bubble-hidden'), 2500);
       });
     })();
+
+    (function initLogoMaskOnScroll(){
+      const THRESHOLD = 60;
+      let ticking = false;
+      function apply(){
+        document.documentElement.classList.toggle('mf-scrolled', window.scrollY > THRESHOLD);
+        ticking = false;
+      }
+      window.addEventListener('scroll', () => {
+        if (!ticking) { requestAnimationFrame(apply); ticking = true; }
+      }, { passive: true });
+      apply();
+    })();
   </script>
 
   <script>
@@ -1736,10 +1790,13 @@
         <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Teléfono / WhatsApp</label>
         <input type="tel" id="clienteAuthPhone" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
       </div>
-      <div style="margin-bottom:18px;">
+      <div style="margin-bottom:8px;">
         <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Contraseña</label>
         <input type="password" id="clienteAuthPassword" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
       </div>
+      <p id="clienteForgotPasswordBox" style="text-align:right; margin:0 0 18px;">
+        <a href="#" onclick="event.preventDefault(); handleForgotPassword();" style="font-size:12px; color:var(--mf-pink); font-weight:600; text-decoration:none;">¿Olvidaste tu contraseña?</a>
+      </p>
 
       <button type="button" class="btn primary" id="clienteAuthSubmitBtn" style="width:100%; justify-content:center; padding:12px; font-weight:700; border-radius:10px;" onclick="submitClienteAuth()">Iniciar Sesión</button>
 
@@ -6023,6 +6080,20 @@ async function loginCliente(email, password) {
   saveClienteSession({ access_token: data.access_token, user: data.user });
 }
 
+async function handleForgotPassword() {
+  const email = document.getElementById('clienteAuthEmail').value.trim();
+  if (!email) {
+    showClienteAuthMessage('Ingresa tu correo arriba y da clic de nuevo en "¿Olvidaste tu contraseña?".', true);
+    return;
+  }
+  try {
+    await supabaseAuthRequest('recover', { email });
+    showClienteAuthMessage('✅ Te enviamos un correo con instrucciones para recuperar tu contraseña.', false);
+  } catch (e) {
+    showClienteAuthMessage(e.message || 'No se pudo enviar el correo de recuperación.', true);
+  }
+}
+
 function loginClienteWithProvider(provider) {
   const redirectTo = encodeURIComponent(window.location.origin + window.location.pathname);
   window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirectTo}`;
@@ -6062,6 +6133,7 @@ function renderClienteAuthMode() {
   document.getElementById('clienteAuthSubtitle').textContent = isRegister ? 'Regístrate para hacer seguimiento a tus pedidos.' : 'Accede para ver tus pedidos y tus datos.';
   document.getElementById('clienteRegisterNameBox').classList.toggle('hidden', !isRegister);
   document.getElementById('clienteRegisterPhoneBox').classList.toggle('hidden', !isRegister);
+  document.getElementById('clienteForgotPasswordBox').classList.toggle('hidden', isRegister);
   document.getElementById('clienteAuthSubmitBtn').textContent = isRegister ? 'Crear Cuenta' : 'Iniciar Sesión';
   document.getElementById('clienteAuthToggleText').textContent = isRegister ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?';
   document.getElementById('clienteAuthToggleLink').textContent = isRegister ? 'Inicia sesión' : 'Regístrate';
@@ -7923,6 +7995,16 @@ async function submitStorefrontOrder(){
     console.log('No se pudo guardar el pedido en Supabase:', e.message);
   }
 
+  fetch('/api/enviar-correo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: email,
+      tipo: 'pedido',
+      datos: { nombre: name, pedidoId: folio, total, items: orderPayload.items },
+    }),
+  }).catch(e => console.log('No se pudo enviar el correo de confirmación:', e.message));
+
   document.getElementById('confirmFolio').textContent = folio;
   document.getElementById('confirmTotal').textContent = fmtMoney(total);
 
@@ -7931,6 +8013,42 @@ async function submitStorefrontOrder(){
   cart = [];
   updateStoreCartBadge();
   showStorefrontPage('storefrontOrderConfirmPage');
+}
+
+async function submitNewsletterSignup(){
+  const input = document.getElementById('newsletterEmail');
+  const msg = document.getElementById('newsletterMsg');
+  const email = input.value.trim();
+
+  msg.classList.remove('hidden', 'ok', 'err');
+
+  try {
+    await sbInsert('newsletter_subscribers', { email });
+  } catch (e) {
+    console.log('No se pudo guardar el suscriptor en Supabase:', e.message);
+  }
+
+  try {
+    const r = await fetch('/api/enviar-correo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: email, tipo: 'suscripcion', datos: { email } }),
+    });
+    const data = await r.json();
+    if (data.fallback) {
+      msg.textContent = '¡Gracias! Te suscribiste correctamente.';
+    } else if (data.sent) {
+      msg.textContent = '¡Listo! Revisa tu correo, te acabamos de escribir 🎉';
+    } else {
+      msg.textContent = '¡Gracias por suscribirte!';
+    }
+    msg.classList.add('ok');
+  } catch (e) {
+    msg.textContent = '¡Gracias por suscribirte!';
+    msg.classList.add('ok');
+  }
+
+  input.value = '';
 }
 
 function filterStorefrontProducts(q) {
