@@ -948,6 +948,10 @@
     background: #fff; color: #2e1065; font-weight: 600; font-size: 0.85rem; line-height: 1.4;
     padding: 12px 15px; border-radius: 16px; box-shadow: 0 6px 18px rgba(46,16,101,0.18);
     max-width: 190px; position: relative; margin-bottom: 34px;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .store-whatsapp-bubble.wa-bubble-hidden {
+    opacity: 0; transform: translateY(8px); pointer-events: none;
   }
   .store-whatsapp-bubble::after {
     content: ''; position: absolute; right: 22px; bottom: -8px; width: 0; height: 0;
@@ -1396,10 +1400,10 @@
       <div class="store-footer-col">
         <h4>Atención al Cliente</h4>
         <ul>
-          <li><a href="https://wa.me/525612622146" target="_blank" rel="noopener">💬 WhatsApp Directo</a></li>
-          <li>🚚 Envío gratis desde $1,500 MXN</li>
-          <li>📦 Precios de mayoreo desde 3 piezas</li>
-          <li>💳 Aceptamos tarjeta y facturamos</li>
+          <li><a href="https://wa.me/525612622146" target="_blank" rel="noopener">WhatsApp Directo</a></li>
+          <li>Envío gratis desde $1,500 MXN</li>
+          <li>Precios de mayoreo desde 3 piezas</li>
+          <li>Aceptamos tarjeta y facturamos</li>
         </ul>
       </div>
       <div class="store-footer-col">
@@ -1439,6 +1443,21 @@
     <div class="store-whatsapp-bubble">¡Hola! Soy Mikel.<br>Estoy aquí para ayudarte.</div>
     <img src="img/whatsapp-support.png" alt="Mikel, soporte por WhatsApp">
   </a>
+  <script>
+    (function initWhatsappBubble(){
+      const floatBtn = document.querySelector('.store-whatsapp-float');
+      const bubble = document.querySelector('.store-whatsapp-bubble');
+      if (!floatBtn || !bubble) return;
+      let hideTimer = setTimeout(() => bubble.classList.add('wa-bubble-hidden'), 6000);
+      floatBtn.addEventListener('mouseenter', () => {
+        clearTimeout(hideTimer);
+        bubble.classList.remove('wa-bubble-hidden');
+      });
+      floatBtn.addEventListener('mouseleave', () => {
+        hideTimer = setTimeout(() => bubble.classList.add('wa-bubble-hidden'), 2500);
+      });
+    })();
+  </script>
 
 </div>
 
