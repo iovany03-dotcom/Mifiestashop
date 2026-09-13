@@ -30,6 +30,82 @@ function normalize(str) {
     .replace(/[̀-ͯ]/g, '');
 }
 
+// Cuando la página existe en PrestaShop pero su campo "content" está vacío
+// (la página se creó como cascarón pero nunca se redactó), se usa este
+// contenido de referencia en vez de mostrar la página en blanco. Se
+// redactó con los datos reales de la tienda (sucursales, envío gratis,
+// WhatsApp) y sirve como borrador: lo ideal es que el dueño de la tienda
+// lo revise y lo edite directamente en PrestaShop cuando pueda.
+const FALLBACK_CONTENT = [
+  {
+    keyword: 'envio gratis',
+    html: `
+      <p>En <b>Mi Fiestashop</b> queremos que recibas tus artículos de fiesta lo más rápido posible y sin costos sorpresa. Así funciona nuestro envío:</p>
+      <h2>Envío gratis</h2>
+      <ul>
+        <li>Envío <b>gratis</b> en compras mayores a <b>$1,500 MXN</b> a cualquier parte de México.</li>
+        <li>En pedidos menores, el costo de envío se calcula según tu código postal y el peso/volumen del pedido, y se muestra antes de confirmar tu compra.</li>
+      </ul>
+      <h2>Tiempos de entrega</h2>
+      <ul>
+        <li>Ciudad de México, Puebla y Querétaro: 1 a 3 días hábiles.</li>
+        <li>Resto de la República: 2 a 6 días hábiles, según la paquetería y el destino.</li>
+      </ul>
+      <h2>Recolección en sucursal</h2>
+      <p>Si prefieres recoger tu pedido sin costo de envío, puedes hacerlo en cualquiera de nuestras sucursales:</p>
+      <ul>
+        <li>CDMX: Rumania 613, Col. Portales, Benito Juárez</li>
+        <li>Querétaro: C. Gral. Lázaro Cárdenas 67, Casa Blanca</li>
+        <li>Puebla: C. 35 Sur 2901, Sta. Cruz Los Ángeles</li>
+      </ul>
+      <p>¿Dudas sobre tu envío? Escríbenos por WhatsApp al <a href="https://wa.me/525612622146">561 262 2146</a>.</p>
+    `
+  },
+  {
+    keyword: 'privacidad',
+    html: `
+      <p><b>Mi Fiestashop</b>, con sucursales en Ciudad de México, Querétaro y Puebla, es responsable del uso y protección de tus datos personales, de conformidad con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.</p>
+      <h2>¿Qué datos recabamos?</h2>
+      <p>Para procesar tus pedidos y brindarte atención podemos solicitar: nombre completo, correo electrónico, teléfono, dirección de envío y facturación, y datos de pago (procesados de forma segura por nuestros proveedores de cobro; nunca almacenamos los datos completos de tu tarjeta).</p>
+      <h2>¿Para qué usamos tus datos?</h2>
+      <ul>
+        <li>Procesar y dar seguimiento a tus pedidos y envíos.</li>
+        <li>Emitir facturas cuando lo solicites.</li>
+        <li>Brindarte atención y soporte por WhatsApp o correo.</li>
+        <li>Enviarte promociones y novedades, solo si aceptaste recibirlas.</li>
+      </ul>
+      <h2>Derechos ARCO</h2>
+      <p>Puedes solicitar en cualquier momento el Acceso, Rectificación, Cancelación u Oposición (derechos ARCO) al tratamiento de tus datos personales, escribiéndonos por WhatsApp al <a href="https://wa.me/525612622146">561 262 2146</a>.</p>
+      <h2>Cambios a este aviso</h2>
+      <p>Podemos actualizar este aviso de privacidad; los cambios se publicarán en esta misma página.</p>
+    `
+  },
+  {
+    keyword: 'devolucion',
+    html: `
+      <p>Queremos que quedes satisfecho con tu compra. Si algo no fue lo que esperabas, esto es lo que necesitas saber:</p>
+      <h2>Plazo para cambios y devoluciones</h2>
+      <p>Cuentas con <b>5 días hábiles</b> a partir de que recibes tu pedido para solicitar un cambio o devolución.</p>
+      <h2>Condiciones</h2>
+      <ul>
+        <li>El producto debe estar sin uso, en su empaque original y con todos sus accesorios.</li>
+        <li>Conserva tu ticket o comprobante de compra.</li>
+        <li>Por higiene y seguridad, los antifaces, artículos de pirotecnia fría y productos personalizados <b>no tienen cambio ni devolución</b>, salvo defecto de fábrica.</li>
+      </ul>
+      <h2>¿Cómo solicitar tu devolución?</h2>
+      <p>Escríbenos por WhatsApp al <a href="https://wa.me/525612622146">561 262 2146</a> con tu número de pedido y el motivo. Te indicaremos si el producto se recoge, se envía o se cambia directamente en sucursal.</p>
+      <h2>Reembolsos</h2>
+      <p>Una vez confirmado que el producto cumple las condiciones anteriores, el reembolso se realiza por el mismo medio de pago, o como saldo a favor para tu siguiente compra, según prefieras.</p>
+    `
+  }
+];
+
+function fallbackContentFor(title) {
+  const norm = normalize(title);
+  const match = FALLBACK_CONTENT.find(f => norm.includes(f.keyword));
+  return match ? match.html : '';
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -95,12 +171,16 @@ module.exports = async function handler(req, res) {
         return;
       }
 
+      const title = firstLangValue(page.meta_title, 'Página');
+      let content = firstLangValue(page.content, '');
+      if (!content.trim()) content = fallbackContentFor(title);
+
       res.status(200).json({
         page: {
           id: page.id,
-          title: firstLangValue(page.meta_title, 'Página'),
+          title,
           description: firstLangValue(page.meta_description, ''),
-          content: firstLangValue(page.content, ''),
+          content,
           slug: firstLangValue(page.link_rewrite, '')
         }
       });
