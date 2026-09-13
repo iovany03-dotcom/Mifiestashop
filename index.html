@@ -923,6 +923,20 @@
     .store-header-icons { gap: 14px; }
     .store-icon-btn svg { width: 26px; height: 26px; }
     .store-search-suggest { max-height: 60vh; }
+
+    /* Varias páginas de la tienda (checkout, portal de cliente, etc.) usan
+       grid-template-columns de 2 columnas en estilos en línea sin ajuste
+       para móvil, lo que las deja demasiado angostas o desborda la
+       página. Se apilan a una sola columna. */
+    #storefrontCheckoutPage [style*="grid-template-columns"],
+    #storefrontCartPage [style*="grid-template-columns"],
+    #storefrontProductPage [style*="grid-template-columns"],
+    #storefrontCatalogPage [style*="grid-template-columns"],
+    #storefrontOrderConfirmPage [style*="grid-template-columns"],
+    #view-cliente-portal [style*="grid-template-columns"],
+    #view-cms-page [style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
   }
 
   .store-hero {
