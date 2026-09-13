@@ -1,0 +1,24 @@
+{
+  "name": "mfs_repo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iovany03-dotcom/Mifiestashop.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/iovany03-dotcom/Mifiestashop/issues"
+  },
+  "homepage": "https://github.com/iovany03-dotcom/Mifiestashop#readme",
+  "dependencies": {
+    "nodemailer": "^10.0.9"
+  }
+}
