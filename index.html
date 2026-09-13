@@ -9,16 +9,45 @@
 <meta name="theme-color" content="#d3007b">
 <link rel="icon" type="image/webp" href="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
 <link id="canonicalLink" rel="canonical" href="https://mifiestashop.vercel.app/">
+<link rel="preload" as="image" href="img/hero-banner.png" fetchpriority="high">
+
+<!-- PWA: instalar en pantalla de inicio (Android/Chrome) -->
+<link rel="manifest" href="/manifest.json">
+
+<!-- PWA / iOS: agregar a pantalla de inicio -->
+<link rel="apple-touch-icon" href="/img/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi Fiestashop">
+<meta name="mobile-web-app-capable" content="yes">
 
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="Mi Fiestashop">
 <meta id="ogTitle" property="og:title" content="Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo">
 <meta id="ogDescription" property="og:description" content="Miles de artículos para fiesta, batucada y pirotecnia fría al mayoreo y menudeo. Envío a todo México.">
 <meta id="ogUrl" property="og:url" content="https://mifiestashop.vercel.app/">
 <meta property="og:image" content="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="1200">
 <meta property="og:locale" content="es_MX">
 <meta name="twitter:card" content="summary">
 <meta id="twitterTitle" name="twitter:title" content="Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo">
 <meta id="twitterDescription" name="twitter:description" content="Miles de artículos para fiesta, batucada y pirotecnia fría al mayoreo y menudeo. Envío a todo México.">
+<meta name="twitter:image" content="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
+
+<script id="ldJsonWebsite" type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Mi Fiestashop",
+  "url": "https://mifiestashop.vercel.app/",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://mifiestashop.vercel.app/?buscar={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 
 <script id="ldJsonOrg" type="application/ld+json">
 {
@@ -726,6 +755,10 @@
   .cms-page-content table td, .cms-page-content table th { border: 1px solid #f0e6ef; padding: 8px 10px; }
 
   .hidden { display: none !important; }
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
 
   /* STOREFRONT STYLES (mifiestashop.com design) */
   #view-storefront {
@@ -1087,6 +1120,26 @@
     content: ''; position: absolute; right: 22px; bottom: -8px; width: 0; height: 0;
     border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 8px solid #fff;
   }
+  .store-install-float {
+    position: fixed; left: 18px; bottom: 18px; z-index: 500;
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; color: #2e1065; font-weight: 700; font-size: 0.85rem;
+    padding: 12px 16px; border-radius: 999px; border: none; cursor: pointer;
+    box-shadow: 0 8px 20px rgba(46,16,101,0.22);
+    transition: transform 0.2s ease;
+  }
+  .store-install-float:hover { transform: translateY(-2px); }
+  .store-install-tip {
+    position: fixed; left: 18px; bottom: 72px; z-index: 501;
+    background: #fff; color: #2e1065; font-size: 0.85rem; line-height: 1.5;
+    padding: 14px 16px; border-radius: 14px; box-shadow: 0 8px 22px rgba(46,16,101,0.22);
+    max-width: 260px;
+  }
+  .store-install-tip b { color: var(--mf-pink); }
+  .store-install-tip button {
+    display: block; margin-top: 8px; background: none; border: none; color: #8b7d97;
+    font-size: 0.78rem; font-weight: 700; cursor: pointer; padding: 0;
+  }
   @keyframes waFloatBounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-7px); }
@@ -1227,8 +1280,9 @@
 
   <!-- Hero Section -->
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
+    <h1 class="sr-only">Mi Fiestashop: Artículos para Fiesta, Globos, Batucada y Pirotecnia Fría al Mayoreo y Menudeo en México</h1>
     <a href="#" class="hero-banner-link" onclick="openStorefrontCatalog('all'); return false;">
-      <img src="img/hero-banner.png" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
+      <img src="img/hero-banner.png" width="1672" height="941" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
     </a>
   </div>
 
@@ -1592,6 +1646,61 @@
         hideTimer = setTimeout(() => bubble.classList.add('wa-bubble-hidden'), 2500);
       });
     })();
+  </script>
+
+  <button class="store-install-float hidden" id="installAppBtn" aria-label="Instalar la app" title="Instalar la app">
+    📲 Instalar App
+  </button>
+  <div class="store-install-tip hidden" id="installAppTip">
+    Para instalar la app en tu iPhone: toca <b>Compartir</b> <span style="font-size:1.1em;">⬆️</span> y luego <b>"Agregar a pantalla de inicio"</b>.
+    <button onclick="document.getElementById('installAppTip').classList.add('hidden')">Entendido</button>
+  </div>
+  <script>
+    (function initInstallPrompt(){
+      const btn = document.getElementById('installAppBtn');
+      const tip = document.getElementById('installAppTip');
+      if (!btn || !tip) return;
+
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (isStandalone) return;
+      if (localStorage.getItem('mf_install_dismissed') === 'true') return;
+
+      const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      let deferredPrompt = null;
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        btn.classList.remove('hidden');
+      });
+
+      if (isIOS) {
+        btn.classList.remove('hidden');
+      }
+
+      btn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          if (outcome === 'accepted') btn.classList.add('hidden');
+        } else if (isIOS) {
+          tip.classList.toggle('hidden');
+        }
+      });
+
+      window.addEventListener('appinstalled', () => {
+        btn.classList.add('hidden');
+        tip.classList.add('hidden');
+        localStorage.setItem('mf_install_dismissed', 'true');
+      });
+    })();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
   </script>
 
 </div>
@@ -1960,6 +2069,15 @@
     </div>
 
 
+    <div class="menu-item" data-view="notificaciones">
+      <div class="menu-link">
+        <div class="menu-left">
+          <span class="menu-icon">🔔</span>
+          <span>Notificaciones</span>
+        </div>
+      </div>
+    </div>
+
     <div class="menu-item" data-view="configuracion">
       <div class="menu-link">
         <div class="menu-left">
@@ -1984,6 +2102,10 @@
       <span class="sub" id="currentViewSub">— Punto de Venta en vivo</span>
     </div>
     <div class="header-actions">
+      <button class="btn small" id="notifBellBtn" onclick="switchView('notificaciones')" title="Notificaciones" style="position:relative;">
+        🔔
+        <span id="notifBellBadge" class="hidden" style="position:absolute; top:-6px; right:-6px; background:var(--series-2); color:#fff; font-size:10px; font-weight:800; min-width:16px; height:16px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 3px;">0</span>
+      </button>
       <button class="btn secondary small" onclick="goToStorefront()">🌐 Tienda Pública</button>
       <button class="btn danger small" onclick="logoutAdmin()">🚪 Cerrar Sesión</button>
       <button class="btn small" id="toggleThemeBtn">☀️ / 🌙</button>
@@ -2908,6 +3030,53 @@
     </section>
 
     <!-- ================= VIEW 8: CONFIGURACIÓN ================= -->
+    <!-- ================= VIEW NOTIFICACIONES ================= -->
+    <section id="view-notificaciones" class="view-panel hidden">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+        <div class="card">
+          <h2>🔔 Notificaciones</h2>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin-bottom:16px;">
+            Elige qué eventos deben avisarte en este navegador mientras el panel esté abierto.
+          </p>
+
+          <div id="notifPermissionBox" style="display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--plane); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:18px;">
+            <div>
+              <div style="font-weight:700; font-size:13px;">Notificaciones del navegador</div>
+              <div id="notifPermissionStatus" style="font-size:12px; color:var(--text-muted);">Consultando permiso…</div>
+            </div>
+            <button class="btn primary small" id="notifRequestBtn" onclick="requestNotificationPermission()">Activar</button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;">
+              <span>📦 Stock bajo de producto</span>
+              <input type="checkbox" id="notifPrefLowStock" onchange="saveNotificationPrefs()">
+            </label>
+            <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;">
+              <span>🛒 Nueva venta en la página</span>
+              <input type="checkbox" id="notifPrefNewSale" onchange="saveNotificationPrefs()">
+            </label>
+            <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;">
+              <span>❌ Ticket cancelado</span>
+              <input type="checkbox" id="notifPrefCancelled" onchange="saveNotificationPrefs()">
+            </label>
+          </div>
+
+          <button class="btn secondary" style="margin-top:20px;" onclick="sendTestNotification()">🔔 Enviar notificación de prueba</button>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h2 style="margin:0;">Historial Reciente</h2>
+            <button class="btn small" onclick="clearNotificationLog()">🗑️ Limpiar</button>
+          </div>
+          <div id="notifLogList" style="display:flex; flex-direction:column; gap:10px; max-height:420px; overflow-y:auto;">
+            <div style="text-align:center; color:var(--text-muted); padding:30px 0;">Sin notificaciones todavía.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section id="view-configuracion" class="view-panel hidden">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
         <div class="card">
@@ -3575,7 +3744,7 @@
           <option value="Entregado">Entregado</option>
           <option value="Cancelado">Cancelado</option>
         </select>
-        <button class="btn" style="border-radius:6px; font-size:13px;" onclick="alert('Estado del pedido actualizado ✓')">Actualizar el estado</button>
+        <button class="btn" style="border-radius:6px; font-size:13px;" onclick="updateOrderDetailStatus()">Actualizar el estado</button>
         <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="window.print()">🖨️ Imprimir pedido</button>
         <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Abriendo ventana de devolución parcial...')">🔄 Devolución parcial</button>
       </div>
@@ -4599,6 +4768,7 @@ function switchView(viewName) {
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     categorias: ['Categorías', 'Organización del Catálogo'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop'],
+    notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
     proveedores: ['Proveedores', 'Directorio de Insumos'],
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
@@ -4627,6 +4797,7 @@ function switchView(viewName) {
   // Auto-fetch API data when opening specific views
   if (viewName === 'categorias') loadCategoriesFromAPI();
   if (viewName === 'paginas-cms') loadCmsPagesAdmin();
+  if (viewName === 'notificaciones') markNotificationsRead();
   if (viewName === 'clientes') loadCustomersFromAPI();
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
@@ -6393,6 +6564,178 @@ function loadSavedTicketConfig(){
   applyTicketConfigToDOM();
 }
 
+// ================= NOTIFICACIONES =================
+let notifPrefs = { lowStock: true, newSale: true, cancelled: true };
+let notifLog = [];
+const NOTIF_TYPE_META = {
+  lowStock: { label: 'Stock bajo', icon: '📦' },
+  newSale: { label: 'Nueva venta', icon: '🛒' },
+  cancelled: { label: 'Ticket cancelado', icon: '❌' },
+  test: { label: 'Prueba', icon: '🔔' }
+};
+
+function loadNotificationPrefs() {
+  try {
+    const saved = localStorage.getItem('mf_notif_prefs');
+    if (saved) notifPrefs = { ...notifPrefs, ...JSON.parse(saved) };
+  } catch (e) {}
+  try {
+    const savedLog = localStorage.getItem('mf_notif_log');
+    if (savedLog) notifLog = JSON.parse(savedLog);
+  } catch (e) {}
+
+  const lowEl = document.getElementById('notifPrefLowStock');
+  const saleEl = document.getElementById('notifPrefNewSale');
+  const cancelEl = document.getElementById('notifPrefCancelled');
+  if (lowEl) lowEl.checked = notifPrefs.lowStock;
+  if (saleEl) saleEl.checked = notifPrefs.newSale;
+  if (cancelEl) cancelEl.checked = notifPrefs.cancelled;
+
+  updateNotifPermissionUI();
+  renderNotificationLog();
+  updateNotifBellBadge();
+}
+
+function saveNotificationPrefs() {
+  notifPrefs.lowStock = document.getElementById('notifPrefLowStock')?.checked ?? true;
+  notifPrefs.newSale = document.getElementById('notifPrefNewSale')?.checked ?? true;
+  notifPrefs.cancelled = document.getElementById('notifPrefCancelled')?.checked ?? true;
+  localStorage.setItem('mf_notif_prefs', JSON.stringify(notifPrefs));
+}
+
+function updateNotifPermissionUI() {
+  const statusEl = document.getElementById('notifPermissionStatus');
+  const btnEl = document.getElementById('notifRequestBtn');
+  if (!statusEl || !btnEl) return;
+  if (!('Notification' in window)) {
+    statusEl.textContent = 'Este navegador no soporta notificaciones.';
+    btnEl.classList.add('hidden');
+    return;
+  }
+  if (Notification.permission === 'granted') {
+    statusEl.textContent = '✅ Activadas en este navegador.';
+    btnEl.classList.add('hidden');
+  } else if (Notification.permission === 'denied') {
+    statusEl.textContent = '🚫 Bloqueadas — actívalas desde los ajustes del navegador.';
+    btnEl.classList.add('hidden');
+  } else {
+    statusEl.textContent = 'Aún no activadas en este navegador.';
+    btnEl.classList.remove('hidden');
+  }
+}
+
+function requestNotificationPermission() {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(() => updateNotifPermissionUI());
+}
+
+function notifyEvent(type, title, body) {
+  const viewOpen = !document.getElementById('view-notificaciones')?.classList.contains('hidden');
+  const entry = { type, title, body, time: new Date().toISOString(), read: viewOpen };
+  notifLog.unshift(entry);
+  notifLog = notifLog.slice(0, 40);
+  localStorage.setItem('mf_notif_log', JSON.stringify(notifLog));
+  renderNotificationLog();
+  updateNotifBellBadge();
+
+  const prefKey = type === 'lowStock' ? 'lowStock' : type === 'newSale' ? 'newSale' : type === 'cancelled' ? 'cancelled' : null;
+  if (prefKey && notifPrefs[prefKey] === false) return;
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      new Notification(title, { body, icon: '/img/icons/icon-192.png' });
+    } catch (e) {}
+  }
+}
+
+function sendTestNotification() {
+  notifyEvent('test', '🔔 Notificación de prueba', 'Así se verán tus notificaciones de Mi Fiestashop.');
+}
+
+function checkLowStockNotifications() {
+  if (sessionStorage.getItem('mf_lowstock_notified') === 'true') return;
+  sessionStorage.setItem('mf_lowstock_notified', 'true');
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const lowItems = [];
+  dataset.forEach((p, index) => {
+    const pId = p.id || index + 1;
+    const stPuebla = (pId * 137 + 450) % 800 + 30;
+    const stRumania = (pId * 211 + 620) % 1200 + 50;
+    const stQueretaro = (pId * 97 + 310) % 650 + 20;
+    if (stPuebla + stRumania + stQueretaro < 150) lowItems.push(p.name);
+  });
+
+  if (lowItems.length === 0) return;
+  const preview = lowItems.slice(0, 3).join(', ');
+  const extra = lowItems.length > 3 ? ` y ${lowItems.length - 3} más` : '';
+  notifyEvent('lowStock', '📦 Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
+}
+
+function updateOrderDetailStatus() {
+  const sel = document.getElementById('odStatusSelect');
+  const status = sel ? sel.value : '';
+  const folio = currentOrderObj ? currentOrderObj.id : '#486601';
+  if (status === 'Cancelado') {
+    notifyEvent('cancelled', '❌ Ticket cancelado', `El pedido ${folio} fue marcado como cancelado.`);
+  }
+  alert('Estado del pedido actualizado ✓');
+}
+
+function fmtNotifTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+function renderNotificationLog() {
+  const list = document.getElementById('notifLogList');
+  if (!list) return;
+  if (notifLog.length === 0) {
+    list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 0;">Sin notificaciones todavía.</div>';
+    return;
+  }
+  list.innerHTML = notifLog.map(n => {
+    const meta = NOTIF_TYPE_META[n.type] || { label: n.type, icon: '🔔' };
+    return `
+      <div style="display:flex; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--plane);">
+        <div style="font-size:20px;">${meta.icon}</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-weight:700; font-size:13px;">${n.title}</div>
+          <div style="font-size:12.5px; color:var(--text-secondary);">${n.body}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${fmtNotifTime(n.time)}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function updateNotifBellBadge() {
+  const badge = document.getElementById('notifBellBadge');
+  if (!badge) return;
+  const unread = notifLog.filter(n => !n.read).length;
+  if (unread > 0) {
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+function clearNotificationLog() {
+  notifLog = [];
+  localStorage.setItem('mf_notif_log', JSON.stringify(notifLog));
+  renderNotificationLog();
+  updateNotifBellBadge();
+}
+
+function markNotificationsRead() {
+  if (notifLog.some(n => !n.read)) {
+    notifLog = notifLog.map(n => ({ ...n, read: true }));
+    localStorage.setItem('mf_notif_log', JSON.stringify(notifLog));
+    updateNotifBellBadge();
+  }
+}
+
 function updateTicketConfigPreview(){
   ticketConfig.name = document.getElementById('cfgTicketName').value || 'MI FIESTASHOP';
   ticketConfig.rfc = document.getElementById('cfgTicketRfc').value || 'MFS260101XXX';
@@ -7241,6 +7584,8 @@ async function submitStorefrontOrder(){
   document.getElementById('confirmFolio').textContent = folio;
   document.getElementById('confirmTotal').textContent = fmtMoney(subtotal);
 
+  notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(subtotal)}.`);
+
   cart = [];
   updateStoreCartBadge();
   showStorefrontPage('storefrontOrderConfirmPage');
@@ -7968,7 +8313,7 @@ function openProductDeepLinkIfPresent() {
   if (p) renderProductFullPage(p);
 }
 
-syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent);
+syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(checkLowStockNotifications);
 loadCategoriesFromAPI();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
@@ -7976,6 +8321,7 @@ loadRealProductSales();
 loadCartsFromAPI();
 loadSuppliersFromAPI();
 loadSavedTicketConfig();
+loadNotificationPrefs();
 loadCmsPagesForFooter();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
