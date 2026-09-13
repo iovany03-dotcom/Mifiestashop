@@ -67,7 +67,8 @@ module.exports = async function handler(req, res) {
           body: attempt.body
         });
         if (!tokenResp.ok) {
-          lastError = new Error(`Skydropx auth error ${tokenResp.status}`);
+          const detail = await tokenResp.text().catch(() => '');
+          lastError = new Error(`Skydropx auth error ${tokenResp.status}${detail ? ': ' + detail.slice(0, 300) : ''}`);
           continue;
         }
         const tokenData = await tokenResp.json();
@@ -102,7 +103,8 @@ module.exports = async function handler(req, res) {
           body: JSON.stringify(body)
         });
         if (!createResp.ok) {
-          lastError = new Error(`Skydropx quotation error ${createResp.status}`);
+          const detail = await createResp.text().catch(() => '');
+          lastError = new Error(`Skydropx quotation error ${createResp.status}${detail ? ': ' + detail.slice(0, 300) : ''}`);
           continue;
         }
         const createData = await createResp.json();
@@ -138,11 +140,13 @@ module.exports = async function handler(req, res) {
     // tarifas estén listas o se agoten los intentos (deja margen dentro del
     // maxDuration de la función).
     let rates = [];
+    let lastPollDetail = '';
     for (let i = 0; i < 8; i++) {
       await new Promise((r) => setTimeout(r, 1200));
       const pollResp = await fetch(`${baseUrl}/api/v1/quotations/${quotationId}`, { headers: authHeaders });
       if (!pollResp.ok) continue;
       const pollData = await pollResp.json();
+      lastPollDetail = JSON.stringify(pollData).slice(0, 300);
       const rawRates = pollData.rates || pollData.data?.rates || [];
       if (Array.isArray(rawRates) && rawRates.length > 0) {
         rates = parseRates(rawRates);
@@ -151,7 +155,7 @@ module.exports = async function handler(req, res) {
     }
 
     if (rates.length === 0) {
-      res.status(200).json({ fallback: true, rates: [], error: 'Sin tarifas disponibles para este destino' });
+      res.status(200).json({ fallback: true, rates: [], error: `Sin tarifas disponibles para este destino${lastPollDetail ? ' (' + lastPollDetail + ')' : ''}` });
       return;
     }
 
