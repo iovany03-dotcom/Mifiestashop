@@ -13,7 +13,8 @@
     "api/clientes.js": { "maxDuration": 30 },
     "api/inventario.js": { "maxDuration": 30 },
     "api/proveedores.js": { "maxDuration": 30 },
-    "api/carritos.js": { "maxDuration": 30 }
+    "api/carritos.js": { "maxDuration": 30 },
+    "api/skydropx-cotizar.js": { "maxDuration": 30 }
   },
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
