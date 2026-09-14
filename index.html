@@ -5644,6 +5644,24 @@ const PRODUCTS_DATA = [
 ];
 
 let cart = [];
+
+// El carrito (tienda pública y POS comparten el mismo array) vivía solo en
+// memoria: recargar la página lo borraba por completo. Se guarda en
+// localStorage en cada cambio y se restaura al cargar la página.
+function saveCartToStorage() {
+  try { localStorage.setItem('mf_cart', JSON.stringify(cart)); } catch (e) {}
+}
+
+function loadCartFromStorage() {
+  try {
+    const saved = localStorage.getItem('mf_cart');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) cart = parsed;
+    }
+  } catch (e) {}
+}
+
 let ticketHistorialCache = [];
 let selectedPayMethod = 'cash';
 
@@ -5856,6 +5874,7 @@ function isIvaApplied() {
 }
 
 function updateCartUI() {
+  saveCartToStorage();
   const container = document.getElementById('cartItemsContainer');
   if (cart.length === 0) {
     container.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--text-muted); font-size:13px;">El carrito está vacío.<br>Haz clic en los productos para agregarlos.</div>`;
@@ -10161,6 +10180,7 @@ function goToSearchResult(productId) {
 }
 
 function updateStoreCartBadge() {
+  saveCartToStorage();
   const badge = document.getElementById('storeCartBadge');
   if (badge) {
     const total = cart.reduce((sum, item) => sum + item.qty, 0);
@@ -10835,6 +10855,11 @@ function openProductDeepLinkIfPresent() {
 
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(checkLowStockNotifications);
 loadRealStockData();
+
+loadCartFromStorage();
+updateStoreCartBadge();
+if (document.getElementById('cartItemsContainer')) updateCartUI();
+if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
 loadCategoriesFromAPI();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
