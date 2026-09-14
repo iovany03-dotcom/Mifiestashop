@@ -2210,6 +2210,7 @@
         <a class="submenu-link" data-view="param-avanzados-equipo">Equipo</a>
         <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
         <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
+        <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
       </div>
     </div>
 
@@ -3760,6 +3761,46 @@
       </div>
     </section>
 
+    <!-- 13b. META PIXEL -->
+    <section id="view-param-avanzados-pixel" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <h2>Integración de Meta Pixel</h2>
+          <button class="btn primary" onclick="saveMetaPixelConfig()">Guardar Configuración</button>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+          Conecta el Píxel de Meta (Facebook/Instagram Ads) para medir el rendimiento de tus campañas: visitas al catálogo, productos agregados al carrito, inicios de compra y pedidos completados. Se activa únicamente en la tienda pública y el portal de clientes — nunca en el Backoffice.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Configuración del Píxel</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>ID del Píxel de Meta:</b>
+                <input type="text" id="cfgMetaPixelId" placeholder="Ej. 937979512914198" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="cfgMetaPixelActivo"> Activar el rastreo en la tienda pública
+              </label>
+              <label><b>Estado:</b> <span id="cfgMetaPixelStatus" class="pill">Inactivo</span></label>
+              <div id="cfgMetaPixelMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Eventos que se envían automáticamente</h3>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+              <div><code>PageView</code> — cada visita a la tienda o al portal</div>
+              <div><code>ViewContent</code> — al abrir la ficha de un producto</div>
+              <div><code>AddToCart</code> — al agregar un producto al carrito</div>
+              <div><code>InitiateCheckout</code> — al entrar a pagar el pedido</div>
+              <div><code>Purchase</code> — al completar un pedido</div>
+              <div><code>Lead</code> — al suscribirse al boletín de novedades</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 </div>
 </div>
@@ -4716,6 +4757,87 @@ function applyStaffPermissionsUI() {
   }
 }
 
+// ================= META PIXEL (Facebook / Instagram Ads) =================
+// Config real, editable desde el Backoffice (Parámetros Avanzados → Meta
+// Pixel), guardada en la tabla ajustes_marketing de Supabase — así el ID del
+// píxel se puede cambiar sin necesidad de otro despliegue del sitio.
+let metaPixelConfig = { id: null, activo: false, rowId: null, loaded: false };
+
+async function loadMetaPixelConfig() {
+  try {
+    const rows = await sbGet('ajustes_marketing?select=id,meta_pixel_id,meta_pixel_activo&order=id.asc&limit=1');
+    if (Array.isArray(rows) && rows[0]) {
+      metaPixelConfig = {
+        id: rows[0].meta_pixel_id || null,
+        activo: !!rows[0].meta_pixel_activo,
+        rowId: rows[0].id,
+        loaded: true
+      };
+    }
+  } catch (e) {
+    console.log('No se pudo cargar la configuración de Meta Pixel:', e.message);
+  }
+  initMetaPixel();
+  renderMetaPixelAdminForm();
+}
+
+function initMetaPixel() {
+  // No se rastrea el Backoffice (uso interno del equipo), solo la tienda
+  // pública y el portal de clientes.
+  if (window.location.pathname.startsWith('/admin')) return;
+  if (!metaPixelConfig.activo || !metaPixelConfig.id || window.fbq) return;
+
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+  n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+  document,'script','https://connect.facebook.net/en_US/fbevents.js');
+
+  fbq('init', metaPixelConfig.id);
+  fbq('track', 'PageView');
+}
+
+function trackPixelEvent(eventName, params) {
+  if (window.fbq) fbq('track', eventName, params || {});
+}
+
+function addToCartTracked(product) {
+  addToCart(product);
+  trackPixelEvent('AddToCart', { content_ids: [String(product.id)], content_name: product.name, content_type: 'product', value: product.price, currency: 'MXN' });
+}
+
+async function saveMetaPixelConfig() {
+  const idInput = document.getElementById('cfgMetaPixelId');
+  const activeInput = document.getElementById('cfgMetaPixelActivo');
+  const msgEl = document.getElementById('cfgMetaPixelMsg');
+  const id = idInput.value.trim();
+  const activo = activeInput.checked;
+
+  try {
+    if (metaPixelConfig.rowId) {
+      await sbPatch('ajustes_marketing', metaPixelConfig.rowId, { meta_pixel_id: id, meta_pixel_activo: activo, updated_at: new Date().toISOString() });
+    } else {
+      const row = await sbInsert('ajustes_marketing', { meta_pixel_id: id, meta_pixel_activo: activo });
+      metaPixelConfig.rowId = row.id;
+    }
+    metaPixelConfig.id = id;
+    metaPixelConfig.activo = activo;
+    if (msgEl) {
+      msgEl.textContent = 'Configuración de Meta Pixel guardada correctamente.';
+      msgEl.style.color = '#15803d';
+      msgEl.style.background = 'rgba(21,128,61,0.08)';
+      msgEl.classList.remove('hidden');
+    }
+  } catch (e) {
+    if (msgEl) {
+      msgEl.textContent = 'No se pudo guardar: ' + e.message;
+      msgEl.style.color = '#dc2626';
+      msgEl.style.background = 'rgba(220,38,38,0.08)';
+      msgEl.classList.remove('hidden');
+    }
+  }
+}
+
 async function toggleStaffLoginForm() {
   const area = document.getElementById('staffLoginArea');
   if (!area) return;
@@ -4913,6 +5035,19 @@ async function deletePersonal(id) {
     await loadPersonalFromAPI();
   } catch (e) {
     alert('No se pudo eliminar el registro.');
+  }
+}
+
+function renderMetaPixelAdminForm() {
+  const idInput = document.getElementById('cfgMetaPixelId');
+  const activeInput = document.getElementById('cfgMetaPixelActivo');
+  const statusEl = document.getElementById('cfgMetaPixelStatus');
+  if (idInput) idInput.value = metaPixelConfig.id || '';
+  if (activeInput) activeInput.checked = !!metaPixelConfig.activo;
+  if (statusEl) {
+    const active = metaPixelConfig.activo && metaPixelConfig.id;
+    statusEl.textContent = active ? 'Activo' : 'Inactivo';
+    statusEl.className = 'pill ' + (active ? 'ok' : 'warn');
   }
 }
 
@@ -5476,7 +5611,8 @@ function switchView(viewName) {
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
-    'param-avanzados-webservice': ['Parámetros Avanzados', 'Conexión con PrestaShop']
+    'param-avanzados-webservice': ['Parámetros Avanzados', 'Conexión con PrestaShop'],
+    'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
   };
   if (titles[viewName]) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
@@ -5494,6 +5630,7 @@ function switchView(viewName) {
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') renderInventarioTable();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
+  if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
 }
@@ -7127,6 +7264,7 @@ function addToClienteCart(pId) {
   addToCart({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
   updateStoreCartBadge();
   updateClienteCartUI();
+  trackPixelEvent('AddToCart', { content_ids: [String(prod.id)], content_name: prod.name, content_type: 'product', value: prod.price, currency: 'MXN' });
 }
 
 function updateClienteCartUI() {
@@ -8577,7 +8715,7 @@ function buildStorefrontProductCardHTML(p, idx){
         </div>
         <div>
           <div class="store-prod-price">${fmtMoney(p.price)}</div>
-          <button class="store-prod-btn btn-pop" style="margin-bottom:6px;" onclick="event.stopPropagation(); fireConfettiBurst(event.clientX, event.clientY); addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
+          <button class="store-prod-btn btn-pop" style="margin-bottom:6px;" onclick="event.stopPropagation(); fireConfettiBurst(event.clientX, event.clientY); addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
             🛒 Agregar al Carrito
           </button>
           <button class="btn small" style="width:100%; background:transparent; border:1px solid #e5dce6; color:#2e1065;" onclick="event.stopPropagation(); openStorefrontProductDetail(${idx})">
@@ -8770,7 +8908,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
           <input type="number" id="${qtyId}" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
-          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
+          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
             🛒 Agregar al Carrito
           </button>
         </div>
@@ -8835,7 +8973,7 @@ function buildRelatedProductCardHTML(p){
         </div>
         <div>
           <div class="store-prod-price">${fmtMoney(p.price)}</div>
-          <button class="store-prod-btn btn-pop" onclick="event.stopPropagation(); fireConfettiBurst(event.clientX, event.clientY); addToCart({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
+          <button class="store-prod-btn btn-pop" onclick="event.stopPropagation(); fireConfettiBurst(event.clientX, event.clientY); addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); updateStoreCartBadge();">
             🛒 Agregar al Carrito
           </button>
         </div>
@@ -8941,6 +9079,7 @@ function renderProductFullPage(p){
   loadProductStockByBranch(p.id);
   applyProductSeoTags(p);
   renderRelatedProductsInto('relatedGrid_storefrontPageQty', p.name, p.id);
+  trackPixelEvent('ViewContent', { content_ids: [String(p.id)], content_name: p.name, content_type: 'product', value: p.price, currency: 'MXN' });
 }
 
 function goHomeStorefront(){
@@ -9244,6 +9383,12 @@ function renderCheckoutSummary(){
 
 function goToStorefrontCheckout(){
   if (cart.length === 0) return;
+  trackPixelEvent('InitiateCheckout', {
+    content_ids: cart.map(i => String(i.id)),
+    num_items: cart.reduce((s, i) => s + i.qty, 0),
+    value: cart.reduce((s, i) => s + i.price * i.qty, 0),
+    currency: 'MXN'
+  });
   populateCheckoutEstadoSelect();
   checkoutPayMethod = '';
   checkoutShippingCost = null;
@@ -9340,6 +9485,13 @@ async function submitStorefrontOrder(){
 
   notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(total)}.`);
 
+  trackPixelEvent('Purchase', {
+    content_ids: cart.map(i => String(i.id)),
+    num_items: cart.reduce((s, i) => s + i.qty, 0),
+    value: total,
+    currency: 'MXN'
+  });
+
   cart = [];
   updateStoreCartBadge();
   showStorefrontPage('storefrontOrderConfirmPage');
@@ -9357,6 +9509,8 @@ async function submitNewsletterSignup(){
   } catch (e) {
     console.log('No se pudo guardar el suscriptor en Supabase:', e.message);
   }
+
+  trackPixelEvent('Lead', { content_name: 'Newsletter' });
 
   try {
     const r = await fetch('/api/enviar-correo', {
@@ -10118,6 +10272,7 @@ loadClienteSession();
 const oauthRedirectPending = window.location.hash.includes('access_token') || window.location.hash.includes('error');
 handleOAuthRedirect();
 loadCmsPagesForFooter();
+loadMetaPixelConfig();
 populateCheckoutEstadoSelect();
 populateSkydropxEstadoSelects();
 
