@@ -719,7 +719,7 @@
     border-radius: 14px 14px 0 0;
     background: linear-gradient(90deg, #d3007b, #ff6fb3);
   }
-  .ticket-logo { display: block; max-height: 46px; max-width: 100%; margin: 0 auto 8px; object-fit: contain; }
+  .ticket-logo { display: block; max-height: 92px; max-width: 100%; margin: 0 auto 10px; object-fit: contain; }
   .ticket-store-name { font-weight: 800; font-size: 16.5px; letter-spacing: 0.01em; }
   .ticket-sub { color: #666; font-size: 11px; }
   .ticket-divider { border-top: 1px dashed #c9c9d2; margin: 12px 0; }
@@ -5780,7 +5780,7 @@ function switchView(viewName) {
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
-  if (viewName === 'bodegas') renderInventarioTable();
+  if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
 
@@ -5995,6 +5995,24 @@ function confirmPOSSale() {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
   }).catch(() => {});
+
+  // Descuenta el inventario real: registra el movimiento en el ledger de
+  // Supabase (best-effort, no bloquea el ticket si falla). Solo aplica a
+  // las 3 bodegas con stock real conectado (Puebla/Rumania/Querétaro).
+  const almacenKey = almacenSelect ? almacenSelect.value : '';
+  if (['puebla', 'rumania', 'queretaro'].includes(almacenKey)) {
+    const moves = cart.map(item => ({
+      id_product: item.id, almacen: almacenKey, qty: -Math.abs(item.qty),
+      motivo: 'venta_pos', folio, registrado_por: nombreSesionActual()
+    }));
+    sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves }).then(() => {
+      moves.forEach(m => {
+        const key = `${m.id_product}|${m.almacen}`;
+        stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
+      });
+      renderInventarioTable();
+    }).catch(() => {});
+  }
 
   clearCart();
 }
@@ -6944,6 +6962,51 @@ if(document.getElementById('catalogSearchInput')){
   });
 }
 
+// ================= STOCK REAL (PrestaShop + ledger de movimientos POS) =================
+// Antes esta sección usaba una fórmula hash como stock "de mentiras" que se
+// recalculaba en cada render y nunca se guardaba en ningún lado. Ahora se lee
+// el stock real por bodega desde PrestaShop (api/stock-all.js) y se le suma
+// el ledger de movimientos registrados desde el Backoffice (ventas de POS,
+// entradas, salidas y traspasos) guardado en Supabase — sin escribir nunca
+// directo al inventario avanzado de PrestaShop.
+let realStockData = {};     // { [idProducto]: { puebla, rumania, queretaro } } — PrestaShop
+let stockLedgerTotals = {}; // { "idProducto|almacen": delta } — Supabase (pos_stock_moves)
+let realStockLoaded = false;
+
+// Respaldo si todavía no cargó el stock real (primer render, o si falla la
+// consulta a PrestaShop): mismos valores deterministas que antes, para que
+// la tabla nunca se vea vacía mientras carga.
+function hashStockFallback(pId, whKey) {
+  if (whKey === 'puebla') return (pId * 137 + 450) % 800 + 30;
+  if (whKey === 'rumania') return (pId * 211 + 620) % 1200 + 50;
+  if (whKey === 'queretaro') return (pId * 97 + 310) % 650 + 20;
+  return 0;
+}
+
+function getStockFor(pId, whKey) {
+  const real = realStockData[pId];
+  const base = real ? (real[whKey] || 0) : hashStockFallback(pId, whKey);
+  const delta = stockLedgerTotals[`${pId}|${whKey}`] || 0;
+  return Math.max(0, Math.round(base + delta));
+}
+
+async function loadRealStockData() {
+  try {
+    const [stockRes, ledgerRows] = await Promise.all([
+      fetch('/api/stock-all').then(r => r.ok ? r.json() : { stock: {} }).catch(() => ({ stock: {} })),
+      sbRpc('rpc_stock_move_totals', getSessionCredsParams()).catch(() => [])
+    ]);
+    realStockData = (stockRes && stockRes.stock) || {};
+    stockLedgerTotals = {};
+    (Array.isArray(ledgerRows) ? ledgerRows : []).forEach(row => {
+      stockLedgerTotals[`${row.id_product}|${row.almacen}`] = parseFloat(row.delta) || 0;
+    });
+    realStockLoaded = true;
+  } catch (e) {
+    // Sin conexión a PrestaShop o Supabase: se sigue usando el respaldo hash.
+  }
+}
+
 // INVENTORY MATRIX RENDERER
 function renderInventarioTable() {
   const tbody = document.getElementById('inventarioTableBody');
@@ -6960,10 +7023,10 @@ function renderInventarioTable() {
 
   const filtered = dataset.filter((p, index) => {
     const pId = p.id || index + 1;
-    // Calculate stock breakdown per warehouse (Puebla, Rumania, Querétaro)
-    const stPuebla = (pId * 137 + 450) % 800 + 30;
-    const stRumania = (pId * 211 + 620) % 1200 + 50;
-    const stQueretaro = (pId * 97 + 310) % 650 + 20;
+    // Stock real por bodega (Puebla, Rumania, Querétaro): PrestaShop + ledger de movimientos.
+    const stPuebla = getStockFor(pId, 'puebla');
+    const stRumania = getStockFor(pId, 'rumania');
+    const stQueretaro = getStockFor(pId, 'queretaro');
     const stTotal = stPuebla + stRumania + stQueretaro;
 
     p._stPuebla = stPuebla;
@@ -7033,11 +7096,10 @@ function syncInventoryData() {
 // ================= MODULO DE MOVIMIENTOS E HISTORIAL DE INVENTARIO =================
 let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
 
-const traspasosHistory = [
-  { folio: 'ENT-1042', tipo: 'entrada', prod: 'Vela de Bengala', qty: 200, origen: 'Proveedor Globos MX', destino: 'CDMX Rumania', motivo: 'Compra directa a fábrica', date: '2026-09-11 15:00' },
-  { folio: 'TR-1088', tipo: 'traspaso', prod: 'Vela de Bengala', qty: 50, origen: 'CDMX Rumania', destino: 'Puebla', motivo: 'Reabastecimiento sucursal', date: '2026-09-11 14:10' },
-  { folio: 'SAL-1009', tipo: 'salida', prod: 'Antifaz cartón metálico', qty: 15, origen: 'Querétaro', destino: 'Baja por merma', motivo: 'Empaque maltratado', date: '2026-09-11 11:30' }
-];
+// Histórico real de movimientos de inventario (pos_stock_moves en Supabase),
+// cargado por loadTraspasoHistory() cada vez que se abre el modal de Traspasos.
+let traspasosHistory = [];
+const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro: 'Querétaro' };
 
 function setMovimientoType(tipo) {
   currentMovType = tipo;
@@ -7084,7 +7146,7 @@ function openTraspasoModal() {
   }
 
   setMovimientoType(currentMovType);
-  renderTraspasoHistory();
+  loadTraspasoHistory();
   modal.classList.remove('hidden');
 }
 
@@ -7099,20 +7161,13 @@ function updateTraspasoMaxStock() {
   if(!prodSelect || !prodSelect.value) return;
 
   const pId = parseInt(prodSelect.value);
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => p.id === pId);
-
-  if (!product) return;
-
-  let currentStock = 0;
-  if (origen === 'puebla') currentStock = product._stPuebla !== undefined ? product._stPuebla : 500;
-  else if (origen === 'rumania') currentStock = product._stRumania !== undefined ? product._stRumania : 700;
-  else if (origen === 'queretaro') currentStock = product._stQueretaro !== undefined ? product._stQueretaro : 300;
+  const currentStock = getStockFor(pId, origen);
+  const totalStock = ['puebla', 'rumania', 'queretaro'].reduce((s, wh) => s + getStockFor(pId, wh), 0);
 
   const infoEl = document.getElementById('traspasoStockAvailableInfo');
   if (infoEl) {
     if (currentMovType === 'entrada') {
-      infoEl.innerHTML = `Stock actual total: <b style="color:var(--text-primary);">${(product._stTotal || 0).toLocaleString()} u.</b>`;
+      infoEl.innerHTML = `Stock actual total: <b style="color:var(--text-primary);">${totalStock.toLocaleString()} u.</b>`;
     } else {
       infoEl.innerHTML = `Disponible en origen: <b style="color:var(--text-primary);">${currentStock.toLocaleString()} u.</b>`;
     }
@@ -7126,6 +7181,18 @@ function updateTraspasoMaxStock() {
   }
 }
 
+async function loadTraspasoHistory() {
+  const container = document.getElementById('traspasoHistoryList');
+  if (container) container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:10px;">Cargando…</div>';
+  try {
+    const rows = await sbRpc('rpc_stock_move_list', getSessionCredsParams());
+    traspasosHistory = Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    traspasosHistory = [];
+  }
+  renderTraspasoHistory();
+}
+
 function renderTraspasoHistory() {
   const container = document.getElementById('traspasoHistoryList');
   if(!container) return;
@@ -7133,43 +7200,57 @@ function renderTraspasoHistory() {
   const countBadge = document.getElementById('movCountBadge');
   if (countBadge) countBadge.textContent = `${traspasosHistory.length} movimientos registrados`;
 
-  container.innerHTML = traspasosHistory.map(t => {
-    let pillBg = 'rgba(59,130,246,0.15)', pillColor = '#2563eb', tipoText = 'Traspaso';
-    if (t.tipo === 'entrada') {
-      pillBg = 'rgba(34,197,94,0.15)'; pillColor = '#16a34a'; tipoText = 'Entrada';
-    } else if (t.tipo === 'salida') {
-      pillBg = 'rgba(239,68,68,0.15)'; pillColor = '#dc2626'; tipoText = 'Salida';
-    } else {
-      tipoText = 'Traspaso';
-    }
+  if (traspasosHistory.length === 0) {
+    container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:10px;">Aún no hay movimientos registrados.</div>';
+    return;
+  }
 
-    let rutaInfo = '';
-    if (t.tipo === 'entrada') rutaInfo = `-> ${t.destino}`;
-    else if (t.tipo === 'salida') rutaInfo = `<- ${t.origen}`;
-    else rutaInfo = `${t.origen}  ${t.destino}`;
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const knownTags = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entrada', 'venta_pos'];
+
+  container.innerHTML = traspasosHistory.map(row => {
+    const parts = (row.motivo || '').split(':');
+    const tagRaw = (parts[0] || '').trim();
+    const tag = knownTags.includes(tagRaw) ? tagRaw : 'ajuste';
+    const nota = parts.slice(1).join(':').trim();
+
+    let pillBg = 'rgba(148,163,184,0.15)', pillColor = '#64748b', tipoText = 'Ajuste';
+    if (tag === 'entrada') { pillBg = 'rgba(34,197,94,0.15)'; pillColor = '#16a34a'; tipoText = 'Entrada'; }
+    else if (tag === 'salida') { pillBg = 'rgba(239,68,68,0.15)'; pillColor = '#dc2626'; tipoText = 'Salida'; }
+    else if (tag === 'traspaso_salida') { pillBg = 'rgba(59,130,246,0.15)'; pillColor = '#2563eb'; tipoText = 'Traspaso (salida)'; }
+    else if (tag === 'traspaso_entrada') { pillBg = 'rgba(59,130,246,0.15)'; pillColor = '#2563eb'; tipoText = 'Traspaso (entrada)'; }
+    else if (tag === 'venta_pos') { pillBg = 'rgba(236,72,153,0.15)'; pillColor = '#db2777'; tipoText = 'Venta POS'; }
+
+    const prod = dataset.find(p => String(p.id) === String(row.id_product));
+    const prodName = prod ? prod.name : `Producto #${row.id_product}`;
+    const whLabel = WAREHOUSE_LABELS[row.almacen] || row.almacen;
+    const qty = parseFloat(row.qty) || 0;
+    const qtyLabel = (qty > 0 ? '+' : '') + qty;
+    const dateStr = row.created_at ? new Date(row.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    const folioLabel = row.folio ? (row.folio.startsWith('#') ? row.folio : '#' + row.folio) : '—';
 
     return `
       <div style="padding:8px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
         <div>
           <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
-            <b style="color:var(--text-primary);">#${t.folio}</b>
+            <b style="color:var(--text-primary);">${escapeHtml(folioLabel)}</b>
             <span style="padding:2px 8px; border-radius:12px; font-size:10px; background:${pillBg}; color:${pillColor}; font-weight:700;">${tipoText}</span>
-            <span style="font-weight:600; color:var(--text-primary);">${t.prod}</span>
-            <b style="color:var(--series-2); font-size:12px;">(${t.qty} u.)</b>
+            <span style="font-weight:600; color:var(--text-primary);">${escapeHtml(prodName)}</span>
+            <b style="color:var(--series-2); font-size:12px;">(${qtyLabel} u.)</b>
           </div>
           <div style="font-size:11px; color:var(--text-muted);">
-             <b>Detalle:</b> ${rutaInfo} ${t.motivo ? '• <i>' + t.motivo + '</i>' : ''}
+            <b>Bodega:</b> ${escapeHtml(whLabel)} ${nota ? '• <i>' + escapeHtml(nota) + '</i>' : ''} ${row.registrado_por ? '• ' + escapeHtml(row.registrado_por) : ''}
           </div>
         </div>
         <div style="font-size:11px; color:var(--text-muted); text-align:right; min-width:110px;">
-          ${t.date}
+          ${dateStr}
         </div>
       </div>
     `;
   }).join('');
 }
 
-function confirmStockTransfer() {
+async function confirmStockTransfer() {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   const prodSelect = document.getElementById('traspasoProduct');
@@ -7177,7 +7258,7 @@ function confirmStockTransfer() {
 
   const pId = parseInt(prodSelect.value);
   const qty = parseInt(document.getElementById('traspasoQty').value) || 0;
-  const motivo = document.getElementById('traspasoMotivo').value.trim() || 'Movimiento de inventario';
+  const notaTexto = document.getElementById('traspasoMotivo').value.trim();
 
   if (currentMovType === 'traspaso' && origen === destino) {
     alert(' En un traspaso, la bodega de origen y destino deben ser diferentes.');
@@ -7190,69 +7271,64 @@ function confirmStockTransfer() {
   }
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => p.id === pId);
+  const product = dataset.find(p => String(p.id) === String(pId));
   if (!product) return;
 
-  const getProp = (wh) => {
-    if(wh === 'puebla') return '_stPuebla';
-    if(wh === 'rumania') return '_stRumania';
-    if(wh === 'queretaro') return '_stQueretaro';
-  };
-
-  const origKey = getProp(origen);
-  const destKey = getProp(destino);
   const origLabel = document.getElementById('traspasoOrigen').options[document.getElementById('traspasoOrigen').selectedIndex].text;
   const destLabel = document.getElementById('traspasoDestino').options[document.getElementById('traspasoDestino').selectedIndex].text;
+  const registradoPor = nombreSesionActual();
 
   let folio = '';
   let rutaDesc = '';
+  let moves = [];
 
   if (currentMovType === 'entrada') {
-    product[destKey] = (product[destKey] || 0) + qty;
     folio = 'ENT-' + Math.floor(1000 + Math.random() * 9000);
     rutaDesc = destLabel;
+    moves = [{ id_product: pId, almacen: destino, qty: qty, motivo: notaTexto ? `entrada: ${notaTexto}` : 'entrada', folio, registrado_por: registradoPor }];
   } else if (currentMovType === 'salida') {
-    const available = product[origKey] !== undefined ? product[origKey] : 0;
+    const available = getStockFor(pId, origen);
     if (qty > available) {
       alert(` Stock insuficiente en bodega de origen (${available} u. disponibles).`);
       return;
     }
-    product[origKey] = (product[origKey] || 0) - qty;
     folio = 'SAL-' + Math.floor(1000 + Math.random() * 9000);
     rutaDesc = origLabel;
+    moves = [{ id_product: pId, almacen: origen, qty: -qty, motivo: notaTexto ? `salida: ${notaTexto}` : 'salida', folio, registrado_por: registradoPor }];
   } else if (currentMovType === 'traspaso') {
-    const available = product[origKey] !== undefined ? product[origKey] : 0;
+    const available = getStockFor(pId, origen);
     if (qty > available) {
       alert(` Stock insuficiente en bodega de origen (${available} u. disponibles).`);
       return;
     }
-    product[origKey] = (product[origKey] || 0) - qty;
-    product[destKey] = (product[destKey] || 0) + qty;
     folio = 'TR-' + Math.floor(1000 + Math.random() * 9000);
     rutaDesc = `${origLabel}  ${destLabel}`;
+    moves = [
+      { id_product: pId, almacen: origen, qty: -qty, motivo: notaTexto ? `traspaso_salida: ${notaTexto}` : 'traspaso_salida', folio, registrado_por: registradoPor },
+      { id_product: pId, almacen: destino, qty: qty, motivo: notaTexto ? `traspaso_entrada: ${notaTexto}` : 'traspaso_entrada', folio, registrado_por: registradoPor }
+    ];
   }
 
-  product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0);
+  const btnConfirm = document.getElementById('btnConfirmMovimiento');
+  if (btnConfirm) btnConfirm.disabled = true;
 
-  const now = new Date();
-  const dateStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  try {
+    await sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves });
 
-  traspasosHistory.unshift({
-    folio: folio,
-    tipo: currentMovType,
-    prod: product.name,
-    qty: qty,
-    origen: origLabel,
-    destino: destLabel,
-    motivo: motivo,
-    date: dateStr
-  });
+    moves.forEach(m => {
+      const key = `${m.id_product}|${m.almacen}`;
+      stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
+    });
+    renderInventarioTable();
+    await loadTraspasoHistory();
 
-  renderTraspasoHistory();
-  renderInventarioTable();
-
-  alert(` Movimiento #${folio} registrado correctamente.\n\nTipo: ${currentMovType.toUpperCase()}\nProducto: ${product.name}\nCantidad: ${qty} u.\nDetalle: ${rutaDesc}`);
-  closeTraspasoModal();
+    alert(` Movimiento #${folio} registrado correctamente.\n\nTipo: ${currentMovType.toUpperCase()}\nProducto: ${product.name}\nCantidad: ${qty} u.\nDetalle: ${rutaDesc}`);
+    closeTraspasoModal();
+  } catch (e) {
+    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo registrar el movimiento. Intenta de nuevo.');
+  } finally {
+    if (btnConfirm) btnConfirm.disabled = false;
+  }
 }
 
 // ================= PORTAL DE CLIENTES: AUTENTICACIÓN REAL (Supabase Auth) =================
@@ -7748,20 +7824,32 @@ function repeatCustomerOrder(folio) {
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
 }
 
-function openStockAdjustModal(pId) {
+async function openStockAdjustModal(pId) {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => p.id === pId);
+  const product = dataset.find(p => String(p.id) === String(pId));
   if(!product) return;
 
-  const newStock = prompt(`Ajuste de inventario para:\n${product.sku} - ${product.name}\n\nIngrese la nueva existencia para la bodega CDMX Rumania:`, product._stRumania || 500);
-  if (newStock !== null) {
-    const parsed = parseInt(newStock);
-    if (!isNaN(parsed) && parsed >= 0) {
-      product._stRumania = parsed;
-      product._stTotal = (product._stPuebla || 0) + (product._stRumania || 0) + (product._stQueretaro || 0);
-      renderInventarioTable();
-      alert(` Existencia actualizada a ${parsed} u. para CDMX Rumania.`);
-    }
+  const current = getStockFor(pId, 'rumania');
+  const newStockStr = prompt(`Ajuste de inventario para:\n${product.sku} - ${product.name}\n\nIngrese la nueva existencia para la bodega CDMX Rumania:`, current);
+  if (newStockStr === null) return;
+
+  const parsed = parseInt(newStockStr);
+  if (isNaN(parsed) || parsed < 0) return;
+
+  const delta = parsed - current;
+  if (delta === 0) return;
+
+  try {
+    await sbRpc('rpc_stock_move_insert_bulk', {
+      ...getSessionCredsParams(),
+      p_moves: [{ id_product: pId, almacen: 'rumania', qty: delta, motivo: 'ajuste', folio: 'AJU-' + Math.floor(1000 + Math.random() * 9000), registrado_por: nombreSesionActual() }]
+    });
+    const key = `${pId}|rumania`;
+    stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + delta;
+    renderInventarioTable();
+    alert(` Existencia actualizada a ${parsed} u. para CDMX Rumania.`);
+  } catch (e) {
+    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo actualizar la existencia.');
   }
 }
 
@@ -8336,10 +8424,8 @@ function checkLowStockNotifications() {
   const lowItems = [];
   dataset.forEach((p, index) => {
     const pId = p.id || index + 1;
-    const stPuebla = (pId * 137 + 450) % 800 + 30;
-    const stRumania = (pId * 211 + 620) % 1200 + 50;
-    const stQueretaro = (pId * 97 + 310) % 650 + 20;
-    if (stPuebla + stRumania + stQueretaro < 150) lowItems.push(p.name);
+    const stTotal = getStockFor(pId, 'puebla') + getStockFor(pId, 'rumania') + getStockFor(pId, 'queretaro');
+    if (stTotal < 150) lowItems.push(p.name);
   });
 
   if (lowItems.length === 0) return;
@@ -10748,6 +10834,7 @@ function openProductDeepLinkIfPresent() {
 }
 
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(checkLowStockNotifications);
+loadRealStockData();
 loadCategoriesFromAPI();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
