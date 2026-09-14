@@ -1983,18 +1983,11 @@
                 <span>Subtotal:</span>
                 <span id="clienteCartSubtotal">$0.00</span>
               </div>
-              <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
-                <span>Envío:</span>
-                <span id="clienteCartShipping" style="color:var(--good); font-weight:600;">GRATIS (&gt;$1,000)</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:800; color:var(--series-2); margin-top:6px; border-top:1px dashed var(--border); padding-top:8px;">
-                <span>TOTAL:</span>
-                <span id="clienteCartTotal">$0.00</span>
-              </div>
+              <div style="font-size:11.5px; color:var(--text-muted);">El envío se cotiza con tu código postal al finalizar la compra.</div>
             </div>
 
             <button class="btn primary" style="width:100%; padding:12px; margin-top:16px; font-size:1rem; font-weight:700; justify-content:center; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="processClienteOnlineOrder()">
-              🚀 Enviar & Procesar Pedido
+              🚀 Continuar a Pagar y Enviar
             </button>
           </div>
         </div>
@@ -6433,13 +6426,12 @@ function renderClientePortalAuthState() {
     renderClienteWelcomeBanner();
     renderClienteOrders();
     renderClienteCatalog();
+    updateClienteCartUI();
   } else {
     clienteAuthMode = 'login';
     renderClienteAuthMode();
   }
 }
-
-let clienteCart = [];
 
 function openClientePortal() {
   hideStorefrontPages();
@@ -6558,17 +6550,17 @@ function renderClienteCatalog(query = '') {
   `).join('');
 }
 
+// El "Nuevo Pedido" del portal de clientes agrega al MISMO carrito y usa el
+// MISMO checkout real de la tienda (con cotización de envío por Skydropx y
+// la regla real de envío gratis) en vez de duplicar ese flujo con datos
+// falsos: antes este carrito nunca cotizaba el envío y mostraba
+// incondicionalmente "GRATIS (>$1,000)" sin validar nada.
 function addToClienteCart(pId) {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const prod = dataset.find(p => p.id === pId);
   if(!prod) return;
-
-  const existing = clienteCart.find(i => i.id === pId);
-  if(existing) {
-    existing.qty += 1;
-  } else {
-    clienteCart.push({ id: prod.id, name: prod.name, price: prod.price, qty: 1 });
-  }
+  addToCart({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
+  updateStoreCartBadge();
   updateClienteCartUI();
 }
 
@@ -6576,15 +6568,14 @@ function updateClienteCartUI() {
   const container = document.getElementById('clienteCartItemsList');
   if(!container) return;
 
-  if (clienteCart.length === 0) {
+  if (cart.length === 0) {
     container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 0;">Tu carrito está vacío.<br>Agrega productos del catálogo.</div>';
     document.getElementById('clienteCartSubtotal').textContent = '$0.00';
-    document.getElementById('clienteCartTotal').textContent = '$0.00';
     return;
   }
 
   let sub = 0;
-  container.innerHTML = clienteCart.map(item => {
+  container.innerHTML = cart.map(item => {
     const itemTotal = item.price * item.qty;
     sub += itemTotal;
     return `
@@ -6599,49 +6590,15 @@ function updateClienteCartUI() {
   }).join('');
 
   document.getElementById('clienteCartSubtotal').textContent = fmtMoney(sub);
-  document.getElementById('clienteCartTotal').textContent = fmtMoney(sub);
 }
 
-async function processClienteOnlineOrder() {
-  if(clienteCart.length === 0) {
+function processClienteOnlineOrder() {
+  if(cart.length === 0) {
     alert('⚠️ Tu carrito está vacío. Agrega al menos 1 producto.');
     return;
   }
-  if (!clienteSession?.user) {
-    alert('Inicia sesión para poder realizar tu pedido.');
-    return;
-  }
-
-  const folio = 'FOL-' + Date.now().toString().slice(-6);
-  const total = clienteCart.reduce((s, i) => s + i.price * i.qty, 0);
-  const user = clienteSession.user;
-
-  const orderPayload = {
-    folio,
-    customer_name: user.user_metadata?.full_name || user.email,
-    customer_email: user.email,
-    customer_phone: user.user_metadata?.phone || '',
-    shipping_address: user.user_metadata?.address || '',
-    items: clienteCart.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty })),
-    subtotal: total,
-    total,
-    status: 'Pendiente'
-  };
-
-  try {
-    await sbInsert('pedidos_online', orderPayload);
-  } catch (e) {
-    alert('❌ No se pudo registrar tu pedido. Intenta de nuevo en unos minutos.');
-    return;
-  }
-
-  clienteCart = [];
-  updateClienteCartUI();
-  await renderClienteOrders();
-  switchClienteTab('pedidos');
-
-  notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${orderPayload.customer_name} por ${fmtMoney(total)}.`);
-  alert(`🎉 ¡Pedido #${folio} realizado con éxito!\n\nTotal: ${fmtMoney(total)}. Te contactaremos para confirmar tu envío.`);
+  closeClientePortal();
+  goToStorefrontCheckout();
 }
 
 function copyCouponCode(code) {
@@ -6664,10 +6621,11 @@ function repeatCustomerOrder(folio) {
     return;
   }
   items.forEach(item => {
-    const existing = clienteCart.find(i => i.id === item.id);
-    if (existing) existing.qty += item.qty;
-    else clienteCart.push({ id: item.id, name: item.name, price: item.price, qty: item.qty });
+    for (let i = 0; i < (item.qty || 1); i++) {
+      addToCart({ id: item.id, name: item.name, sku: item.sku || '', price: item.price, cat: 'general', img: '' });
+    }
   });
+  updateStoreCartBadge();
   updateClienteCartUI();
   switchClienteTab('nuevo');
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
@@ -8395,15 +8353,20 @@ function estimateShippingGuideCost(cp) {
 }
 
 let checkoutShippingCost = null;
+let checkoutShippingCarrier = null;
+let checkoutShippingOptions = [];
+let checkoutSelectedShippingIndex = null;
 let checkoutCpRequestSeq = 0;
 
-// Intenta cotizar el envío con la API real de Skydropx, usando el Estado/
-// Municipio/Colonia que el cliente escribió (Skydropx los exige y los
-// servicios gratuitos para derivarlos solo del código postal resultaron
-// poco confiables). Si no hay credenciales configuradas o la consulta
-// falla, cae en la estimación por zona (estimateShippingGuideCost) para
-// que el checkout nunca se bloquee.
-async function quoteShippingGuideCost(cp, estado, municipio, colonia) {
+// Cotiza el envío con la API real de Skydropx, usando el Estado/Municipio/
+// Colonia que el cliente escribió (Skydropx los exige y los servicios
+// gratuitos para derivarlos solo del código postal resultaron poco
+// confiables), y devuelve TODAS las opciones de paquetería para que el
+// cliente elija la que más le convenga, en vez de aplicar una sola
+// automáticamente. Si no hay credenciales configuradas o la consulta
+// falla, cae en una única opción estimada por zona para que el checkout
+// nunca se bloquee.
+async function quoteShippingOptions(cp, estado, municipio, colonia) {
   try {
     const params = new URLSearchParams({
       cp_origen: '72000', cp_destino: cp, peso: '1', largo: '30', ancho: '25', alto: '15',
@@ -8412,12 +8375,55 @@ async function quoteShippingGuideCost(cp, estado, municipio, colonia) {
     const r = await fetch(`/api/skydropx-cotizar?${params.toString()}`);
     const data = await r.json();
     if (Array.isArray(data.rates) && data.rates.length > 0) {
-      return Math.round(Math.min(...data.rates.map(r => Number(r.price))));
+      return data.rates
+        .map(r => ({ carrier: r.carrier || 'Paquetería', service: r.service || '', price: Number(r.price) || 0, days: r.days || null }))
+        .filter(r => r.price > 0)
+        .sort((a, b) => a.price - b.price);
     }
   } catch (e) {
     // Sin conexión con Skydropx: se usa la estimación local.
   }
-  return estimateShippingGuideCost(cp);
+  return [{ carrier: 'Envío estándar', service: '', price: estimateShippingGuideCost(cp), days: null }];
+}
+
+function renderCheckoutShippingOptions() {
+  const box = document.getElementById('checkoutShippingQuoteBox');
+  if (!box) return;
+  if (checkoutShippingOptions.length === 0) return;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  box.innerHTML = `
+    <div style="font-size:12px; font-weight:700; color:#2e1065; margin-bottom:8px;">🚚 Elige tu opción de envío:</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      ${checkoutShippingOptions.map((opt, idx) => {
+        const envioGratis = opt.price < 250 && subtotal > 1500;
+        const selected = checkoutSelectedShippingIndex === idx;
+        return `
+          <label style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:8px; border:2px solid ${selected ? 'var(--mf-pink)' : '#e5dce6'}; background:${selected ? '#fff' : '#fdfbfc'}; cursor:pointer;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <input type="radio" name="checkoutShippingOption" ${selected ? 'checked' : ''} onchange="selectCheckoutShippingOption(${idx})">
+              <div>
+                <div style="font-weight:700; font-size:13px; color:#2e1065; text-transform:capitalize;">${opt.carrier}${opt.service ? ' — ' + opt.service : ''}</div>
+                <div style="font-size:11px; color:#8b7d97;">${opt.days ? `Entrega en ~${opt.days} día${opt.days == 1 ? '' : 's'}` : 'Tiempo de entrega no especificado'}</div>
+              </div>
+            </div>
+            <div style="font-weight:800; font-size:14px; color:${envioGratis ? '#15803d' : '#2e1065'}; white-space:nowrap;">${envioGratis ? 'Gratis' : fmtMoney(opt.price)}</div>
+          </label>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function selectCheckoutShippingOption(idx) {
+  const opt = checkoutShippingOptions[idx];
+  if (!opt) return;
+  checkoutSelectedShippingIndex = idx;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  const envioGratis = opt.price < 250 && subtotal > 1500;
+  checkoutShippingCost = envioGratis ? 0 : opt.price;
+  checkoutShippingCarrier = opt.carrier + (opt.service ? ' - ' + opt.service : '');
+  renderCheckoutShippingOptions();
+  renderCheckoutSummary();
 }
 
 async function onCheckoutShippingFieldsInput() {
@@ -8432,34 +8438,37 @@ async function onCheckoutShippingFieldsInput() {
 
   if (cp.length !== 5 || !estado || !municipio || !colonia) {
     checkoutShippingCost = null;
+    checkoutShippingCarrier = null;
+    checkoutShippingOptions = [];
+    checkoutSelectedShippingIndex = null;
     if (box) {
       box.classList.remove('hidden');
-      box.innerHTML = `Completa código postal, estado, municipio y colonia para cotizar tu envío.`;
+      box.innerHTML = `Completa código postal, estado, municipio y colonia para ver tus opciones de envío.`;
     }
     renderCheckoutSummary();
     return;
   }
 
   const requestId = ++checkoutCpRequestSeq;
+  checkoutShippingCost = null;
+  checkoutShippingCarrier = null;
+  checkoutSelectedShippingIndex = null;
   if (box) {
     box.classList.remove('hidden');
-    box.innerHTML = `⏳ Cotizando envío a esta dirección…`;
+    box.innerHTML = `⏳ Buscando opciones de envío a esta dirección…`;
   }
 
-  const guideCost = await quoteShippingGuideCost(cp, estado, municipio, colonia);
+  const options = await quoteShippingOptions(cp, estado, municipio, colonia);
   if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió los datos de envío
 
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const envioGratis = guideCost < 250 && subtotal > 1500;
-  checkoutShippingCost = envioGratis ? 0 : guideCost;
-
-  if (box) {
-    box.classList.remove('hidden');
-    box.innerHTML = envioGratis
-      ? `🎉 <b>¡Envío gratis!</b> Tu pedido califica por ser mayor a $1,500 MXN.`
-      : `🚚 Costo de envío estimado a esta dirección: <b>${fmtMoney(guideCost)}</b>`;
+  checkoutShippingOptions = options;
+  if (options.length === 1) {
+    // Única opción disponible (estimación de referencia): se selecciona sola.
+    selectCheckoutShippingOption(0);
+  } else {
+    renderCheckoutShippingOptions();
+    renderCheckoutSummary();
   }
-  renderCheckoutSummary();
 }
 
 function renderCheckoutSummary(){
@@ -8496,6 +8505,9 @@ function goToStorefrontCheckout(){
   populateCheckoutEstadoSelect();
   checkoutPayMethod = '';
   checkoutShippingCost = null;
+  checkoutShippingCarrier = null;
+  checkoutShippingOptions = [];
+  checkoutSelectedShippingIndex = null;
   setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), false);
@@ -8526,8 +8538,13 @@ async function submitStorefrontOrder(){
   const address = document.getElementById('checkoutAddress').value.trim();
   const errEl = document.getElementById('checkoutErrorMsg');
 
-  if (cp.length !== 5 || !estado || !municipio || !colonia || checkoutShippingCost === null) {
-    errEl.textContent = 'Completa código postal, estado, municipio y colonia para cotizar el envío.';
+  if (cp.length !== 5 || !estado || !municipio || !colonia) {
+    errEl.textContent = 'Completa código postal, estado, municipio y colonia para ver tus opciones de envío.';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  if (checkoutShippingCost === null) {
+    errEl.textContent = 'Selecciona una opción de envío para continuar.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -8552,6 +8569,7 @@ async function submitStorefrontOrder(){
     shipping_address: fullAddress,
     shipping_cp: cp,
     shipping_cost: shippingCost,
+    shipping_carrier: checkoutShippingCarrier || '',
     payment_method: checkoutPayMethod,
     items: cart.map(i => ({ id: i.id, name: i.name, sku: i.sku, price: i.price, qty: i.qty })),
     subtotal,
