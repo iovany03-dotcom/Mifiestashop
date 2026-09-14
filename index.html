@@ -1997,43 +1997,8 @@
     <!-- TAB 3: PROMOCIONES Y CUPONES -->
     <div id="clienteTabPromos" class="hidden">
       <h3 style="margin-top:0; margin-bottom:16px; font-size:1.2rem;">🎉 Ofertas Exclusivas y Cupones Activos</h3>
-      
-      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
-        <div style="background:linear-gradient(135deg, rgba(232,93,4,0.12), rgba(249,115,22,0.05)); border:2px dashed #e85d04; border-radius:16px; padding:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span class="pill ok" style="font-weight:700;">Válido Septiembre 2026</span>
-            <span style="font-size:24px;">✨</span>
-          </div>
-          <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:var(--series-2);">15% OFF en Pirotecnia Fría</h4>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">Aplica en chisperos para bodas y graduaciones.</p>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <code style="background:var(--card-bg); border:1px solid var(--border); padding:8px 14px; border-radius:8px; font-size:1rem; font-weight:800; color:var(--series-2); flex:1; text-align:center;">PIRO15VIP</code>
-            <button class="btn small primary" onclick="copyCouponCode('PIRO15VIP')">📋 Copiar</button>
-          </div>
-        </div>
-
-        <div style="background:linear-gradient(135deg, rgba(34,197,94,0.12), rgba(16,185,129,0.05)); border:2px dashed #22c55e; border-radius:16px; padding:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span class="pill ok" style="font-weight:700; background:rgba(34,197,94,0.2); color:#15803d;">Permanente</span>
-            <span style="font-size:24px;">🚚</span>
-          </div>
-          <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:#15803d;">Envío Gratis Nacional</h4>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">Envío estándar sin costo a todo México en compras mayores a $1,000.00 MXN.</p>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <code style="background:var(--card-bg); border:1px solid var(--border); padding:8px 14px; border-radius:8px; font-size:1rem; font-weight:800; color:#15803d; flex:1; text-align:center;">ENVIOMEX</code>
-            <button class="btn small success" onclick="copyCouponCode('ENVIOMEX')">📋 Copiar</button>
-          </div>
-        </div>
-
-        <div style="background:linear-gradient(135deg, rgba(59,130,246,0.12), rgba(37,99,235,0.05)); border:2px dashed #3b82f6; border-radius:16px; padding:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span class="pill info" style="font-weight:700;">Combo Especial</span>
-            <span style="font-size:24px;">🎉</span>
-          </div>
-          <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:#1d4ed8;">Combo Batucada Fiesta 200 Pzs</h4>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">Incluye 100 antifaces metálicos + 50 pulseras neón + 50 corbatas de fiesta por solo $899.00.</p>
-          <button class="btn primary" style="width:100%; justify-content:center; font-weight:700;" onclick="addPromoComboToCart()">🛒 Agregar Combo al Carrito</button>
-        </div>
+      <div id="clienteTabPromosGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
+        <div style="text-align:center; color:var(--text-muted); padding:30px 0; grid-column:1/-1;">Cargando promociones…</div>
       </div>
     </div>
 
@@ -2190,6 +2155,7 @@
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="categorias">Categorías</a>
         <a class="submenu-link" data-view="paginas-cms">Páginas CMS</a>
+        <a class="submenu-link" data-view="promociones">🎉 Promociones</a>
       </div>
     </div>
 
@@ -3190,6 +3156,29 @@
               <tr><th>ID</th><th>Título</th><th>Slug</th><th>En el footer</th><th style="text-align:center;">Acciones</th></tr>
             </thead>
             <tbody id="cmsPagesAdminTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW PROMOCIONES ================= -->
+    <section id="view-promociones" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+          <h2>🎉 Promociones y Cupones</h2>
+          <button class="btn primary" onclick="openPromoAdminModal(null)">➕ Nueva Promoción</button>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+          Estas son las promociones que ven los clientes en su portal ("Mi Perfil" → Promociones & Cupones). Solo las marcadas como activas se muestran.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Título</th><th>Tipo</th><th>Código</th><th>Vigencia</th><th style="text-align:center;">Activa</th><th style="text-align:center;">Acciones</th></tr>
+            </thead>
+            <tbody id="promosAdminTableBody">
               <!-- Dynamically populated -->
             </tbody>
           </table>
@@ -4320,6 +4309,70 @@
   </div>
 </div>
 
+<!-- ================= PROMO ADMIN MODAL ================= -->
+<div id="promoAdminModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px; max-height:88vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2 id="promoAdminModalTitle">Nueva Promoción</h2>
+      <button class="btn small" onclick="closePromoAdminModal()">✕</button>
+    </div>
+    <form onsubmit="event.preventDefault(); savePromoAdmin();">
+      <input type="hidden" id="promoAdminId">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Título *</label>
+          <input type="text" id="promoAdminTitulo" required style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Descripción</label>
+          <textarea id="promoAdminDescripcion" rows="2" style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Tipo</label>
+            <select id="promoAdminTipo" style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="descuento">Descuento (con código)</option>
+              <option value="envio">Envío</option>
+              <option value="combo">Combo (sin código, contacto directo)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Color</label>
+            <select id="promoAdminColor" style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="naranja">Naranja</option>
+              <option value="verde">Verde</option>
+              <option value="azul">Azul</option>
+              <option value="rosa">Rosa</option>
+              <option value="morado">Morado</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Código de cupón</label>
+            <input type="text" id="promoAdminCodigo" placeholder="Opcional" style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); text-transform:uppercase;">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Ícono (emoji)</label>
+            <input type="text" id="promoAdminIcono" placeholder="🎉" style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </div>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Texto de vigencia</label>
+          <input type="text" id="promoAdminVigencia" placeholder="Ej. Válido Septiembre 2026, o Permanente" style="width:100%; padding:9px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600;">
+          <input type="checkbox" id="promoAdminActivo" checked> Promoción activa (visible para clientes)
+        </label>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="submit" class="btn primary" style="flex:1; justify-content:center; font-weight:700;">💾 Guardar Promoción</button>
+        <button type="button" class="btn secondary" onclick="closePromoAdminModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ================= EMAIL TEMPLATE PREVIEW MODAL ================= -->
 <div id="emailTemplatePreviewModal" class="modal-overlay hidden">
   <div class="modal" style="max-width:640px; max-height:88vh; display:flex; flex-direction:column;">
@@ -4472,6 +4525,13 @@ async function sbInsert(table, body){
   if (!r.ok) throw new Error(`POST ${table} -> ${r.status}`);
   const rows = await r.json();
   return rows[0];
+}
+async function sbDelete(table, id){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'return=minimal' }
+  });
+  if (!r.ok) throw new Error(`DELETE ${table} -> ${r.status}`);
 }
 
 // GATE & ACCESS CONTROL
@@ -5007,6 +5067,7 @@ function switchView(viewName) {
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     categorias: ['Categorías', 'Organización del Catálogo'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop'],
+    promociones: ['Promociones y Cupones', 'Ofertas visibles en el portal de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
     proveedores: ['Proveedores', 'Directorio de Insumos'],
@@ -5037,6 +5098,7 @@ function switchView(viewName) {
   // Auto-fetch API data when opening specific views
   if (viewName === 'categorias') loadCategoriesFromAPI();
   if (viewName === 'paginas-cms') loadCmsPagesAdmin();
+  if (viewName === 'promociones') loadPromosAdmin();
   if (viewName === 'notificaciones') markNotificationsRead();
   if (viewName === 'clientes') loadCustomersFromAPI();
   if (viewName === 'pedidos') loadOrdersFromAPI();
@@ -6426,6 +6488,7 @@ function renderClientePortalAuthState() {
     renderClienteWelcomeBanner();
     renderClienteOrders();
     renderClienteCatalog();
+    renderClientePromos();
     updateClienteCartUI();
   } else {
     clienteAuthMode = 'login';
@@ -6606,11 +6669,52 @@ function copyCouponCode(code) {
   alert(`📋 ¡Código de cupón "${code}" copiado al portapapeles! Usar al realizar tu pedido.`);
 }
 
-function addPromoComboToCart() {
-  switchClienteTab('nuevo');
-  addToClienteCart(1);
-  addToClienteCart(2);
-  alert('🎉 ¡Combo Batucada Fiesta agregado al carrito con descuento!');
+// Promociones reales, administradas desde el Backoffice (tabla
+// promociones_web en Supabase) — antes estaban fijas en el código con
+// datos de muestra que nunca cambiaban.
+const PROMO_COLOR_THEMES = {
+  naranja: { border: '#e85d04', bg: 'linear-gradient(135deg, rgba(232,93,4,0.12), rgba(249,115,22,0.05))', text: 'var(--series-2)', pillBg: 'rgba(232,93,4,0.18)' },
+  verde: { border: '#22c55e', bg: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(16,185,129,0.05))', text: '#15803d', pillBg: 'rgba(34,197,94,0.2)' },
+  azul: { border: '#3b82f6', bg: 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(37,99,235,0.05))', text: '#1d4ed8', pillBg: 'rgba(59,130,246,0.18)' },
+  rosa: { border: '#d3007b', bg: 'linear-gradient(135deg, rgba(211,0,123,0.12), rgba(236,72,153,0.05))', text: '#d3007b', pillBg: 'rgba(211,0,123,0.18)' },
+  morado: { border: '#8e3fa8', bg: 'linear-gradient(135deg, rgba(142,63,168,0.12), rgba(126,34,206,0.05))', text: '#7c3aed', pillBg: 'rgba(142,63,168,0.18)' }
+};
+
+async function renderClientePromos() {
+  const grid = document.getElementById('clienteTabPromosGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 0; grid-column:1/-1;">Cargando promociones…</div>';
+  let promos = [];
+  try {
+    promos = await sbGet('promociones_web?activo=eq.true&order=orden.asc');
+    if (!Array.isArray(promos)) promos = [];
+  } catch (e) {
+    promos = [];
+  }
+  if (promos.length === 0) {
+    grid.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:30px 0; grid-column:1/-1;">No hay promociones activas por el momento.</div>';
+    return;
+  }
+  grid.innerHTML = promos.map(p => {
+    const theme = PROMO_COLOR_THEMES[p.color] || PROMO_COLOR_THEMES.naranja;
+    const action = p.codigo
+      ? `<div style="display:flex; gap:10px; align-items:center;">
+          <code style="background:var(--card-bg); border:1px solid var(--border); padding:8px 14px; border-radius:8px; font-size:1rem; font-weight:800; color:${theme.text}; flex:1; text-align:center;">${p.codigo}</code>
+          <button class="btn small primary" onclick="copyCouponCode('${p.codigo}')">📋 Copiar</button>
+        </div>`
+      : `<a class="btn primary" style="width:100%; justify-content:center; font-weight:700; text-decoration:none;" href="https://wa.me/525612622146?text=${encodeURIComponent('Hola, me interesa la promoción: ' + p.titulo)}" target="_blank" rel="noopener">💬 Preguntar por WhatsApp</a>`;
+    return `
+      <div style="background:${theme.bg}; border:2px dashed ${theme.border}; border-radius:16px; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          ${p.vigencia_texto ? `<span class="pill ok" style="font-weight:700; background:${theme.pillBg}; color:${theme.text};">${p.vigencia_texto}</span>` : '<span></span>'}
+          <span style="font-size:24px;">${p.icono || '🎉'}</span>
+        </div>
+        <h4 style="margin:0 0 6px 0; font-size:1.2rem; color:${theme.text};">${p.titulo}</h4>
+        ${p.descripcion ? `<p style="font-size:0.85rem; color:var(--text-secondary); margin:0 0 14px 0;">${p.descripcion}</p>` : ''}
+        ${action}
+      </div>
+    `;
+  }).join('');
 }
 
 function repeatCustomerOrder(folio) {
@@ -7635,6 +7739,120 @@ async function previewCmsPageAdmin(id) {
 
 function closeCmsPageAdminModal() {
   document.getElementById('cmsPageAdminModal')?.classList.add('hidden');
+}
+
+// ================= PROMOCIONES (Backoffice) =================
+// CRUD real sobre la tabla promociones_web en Supabase — reemplaza las
+// promociones que antes estaban fijas en el HTML del portal de clientes.
+let promosAdminCache = [];
+
+async function loadPromosAdmin() {
+  const tbody = document.getElementById('promosAdminTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:16px;">Cargando promociones…</td></tr>`;
+  try {
+    promosAdminCache = await sbGet('promociones_web?order=orden.asc');
+    if (!Array.isArray(promosAdminCache)) promosAdminCache = [];
+  } catch (e) {
+    promosAdminCache = [];
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger, #dc2626); padding:16px;">No se pudieron cargar las promociones: ${e.message}</td></tr>`;
+    return;
+  }
+  renderPromosAdminTable();
+}
+
+function renderPromosAdminTable() {
+  const tbody = document.getElementById('promosAdminTableBody');
+  if (!tbody) return;
+  if (promosAdminCache.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:16px;">Sin promociones creadas todavía.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = promosAdminCache.map(p => `
+    <tr>
+      <td><b>${p.icono || '🎉'} ${p.titulo}</b></td>
+      <td style="text-transform:capitalize;">${p.tipo}</td>
+      <td>${p.codigo ? `<code>${p.codigo}</code>` : '—'}</td>
+      <td>${p.vigencia_texto || '—'}</td>
+      <td style="text-align:center;">
+        <span class="pill ${p.activo ? 'ok' : 'warn'}" style="cursor:pointer;" onclick="togglePromoActivo(${p.id}, ${p.activo})">${p.activo ? 'Activa' : 'Inactiva'}</span>
+      </td>
+      <td style="text-align:center; white-space:nowrap;">
+        <button class="btn small" onclick="openPromoAdminModal(${p.id})">✏️ Editar</button>
+        <button class="btn small danger" onclick="deletePromoAdmin(${p.id})">🗑️</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function togglePromoActivo(id, current) {
+  try {
+    await sbPatch('promociones_web', id, { activo: !current });
+    await loadPromosAdmin();
+  } catch (e) {
+    alert('❌ No se pudo actualizar la promoción: ' + e.message);
+  }
+}
+
+function openPromoAdminModal(id) {
+  const modal = document.getElementById('promoAdminModal');
+  if (!modal) return;
+  const promo = id ? promosAdminCache.find(p => p.id === id) : null;
+  document.getElementById('promoAdminModalTitle').textContent = promo ? 'Editar Promoción' : 'Nueva Promoción';
+  document.getElementById('promoAdminId').value = promo ? promo.id : '';
+  document.getElementById('promoAdminTitulo').value = promo?.titulo || '';
+  document.getElementById('promoAdminDescripcion').value = promo?.descripcion || '';
+  document.getElementById('promoAdminTipo').value = promo?.tipo || 'descuento';
+  document.getElementById('promoAdminColor').value = promo?.color || 'naranja';
+  document.getElementById('promoAdminCodigo').value = promo?.codigo || '';
+  document.getElementById('promoAdminIcono').value = promo?.icono || '🎉';
+  document.getElementById('promoAdminVigencia').value = promo?.vigencia_texto || '';
+  document.getElementById('promoAdminActivo').checked = promo ? !!promo.activo : true;
+  modal.classList.remove('hidden');
+}
+
+function closePromoAdminModal() {
+  document.getElementById('promoAdminModal')?.classList.add('hidden');
+}
+
+async function savePromoAdmin() {
+  const id = document.getElementById('promoAdminId').value;
+  const payload = {
+    titulo: document.getElementById('promoAdminTitulo').value.trim(),
+    descripcion: document.getElementById('promoAdminDescripcion').value.trim(),
+    tipo: document.getElementById('promoAdminTipo').value,
+    color: document.getElementById('promoAdminColor').value,
+    codigo: document.getElementById('promoAdminCodigo').value.trim().toUpperCase() || null,
+    icono: document.getElementById('promoAdminIcono').value.trim() || '🎉',
+    vigencia_texto: document.getElementById('promoAdminVigencia').value.trim(),
+    activo: document.getElementById('promoAdminActivo').checked
+  };
+  if (!payload.titulo) {
+    alert('El título es obligatorio.');
+    return;
+  }
+  try {
+    if (id) {
+      await sbPatch('promociones_web', id, payload);
+    } else {
+      payload.orden = promosAdminCache.length;
+      await sbInsert('promociones_web', payload);
+    }
+    closePromoAdminModal();
+    await loadPromosAdmin();
+  } catch (e) {
+    alert('❌ No se pudo guardar la promoción: ' + e.message);
+  }
+}
+
+async function deletePromoAdmin(id) {
+  if (!confirm('¿Eliminar esta promoción? Los clientes dejarán de verla.')) return;
+  try {
+    await sbDelete('promociones_web', id);
+    await loadPromosAdmin();
+  } catch (e) {
+    alert('❌ No se pudo eliminar la promoción: ' + e.message);
+  }
 }
 
 // ================= PLANTILLAS DE CORREO (Backoffice) =================
