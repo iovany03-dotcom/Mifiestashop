@@ -1596,7 +1596,7 @@
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
               <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayEfectivo" onclick="setCheckoutPayMethod('Efectivo contra entrega')">💵 Efectivo contra entrega</button>
               <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTransferencia" onclick="setCheckoutPayMethod('Transferencia bancaria')">🏦 Transferencia</button>
-              <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTarjeta" onclick="setCheckoutPayMethod('Tarjeta en línea')">💳 Tarjeta</button>
+              <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTarjeta" onclick="setCheckoutPayMethod('Mercado Pago')">💳 Tarjeta (Mercado Pago)</button>
             </div>
           </div>
           <div id="checkoutErrorMsg" class="hidden" style="color:#dc2626; font-size:13px; font-weight:600;"></div>
@@ -9768,7 +9768,7 @@ function setCheckoutPayMethod(method){
   checkoutPayMethod = method;
   setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), method === 'Efectivo contra entrega');
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), method === 'Transferencia bancaria');
-  setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Tarjeta en línea');
+  setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Mercado Pago');
 }
 
 // Los 32 estados de México, para el selector de Estado en el checkout. Se
@@ -10065,6 +10065,30 @@ async function submitStorefrontOrder(){
 
   const { folio, total, items: verifiedItems } = order;
 
+  if (checkoutPayMethod === 'Mercado Pago') {
+    try {
+      const mpItems = verifiedItems.map(i => ({ name: i.name, qty: i.qty, price: i.price }));
+      if (checkoutShippingCost > 0) mpItems.push({ name: 'Envío (' + (checkoutShippingCarrier || 'paquetería') + ')', qty: 1, price: checkoutShippingCost });
+      const mpRes = await fetch('/api/mp-crear-preferencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folio, items: mpItems, payerEmail: email, payerName: name, siteUrl: window.location.origin }),
+      });
+      const mpData = await mpRes.json();
+      if (mpData.init_point) {
+        window.location.href = mpData.init_point;
+        return;
+      }
+      errEl.textContent = 'No se pudo iniciar el pago con Mercado Pago: ' + (mpData.error || 'intenta de nuevo o elige otro método de pago.');
+      errEl.classList.remove('hidden');
+      return;
+    } catch (e) {
+      errEl.textContent = 'No se pudo conectar con Mercado Pago. Intenta de nuevo o elige otro método de pago.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+  }
+
   fetch('/api/enviar-correo', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -10090,6 +10114,30 @@ async function submitStorefrontOrder(){
   cart = [];
   updateStoreCartBadge();
   showStorefrontPage('storefrontOrderConfirmPage');
+}
+
+async function handleMercadoPagoReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const mpStatus = params.get('mp_status');
+  const mpFolio = params.get('mp_folio');
+  const mpTotal = parseFloat(params.get('mp_total'));
+  if (!mpStatus || !mpFolio) return;
+  history.replaceState({}, '', window.location.pathname);
+
+  if (mpStatus === 'approved') {
+    document.getElementById('confirmFolio').textContent = mpFolio;
+    document.getElementById('confirmTotal').textContent = isNaN(mpTotal) ? '' : fmtMoney(mpTotal);
+    showStorefrontPage('storefrontOrderConfirmPage');
+    if (!isNaN(mpTotal)) {
+      trackPixelEvent('Purchase', { value: mpTotal, currency: 'MXN' });
+    }
+  } else if (mpStatus === 'pending') {
+    showPublicStorefront();
+    alert('Tu pago con Mercado Pago quedó pendiente de confirmación. Te avisaremos por correo en cuanto se acredite (pedido ' + mpFolio + ').');
+  } else {
+    showPublicStorefront();
+    alert('El pago con Mercado Pago no se completó. Tu pedido ' + mpFolio + ' quedó guardado — puedes intentar de nuevo o elegir otro método de pago.');
+  }
 }
 
 async function submitNewsletterSignup(){
@@ -10873,6 +10921,7 @@ loadClienteSession();
 // el hash de la URL (history.replaceState) apenas procesa el resultado.
 const oauthRedirectPending = window.location.hash.includes('access_token') || window.location.hash.includes('error');
 handleOAuthRedirect();
+handleMercadoPagoReturn();
 loadCmsPagesForFooter();
 loadMetaPixelConfig();
 populateCheckoutEstadoSelect();
