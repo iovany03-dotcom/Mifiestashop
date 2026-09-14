@@ -2265,6 +2265,9 @@
         
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
+          <div style="display:flex; justify-content:flex-end;">
+            <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+          </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
             <select id="posWarehouseSelect">
@@ -7504,18 +7507,33 @@ if(document.getElementById('invWhSelect')) document.getElementById('invWhSelect'
 if(document.getElementById('invStatusSelect')) document.getElementById('invStatusSelect').addEventListener('change', renderInventarioTable);
 
 // OVERRIDE POS PRODUCT RENDERER TO USE LIVE PRODUCTS WITH IMAGE FALLBACK
+//
+// Antes se renderizaban TODOS los productos del catálogo de una sola vez
+// (hasta 500), lo que hacía muy lenta la carga y, en celular, empujaba el
+// panel del carrito (con el botón de Historial de Tickets) muy abajo,
+// prácticamente fuera de vista sin hacer scroll. Ahora, al entrar al POS
+// sin buscar ni elegir categoría, solo se muestran los primeros 10
+// productos; el resto aparece según se busque por nombre/SKU o se
+// seleccione una categoría.
+const POS_BROWSE_LIMIT = 10;
+const POS_SEARCH_LIMIT = 60;
+
 function renderProducts(category = 'all', query = '') {
   const grid = document.getElementById('posProductGrid');
   if(!grid) return;
   grid.innerHTML = '';
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const isBrowsingAll = category === 'all' && !query.trim();
 
-  const filtered = dataset.filter(p => {
+  const matched = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
     const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
     return matchCat && matchQ;
   });
+
+  const limit = isBrowsingAll ? POS_BROWSE_LIMIT : POS_SEARCH_LIMIT;
+  const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
     grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
@@ -7527,10 +7545,10 @@ function renderProducts(category = 'all', query = '') {
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
     card.innerHTML = `
-      <img src="${p.img}" alt="${p.name}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
-        <div class="p-title">${p.name}</div>
-        <div class="p-sku">SKU / Cód: ${p.sku}</div>
+        <div class="p-title">${escapeHtml(p.name)}</div>
+        <div class="p-sku">SKU / Cód: ${escapeHtml(p.sku)}</div>
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
@@ -7539,6 +7557,15 @@ function renderProducts(category = 'all', query = '') {
     `;
     grid.appendChild(card);
   });
+
+  if (matched.length > filtered.length) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'grid-column:1/-1; padding:14px; text-align:center; color:var(--text-muted); font-size:12.5px;';
+    hint.textContent = isBrowsingAll
+      ? `Mostrando ${filtered.length} de ${matched.length} productos — usa el buscador o elige una categoría para ver más.`
+      : `Mostrando los primeros ${filtered.length} de ${matched.length} resultados — afina tu búsqueda para acotar.`;
+    grid.appendChild(hint);
+  }
 }
 
 // SEARCH & CATEGORY LISTENERS
