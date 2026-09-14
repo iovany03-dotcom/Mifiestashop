@@ -128,6 +128,14 @@ function titleFromSlug(slug) {
   return words.replace(/\b\w/g, c => c.toUpperCase());
 }
 
+// Algunas páginas también tienen el meta_title lleno pero con el valor
+// genérico "Página" tal cual (dejado por error al crear la página). Se
+// trata igual que si estuviera vacío, para no mostrar ese texto sin
+// sentido como título real.
+function isGenericTitle(title) {
+  return !title || normalize(title).trim() === 'pagina';
+}
+
 function fallbackContentFor(title) {
   const norm = normalize(title);
   const match = FALLBACK_CONTENT.find(f => norm.includes(f.keyword));
@@ -200,7 +208,8 @@ module.exports = async function handler(req, res) {
       }
 
       const linkRewrite = firstLangValue(page.link_rewrite, '');
-      const title = firstLangValue(page.meta_title, '') || titleFromSlug(linkRewrite);
+      const rawTitle = firstLangValue(page.meta_title, '');
+      const title = isGenericTitle(rawTitle) ? titleFromSlug(linkRewrite) : rawTitle;
       let content = firstLangValue(page.content, '');
       if (!content.trim()) content = fallbackContentFor(title);
 
@@ -231,7 +240,7 @@ module.exports = async function handler(req, res) {
         const slug = firstLangValue(p.link_rewrite, '');
         return {
           id: p.id,
-          title: firstLangValue(p.meta_title, '') || titleFromSlug(slug),
+          title: isGenericTitle(firstLangValue(p.meta_title, '')) ? titleFromSlug(slug) : firstLangValue(p.meta_title, ''),
           slug
         };
       })
