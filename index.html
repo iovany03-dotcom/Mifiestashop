@@ -3195,6 +3195,8 @@
           <h2>Directorio de Clientes</h2>
           <button class="btn primary" onclick="loadCustomersFromAPI()">Recargar Clientes</button>
         </div>
+        <input type="search" id="customersSearchInput" placeholder="Buscar por nombre o correo…" oninput="filterCustomersTable(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
+        <div id="customersCountNote" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -7681,10 +7683,24 @@ async function loadCategoriesFromAPI(){
   `).join('');
 }
 
+// Algunas tiendas tienen varios miles de clientes reales: renderizar todas
+// las filas de golpe (o llenar el <select> del POS con miles de <option>)
+// deja la página muy lenta. Se cachea la lista completa y solo se
+// renderizan hasta CUSTOMERS_RENDER_LIMIT a la vez; el resto aparece
+// buscando por nombre o correo. El selector de cliente del POS también se
+// limita a los más recientes (alcanza de sobra para mostrador/ventas del
+// día a día).
+const CUSTOMERS_RENDER_LIMIT = 50;
+const CUSTOMERS_SEARCH_LIMIT = 150;
+const POS_CUSTOMER_SELECT_LIMIT = 200;
+let customersCache = [];
+
 async function loadCustomersFromAPI(){
   const tbody = document.getElementById('customersTableBody');
   const select = document.getElementById('posCustomerSelect');
-  
+  const searchInput = document.getElementById('customersSearchInput');
+  if (searchInput) searchInput.value = '';
+
   let list = [];
   try {
     const r = await fetch('/api/clientes');
@@ -7695,23 +7711,54 @@ async function loadCustomersFromAPI(){
   } catch(e) {}
 
   if(list.length === 0) list = DEFAULT_CUSTOMERS;
-
-  if(tbody) {
-    tbody.innerHTML = list.map(c => `
-      <tr>
-        <td><b>#${escapeHtml(c.id)}</b></td>
-        <td><b>${escapeHtml(c.name)}</b></td>
-        <td>${escapeHtml(c.email)}</td>
-        <td>${escapeHtml(c.rfc)}</td>
-        <td>${escapeHtml(c.date)}</td>
-        <td><span class="pill ok">Activo</span></td>
-      </tr>
-    `).join('');
-  }
+  customersCache = list;
+  renderCustomersTable(list);
 
   if(select && list.length > 0) {
-    select.innerHTML = '<option value="mostrador">Cliente Mostrador (General)</option>' + list.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
+    const forSelect = list.slice(0, POS_CUSTOMER_SELECT_LIMIT);
+    select.innerHTML = '<option value="mostrador">Cliente Mostrador (General)</option>' + forSelect.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
   }
+}
+
+function renderCustomersTable(list){
+  const tbody = document.getElementById('customersTableBody');
+  const note = document.getElementById('customersCountNote');
+  if (!tbody) return;
+
+  const isBrowsingAll = customersCache === list;
+  const limit = isBrowsingAll ? CUSTOMERS_RENDER_LIMIT : CUSTOMERS_SEARCH_LIMIT;
+  const shown = list.slice(0, limit);
+
+  tbody.innerHTML = shown.map(c => `
+    <tr>
+      <td><b>#${escapeHtml(c.id)}</b></td>
+      <td><b>${escapeHtml(c.name)}</b></td>
+      <td>${escapeHtml(c.email)}</td>
+      <td>${escapeHtml(c.rfc)}</td>
+      <td>${escapeHtml(c.date)}</td>
+      <td><span class="pill ok">Activo</span></td>
+    </tr>
+  `).join('');
+
+  if (note) {
+    if (list.length === 0) {
+      note.textContent = customersCache.length === 0 ? '' : 'Ningún cliente coincide con tu búsqueda.';
+    } else if (list.length > shown.length) {
+      note.textContent = isBrowsingAll
+        ? `Mostrando ${shown.length} de ${list.length} clientes — usa el buscador para encontrar a alguien en particular.`
+        : `Mostrando los primeros ${shown.length} de ${list.length} resultados — afina tu búsqueda para acotar.`;
+    } else {
+      note.textContent = `${list.length} cliente${list.length === 1 ? '' : 's'} en total.`;
+    }
+  }
+}
+
+function filterCustomersTable(query){
+  const q = normalizeEs(query || '');
+  const filtered = q
+    ? customersCache.filter(c => normalizeEs(c.name).includes(q) || normalizeEs(c.email).includes(q))
+    : customersCache;
+  renderCustomersTable(filtered);
 }
 
 let loadedOrdersList = [];

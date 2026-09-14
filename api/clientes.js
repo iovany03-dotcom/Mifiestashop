@@ -24,8 +24,15 @@ module.exports = async function handler(req, res) {
   // by this field"), así que se ordena por id descendente — en PrestaShop
   // los ids son consecutivos según se crea la cuenta, así que sigue
   // mostrando primero a los clientes más recientes.
-  const PAGE_SIZE = 300;
-  const MAX_PAGES = 20; // hasta 6000 clientes, de sobra para esta tienda
+  //
+  // Esta tienda tiene varios miles de clientes reales (más de los 6000 que
+  // un primer intento con un límite fijo de páginas llegó a cortar), así
+  // que en vez de un número fijo de páginas se pagina hasta agotar los
+  // resultados, con un presupuesto de tiempo para no exceder el límite de
+  // ejecución de la función serverless.
+  const PAGE_SIZE = 500;
+  const TIME_BUDGET_MS = 8000;
+  const startedAt = Date.now();
   const fields = '[id,firstname,lastname,email,date_add,active]';
 
   // El RFC/identificador fiscal en PrestaShop se guarda en la dirección del
@@ -36,9 +43,15 @@ module.exports = async function handler(req, res) {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const headers = { Authorization: `Basic ${auth}` };
 
-    // Trae TODOS los clientes paginando, no solo los primeros 200.
+    // Trae TODOS los clientes paginando, no solo los primeros 200 (ni un
+    // número fijo de páginas): sigue mientras la página venga llena y
+    // quede presupuesto de tiempo; si se agota el tiempo antes de terminar,
+    // se devuelve lo recabado hasta ahí en vez de fallar por completo.
     let rawCust = [];
-    for (let page = 0; page < MAX_PAGES; page++) {
+    let page = 0;
+    let truncatedByTime = false;
+    while (true) {
+      if (Date.now() - startedAt > TIME_BUDGET_MS) { truncatedByTime = true; break; }
       const url = `${baseUrl}/api/customers?display=${encodeURIComponent(fields)}&sort=[id_DESC]&limit=${page * PAGE_SIZE},${PAGE_SIZE}&output_format=JSON`;
       const r = await fetch(url, { headers });
       if (!r.ok) {
@@ -49,6 +62,7 @@ module.exports = async function handler(req, res) {
       const batch = Array.isArray(data.customers) ? data.customers : [];
       rawCust = rawCust.concat(batch);
       if (batch.length < PAGE_SIZE) break; // última página
+      page++;
     }
 
     const rfcByCustomer = {};
@@ -74,7 +88,7 @@ module.exports = async function handler(req, res) {
       active: c.active === '1' || c.active === 1
     }));
 
-    res.status(200).json({ customers, count: customers.length });
+    res.status(200).json({ customers, count: customers.length, truncated: truncatedByTime });
   } catch (err) {
     res.status(200).json({
       fallback: true,
