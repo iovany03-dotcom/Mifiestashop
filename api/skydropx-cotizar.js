@@ -202,6 +202,20 @@ module.exports = async function handler(req, res) {
     throw lastError || new Error('No se pudo crear la cotización en Skydropx');
   }
 
+  // Combinaciones de paquetería/servicio que nunca deben mostrarse (por
+  // pedido explícito del usuario: "Punto_post — Standard" devuelve
+  // cotizaciones irrealmente bajas, ej. $1.16 MXN, que no son un envío
+  // real utilizable).
+  const BLOCKED_CARRIER_SERVICES = [
+    { carrier: 'punto_post', service: 'standard' }
+  ];
+
+  function isBlockedRate(carrier, service) {
+    const c = String(carrier || '').toLowerCase();
+    const s = String(service || '').toLowerCase();
+    return BLOCKED_CARRIER_SERVICES.some(b => c.includes(b.carrier) && s.includes(b.service));
+  }
+
   function parseRates(rawRates) {
     return rawRates
       .filter((r) => r.success !== false)
@@ -211,7 +225,7 @@ module.exports = async function handler(req, res) {
         price: parseFloat(r.total_pricing || r.total || r.amount || 0),
         days: r.days || r.delivery_estimate || null
       }))
-      .filter((r) => r.price > 0)
+      .filter((r) => r.price > 0 && !isBlockedRate(r.carrier, r.service))
       .sort((a, b) => a.price - b.price);
   }
 
