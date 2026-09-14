@@ -221,6 +221,11 @@ module.exports = async function handler(req, res) {
         return;
       }
 
+      if (req.query.debug === '1') {
+        res.status(200).json({ debug: true, raw: page });
+        return;
+      }
+
       const linkRewrite = firstLangValue(page.link_rewrite, '');
       const rawTitle = firstLangValue(page.meta_title, '');
       const title = isGenericTitle(rawTitle) ? titleFromSlug(linkRewrite) : rawTitle;
