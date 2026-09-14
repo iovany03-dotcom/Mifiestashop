@@ -3150,6 +3150,9 @@
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
           Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda y Legal") están marcadas.
         </p>
+        <div style="margin-bottom:14px;">
+          <input type="search" id="cmsPagesAdminSearch" placeholder="🔍 Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -7698,9 +7701,13 @@ async function loadCmsPagesForFooter() {
 }
 
 // ============== PÁGINAS CMS — SECCIÓN DEL BACKOFFICE ==============
+let cmsPagesAdminCache = [];
+
 async function loadCmsPagesAdmin() {
   const tbody = document.getElementById('cmsPagesAdminTableBody');
+  const searchInput = document.getElementById('cmsPagesAdminSearch');
   if (!tbody) return;
+  if (searchInput) searchInput.value = '';
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   try {
@@ -7709,29 +7716,48 @@ async function loadCmsPagesAdmin() {
     const pages = Array.isArray(data.pages) ? data.pages : [];
 
     if (data.fallback) {
+      cmsPagesAdminCache = [];
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Configure PS_API_KEY en Vercel para ver las páginas de PrestaShop.</td></tr>';
       return;
     }
-    if (pages.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No hay páginas activas.</td></tr>';
-      return;
-    }
 
-    tbody.innerHTML = pages.map(p => `
-      <tr>
-        <td><b>#${p.id}</b></td>
-        <td>${p.title}</td>
-        <td><code>${p.slug}</code></td>
-        <td>${p.inFooter ? '<span class="pill ok">✔️ Sí</span>' : '<span class="pill">—</span>'}</td>
-        <td style="text-align:center; white-space:nowrap;">
-          <button class="btn small primary" onclick="previewCmsPageAdmin('${p.id}')">👁️ Ver</button>
-          <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('/pagina/${p.slug}', '_blank')">🔗 Abrir</button>
-        </td>
-      </tr>
-    `).join('');
+    cmsPagesAdminCache = pages;
+    renderCmsPagesAdminTable(pages);
   } catch (e) {
+    cmsPagesAdminCache = [];
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudieron cargar las páginas.</td></tr>';
   }
+}
+
+function renderCmsPagesAdminTable(pages) {
+  const tbody = document.getElementById('cmsPagesAdminTableBody');
+  if (!tbody) return;
+
+  if (pages.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">${cmsPagesAdminCache.length === 0 ? 'No hay páginas activas.' : 'Ninguna página coincide con tu búsqueda.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = pages.map(p => `
+    <tr>
+      <td><b>#${p.id}</b></td>
+      <td>${p.title}</td>
+      <td><code>${p.slug}</code></td>
+      <td>${p.inFooter ? '<span class="pill ok">✔️ Sí</span>' : '<span class="pill">—</span>'}</td>
+      <td style="text-align:center; white-space:nowrap;">
+        <button class="btn small primary" onclick="previewCmsPageAdmin('${p.id}')">👁️ Ver</button>
+        <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('/pagina/${p.slug}', '_blank')">🔗 Abrir</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterCmsPagesAdmin(query) {
+  const q = normalizeEs(query || '');
+  const filtered = q
+    ? cmsPagesAdminCache.filter(p => normalizeEs(p.title).includes(q) || normalizeEs(p.slug).includes(q))
+    : cmsPagesAdminCache;
+  renderCmsPagesAdminTable(filtered);
 }
 
 async function previewCmsPageAdmin(id) {
