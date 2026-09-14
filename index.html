@@ -602,8 +602,8 @@
   }
   .pos-card img {
     width: 100%;
-    height: 100px;
-    object-fit: cover;
+    height: 110px;
+    object-fit: contain;
     border-radius: 8px;
     margin-bottom: 8px;
     background: var(--plane);
@@ -755,6 +755,7 @@
   .cms-page-content table td, .cms-page-content table th { border: 1px solid #f0e6ef; padding: 8px 10px; }
 
   .hidden { display: none !important; }
+  .perm-hidden { display: none !important; }
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
@@ -2244,6 +2245,7 @@
       <span class="sub" id="currentViewSub">— Punto de Venta en vivo</span>
     </div>
     <div class="header-actions">
+      <span id="staffSessionLabel" class="hidden" style="font-size:12px; color:var(--text-secondary); margin-right:4px;"></span>
       <button class="btn small" id="notifBellBtn" onclick="switchView('notificaciones')" title="Notificaciones" style="position:relative;">
         
         <span id="notifBellBadge" class="hidden" style="position:absolute; top:-6px; right:-6px; background:var(--series-2); color:#fff; font-size:10px; font-weight:800; min-width:16px; height:16px; border-radius:999px; display:flex; align-items:center; justify-content:center; padding:0 3px;">0</span>
@@ -2290,7 +2292,10 @@
         <div class="pos-cart">
           <div class="cart-header">
             <h3>Orden de Venta</h3>
-            <button class="btn small" onclick="clearCart()">Vaciar</button>
+            <div style="display:flex; gap:6px;">
+              <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+              <button class="btn small" onclick="clearCart()">Vaciar</button>
+            </div>
           </div>
 
           <div style="padding: 10px 16px; background: var(--plane); border-bottom: 1px solid var(--border);">
@@ -3037,19 +3042,18 @@
     <!-- ================= VIEW 6: PERSONAL ================= -->
     <section id="view-personal" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
           <h2>Equipo de Trabajo y Cajeros</h2>
-          <button class="btn primary" onclick="alert('Formulario para registrar nuevo cajero o personal')">+ Registrar Personal</button>
+          <button class="btn primary" onclick="openPersonalModal()">+ Registrar Personal</button>
         </div>
+        <input type="search" id="personalSearchInput" placeholder="Buscar por nombre, correo o rol…" oninput="filterPersonalTable(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Bodega Asignada</th><th>Estado</th></tr>
+              <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Bodega Asignada</th><th>Estado</th><th>Permisos</th><th>Acciones</th></tr>
             </thead>
-            <tbody>
-              <tr><td><b>Iovany Fernández</b></td><td>iovany@mifiestashop.com</td><td>Administrador General</td><td>Todas</td><td><span class="pill ok">En Turno</span></td></tr>
-              <tr><td><b>Ana Morales</b></td><td>ana.caja@mifiestashop.com</td><td>Cajero Senior</td><td>Bodega Puebla</td><td><span class="pill ok">En Turno</span></td></tr>
-              <tr><td><b>Roberto Ruiz</b></td><td>roberto@mifiestashop.com</td><td>Encargado Almacén</td><td>CDMX Rumania</td><td><span class="pill ok">Activo</span></td></tr>
+            <tbody id="personalTableBody">
+              <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3676,20 +3680,20 @@
     <!-- 11. EQUIPO -->
     <section id="view-param-avanzados-equipo" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Personal & Equipo de Trabajo</h2>
-          <button class="btn primary" onclick="alert('Abriendo formulario para nuevo usuario del equipo...')">Nuevo Empleado</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <h2>Personal & Permisos de Equipo</h2>
+          <button class="btn primary" onclick="switchView('personal'); document.querySelector('[data-view=personal]')?.classList.add('active');">Ir a Personal & Cajeros</button>
         </div>
+        <p style="color:var(--text-secondary); font-size:13px; margin-bottom:16px;">
+          El alta de empleados, sus roles, bodega asignada, PIN de acceso y los permisos por sección de cada persona se gestionan desde <b>Contactos & Equipo → Personal / Equipo</b>. Aquí puedes ver el mismo listado en vivo.
+        </p>
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Empleado</th><th>Correo</th><th>Rol / Perfil</th><th>Almacén Asignado</th><th>Estado</th></tr>
+              <tr><th>Empleado</th><th>Correo</th><th>Rol / Perfil</th><th>Almacén Asignado</th><th>Estado</th><th>Permisos</th></tr>
             </thead>
-            <tbody>
-              <tr><td><b>Iovany Fernández</b></td><td>iovany@mifiestashop.com</td><td>Administrador General</td><td>Todas las Bodegas</td><td><span class="pill ok">En Turno</span></td></tr>
-              <tr><td><b>Ana Morales</b></td><td>ana.caja@mifiestashop.com</td><td>Cajero Senior</td><td>Bodega Puebla</td><td><span class="pill ok">En Turno</span></td></tr>
-              <tr><td><b>Roberto Ruiz</b></td><td>roberto@mifiestashop.com</td><td>Encargado Almacén</td><td>CDMX Rumania</td><td><span class="pill ok">Activo</span></td></tr>
-              <tr><td><b>Carlos Mendoza</b></td><td>carlos.qro@mifiestashop.com</td><td>Encargado Almacén</td><td>Querétaro</td><td><span class="pill ok">Activo</span></td></tr>
+            <tbody id="personalTableBodyAvanzado">
+              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3793,6 +3797,19 @@
 
     <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); text-align:center; font-size:12px; color:var(--text-muted);">
       Usuario: <code>i.ovany.03@gmail.com</code> | Contraseña: <code>Soyelgio02.</code>
+    </div>
+
+    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+      <a href="#" onclick="event.preventDefault(); toggleStaffLoginForm();" style="font-size:12.5px; color:var(--series-2); text-decoration:none; font-weight:600;">¿Eres cajero o parte del equipo? Accede con tu PIN</a>
+      <div id="staffLoginArea" class="hidden" style="margin-top:12px;">
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Selecciona tu nombre:</label>
+        <select id="staffLoginSelect" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; margin-bottom:10px;">
+          <option value="">Cargando personal…</option>
+        </select>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">PIN de acceso:</label>
+        <input type="password" id="staffLoginPin" inputmode="numeric" maxlength="6" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; margin-bottom:12px;">
+        <button type="button" class="btn primary" style="width:100%; justify-content:center;" onclick="handleStaffLogin()">Entrar como Personal</button>
+      </div>
     </div>
   </div>
 </div>
@@ -4290,6 +4307,84 @@
   </div>
 </div>
 
+<!-- ================= TICKET HISTORIAL MODAL ================= -->
+<div class="modal-overlay hidden" id="ticketHistorialModal">
+  <div class="modal" style="max-width:760px; width:94%; max-height:85vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2>Historial de Tickets POS</h2>
+      <button class="btn small" onclick="closeTicketHistorialModal()">✕</button>
+    </div>
+    <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="ticketHistorialTableBody">
+          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= REGISTRAR / EDITAR PERSONAL MODAL ================= -->
+<div class="modal-overlay hidden" id="personalModal">
+  <div class="modal" style="max-width:640px; width:94%; max-height:88vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2 id="personalModalTitle">Registrar Personal</h2>
+      <button class="btn small" onclick="closePersonalModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="personalEditId" value="">
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+      <div>
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Nombre completo:</label>
+        <input type="text" id="personalNombre" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div>
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Correo electrónico:</label>
+        <input type="email" id="personalEmail" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div>
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">PIN de acceso (4-6 dígitos):</label>
+        <input type="text" id="personalPin" inputmode="numeric" maxlength="6" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div>
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Rol / Perfil:</label>
+        <input type="text" id="personalRol" placeholder="Ej: Cajero Senior" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      </div>
+      <div>
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Bodega asignada:</label>
+        <select id="personalBodega" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          <option value="Todas">Todas</option>
+          <option value="Bodega Puebla">Bodega Puebla</option>
+          <option value="CDMX Rumania">CDMX Rumania</option>
+          <option value="Querétaro">Querétaro</option>
+          <option value="Atizapán">Atizapán</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Estado:</label>
+        <select id="personalEstado" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:8px; font-size:13px; font-weight:700; color:var(--text-primary);">Permisos de acceso al Backoffice:</div>
+    <p style="font-size:12px; color:var(--text-secondary); margin-top:0; margin-bottom:10px;">Marca únicamente las secciones del panel que esta persona podrá ver y usar.</p>
+    <div id="personalPermisosContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;"></div>
+
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn" onclick="closePersonalModal()">Cancelar</button>
+      <button class="btn primary" onclick="savePersonal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= CMS PAGE PREVIEW MODAL ================= -->
 <div id="cmsPageAdminModal" class="modal-overlay hidden">
   <div class="modal" style="max-width:720px; max-height:85vh; overflow-y:auto;">
@@ -4526,6 +4621,299 @@ async function sbDelete(table, id){
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'return=minimal' }
   });
   if (!r.ok) throw new Error(`DELETE ${table} -> ${r.status}`);
+}
+
+// ================= PERSONAL & PERMISOS DE EQUIPO =================
+const PERMISSION_GROUPS = [
+  { group: 'Vender', items: [
+    { key: 'pos', label: 'Sistema POS' },
+    { key: 'pedidos', label: 'Pedidos / Remisiones' },
+    { key: 'envios', label: 'Envíos & Skydropx' },
+    { key: 'facturacion', label: 'Facturación' },
+    { key: 'costos', label: 'Costos y Gastos' },
+    { key: 'carritos', label: 'Carritos de Compra' }
+  ]},
+  { group: 'Catálogo & Stock', items: [
+    { key: 'productos', label: 'Productos' },
+    { key: 'bodegas', label: 'Almacenes / Bodegas' },
+    { key: 'categorias', label: 'Categorías' },
+    { key: 'paginas-cms', label: 'Páginas CMS' },
+    { key: 'promociones', label: 'Promociones' }
+  ]},
+  { group: 'Contactos & Equipo', items: [
+    { key: 'personal', label: 'Personal / Equipo' },
+    { key: 'clientes', label: 'Clientes' },
+    { key: 'proveedores', label: 'Proveedores' }
+  ]},
+  { group: 'Parámetros de la Tienda', items: [
+    { key: 'param-tienda-general', label: 'General' },
+    { key: 'param-tienda-pedidos', label: 'Config. Pedidos' },
+    { key: 'param-tienda-productos', label: 'Config. Productos' },
+    { key: 'param-tienda-clientes', label: 'Ajustes de Clientes' },
+    { key: 'param-tienda-contacto', label: 'Contacto' },
+    { key: 'param-tienda-seo', label: 'Tráfico & SEO' },
+    { key: 'param-tienda-buscar', label: 'Buscar' }
+  ]},
+  { group: 'Parámetros Avanzados', items: [
+    { key: 'param-avanzados-rendimiento', label: 'Rendimiento' },
+    { key: 'param-avanzados-correo', label: 'Correo' },
+    { key: 'plantillas-correo', label: 'Plantillas de Correo' },
+    { key: 'param-avanzados-importar', label: 'Importar' },
+    { key: 'param-avanzados-equipo', label: 'Equipo' },
+    { key: 'param-avanzados-registros', label: 'Registros' },
+    { key: 'param-avanzados-webservice', label: 'Webservice' }
+  ]},
+  { group: 'Otros', items: [
+    { key: 'dashboard', label: 'Estadísticas' },
+    { key: 'notificaciones', label: 'Notificaciones' },
+    { key: 'configuracion', label: 'Ajustes del Sistema (Ticket POS)' }
+  ]}
+];
+
+let personalCache = [];
+let currentStaffSession = null;
+let staffLoginCache = [];
+
+function loadStaffSessionFromStorage() {
+  try {
+    const raw = localStorage.getItem('mf_staff_session');
+    currentStaffSession = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    currentStaffSession = null;
+  }
+}
+loadStaffSessionFromStorage();
+
+function hasPermission(viewName) {
+  if (!currentStaffSession) return true;
+  return (currentStaffSession.permisos || []).includes(viewName);
+}
+
+function applyStaffPermissionsUI() {
+  const restricted = !!currentStaffSession;
+
+  document.querySelectorAll('[data-view]').forEach(el => {
+    const view = el.dataset.view;
+    const allowed = !restricted || hasPermission(view);
+    el.classList.toggle('perm-hidden', !allowed);
+  });
+
+  document.querySelectorAll('.menu-item .submenu').forEach(sub => {
+    const links = Array.from(sub.querySelectorAll('.submenu-link'));
+    const anyVisible = links.some(l => !l.classList.contains('perm-hidden'));
+    const menuItem = sub.closest('.menu-item');
+    if (menuItem) menuItem.classList.toggle('perm-hidden', restricted && !anyVisible);
+  });
+
+  const label = document.getElementById('staffSessionLabel');
+  if (label) {
+    if (restricted) {
+      label.textContent = `Sesión: ${currentStaffSession.nombre} (${currentStaffSession.rol})`;
+      label.classList.remove('hidden');
+    } else {
+      label.classList.add('hidden');
+    }
+  }
+}
+
+async function toggleStaffLoginForm() {
+  const area = document.getElementById('staffLoginArea');
+  if (!area) return;
+  const nowHidden = area.classList.toggle('hidden');
+  if (!nowHidden) await populateStaffLoginSelect();
+}
+
+async function populateStaffLoginSelect() {
+  const select = document.getElementById('staffLoginSelect');
+  if (!select) return;
+  select.innerHTML = '<option value="">Cargando…</option>';
+  try {
+    const rows = await sbGet('personal_equipo?estado=eq.Activo&order=nombre.asc');
+    staffLoginCache = Array.isArray(rows) ? rows : [];
+    select.innerHTML = '<option value="">-- Selecciona tu nombre --</option>' +
+      staffLoginCache.map(p => `<option value="${p.id}">${p.nombre} (${p.rol})</option>`).join('');
+  } catch (e) {
+    select.innerHTML = '<option value="">No se pudo cargar el personal.</option>';
+  }
+}
+
+async function handleStaffLogin() {
+  const select = document.getElementById('staffLoginSelect');
+  const pinInput = document.getElementById('staffLoginPin');
+  const err = document.getElementById('loginErrorMsg');
+  const id = select ? select.value : '';
+  const pin = (pinInput?.value || '').trim();
+
+  if (!id) {
+    if (err) { err.textContent = 'Selecciona tu nombre en la lista.'; err.classList.remove('hidden'); }
+    return;
+  }
+
+  const person = staffLoginCache.find(p => String(p.id) === String(id));
+  if (!person || String(person.pin) !== pin || person.estado !== 'Activo') {
+    if (err) { err.textContent = 'PIN incorrecto o usuario inactivo.'; err.classList.remove('hidden'); }
+    return;
+  }
+
+  currentStaffSession = {
+    id: person.id, nombre: person.nombre, email: person.email,
+    rol: person.rol, permisos: Array.isArray(person.permisos) ? person.permisos : []
+  };
+  localStorage.setItem('mf_admin_logged_in', 'true');
+  localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
+  closeLoginModal();
+  showAdminDashboard();
+}
+
+async function loadPersonalFromAPI() {
+  const tbody = document.getElementById('personalTableBody');
+  const tbodyAv = document.getElementById('personalTableBodyAvanzado');
+  const searchInput = document.getElementById('personalSearchInput');
+  if (searchInput) searchInput.value = '';
+
+  try {
+    const rows = await sbGet('personal_equipo?order=nombre.asc');
+    personalCache = Array.isArray(rows) ? rows : [];
+    renderPersonalTable(personalCache);
+  } catch (e) {
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el personal.</td></tr>';
+    if (tbodyAv) tbodyAv.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el personal.</td></tr>';
+  }
+}
+
+function renderPersonalTable(list) {
+  const tbody = document.getElementById('personalTableBody');
+  const tbodyAv = document.getElementById('personalTableBodyAvanzado');
+
+  if (list.length === 0) {
+    const emptyMsg = personalCache.length === 0 ? 'Aún no hay personal registrado.' : 'Nadie coincide con tu búsqueda.';
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${emptyMsg}</td></tr>`;
+    if (tbodyAv) tbodyAv.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${emptyMsg}</td></tr>`;
+    return;
+  }
+
+  if (tbody) {
+    tbody.innerHTML = list.map(p => {
+      const permCount = Array.isArray(p.permisos) ? p.permisos.length : 0;
+      return `
+      <tr>
+        <td><b>${p.nombre}</b></td>
+        <td>${p.email}</td>
+        <td>${p.rol}</td>
+        <td>${p.bodega_asignada}</td>
+        <td><span class="pill ${p.estado === 'Activo' ? 'ok' : ''}">${p.estado}</span></td>
+        <td>${permCount} sección${permCount === 1 ? '' : 'es'}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn small primary" onclick="openPersonalModal(${p.id})">Editar</button>
+          <button class="btn small danger" onclick="deletePersonal(${p.id})">Eliminar</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  if (tbodyAv) {
+    tbodyAv.innerHTML = list.map(p => {
+      const permCount = Array.isArray(p.permisos) ? p.permisos.length : 0;
+      return `
+      <tr>
+        <td><b>${p.nombre}</b></td>
+        <td>${p.email}</td>
+        <td>${p.rol}</td>
+        <td>${p.bodega_asignada}</td>
+        <td><span class="pill ${p.estado === 'Activo' ? 'ok' : ''}">${p.estado}</span></td>
+        <td>${permCount} sección${permCount === 1 ? '' : 'es'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+function filterPersonalTable(query) {
+  const q = normalizeEs(query || '');
+  const filtered = q
+    ? personalCache.filter(p => normalizeEs(p.nombre).includes(q) || normalizeEs(p.email).includes(q) || normalizeEs(p.rol).includes(q))
+    : personalCache;
+  renderPersonalTable(filtered);
+}
+
+function buildPermisosCheckboxesHTML(selected) {
+  const sel = Array.isArray(selected) ? selected : [];
+  return PERMISSION_GROUPS.map(g => `
+    <div>
+      <div style="font-size:12px; font-weight:700; color:var(--text-secondary); margin-bottom:6px;">${g.group}</div>
+      ${g.items.map(it => `
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:5px; cursor:pointer;">
+          <input type="checkbox" class="personal-permiso-check" value="${it.key}" ${sel.includes(it.key) ? 'checked' : ''}>
+          <span>${it.label}</span>
+        </label>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function openPersonalModal(id) {
+  const modal = document.getElementById('personalModal');
+  const container = document.getElementById('personalPermisosContainer');
+  const person = id ? personalCache.find(p => p.id === id) : null;
+
+  document.getElementById('personalModalTitle').textContent = person ? 'Editar Personal' : 'Registrar Personal';
+  document.getElementById('personalEditId').value = person ? person.id : '';
+  document.getElementById('personalNombre').value = person ? person.nombre : '';
+  document.getElementById('personalEmail').value = person ? person.email : '';
+  document.getElementById('personalPin').value = person ? person.pin : '';
+  document.getElementById('personalRol').value = person ? person.rol : '';
+  document.getElementById('personalBodega').value = person ? person.bodega_asignada : 'Todas';
+  document.getElementById('personalEstado').value = person ? person.estado : 'Activo';
+  container.innerHTML = buildPermisosCheckboxesHTML(person ? person.permisos : ['dashboard', 'pos']);
+
+  modal.classList.remove('hidden');
+}
+
+function closePersonalModal() {
+  document.getElementById('personalModal').classList.add('hidden');
+}
+
+async function savePersonal() {
+  const id = document.getElementById('personalEditId').value;
+  const nombre = document.getElementById('personalNombre').value.trim();
+  const email = document.getElementById('personalEmail').value.trim();
+  const pin = document.getElementById('personalPin').value.trim();
+  const rol = document.getElementById('personalRol').value.trim() || 'Cajero';
+  const bodega_asignada = document.getElementById('personalBodega').value;
+  const estado = document.getElementById('personalEstado').value;
+  const permisos = Array.from(document.querySelectorAll('.personal-permiso-check:checked')).map(c => c.value);
+
+  if (!nombre || !email || !pin) {
+    alert('Nombre, correo y PIN son obligatorios.');
+    return;
+  }
+  if (!/^\d{4,6}$/.test(pin)) {
+    alert('El PIN debe tener entre 4 y 6 dígitos numéricos.');
+    return;
+  }
+
+  const payload = { nombre, email, pin, rol, bodega_asignada, estado, permisos };
+
+  try {
+    if (id) {
+      await sbPatch('personal_equipo', id, payload);
+    } else {
+      await sbInsert('personal_equipo', payload);
+    }
+    closePersonalModal();
+    await loadPersonalFromAPI();
+  } catch (e) {
+    alert('No se pudo guardar el registro. Verifica que el correo no esté ya registrado.');
+  }
+}
+
+async function deletePersonal(id) {
+  if (!confirm('¿Eliminar a esta persona del equipo? Esta acción no se puede deshacer.')) return;
+  try {
+    await sbDelete('personal_equipo', id);
+    await loadPersonalFromAPI();
+  } catch (e) {
+    alert('No se pudo eliminar el registro.');
+  }
 }
 
 // GATE & ACCESS CONTROL
@@ -4978,6 +5366,7 @@ const PRODUCTS_DATA = [
 ];
 
 let cart = [];
+let ticketHistorialCache = [];
 let selectedPayMethod = 'cash';
 
 function fmtMoney(v){
@@ -5047,6 +5436,11 @@ if (document.getElementById('sidebarBackdrop')) {
 
 // NAVIGATION
 function switchView(viewName) {
+  if (currentStaffSession && !hasPermission(viewName)) {
+    alert('No tienes permiso para acceder a esta sección. Contacta al administrador si crees que es un error.');
+    return;
+  }
+
   document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
   const target = document.getElementById('view-' + viewName);
   if (target) target.classList.remove('hidden');
@@ -5096,6 +5490,7 @@ function switchView(viewName) {
   if (viewName === 'notificaciones') markNotificationsRead();
   if (viewName === 'clientes') loadCustomersFromAPI();
   if (viewName === 'pedidos') loadOrdersFromAPI();
+  if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') renderInventarioTable();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
@@ -5260,9 +5655,18 @@ function confirmPOSSale() {
   const change = Math.max(0, given - total);
   const folio = '#POS-' + Math.floor(10000 + Math.random() * 90000);
 
+  const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+  const iva = isIvaApplied() ? subtotal * 0.16 : 0;
+  const customerSelect = document.getElementById('posCustomerSelect');
+  const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente Mostrador';
+  const almacenSelect = document.getElementById('posWarehouseSelect');
+  const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
+  const cartSnapshot = cart.map(i => ({ name: i.name, sku: i.sku || i.id, qty: i.qty, price: i.price }));
+
   // Populate Ticket Modal
   document.getElementById('tFolio').textContent = folio;
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  document.getElementById('tCliente').textContent = clienteNombre;
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
   document.getElementById('tChange').textContent = fmtMoney(change);
@@ -5278,7 +5682,7 @@ function confirmPOSSale() {
   tr.innerHTML = `
     <td><b>${folio}</b></td>
     <td>${new Date().toLocaleString('es-MX')}</td>
-    <td>Cliente Mostrador</td>
+    <td>${clienteNombre}</td>
     <td><span class="pill ok">Sistema POS</span></td>
     <td>${fmtMoney(total)}</td>
     <td><span class="pill ok">Pago Aceptado</span></td>
@@ -5292,6 +5696,14 @@ function confirmPOSSale() {
     recordSaleForProduct(item.sku || item.id, item.qty, item.price, currentMonthStr);
   });
   renderTopProductsTable();
+
+  // Persist ticket to Supabase for the ticket history (best-effort, non-blocking)
+  sbInsert('pos_tickets', {
+    folio, cliente: clienteNombre, almacen, items: cartSnapshot,
+    subtotal, iva, total, pago_recibido: given, cambio: change
+  }).then(row => {
+    if (row) ticketHistorialCache.unshift(row);
+  }).catch(() => {});
 
   clearCart();
 }
@@ -5325,12 +5737,88 @@ function printTicket() {
 }
 
 function reprintTicket(folio, total) {
+  const saved = ticketHistorialCache.find(t => t.folio === folio);
+  if (saved) return viewPosTicketFromHistorial(saved.id);
+
   document.getElementById('tFolio').textContent = folio;
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  document.getElementById('tCliente').textContent = 'Cliente Mostrador';
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(total);
   document.getElementById('tChange').textContent = '$0.00';
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML([{ name: 'Venta Registrada POS', qty: 1, price: total }]);
+  document.getElementById('ticketModal').classList.remove('hidden');
+}
+
+// HISTORIAL DE TICKETS POS (Supabase)
+async function openTicketHistorialModal() {
+  document.getElementById('ticketHistorialModal').classList.remove('hidden');
+  const searchInput = document.getElementById('ticketHistorialSearch');
+  if (searchInput) searchInput.value = '';
+  await loadTicketHistorial();
+}
+
+function closeTicketHistorialModal() {
+  document.getElementById('ticketHistorialModal').classList.add('hidden');
+}
+
+async function loadTicketHistorial() {
+  const tbody = document.getElementById('ticketHistorialTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+
+  try {
+    const rows = await sbGet('pos_tickets?order=created_at.desc&limit=200');
+    ticketHistorialCache = Array.isArray(rows) ? rows : [];
+    renderTicketHistorialTable(ticketHistorialCache);
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
+  }
+}
+
+function renderTicketHistorialTable(tickets) {
+  const tbody = document.getElementById('ticketHistorialTableBody');
+  if (!tbody) return;
+
+  if (tickets.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = tickets.map(t => {
+    const itemCount = Array.isArray(t.items) ? t.items.reduce((s, i) => s + (i.qty || 1), 0) : 0;
+    const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    return `
+    <tr>
+      <td><b>${t.folio}</b></td>
+      <td>${fecha}</td>
+      <td>${t.cliente || 'Cliente Mostrador'}</td>
+      <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
+      <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
+      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterTicketHistorial(query) {
+  const q = normalizeEs(query || '');
+  const filtered = q
+    ? ticketHistorialCache.filter(t => normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q))
+    : ticketHistorialCache;
+  renderTicketHistorialTable(filtered);
+}
+
+function viewPosTicketFromHistorial(id) {
+  const t = ticketHistorialCache.find(x => x.id === id);
+  if (!t) return;
+
+  document.getElementById('tFolio').textContent = t.folio;
+  document.getElementById('tFecha').textContent = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+  document.getElementById('tCliente').textContent = t.cliente || 'Cliente Mostrador';
+  document.getElementById('tTotal').textContent = fmtMoney(t.total);
+  document.getElementById('tPaid').textContent = fmtMoney(t.pago_recibido || t.total);
+  document.getElementById('tChange').textContent = fmtMoney(t.cambio || 0);
+  document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
   document.getElementById('ticketModal').classList.remove('hidden');
 }
 
@@ -7381,6 +7869,8 @@ function handleAdminLogin() {
 
   if (email === 'i.ovany.03@gmail.com' && pass === 'Soyelgio02.') {
     localStorage.setItem('mf_admin_logged_in', 'true');
+    localStorage.removeItem('mf_staff_session');
+    currentStaffSession = null;
     closeLoginModal();
     showAdminDashboard();
   } else {
@@ -7400,7 +7890,11 @@ function showAdminDashboard() {
   if (portal) portal.classList.add('hidden');
   if (dash) dash.classList.remove('hidden');
   document.title = 'Mi Fiestashop — Sistema ERP & POS';
-  switchView('dashboard');
+  applyStaffPermissionsUI();
+  const landingView = (currentStaffSession && !hasPermission('dashboard'))
+    ? (currentStaffSession.permisos[0] || 'pos')
+    : 'dashboard';
+  switchView(landingView);
   window.scrollTo(0, 0);
 }
 
@@ -7998,6 +8492,8 @@ function fireConfettiBurst(x, y){
 
 function logoutAdmin() {
   localStorage.removeItem('mf_admin_logged_in');
+  localStorage.removeItem('mf_staff_session');
+  currentStaffSession = null;
   goToStorefront();
 }
 
