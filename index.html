@@ -2587,6 +2587,30 @@
               </div>
             </div>
 
+            <p style="font-size:11px; color:var(--text-muted); margin:0 0 8px;">Skydropx exige estado/municipio/colonia además del C.P. Puedes dejarlos vacíos y se intentará resolverlos automáticamente por C.P. (menos confiable), o llenarlos si ya los conoces.</p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:8px;">
+              <div>
+                <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Estado Origen:</label>
+                <select id="skEstadoOrigen" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+                  <option value="">Autodetectar por C.P.</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Estado Destino:</label>
+                <select id="skEstadoDestino" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+                  <option value="">Autodetectar por C.P.</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:8px;">
+              <input type="text" id="skMunicipioOrigen" placeholder="Municipio/Alcaldía origen" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              <input type="text" id="skMunicipioDestino" placeholder="Municipio/Alcaldía destino" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+              <input type="text" id="skColoniaOrigen" placeholder="Colonia origen" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              <input type="text" id="skColoniaDestino" placeholder="Colonia destino" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            </div>
+
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
               <div>
                 <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Peso (kg):</label>
@@ -8332,8 +8356,8 @@ const MEXICAN_STATES = [
   'Yucatán', 'Zacatecas'
 ];
 
-function populateCheckoutEstadoSelect(){
-  const sel = document.getElementById('checkoutEstado');
+function populateEstadoSelect(selectId){
+  const sel = document.getElementById(selectId);
   if (!sel || sel.options.length > 1) return;
   MEXICAN_STATES.forEach(estado => {
     const opt = document.createElement('option');
@@ -8341,6 +8365,15 @@ function populateCheckoutEstadoSelect(){
     opt.textContent = estado;
     sel.appendChild(opt);
   });
+}
+
+function populateCheckoutEstadoSelect(){
+  populateEstadoSelect('checkoutEstado');
+}
+
+function populateSkydropxEstadoSelects(){
+  populateEstadoSelect('skEstadoOrigen');
+  populateEstadoSelect('skEstadoDestino');
 }
 
 // Cotización de envío por código postal. No hay todavía una integración en
@@ -9323,6 +9356,7 @@ loadClienteSession();
 handleOAuthRedirect();
 loadCmsPagesForFooter();
 populateCheckoutEstadoSelect();
+populateSkydropxEstadoSelects();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
 function routeApp() {
@@ -9373,6 +9407,12 @@ async function calcularCotizacionesSkydropx() {
   const largo = (document.getElementById('skLargo').value || '30').trim();
   const ancho = (document.getElementById('skAncho').value || '25').trim();
   const alto = (document.getElementById('skAlto').value || '15').trim();
+  const estadoOrigen = (document.getElementById('skEstadoOrigen')?.value || '').trim();
+  const municipioOrigen = (document.getElementById('skMunicipioOrigen')?.value || '').trim();
+  const coloniaOrigen = (document.getElementById('skColoniaOrigen')?.value || '').trim();
+  const estadoDestino = (document.getElementById('skEstadoDestino')?.value || '').trim();
+  const municipioDestino = (document.getElementById('skMunicipioDestino')?.value || '').trim();
+  const coloniaDestino = (document.getElementById('skColoniaDestino')?.value || '').trim();
   const container = document.getElementById('skydropxRatesContainer');
   if(!container) return;
 
@@ -9386,8 +9426,12 @@ async function calcularCotizacionesSkydropx() {
   let rates = [];
   let usedFallback = false;
   try {
-    const url = `/api/skydropx-cotizar?cp_origen=${encodeURIComponent(orig)}&cp_destino=${encodeURIComponent(dest)}&peso=${encodeURIComponent(peso)}&largo=${encodeURIComponent(largo)}&ancho=${encodeURIComponent(ancho)}&alto=${encodeURIComponent(alto)}`;
-    const r = await fetch(url);
+    const params = new URLSearchParams({
+      cp_origen: orig, cp_destino: dest, peso, largo, ancho, alto,
+      estado_origen: estadoOrigen, municipio_origen: municipioOrigen, colonia_origen: coloniaOrigen,
+      estado_destino: estadoDestino, municipio_destino: municipioDestino, colonia_destino: coloniaDestino
+    });
+    const r = await fetch(`/api/skydropx-cotizar?${params.toString()}`);
     const data = await r.json();
     if (Array.isArray(data.rates) && data.rates.length > 0) {
       rates = data.rates;
