@@ -154,15 +154,23 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // Extrae el primer valor de un campo multi-idioma de PrestaShop (array u objeto),
-  // garantizando que el resultado sea siempre un string usable.
+  // Extrae el valor de un campo multi-idioma de PrestaShop (array u objeto),
+  // garantizando que el resultado sea siempre un string usable. Algunas
+  // páginas tienen el idioma en la posición 0 vacío (ej. el título o el
+  // link_rewrite solo se redactaron en el segundo idioma de la tienda);
+  // en vez de tomar ciegamente el primer idioma, se usa el primero que
+  // realmente tenga contenido no vacío.
   function firstLangValue(field, fallback) {
-    let val = field;
     if (Array.isArray(field)) {
-      val = field[0]?.value;
-      if (val === undefined) val = field[0];
-    } else if (field && typeof field === 'object') {
-      val = field.value !== undefined ? field.value : Object.values(field)[0];
+      for (const entry of field) {
+        const v = entry && typeof entry === 'object' ? entry.value : entry;
+        if (typeof v === 'string' && v.trim() !== '') return v;
+      }
+      return fallback;
+    }
+    let val = field;
+    if (field && typeof field === 'object') {
+      val = field.value !== undefined ? field.value : Object.values(field).find(v => typeof v === 'string' && v.trim() !== '');
     }
     if (typeof val !== 'string' || val === '') return fallback;
     return val;
