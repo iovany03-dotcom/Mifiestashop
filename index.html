@@ -1102,6 +1102,48 @@
   .store-feat-title { font-weight: 700; font-size: 1.08rem; color: #2e1065; }
   .store-feat-sub { font-size: 0.92rem; color: #8b7d97; }
 
+  /* Sección "Esto también le hace falta a tu evento" (Grupo SAE cross-sell) */
+  .store-crosssell {
+    background: linear-gradient(160deg, #3a1568 0%, #2e1065 60%, #24095a 100%);
+    color: #fff; padding: 48px 20px 56px; position: relative; overflow: hidden;
+  }
+  .store-crosssell-confetti { display: flex; justify-content: center; gap: 40px; margin-bottom: 18px; opacity: 0.9; }
+  .store-crosssell-confetti span { font-size: 1.1rem; }
+  .store-crosssell-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
+  .store-crosssell-pill {
+    display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 7px 16px;
+    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 18px;
+  }
+  .store-crosssell-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mf-pink); display: inline-block; }
+  .store-crosssell h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); font-weight: 800; margin: 0 0 14px; line-height: 1.25; }
+  .store-crosssell h2 .highlight { color: #ffd84d; }
+  .store-crosssell p.subtitle { font-size: 1rem; color: #d8c9ec; max-width: 640px; margin: 0 auto 36px; line-height: 1.5; }
+  .store-crosssell-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 28px 20px; text-align: left;
+  }
+  .store-crosssell-card {
+    background: #fff; border-radius: 16px; padding: 26px 20px; position: relative;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.2); transition: transform 0.2s ease;
+  }
+  .store-crosssell-card:hover { transform: translateY(-4px); }
+  .store-crosssell-card::before {
+    content: ''; position: absolute; top: -22px; left: 50%; width: 1px; height: 18px;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.6) 0 4px, transparent 4px 8px);
+  }
+  .store-crosssell-card::after {
+    content: ''; position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+    width: 6px; height: 6px; border-radius: 50%; background: #fff;
+  }
+  .store-crosssell-icon {
+    width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; margin-bottom: 14px; color: #fff;
+  }
+  .store-crosssell-card h3 { margin: 0 0 8px; font-size: 1.05rem; color: #2e1065; font-weight: 800; }
+  .store-crosssell-card p { margin: 0 0 14px; font-size: 0.85rem; color: #6b5c7a; line-height: 1.4; min-height: 58px; }
+  .store-crosssell-card a { font-size: 0.85rem; font-weight: 700; color: var(--mf-pink); text-decoration: none; }
+  .store-crosssell-card a:hover { text-decoration: underline; }
+
   .store-footer { background: #f7f5f8; color: #5b4a68; margin-top: 0; font-size: 0.88rem; border-top: 1px solid #f0e6ef; }
   .store-footer-social {
     text-align: center; padding: 34px 24px 30px; background: #efe9f2; border-bottom: 1px solid #e5dce6;
@@ -1445,6 +1487,44 @@
     </div>
     </div>
 
+    <!-- Del mismo equipo que arma tu fiesta (Grupo SAE) -->
+    <section class="store-crosssell">
+      <div class="store-crosssell-confetti" aria-hidden="true">
+        <span style="color:#c084fc;">▼</span><span style="color:#ffb020;">▼</span><span style="color:#34d399;">▼</span><span style="color:#f2652e;">▼</span><span style="color:#c084fc;">▼</span><span style="color:#ffb020;">▼</span>
+      </div>
+      <div class="store-crosssell-inner">
+        <span class="store-crosssell-pill"><span class="dot"></span>Del mismo equipo que arma tu fiesta</span>
+        <h2>¡Espera! Esto también <span class="highlight">le hace falta</span> a tu evento</h2>
+        <p class="subtitle">Además de tus artículos de batucada, en Grupo SAE tenemos todo lo demás listo para que solo te preocupes por disfrutar.</p>
+        <div class="store-crosssell-grid">
+          <div class="store-crosssell-card">
+            <div class="store-crosssell-icon" style="background:#8e3fa8;">🎧</div>
+            <h3>DJ</h3>
+            <p>Música, luces y ambiente para que nadie se quede sentado.</p>
+            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+          </div>
+          <div class="store-crosssell-card">
+            <div class="store-crosssell-icon" style="background:#22a06b;">🛋️</div>
+            <h3>Mobiliario</h3>
+            <p>Salas lounge y mobiliario para vestir el espacio con estilo.</p>
+            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+          </div>
+          <div class="store-crosssell-card">
+            <div class="store-crosssell-icon" style="background:#f2652e;">🎈</div>
+            <h3>Decoración</h3>
+            <p>Arcos y figuras de globos que transforman cualquier salón.</p>
+            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+          </div>
+          <div class="store-crosssell-card">
+            <div class="store-crosssell-icon" style="background:#e8a415;">🍽️</div>
+            <h3>Meseros</h3>
+            <p>Personal capacitado para atender a tus invitados.</p>
+            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- Dedicated Product Page (own URL, replaces home content) -->
@@ -1471,12 +1551,28 @@
         <div style="display:flex; flex-direction:column; gap:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Código Postal *</label>
-            <input type="text" id="checkoutCP" inputmode="numeric" maxlength="5" placeholder="Ej. 72000" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutCPInput()">
+            <input type="text" id="checkoutCP" inputmode="numeric" maxlength="5" placeholder="Ej. 72000" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Estado *</label>
+              <select id="checkoutEstado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" onchange="onCheckoutShippingFieldsInput()">
+                <option value="">Selecciona...</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Municipio / Alcaldía *</label>
+              <input type="text" id="checkoutMunicipio" placeholder="Ej. Benito Juárez" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Colonia *</label>
+            <input type="text" id="checkoutColonia" placeholder="Ej. Portales" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
           </div>
           <div id="checkoutShippingQuoteBox" class="hidden" style="background:var(--mf-cream); border-radius:8px; padding:10px 12px; font-size:13px; color:#2e1065;"></div>
           <div>
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Dirección completa *</label>
-            <textarea id="checkoutAddress" rows="3" placeholder="Calle, número, colonia, ciudad" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Calle y número *</label>
+            <textarea id="checkoutAddress" rows="2" placeholder="Calle, número, referencias" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
           </div>
         </div>
 
@@ -2000,8 +2096,23 @@
       🏪 Volver a la Tienda
     </button>
   </header>
+
+  <div id="cmsPageHero" style="background: linear-gradient(135deg, var(--mf-pink) 0%, var(--mf-purple) 55%, var(--mf-purple-dark) 100%); padding: 46px 20px 70px; text-align:center; color:#fff;">
+    <div style="max-width:820px; margin:0 auto;">
+      <div style="font-size:13px; font-weight:600; opacity:.85; margin-bottom:12px;">
+        <a href="#" onclick="closeCmsPage(); return false;" style="color:#fff; text-decoration:none; opacity:.9;">Inicio</a>
+        <span style="margin:0 6px; opacity:.6;">/</span>
+        <span id="cmsPageBreadcrumbTitle"></span>
+      </div>
+      <h1 id="cmsPageHeroTitle" style="margin:0; font-size:clamp(1.6rem, 4vw, 2.3rem); font-weight:800; line-height:1.2;"></h1>
+      <p id="cmsPageHeroTagline" style="margin:12px 0 0; font-size:1rem; opacity:.92; max-width:640px; margin-left:auto; margin-right:auto;">
+        Artículos de fiesta, globos, decoración y pirotecnia fría al mayoreo y menudeo.
+      </p>
+    </div>
+  </div>
+
   <div class="store-container" style="max-width:900px;">
-    <div id="cmsPageBody" style="background:#fff; border:1px solid #f0e6ef; border-radius:16px; padding:32px; margin:30px 0; min-height:300px;">
+    <div id="cmsPageBody" style="background:#fff; border:1px solid #f0e6ef; border-radius:16px; padding:32px; margin:-42px 0 30px; position:relative; box-shadow:0 16px 40px rgba(46,16,101,0.12); min-height:200px;">
       <div style="text-align:center; color:#8b7d97; padding:60px 0;">Cargando…</div>
     </div>
   </div>
@@ -7288,6 +7399,8 @@ async function openCmsPage(slug, pushState) {
   const body = document.getElementById('cmsPageBody');
   if (!body) return;
   body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">Cargando…</div>';
+  document.getElementById('cmsPageHeroTitle').textContent = '';
+  document.getElementById('cmsPageBreadcrumbTitle').textContent = '';
 
   try {
     const r = await fetch('/api/paginas?slug=' + encodeURIComponent(slug));
@@ -7299,7 +7412,14 @@ async function openCmsPage(slug, pushState) {
     document.title = data.page.title + ' | Mi Fiestashop';
     const metaDesc = document.getElementById('metaDescription');
     if (metaDesc && data.page.description) metaDesc.setAttribute('content', data.page.description);
-    body.innerHTML = `<h1 style="margin-top:0; color:#2e1065; font-size:1.6rem;">${data.page.title}</h1><div class="cms-page-content">${data.page.content}</div><div id="cmsPageRelatedGrid"></div>`;
+
+    document.getElementById('cmsPageHeroTitle').textContent = data.page.title;
+    document.getElementById('cmsPageBreadcrumbTitle').textContent = data.page.title;
+    document.getElementById('cmsPageHeroTagline').textContent = data.page.description && data.page.description.trim()
+      ? data.page.description
+      : `Descubre ${data.page.title} en Mi Fiestashop, con envío a toda la República Mexicana.`;
+
+    body.innerHTML = `<div class="cms-page-content">${data.page.content}</div><div id="cmsPageRelatedGrid"></div>`;
 
     if (liveProducts.length === 0) await syncProductsFromPrestaShopAPI();
     renderRelatedProductsInto('cmsPageRelatedGrid', data.page.title, null, `Productos relacionados con ${data.page.title}`);
@@ -8200,6 +8320,29 @@ function setCheckoutPayMethod(method){
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Tarjeta en línea');
 }
 
+// Los 32 estados de México, para el selector de Estado en el checkout. Se
+// piden Estado/Municipio/Colonia directamente al cliente (en vez de
+// derivarlos del código postal con un servicio externo) porque los
+// servicios gratuitos de códigos postales resultaron poco confiables.
+const MEXICAN_STATES = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua',
+  'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero',
+  'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro',
+  'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz',
+  'Yucatán', 'Zacatecas'
+];
+
+function populateCheckoutEstadoSelect(){
+  const sel = document.getElementById('checkoutEstado');
+  if (!sel || sel.options.length > 1) return;
+  MEXICAN_STATES.forEach(estado => {
+    const opt = document.createElement('option');
+    opt.value = estado;
+    opt.textContent = estado;
+    sel.appendChild(opt);
+  });
+}
+
 // Cotización de envío por código postal. No hay todavía una integración en
 // vivo con la paquetería (Skydropx), así que se simula el costo de la guía
 // por zona a partir del CP; en cuanto se conecte una API real de cotización,
@@ -8221,12 +8364,19 @@ function estimateShippingGuideCost(cp) {
 let checkoutShippingCost = null;
 let checkoutCpRequestSeq = 0;
 
-// Intenta cotizar el envío con la API real de Skydropx; si no hay
-// credenciales configuradas o la consulta falla, cae en la estimación por
-// zona (estimateShippingGuideCost) para que el checkout nunca se bloquee.
-async function quoteShippingGuideCost(cp) {
+// Intenta cotizar el envío con la API real de Skydropx, usando el Estado/
+// Municipio/Colonia que el cliente escribió (Skydropx los exige y los
+// servicios gratuitos para derivarlos solo del código postal resultaron
+// poco confiables). Si no hay credenciales configuradas o la consulta
+// falla, cae en la estimación por zona (estimateShippingGuideCost) para
+// que el checkout nunca se bloquee.
+async function quoteShippingGuideCost(cp, estado, municipio, colonia) {
   try {
-    const r = await fetch(`/api/skydropx-cotizar?cp_origen=72000&cp_destino=${encodeURIComponent(cp)}&peso=1&largo=30&ancho=25&alto=15`);
+    const params = new URLSearchParams({
+      cp_origen: '72000', cp_destino: cp, peso: '1', largo: '30', ancho: '25', alto: '15',
+      estado_destino: estado, municipio_destino: municipio, colonia_destino: colonia
+    });
+    const r = await fetch(`/api/skydropx-cotizar?${params.toString()}`);
     const data = await r.json();
     if (Array.isArray(data.rates) && data.rates.length > 0) {
       return Math.round(Math.min(...data.rates.map(r => Number(r.price))));
@@ -8237,15 +8387,22 @@ async function quoteShippingGuideCost(cp) {
   return estimateShippingGuideCost(cp);
 }
 
-async function onCheckoutCPInput() {
+async function onCheckoutShippingFieldsInput() {
   const cpInput = document.getElementById('checkoutCP');
   const box = document.getElementById('checkoutShippingQuoteBox');
   const cp = (cpInput?.value || '').replace(/\D/g, '').slice(0, 5);
   if (cpInput) cpInput.value = cp;
 
-  if (cp.length !== 5) {
+  const estado = document.getElementById('checkoutEstado')?.value.trim() || '';
+  const municipio = document.getElementById('checkoutMunicipio')?.value.trim() || '';
+  const colonia = document.getElementById('checkoutColonia')?.value.trim() || '';
+
+  if (cp.length !== 5 || !estado || !municipio || !colonia) {
     checkoutShippingCost = null;
-    if (box) box.classList.add('hidden');
+    if (box) {
+      box.classList.remove('hidden');
+      box.innerHTML = `Completa código postal, estado, municipio y colonia para cotizar tu envío.`;
+    }
     renderCheckoutSummary();
     return;
   }
@@ -8253,11 +8410,11 @@ async function onCheckoutCPInput() {
   const requestId = ++checkoutCpRequestSeq;
   if (box) {
     box.classList.remove('hidden');
-    box.innerHTML = `⏳ Cotizando envío a este código postal…`;
+    box.innerHTML = `⏳ Cotizando envío a esta dirección…`;
   }
 
-  const guideCost = await quoteShippingGuideCost(cp);
-  if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió el CP
+  const guideCost = await quoteShippingGuideCost(cp, estado, municipio, colonia);
+  if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió los datos de envío
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const envioGratis = guideCost < 250 && subtotal > 1500;
@@ -8267,7 +8424,7 @@ async function onCheckoutCPInput() {
     box.classList.remove('hidden');
     box.innerHTML = envioGratis
       ? `🎉 <b>¡Envío gratis!</b> Tu pedido califica por ser mayor a $1,500 MXN.`
-      : `🚚 Costo de envío estimado a este código postal: <b>${fmtMoney(guideCost)}</b>`;
+      : `🚚 Costo de envío estimado a esta dirección: <b>${fmtMoney(guideCost)}</b>`;
   }
   renderCheckoutSummary();
 }
@@ -8303,6 +8460,7 @@ function renderCheckoutSummary(){
 
 function goToStorefrontCheckout(){
   if (cart.length === 0) return;
+  populateCheckoutEstadoSelect();
   checkoutPayMethod = '';
   checkoutShippingCost = null;
   setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), false);
@@ -8312,6 +8470,12 @@ function goToStorefrontCheckout(){
   if (errEl) errEl.classList.add('hidden');
   const cpInput = document.getElementById('checkoutCP');
   if (cpInput) cpInput.value = '';
+  const estadoSel = document.getElementById('checkoutEstado');
+  if (estadoSel) estadoSel.value = '';
+  const municipioInput = document.getElementById('checkoutMunicipio');
+  if (municipioInput) municipioInput.value = '';
+  const coloniaInput = document.getElementById('checkoutColonia');
+  if (coloniaInput) coloniaInput.value = '';
   const quoteBox = document.getElementById('checkoutShippingQuoteBox');
   if (quoteBox) quoteBox.classList.add('hidden');
   renderCheckoutSummary();
@@ -8320,14 +8484,17 @@ function goToStorefrontCheckout(){
 
 async function submitStorefrontOrder(){
   const cp = document.getElementById('checkoutCP').value.trim();
+  const estado = document.getElementById('checkoutEstado').value.trim();
+  const municipio = document.getElementById('checkoutMunicipio').value.trim();
+  const colonia = document.getElementById('checkoutColonia').value.trim();
   const name = document.getElementById('checkoutName').value.trim();
   const email = document.getElementById('checkoutEmail').value.trim();
   const phone = document.getElementById('checkoutPhone').value.trim();
   const address = document.getElementById('checkoutAddress').value.trim();
   const errEl = document.getElementById('checkoutErrorMsg');
 
-  if (cp.length !== 5 || checkoutShippingCost === null) {
-    errEl.textContent = 'Ingresa tu código postal para cotizar el envío.';
+  if (cp.length !== 5 || !estado || !municipio || !colonia || checkoutShippingCost === null) {
+    errEl.textContent = 'Completa código postal, estado, municipio y colonia para cotizar el envío.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -8342,13 +8509,14 @@ async function submitStorefrontOrder(){
   const shippingCost = checkoutShippingCost;
   const total = subtotal + shippingCost;
   const folio = 'WEB-' + Date.now().toString().slice(-6);
+  const fullAddress = `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
 
   const orderPayload = {
     folio,
     customer_name: name,
     customer_email: email,
     customer_phone: phone,
-    shipping_address: address,
+    shipping_address: fullAddress,
     shipping_cp: cp,
     shipping_cost: shippingCost,
     payment_method: checkoutPayMethod,
@@ -9154,6 +9322,7 @@ loadNotificationPrefs();
 loadClienteSession();
 handleOAuthRedirect();
 loadCmsPagesForFooter();
+populateCheckoutEstadoSelect();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
 function routeApp() {

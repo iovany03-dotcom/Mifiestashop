@@ -2,6 +2,8 @@
 // (OAuth2 client_credentials + cotización asíncrona por polling).
 //
 // GET/POST /api/skydropx-cotizar?cp_origen=72000&cp_destino=76000&peso=1&largo=30&ancho=25&alto=15
+//   &estado_destino=Querétaro&municipio_destino=Querétaro&colonia_destino=Casa%20Blanca
+//   (estado_origen/municipio_origen/colonia_origen son opcionales, igual)
 // -> { rates: [{ carrier, service, price, days }], cheapest }
 // -> { fallback: true, rates: [], error } si no hay credenciales o falla la cotización
 //
@@ -16,8 +18,18 @@
 // cuerpo de la cotización se ajustó a partir de un error real de validación devuelto por la
 // propia API en producción: Skydropx exige, además de country_code y postal_code, los campos
 // area_level1 (estado), area_level2 (municipio) y area_level3 (colonia) en address_from/
-// address_to — por eso esta función resuelve esos datos a partir del código postal usando la
-// API pública y gratuita de SEPOMEX (api-sepomex.hckdrk.mx) antes de cotizar.
+// address_to. El checkout público ahora le pide estos datos directamente al cliente (los
+// servicios gratuitos de códigos postales resultaron poco confiables), así que esta función
+// los usa cuando vienen en la solicitud (estado_origen/municipio_origen/colonia_origen y
+// sus equivalentes _destino) y solo intenta resolverlos automáticamente por CP como respaldo
+// (útil para el cotizador del Backoffice, donde no siempre se capturan esos campos).
+
+// Dirección conocida de la bodega principal (Puebla, CP 72000), para no
+// depender de ningún servicio externo cuando se cotiza desde el origen por
+// defecto del checkout.
+const KNOWN_ORIGINS = {
+  '72000': { area_level1: 'Puebla', area_level2: 'Puebla', area_level3: 'Santa Cruz Los Ángeles' }
+};
 
 // Extrae estado/municipio/colonia de una fila de datos SEPOMEX, sin importar
 // si usa nombres "amigables" (estado/municipio/asentamiento) o los nombres
@@ -71,6 +83,21 @@ async function resolveAreaLevels(cp) {
   return { ok: false, reason: reasons.join(' / ') };
 }
 
+// Resuelve estado/municipio/colonia para una dirección, en este orden de
+// preferencia: (1) los datos que vinieron explícitos en la solicitud (el
+// checkout se los pide al cliente), (2) una bodega conocida por su CP, y
+// solo como último recurso (3) un intento de resolución automática por CP
+// contra servicios externos gratuitos.
+async function resolveAddressLevels(cp, estado, municipio, colonia) {
+  if (estado && municipio && colonia) {
+    return { ok: true, levels: { area_level1: estado, area_level2: municipio, area_level3: colonia } };
+  }
+  if (KNOWN_ORIGINS[cp]) {
+    return { ok: true, levels: KNOWN_ORIGINS[cp] };
+  }
+  return resolveAreaLevels(cp);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -91,6 +118,12 @@ module.exports = async function handler(req, res) {
   const largo = parseFloat(params.largo || '30');
   const ancho = parseFloat(params.ancho || '25');
   const alto = parseFloat(params.alto || '15');
+  const estadoOrigen = params.estado_origen ? String(params.estado_origen) : '';
+  const municipioOrigen = params.municipio_origen ? String(params.municipio_origen) : '';
+  const coloniaOrigen = params.colonia_origen ? String(params.colonia_origen) : '';
+  const estadoDestino = params.estado_destino ? String(params.estado_destino) : '';
+  const municipioDestino = params.municipio_destino ? String(params.municipio_destino) : '';
+  const coloniaDestino = params.colonia_destino ? String(params.colonia_destino) : '';
 
   if (!cpDestino) {
     res.status(400).json({ error: 'Falta cp_destino' });
@@ -183,7 +216,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const [resFrom, resTo] = await Promise.all([resolveAreaLevels(cpOrigen), resolveAreaLevels(cpDestino)]);
+    const [resFrom, resTo] = await Promise.all([
+      resolveAddressLevels(cpOrigen, estadoOrigen, municipioOrigen, coloniaOrigen),
+      resolveAddressLevels(cpDestino, estadoDestino, municipioDestino, coloniaDestino)
+    ]);
     if (!resFrom.ok || !resTo.ok) {
       const reasons = [!resFrom.ok ? `origen ${cpOrigen}: ${resFrom.reason}` : null, !resTo.ok ? `destino ${cpDestino}: ${resTo.reason}` : null].filter(Boolean).join(' | ');
       res.status(200).json({ fallback: true, rates: [], error: `No se pudo resolver estado/municipio/colonia para el código postal (${reasons})` });
