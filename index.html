@@ -6348,9 +6348,25 @@ function loginClienteWithProvider(provider) {
   window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=${provider}&redirect_to=${redirectTo}`;
 }
 
+function showOAuthLoginError(description) {
+  const friendly = /error getting user email/i.test(description || '')
+    ? 'No pudimos obtener tu correo electrónico desde el proveedor. Verifica que tu cuenta tenga un correo confirmado y que hayas aceptado compartirlo al iniciar sesión, e intenta de nuevo.'
+    : (description || 'No se pudo completar el inicio de sesión. Intenta de nuevo.');
+  openClientePortal();
+  clienteAuthMode = 'login';
+  renderClienteAuthMode();
+  showClienteAuthMessage('❌ ' + friendly, true);
+}
+
 async function handleOAuthRedirect() {
-  if (!window.location.hash.includes('access_token')) return;
+  if (!window.location.hash.includes('access_token') && !window.location.hash.includes('error')) return;
   const params = new URLSearchParams(window.location.hash.slice(1));
+  const oauthError = params.get('error_description') || params.get('error');
+  if (oauthError) {
+    history.replaceState({}, '', window.location.pathname);
+    showOAuthLoginError(decodeURIComponent(oauthError.replace(/\+/g, ' ')));
+    return;
+  }
   const access_token = params.get('access_token');
   if (!access_token) return;
   try {
@@ -6358,12 +6374,16 @@ async function handleOAuthRedirect() {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${access_token}` }
     });
     const user = await r.json();
+    history.replaceState({}, '', window.location.pathname);
     if (r.ok && user) {
       saveClienteSession({ access_token, user });
-      history.replaceState({}, '', window.location.pathname);
       openClientePortal();
+    } else {
+      showOAuthLoginError(user?.msg || user?.error_description);
     }
-  } catch (e) {}
+  } catch (e) {
+    showOAuthLoginError(e.message);
+  }
 }
 
 function logoutCliente() {
@@ -9589,6 +9609,9 @@ loadSuppliersFromAPI();
 loadSavedTicketConfig();
 loadNotificationPrefs();
 loadClienteSession();
+// Se captura ANTES de llamar handleOAuthRedirect(), porque esa función limpia
+// el hash de la URL (history.replaceState) apenas procesa el resultado.
+const oauthRedirectPending = window.location.hash.includes('access_token') || window.location.hash.includes('error');
 handleOAuthRedirect();
 loadCmsPagesForFooter();
 populateCheckoutEstadoSelect();
@@ -9596,6 +9619,9 @@ populateSkydropxEstadoSelects();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
 function routeApp() {
+  if (oauthRedirectPending) {
+    return; // handleOAuthRedirect() ya se encarga de mostrar la vista correcta
+  }
   if (productDeepLinkMatch) {
     showPublicStorefront();
     return;
