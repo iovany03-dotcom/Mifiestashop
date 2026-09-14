@@ -3820,12 +3820,12 @@
     <form id="loginForm" onsubmit="event.preventDefault(); handleAdminLogin();">
       <div style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Correo Electrónico / Usuario:</label>
-        <input type="email" id="loginEmail" value="i.ovany.03@gmail.com" required style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <input type="email" id="loginEmail" placeholder="tu@correo.com" required autocomplete="username" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
       <div style="margin-bottom:16px;">
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Contraseña:</label>
-        <input type="password" id="loginPassword" value="Soyelgio02." required style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
       <div id="loginErrorMsg" class="hidden" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; text-align:center;">
@@ -3835,10 +3835,6 @@
          Iniciar Sesión en Dashboard POS
       </button>
     </form>
-
-    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border); text-align:center; font-size:12px; color:var(--text-muted);">
-      Usuario: <code>i.ovany.03@gmail.com</code> | Contraseña: <code>Soyelgio02.</code>
-    </div>
 
     <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
       <a href="#" onclick="event.preventDefault(); toggleStaffLoginForm();" style="font-size:12.5px; color:var(--series-2); text-decoration:none; font-weight:600;">¿Eres cajero o parte del equipo? Accede con tu PIN</a>
@@ -4622,7 +4618,8 @@
 // SUPABASE CREDENTIALS & SETUP
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
-const EDIT_PASSWORD = 'fiesta2026';
+// La contraseña de edición de "Costos y Gastos" ya no vive aquí en texto
+// plano: checkGate() la verifica contra la base de datos vía rpc_check_edit.
 
 // SUPABASE API HELPERS
 async function sbGet(path){
@@ -4662,6 +4659,57 @@ async function sbDelete(table, id){
     headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'return=minimal' }
   });
   if (!r.ok) throw new Error(`DELETE ${table} -> ${r.status}`);
+}
+
+// Llama a una función RPC de Postgres (Supabase) en vez de tocar una tabla
+// directo. Las operaciones sensibles (personal, costos, gastos, tickets
+// POS, promociones, ajustes) ya NO tienen una política que permita leer o
+// escribir la tabla completa con la sola clave anon: la función valida en
+// el propio servidor de base de datos la contraseña de admin/edición o el
+// PIN de la persona logueada antes de tocar cualquier fila.
+async function sbRpc(fnName, params){
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json', Prefer: 'return=representation'
+    },
+    body: JSON.stringify(params || {})
+  });
+  if (!r.ok) {
+    const text = await r.text().catch(() => '');
+    throw new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
+  }
+  return r.json();
+}
+
+// Contraseña de administrador / de edición de la sesión actual, guardadas
+// solo en sessionStorage de este navegador (nunca en el HTML ni en un
+// repositorio) para poder acompañar cada llamada RPC sin pedirlas de nuevo
+// en cada acción durante la misma sesión.
+function getAdminPassword(){ return sessionStorage.getItem('mf_admin_pw') || null; }
+function setAdminPassword(pw){ if (pw) sessionStorage.setItem('mf_admin_pw', pw); else sessionStorage.removeItem('mf_admin_pw'); }
+function getEditPassword(){ return sessionStorage.getItem('mfs_edit_pw') || null; }
+function setEditPassword(pw){ if (pw) sessionStorage.setItem('mfs_edit_pw', pw); else sessionStorage.removeItem('mfs_edit_pw'); }
+// PIN de personal solo se guarda para poder registrar/leer tickets POS con
+// esa identidad; nunca se usa para las operaciones de administración.
+function getStaffCreds(){
+  const raw = sessionStorage.getItem('mf_staff_creds');
+  try { return raw ? JSON.parse(raw) : null; } catch(e) { return null; }
+}
+function setStaffCreds(email, pin){
+  if (email && pin) sessionStorage.setItem('mf_staff_creds', JSON.stringify({ email, pin }));
+  else sessionStorage.removeItem('mf_staff_creds');
+}
+// Credenciales de "sesión válida" (admin o cajero) para las RPC que
+// cualquiera de los dos puede usar (tickets POS, promociones, ajustes).
+function getSessionCredsParams(){
+  const staff = getStaffCreds();
+  return {
+    p_admin_password: getAdminPassword(),
+    p_staff_email: staff ? staff.email : null,
+    p_staff_pin: staff ? staff.pin : null
+  };
 }
 
 // ================= PERSONAL & PERMISOS DE EQUIPO =================
@@ -4814,12 +4862,12 @@ async function saveMetaPixelConfig() {
   const activo = activeInput.checked;
 
   try {
-    if (metaPixelConfig.rowId) {
-      await sbPatch('ajustes_marketing', metaPixelConfig.rowId, { meta_pixel_id: id, meta_pixel_activo: activo, updated_at: new Date().toISOString() });
-    } else {
-      const row = await sbInsert('ajustes_marketing', { meta_pixel_id: id, meta_pixel_activo: activo });
-      metaPixelConfig.rowId = row.id;
-    }
+    const rows = await sbRpc('rpc_admin_save_meta_pixel', {
+      p_admin_password: getAdminPassword(), p_id: metaPixelConfig.rowId || null,
+      p_meta_pixel_id: id, p_meta_pixel_activo: activo
+    });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    if (row) metaPixelConfig.rowId = row.id;
     metaPixelConfig.id = id;
     metaPixelConfig.activo = activo;
     if (msgEl) {
@@ -4850,10 +4898,13 @@ async function populateStaffLoginSelect() {
   if (!select) return;
   select.innerHTML = '<option value="">Cargando…</option>';
   try {
-    const rows = await sbGet('personal_equipo?estado=eq.Activo&order=nombre.asc');
+    // Este listado solo trae id/nombre/rol (rpc_staff_login_options nunca
+    // devuelve email/pin/permisos) — el PIN se verifica aparte, en el
+    // servidor, al iniciar sesión.
+    const rows = await sbRpc('rpc_staff_login_options', {});
     staffLoginCache = Array.isArray(rows) ? rows : [];
     select.innerHTML = '<option value="">-- Selecciona tu nombre --</option>' +
-      staffLoginCache.map(p => `<option value="${p.id}">${p.nombre} (${p.rol})</option>`).join('');
+      staffLoginCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)} (${escapeHtml(p.rol)})</option>`).join('');
   } catch (e) {
     select.innerHTML = '<option value="">No se pudo cargar el personal.</option>';
   }
@@ -4871,8 +4922,13 @@ async function handleStaffLogin() {
     return;
   }
 
-  const person = staffLoginCache.find(p => String(p.id) === String(id));
-  if (!person || String(person.pin) !== pin || person.estado !== 'Activo') {
+  let rows = [];
+  try {
+    rows = await sbRpc('rpc_staff_login', { p_id: parseInt(id, 10), p_pin: pin });
+  } catch (e) { rows = []; }
+
+  const person = Array.isArray(rows) ? rows[0] : rows;
+  if (!person) {
     if (err) { err.textContent = 'PIN incorrecto o usuario inactivo.'; err.classList.remove('hidden'); }
     return;
   }
@@ -4881,6 +4937,7 @@ async function handleStaffLogin() {
     id: person.id, nombre: person.nombre, email: person.email,
     rol: person.rol, permisos: Array.isArray(person.permisos) ? person.permisos : []
   };
+  setStaffCreds(person.email, pin);
   localStorage.setItem('mf_admin_logged_in', 'true');
   localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
   closeLoginModal();
@@ -4893,13 +4950,25 @@ async function loadPersonalFromAPI() {
   const searchInput = document.getElementById('personalSearchInput');
   if (searchInput) searchInput.value = '';
 
+  // Gestionar personal es una acción exclusiva del administrador: un
+  // cajero logueado con su PIN puede usar el sistema, pero no ver ni
+  // editar el PIN o los permisos de sus compañeros.
+  const adminPw = getAdminPassword();
+  if (!adminPw) {
+    const msg = 'Solo el administrador puede ver y gestionar al personal.';
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${msg}</td></tr>`;
+    if (tbodyAv) tbodyAv.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${msg}</td></tr>`;
+    return;
+  }
+
   try {
-    const rows = await sbGet('personal_equipo?order=nombre.asc');
+    const rows = await sbRpc('rpc_admin_list_personal', { p_admin_password: adminPw });
     personalCache = Array.isArray(rows) ? rows : [];
     renderPersonalTable(personalCache);
   } catch (e) {
-    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el personal.</td></tr>';
-    if (tbodyAv) tbodyAv.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el personal.</td></tr>';
+    const msg = e.message === 'unauthorized' ? 'Tu sesión de administrador expiró. Vuelve a iniciar sesión.' : 'No se pudo cargar el personal.';
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${msg}</td></tr>`;
+    if (tbodyAv) tbodyAv.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${msg}</td></tr>`;
   }
 }
 
@@ -4919,11 +4988,11 @@ function renderPersonalTable(list) {
       const permCount = Array.isArray(p.permisos) ? p.permisos.length : 0;
       return `
       <tr>
-        <td><b>${p.nombre}</b></td>
-        <td>${p.email}</td>
-        <td>${p.rol}</td>
-        <td>${p.bodega_asignada}</td>
-        <td><span class="pill ${p.estado === 'Activo' ? 'ok' : ''}">${p.estado}</span></td>
+        <td><b>${escapeHtml(p.nombre)}</b></td>
+        <td>${escapeHtml(p.email)}</td>
+        <td>${escapeHtml(p.rol)}</td>
+        <td>${escapeHtml(p.bodega_asignada)}</td>
+        <td><span class="pill ${p.estado === 'Activo' ? 'ok' : ''}">${escapeHtml(p.estado)}</span></td>
         <td>${permCount} sección${permCount === 1 ? '' : 'es'}</td>
         <td style="white-space:nowrap;">
           <button class="btn small primary" onclick="openPersonalModal(${p.id})">Editar</button>
@@ -4938,11 +5007,11 @@ function renderPersonalTable(list) {
       const permCount = Array.isArray(p.permisos) ? p.permisos.length : 0;
       return `
       <tr>
-        <td><b>${p.nombre}</b></td>
-        <td>${p.email}</td>
-        <td>${p.rol}</td>
-        <td>${p.bodega_asignada}</td>
-        <td><span class="pill ${p.estado === 'Activo' ? 'ok' : ''}">${p.estado}</span></td>
+        <td><b>${escapeHtml(p.nombre)}</b></td>
+        <td>${escapeHtml(p.email)}</td>
+        <td>${escapeHtml(p.rol)}</td>
+        <td>${escapeHtml(p.bodega_asignada)}</td>
+        <td><span class="pill ${p.estado === 'Activo' ? 'ok' : ''}">${escapeHtml(p.estado)}</span></td>
         <td>${permCount} sección${permCount === 1 ? '' : 'es'}</td>
       </tr>`;
     }).join('');
@@ -5013,14 +5082,15 @@ async function savePersonal() {
     return;
   }
 
-  const payload = { nombre, email, pin, rol, bodega_asignada, estado, permisos };
+  const adminPw = getAdminPassword();
+  if (!adminPw) { alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión.'); return; }
 
   try {
-    if (id) {
-      await sbPatch('personal_equipo', id, payload);
-    } else {
-      await sbInsert('personal_equipo', payload);
-    }
+    await sbRpc('rpc_admin_upsert_personal', {
+      p_admin_password: adminPw, p_id: id ? parseInt(id, 10) : null,
+      p_nombre: nombre, p_email: email, p_pin: pin, p_rol: rol,
+      p_bodega: bodega_asignada, p_estado: estado, p_permisos: permisos
+    });
     closePersonalModal();
     await loadPersonalFromAPI();
   } catch (e) {
@@ -5030,8 +5100,10 @@ async function savePersonal() {
 
 async function deletePersonal(id) {
   if (!confirm('¿Eliminar a esta persona del equipo? Esta acción no se puede deshacer.')) return;
+  const adminPw = getAdminPassword();
+  if (!adminPw) { alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión.'); return; }
   try {
-    await sbDelete('personal_equipo', id);
+    await sbRpc('rpc_admin_delete_personal', { p_admin_password: adminPw, p_id: id });
     await loadPersonalFromAPI();
   } catch (e) {
     alert('No se pudo eliminar el registro.');
@@ -5055,9 +5127,13 @@ function renderMetaPixelAdminForm() {
 document.getElementById('gateBtn').addEventListener('click', checkGate);
 document.getElementById('gatePw').addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkGate(); });
 
-function checkGate(){
+async function checkGate(){
   const pw = document.getElementById('gatePw').value;
-  if (pw === EDIT_PASSWORD){
+  let ok = false;
+  try { ok = await sbRpc('rpc_check_edit', { p_password: pw }); } catch (e) { ok = false; }
+
+  if (ok){
+    setEditPassword(pw);
     sessionStorage.setItem('mfs_unlocked', '1');
     document.getElementById('gate').classList.add('hidden');
     document.getElementById('costosContent').classList.remove('hidden');
@@ -5115,7 +5191,7 @@ async function loadGastos(){
   
   let rows = [];
   try{
-    const data = await sbGet('gastos_generales?select=*&order=orden.asc,id.asc');
+    const data = await sbRpc('rpc_admin_list_gastos', { p_edit_password: getEditPassword() });
     if (Array.isArray(data) && data.length > 0) {
       rows = data;
     }
@@ -5223,7 +5299,7 @@ function gastoRow(row){
     inputs.forEach((inp, idx) => { sucursalesData[BRANCHES[idx].key] = parseFloat(inp.value) || 0; });
     saveBtn.disabled = true;
     try {
-      await sbPatch('gastos_generales', row.id, { concepto: newConcepto, sucursales: sucursalesData });
+      await sbRpc('rpc_admin_update_gasto', { p_edit_password: getEditPassword(), p_id: row.id, p_concepto: newConcepto, p_sucursales: sucursalesData });
       alert('Gasto actualizado en Supabase ✓');
     } catch(err) { 
       alert('Gasto de ' + newConcepto + ' guardado localmente correctamente ✓'); 
@@ -5263,12 +5339,11 @@ async function loadProductos(){
   const search = document.getElementById('prodSearch').value.trim();
   const cat = document.getElementById('prodCat').value;
 
-  let query = `costos_productos?select=*&order=categoria.asc,nombre_generico.asc&limit=${PROD_PAGE_SIZE}&offset=${prodPage*PROD_PAGE_SIZE}`;
-  if (search) query += `&nombre_generico=ilike.*${encodeURIComponent(search)}*`;
-  if (cat) query += `&categoria=eq.${encodeURIComponent(cat)}`;
-
   try{
-    const rows = await sbGet(query);
+    const rows = await sbRpc('rpc_admin_list_costos', {
+      p_edit_password: getEditPassword(), p_limit: PROD_PAGE_SIZE, p_offset: prodPage * PROD_PAGE_SIZE,
+      p_search: search || null, p_categoria: cat || null
+    });
     tbody.innerHTML = '';
     if (rows.length === 0){
       tbody.innerHTML = '<tr><td colspan="9">Sin resultados</td></tr>';
@@ -5380,8 +5455,8 @@ async function openProductModal(id){
   body.innerHTML = 'Cargando datos del producto…';
   overlay.classList.remove('hidden');
   try{
-    const rows = await sbGet(`costos_productos?select=*&id=eq.${id}`);
-    const row = rows[0];
+    const rows = await sbRpc('rpc_admin_get_costo', { p_edit_password: getEditPassword(), p_id: id });
+    const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row) throw new Error('Producto no encontrado');
     title.textContent = row.nombre_generico || 'Editar producto';
     body.innerHTML = '';
@@ -5478,7 +5553,7 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   body.medidas = dims.length ? dims.join(' x ') + ' cm' : null;
   status.textContent = 'Guardando en Supabase…';
   try{
-    await sbPatch('costos_productos', modalProductId, body);
+    await sbRpc('rpc_admin_update_costo', { p_edit_password: getEditPassword(), p_id: modalProductId, p_fields: body });
     status.textContent = 'Guardado ✓';
     loadProductos();
     setTimeout(()=>{ document.getElementById('prodModalOverlay').classList.add('hidden'); }, 600);
@@ -5506,6 +5581,15 @@ let selectedPayMethod = 'cash';
 
 function fmtMoney(v){
   return '$' + Number(v || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Escapa texto que viene de un cliente/usuario (nombre, correo, etc.) antes
+// de insertarlo con innerHTML, para que no pueda inyectar HTML/JS ejecutable
+// en la sesión de un administrador que abra esa tabla (XSS almacenado).
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
 }
 
 // TOGGLE SUBMENU & SIDEBAR COLLAPSE
@@ -5835,10 +5919,12 @@ function confirmPOSSale() {
   renderTopProductsTable();
 
   // Persist ticket to Supabase for the ticket history (best-effort, non-blocking)
-  sbInsert('pos_tickets', {
-    folio, cliente: clienteNombre, almacen, items: cartSnapshot,
-    subtotal, iva, total, pago_recibido: given, cambio: change
-  }).then(row => {
+  sbRpc('rpc_pos_ticket_insert', {
+    ...getSessionCredsParams(),
+    p_folio: folio, p_cliente: clienteNombre, p_almacen: almacen, p_items: cartSnapshot,
+    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change
+  }).then(rows => {
+    const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
   }).catch(() => {});
 
@@ -5852,7 +5938,7 @@ function closeTicketModal() {
 function buildTicketItemsHTML(items) {
   return items.map(i => {
     const lineTotal = fmtMoney(i.price * i.qty);
-    const name = i.name.length > 26 ? i.name.slice(0, 26) + '…' : i.name;
+    const name = escapeHtml(i.name.length > 26 ? i.name.slice(0, 26) + '…' : i.name);
     return `
     <div class="ticket-item">
       <div class="ticket-item-row"><span>${i.qty > 1 ? i.qty + 'x ' : ''}${name}</span><span>${lineTotal}</span></div>
@@ -5905,7 +5991,7 @@ async function loadTicketHistorial() {
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   try {
-    const rows = await sbGet('pos_tickets?order=created_at.desc&limit=200');
+    const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
     ticketHistorialCache = Array.isArray(rows) ? rows : [];
     renderTicketHistorialTable(ticketHistorialCache);
   } catch (e) {
@@ -5927,9 +6013,9 @@ function renderTicketHistorialTable(tickets) {
     const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     return `
     <tr>
-      <td><b>${t.folio}</b></td>
+      <td><b>${escapeHtml(t.folio)}</b></td>
       <td>${fecha}</td>
-      <td>${t.cliente || 'Cliente Mostrador'}</td>
+      <td>${escapeHtml(t.cliente || 'Cliente Mostrador')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
@@ -6317,21 +6403,25 @@ async function syncProductsFromPrestaShopAPI(){
 
   if (!loaded) {
     try {
-      const data = await sbGet('costos_productos?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,mayoreo_precio_2,volumen_precio_3,distribuidor_precio,precio_compra_regular,precio_compra_actualizado,link_imagen,codigo_barra,codigo_pos,descripcion,link_producto,url_producto&limit=250');
+      // Solo se consulta la vista pública (sin costo de compra, precio a
+      // distribuidor ni datos de competencia) — la tabla completa ya no es
+      // legible sin la contraseña de edición, ni siquiera para este
+      // respaldo cuando falla PrestaShop.
+      const data = await sbGet('costos_productos_publico?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,link_imagen,codigo_barra,codigo_pos,descripcion&limit=250');
       if (Array.isArray(data) && data.length > 0) {
         liveProducts = data.map(item => {
-          const prodUrl = item.link_producto || item.url_producto || `https://mifiestashop.com/producto/${item.codigo_pos || item.id}`;
+          const prodUrl = `https://mifiestashop.com/producto/${item.codigo_pos || item.id}`;
           return {
             id: item.id,
             name: item.nombre_generico || 'Producto Mi Fiestashop',
             nombre_explicito: item.nombre_explicito || '',
             sku: item.codigo_pos || item.codigo_barra || `MF-${item.id}`,
             barcode: item.codigo_barra || '',
-            price: parseFloat(item.menudeo_precio || item.precio_compra_actualizado || 45),
-            priceMayoreo: parseFloat(item.mayoreo_precio_2 || 0),
-            priceVolumen: parseFloat(item.volumen_precio_3 || 0),
-            priceDistribuidor: parseFloat(item.distribuidor_precio || 0),
-            costoCompra: parseFloat(item.precio_compra_actualizado || item.precio_compra_regular || 0),
+            price: parseFloat(item.menudeo_precio || 45),
+            priceMayoreo: 0,
+            priceVolumen: 0,
+            priceDistribuidor: 0,
+            costoCompra: 0,
             cat: (item.categoria || 'General').toLowerCase().trim(),
             catLabel: item.categoria || 'General',
             img: item.link_imagen || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
@@ -6527,20 +6617,21 @@ function saveProductChanges() {
   }
 
   // Sync back to Supabase DB if function exists
-  if (typeof sbPatch === 'function' && targetProd && targetProd.id) {
-    sbPatch('costos_productos', targetProd.id, {
-      codigo_pos: sku,
-      codigo_barra: barcode,
-      categoria: cat,
-      nombre_generico: name,
-      menudeo_precio: price,
-      mayoreo_precio_2: priceMayoreo || null,
-      volumen_precio_3: priceVolumen || null,
-      distribuidor_precio: priceDistribuidor || null,
-      precio_compra_actualizado: costoCompra || null,
-      link_imagen: img,
-      link_producto: prodUrl,
-      descripcion: desc
+  if (targetProd && targetProd.id) {
+    sbRpc('rpc_catalog_update_producto', {
+      ...getSessionCredsParams(),
+      p_id: targetProd.id,
+      p_codigo_pos: sku,
+      p_codigo_barra: barcode,
+      p_categoria: cat,
+      p_nombre_generico: name,
+      p_menudeo_precio: String(price),
+      p_mayoreo_precio_2: priceMayoreo ? String(priceMayoreo) : null,
+      p_volumen_precio_3: priceVolumen ? String(priceVolumen) : null,
+      p_distribuidor_precio: priceDistribuidor ? String(priceDistribuidor) : null,
+      p_precio_compra_actualizado: costoCompra ? String(costoCompra) : null,
+      p_link_imagen: img,
+      p_descripcion: desc
     }).catch(e => console.log('Sincronización Supabase en segundo plano:', e.message));
   }
 
@@ -7565,18 +7656,18 @@ async function loadCustomersFromAPI(){
   if(tbody) {
     tbody.innerHTML = list.map(c => `
       <tr>
-        <td><b>#${c.id}</b></td>
-        <td><b>${c.name}</b></td>
-        <td>${c.email}</td>
-        <td>${c.rfc}</td>
-        <td>${c.date}</td>
+        <td><b>#${escapeHtml(c.id)}</b></td>
+        <td><b>${escapeHtml(c.name)}</b></td>
+        <td>${escapeHtml(c.email)}</td>
+        <td>${escapeHtml(c.rfc)}</td>
+        <td>${escapeHtml(c.date)}</td>
         <td><span class="pill ok">Activo</span></td>
       </tr>
     `).join('');
   }
 
   if(select && list.length > 0) {
-    select.innerHTML = '<option value="mostrador">Cliente Mostrador (General)</option>' + list.map(c => `<option value="${c.id}">${c.name} — ${c.email}</option>`).join('');
+    select.innerHTML = '<option value="mostrador">Cliente Mostrador (General)</option>' + list.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
   }
 }
 
@@ -7603,24 +7694,24 @@ async function loadOrdersFromAPI(){
   // que sí agrega datos reales de PrestaShop (ver loadRealProductSales()).
 
   tbody.innerHTML = list.map(o => `
-    <tr style="cursor:pointer;" onclick="openOrderDetailModal('${o.id}')">
-      <td><b>${o.id}</b></td>
-      <td>${o.date}</td>
-      <td><b>${o.customer}</b></td>
-      <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${o.channel}</span></td>
+    <tr style="cursor:pointer;" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
+      <td><b>${escapeHtml(o.id)}</b></td>
+      <td>${escapeHtml(o.date)}</td>
+      <td><b>${escapeHtml(o.customer)}</b></td>
+      <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${escapeHtml(o.channel)}</span></td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
-      <td><span class="pill ok">${o.status}</span></td>
+      <td><span class="pill ok">${escapeHtml(o.status)}</span></td>
       <td>
-        <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('${o.id}')"> Ver Orden</button>
-        <button class="btn small" onclick="event.stopPropagation(); reprintTicket('${o.id}', ${o.total})"> Ticket</button>
+        <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('${escapeHtml(o.id)}')"> Ver Orden</button>
+        <button class="btn small" onclick="event.stopPropagation(); reprintTicket('${escapeHtml(o.id)}', ${o.total})"> Ticket</button>
       </td>
     </tr>
   `).join('');
 
   const skSelect = document.getElementById('skSelectOrder');
   if (skSelect && list.length > 0) {
-    skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' + 
-      list.map(o => `<option value="${o.id}">${o.id} - ${o.customer} (${fmtMoney(o.total)})</option>`).join('');
+    skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' +
+      list.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.id)} - ${escapeHtml(o.customer)} (${fmtMoney(o.total)})</option>`).join('');
   }
 
   renderTopProductsTable();
@@ -7652,7 +7743,7 @@ function renderOdProductRows(items){
   } else {
     tbody.innerHTML = items.map(it => `
       <tr>
-        <td>${it.name}${it.sku ? `<br><span style="font-size:11px; color:var(--text-muted);">${it.sku}</span>` : ''}</td>
+        <td>${escapeHtml(it.name)}${it.sku ? `<br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(it.sku)}</span>` : ''}</td>
         <td style="text-align:right;">${fmtMoney(it.price)}</td>
         <td style="text-align:center;">${it.qty}</td>
         <td style="text-align:center;"><span class="pill ok">Sí</span></td>
@@ -7677,7 +7768,7 @@ function openOrderDetailModal(id){
 
   const totalStr = fmtMoney(order.total) + ' MXN';
   document.getElementById('odBreadcrumb').textContent = order.id;
-  document.getElementById('odTitleHeader').innerHTML = `${order.id} <span style="font-weight:400; font-size:1rem; color:var(--text-muted);">de ${order.customer || 'Cliente'}</span>`;
+  document.getElementById('odTitleHeader').innerHTML = `${escapeHtml(order.id)} <span style="font-weight:400; font-size:1rem; color:var(--text-muted);">de ${escapeHtml(order.customer || 'Cliente')}</span>`;
   document.getElementById('odTotalBadge').textContent = totalStr;
   document.getElementById('odDateHeader').textContent = order.date || '—';
   document.getElementById('odClientName').textContent = order.customer || 'Cliente';
@@ -7916,8 +8007,8 @@ function renderNotificationLog() {
     return `
       <div style="display:flex; gap:10px; padding:10px; border:1px solid var(--border); border-radius:10px; background:var(--plane);">
         <div style="flex:1; min-width:0;">
-          <div style="font-weight:700; font-size:13px;">${n.title}</div>
-          <div style="font-size:12.5px; color:var(--text-secondary);">${n.body}</div>
+          <div style="font-weight:700; font-size:13px;">${escapeHtml(n.title)}</div>
+          <div style="font-size:12.5px; color:var(--text-secondary);">${escapeHtml(n.body)}</div>
           <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${fmtNotifTime(n.time)}</div>
         </div>
       </div>
@@ -8001,22 +8092,30 @@ function closeLoginModal() {
   if (modal) modal.classList.add('hidden');
 }
 
-function handleAdminLogin() {
+async function handleAdminLogin() {
   const email = (document.getElementById('loginEmail')?.value || '').trim().toLowerCase();
   const pass = (document.getElementById('loginPassword')?.value || '').trim();
+  const err = document.getElementById('loginErrorMsg');
 
-  if (email === 'i.ovany.03@gmail.com' && pass === 'Soyelgio02.') {
+  // La contraseña ya no se compara en el navegador contra un valor fijo en
+  // el JS (cualquiera podía leerla en el código fuente): se verifica en el
+  // servidor de base de datos, que nunca revela la contraseña real.
+  let ok = false;
+  try {
+    ok = email === 'i.ovany.03@gmail.com' && await sbRpc('rpc_check_admin', { p_password: pass });
+  } catch (e) { ok = false; }
+
+  if (ok) {
+    setAdminPassword(pass);
     localStorage.setItem('mf_admin_logged_in', 'true');
     localStorage.removeItem('mf_staff_session');
+    setStaffCreds(null, null);
     currentStaffSession = null;
     closeLoginModal();
     showAdminDashboard();
-  } else {
-    const err = document.getElementById('loginErrorMsg');
-    if (err) {
-      err.textContent = 'Credenciales incorrectas. Verifique el usuario o contraseña.';
-      err.classList.remove('hidden');
-    }
+  } else if (err) {
+    err.textContent = 'Credenciales incorrectas. Verifique el usuario o contraseña.';
+    err.classList.remove('hidden');
   }
 }
 
@@ -8448,7 +8547,7 @@ function renderPromosAdminTable() {
 
 async function togglePromoActivo(id, current) {
   try {
-    await sbPatch('promociones_web', id, { activo: !current });
+    await sbRpc('rpc_admin_toggle_promo', { ...getSessionCredsParams(), p_id: id, p_activo: !current });
     await loadPromosAdmin();
   } catch (e) {
     alert('No se pudo actualizar la promoción: ' + e.message);
@@ -8493,12 +8592,14 @@ async function savePromoAdmin() {
     return;
   }
   try {
-    if (id) {
-      await sbPatch('promociones_web', id, payload);
-    } else {
-      payload.orden = promosAdminCache.length;
-      await sbInsert('promociones_web', payload);
-    }
+    const orden = id ? null : promosAdminCache.length;
+    await sbRpc('rpc_admin_upsert_promo', {
+      ...getSessionCredsParams(),
+      p_id: id ? parseInt(id, 10) : null,
+      p_titulo: payload.titulo, p_descripcion: payload.descripcion, p_tipo: payload.tipo,
+      p_codigo: payload.codigo, p_vigencia_texto: payload.vigencia_texto, p_icono: payload.icono,
+      p_color: payload.color, p_activo: payload.activo, p_orden: orden
+    });
     closePromoAdminModal();
     await loadPromosAdmin();
   } catch (e) {
@@ -8509,7 +8610,7 @@ async function savePromoAdmin() {
 async function deletePromoAdmin(id) {
   if (!confirm('¿Eliminar esta promoción? Los clientes dejarán de verla.')) return;
   try {
-    await sbDelete('promociones_web', id);
+    await sbRpc('rpc_admin_delete_promo', { ...getSessionCredsParams(), p_id: id });
     await loadPromosAdmin();
   } catch (e) {
     alert('No se pudo eliminar la promoción: ' + e.message);
@@ -8632,6 +8733,10 @@ function logoutAdmin() {
   localStorage.removeItem('mf_admin_logged_in');
   localStorage.removeItem('mf_staff_session');
   currentStaffSession = null;
+  setAdminPassword(null);
+  setEditPassword(null);
+  setStaffCreds(null, null);
+  sessionStorage.removeItem('mfs_unlocked');
   goToStorefront();
 }
 
@@ -9442,33 +9547,40 @@ async function submitStorefrontOrder(){
   }
   errEl.classList.add('hidden');
 
-  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const shippingCost = checkoutShippingCost;
-  const total = subtotal + shippingCost;
-  const folio = 'WEB-' + Date.now().toString().slice(-6);
-  const fullAddress = `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
-
-  const orderPayload = {
-    folio,
-    customer_name: name,
-    customer_email: email,
-    customer_phone: phone,
-    shipping_address: fullAddress,
-    shipping_cp: cp,
-    shipping_cost: shippingCost,
-    shipping_carrier: checkoutShippingCarrier || '',
-    payment_method: checkoutPayMethod,
-    items: cart.map(i => ({ id: i.id, name: i.name, sku: i.sku, price: i.price, qty: i.qty })),
-    subtotal,
-    total,
-    status: 'Pendiente'
-  };
-
+  // El subtotal/total real se calcula en el servidor (a partir del precio
+  // vigente en PrestaShop de cada producto), no con los precios que ya
+  // están cargados en el navegador — así nadie puede alterar el total
+  // manipulando el carrito desde la consola antes de confirmar la compra.
+  let order;
   try {
-    await sbInsert('pedidos_online', orderPayload);
+    const r = await fetch('/api/crear-pedido', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: cart.map(i => ({ id: i.id, qty: i.qty })),
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+        address, colonia, municipio, estado, cp,
+        shipping_cost: checkoutShippingCost,
+        shipping_carrier: checkoutShippingCarrier || '',
+        payment_method: checkoutPayMethod
+      })
+    });
+    const data = await r.json();
+    if (!r.ok || data.error) {
+      errEl.textContent = data.error || 'No se pudo procesar tu pedido. Intenta de nuevo.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    order = data;
   } catch (e) {
-    console.log('No se pudo guardar el pedido en Supabase:', e.message);
+    errEl.textContent = 'No se pudo procesar tu pedido. Verifica tu conexión e intenta de nuevo.';
+    errEl.classList.remove('hidden');
+    return;
   }
+
+  const { folio, total, items: verifiedItems } = order;
 
   fetch('/api/enviar-correo', {
     method: 'POST',
@@ -9476,7 +9588,7 @@ async function submitStorefrontOrder(){
     body: JSON.stringify({
       to: email,
       tipo: 'pedido',
-      datos: { nombre: name, pedidoId: folio, total, items: orderPayload.items },
+      datos: { nombre: name, pedidoId: folio, total, items: verifiedItems },
     }),
   }).catch(e => console.log('No se pudo enviar el correo de confirmación:', e.message));
 
