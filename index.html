@@ -700,10 +700,10 @@
   /* TICKET PREVIEW */
   .ticket-paper {
     background: #fff;
-    color: #161616;
-    font-family: 'Courier New', Courier, monospace;
-    padding: 18px 20px 16px;
-    border-radius: 10px;
+    color: #1a1a1a;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    padding: 22px 22px 18px;
+    border-radius: 14px;
     width: 320px;
     margin: 0 auto 16px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.16);
@@ -715,21 +715,21 @@
   .ticket-paper .t-center { text-align: center; }
   .ticket-brand-bar {
     height: 4px;
-    margin: -18px -20px 14px;
-    border-radius: 10px 10px 0 0;
+    margin: -22px -22px 14px;
+    border-radius: 14px 14px 0 0;
     background: linear-gradient(90deg, #d3007b, #ff6fb3);
   }
-  .ticket-store-name { font-weight: 800; font-size: 15.5px; letter-spacing: 0.01em; }
+  .ticket-logo { display: block; max-height: 46px; max-width: 100%; margin: 0 auto 8px; object-fit: contain; }
+  .ticket-store-name { font-weight: 800; font-size: 16.5px; letter-spacing: 0.01em; }
   .ticket-sub { color: #666; font-size: 11px; }
-  .ticket-divider { border-top: 1px dashed #b0b0b8; margin: 10px 0; }
-  .ticket-item { margin-bottom: 7px; }
+  .ticket-divider { border-top: 1px dashed #c9c9d2; margin: 12px 0; }
+  .ticket-item { margin-bottom: 8px; }
   .ticket-item-row { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; }
-  .ticket-item-sub { display: flex; justify-content: space-between; gap: 10px; color: #666; font-size: 11px; margin-top: 1px; }
-  .ticket-total-row { display: flex; justify-content: space-between; padding: 2px 0; }
-  .ticket-total-row.grand { font-size: 14.5px; font-weight: 800; padding-top: 6px; }
-  .ticket-thanks { font-weight: 700; margin-bottom: 2px; }
-  .ticket-note { color: #777; font-size: 10.5px; }
-  .ticket-scissors { text-align: center; color: #aaa; font-size: 11px; letter-spacing: 3px; margin-top: 14px; }
+  .ticket-item-sub { display: flex; justify-content: space-between; gap: 10px; color: #777; font-size: 11px; margin-top: 1px; }
+  .ticket-total-row { display: flex; justify-content: space-between; padding: 3px 0; color: #444; }
+  .ticket-total-row.grand { font-size: 16px; font-weight: 800; padding-top: 8px; color: #1a1a1a; }
+  .ticket-thanks { font-weight: 700; margin-bottom: 2px; font-size: 13px; }
+  .ticket-scissors { text-align: center; color: #ccc; font-size: 11px; letter-spacing: 3px; margin-top: 14px; }
 
   @media print {
     body * { visibility: hidden; }
@@ -3306,6 +3306,7 @@
           <h3>Vista Previa del Ticket Impreso</h3>
           <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
             <div class="ticket-brand-bar"></div>
+            <img class="ticket-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
             <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
             <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
             <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
@@ -3328,7 +3329,6 @@
             <div class="ticket-total-row grand"><span>TOTAL:</span><span>$163.56</span></div>
             <div class="ticket-divider"></div>
             <div class="t-center ticket-thanks" id="prevTFoot">¡Gracias por tu compra en Mi Fiestashop!</div>
-            <div class="t-center ticket-note">Conserva tu ticket por si necesitas una aclaración.</div>
             <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
           </div>
         </div>
@@ -4295,6 +4295,7 @@
 
     <div class="ticket-paper" id="printableTicket">
       <div class="ticket-brand-bar"></div>
+      <img class="ticket-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
       <div class="t-center ticket-store-name" id="tHeaderName">MI FIESTASHOP</div>
       <div class="t-center ticket-sub" id="tHeaderRfc">RFC: MFS260101XXX</div>
       <div class="t-center ticket-sub" id="tHeaderAddress">Sucursal Puebla Principal</div>
@@ -4322,7 +4323,6 @@
       </div>
       <div class="ticket-divider"></div>
       <div class="t-center ticket-thanks" id="tFooterMsg">¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com</div>
-      <div class="t-center ticket-note">Conserva tu ticket por si necesitas una aclaración.</div>
       <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
     </div>
 
@@ -4744,22 +4744,30 @@ async function sbRpc(fnName, params){
 }
 
 // Contraseña de administrador / de edición de la sesión actual, guardadas
-// solo en sessionStorage de este navegador (nunca en el HTML ni en un
-// repositorio) para poder acompañar cada llamada RPC sin pedirlas de nuevo
-// en cada acción durante la misma sesión.
-function getAdminPassword(){ return sessionStorage.getItem('mf_admin_pw') || null; }
-function setAdminPassword(pw){ if (pw) sessionStorage.setItem('mf_admin_pw', pw); else sessionStorage.removeItem('mf_admin_pw'); }
-function getEditPassword(){ return sessionStorage.getItem('mfs_edit_pw') || null; }
-function setEditPassword(pw){ if (pw) sessionStorage.setItem('mfs_edit_pw', pw); else sessionStorage.removeItem('mfs_edit_pw'); }
+// en este navegador (nunca en el HTML ni en un repositorio) para poder
+// acompañar cada llamada RPC sin pedirlas de nuevo en cada acción.
+//
+// Se usa localStorage (no sessionStorage): "Cerrar Sesión" ya deja al admin
+// con mf_admin_logged_in=true en localStorage de forma indefinida (así
+// funciona el POS de una tienda: el dispositivo se queda con la sesión
+// iniciada todo el día, incluso si se cierra y reabre el navegador/PWA).
+// Guardar la contraseña solo en sessionStorage rompía eso: al reabrir la
+// app, el panel se veía "con sesión iniciada" pero sessionStorage ya
+// estaba vacío, así que cada acción (guardar un ticket, una salida de
+// caja, etc.) fallaba en silencio con "unauthorized" sin avisar nada.
+function getAdminPassword(){ return localStorage.getItem('mf_admin_pw') || null; }
+function setAdminPassword(pw){ if (pw) localStorage.setItem('mf_admin_pw', pw); else localStorage.removeItem('mf_admin_pw'); }
+function getEditPassword(){ return localStorage.getItem('mfs_edit_pw') || null; }
+function setEditPassword(pw){ if (pw) localStorage.setItem('mfs_edit_pw', pw); else localStorage.removeItem('mfs_edit_pw'); }
 // PIN de personal solo se guarda para poder registrar/leer tickets POS con
 // esa identidad; nunca se usa para las operaciones de administración.
 function getStaffCreds(){
-  const raw = sessionStorage.getItem('mf_staff_creds');
+  const raw = localStorage.getItem('mf_staff_creds');
   try { return raw ? JSON.parse(raw) : null; } catch(e) { return null; }
 }
 function setStaffCreds(email, pin){
-  if (email && pin) sessionStorage.setItem('mf_staff_creds', JSON.stringify({ email, pin }));
-  else sessionStorage.removeItem('mf_staff_creds');
+  if (email && pin) localStorage.setItem('mf_staff_creds', JSON.stringify({ email, pin }));
+  else localStorage.removeItem('mf_staff_creds');
 }
 // Credenciales de "sesión válida" (admin o cajero) para las RPC que
 // cualquiera de los dos puede usar (tickets POS, promociones, ajustes).
@@ -8030,6 +8038,33 @@ async function loadOrdersFromAPI(){
   } catch(e) {}
 
   if(list.length === 0) list = DEFAULT_ORDERS;
+
+  // Las ventas del Sistema POS no se crean como pedido real en PrestaShop
+  // (/api/pedidos nunca las va a traer) — se guardan aparte en pos_tickets.
+  // Se incorporan aquí para que una venta de mostrador también se vea en
+  // "Pedidos" y no solo en el Historial de Tickets del POS.
+  try {
+    const tickets = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
+    if (Array.isArray(tickets) && tickets.length > 0) {
+      ticketHistorialCache = tickets; // así "Ticket" reimprime el detalle real sin tener que abrir antes el Historial de Tickets
+      const posOrders = tickets.map(t => ({
+        id: t.folio,
+        date: new Date(t.created_at).toLocaleString('es-MX'),
+        customer: t.cliente || 'Cliente Mostrador',
+        channel: 'Sistema POS',
+        total: Number(t.total || 0),
+        status: 'Pago Aceptado',
+        items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
+        rawId: null,
+        _sortDate: new Date(t.created_at).getTime()
+      }));
+      list = posOrders.concat(list).sort((a, b) => (b._sortDate || 0) - (a._sortDate || 0));
+    }
+  } catch (e) {
+    // Si falla (sin sesión válida, sin red, etc.) se sigue mostrando solo
+    // lo que ya trajo PrestaShop, igual que antes.
+  }
+
   loadedOrdersList = list;
 
   // Nota: las ventas reales por producto ya NO se sacan de aquí (esta lista de pedidos
