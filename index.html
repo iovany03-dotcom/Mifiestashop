@@ -70,6 +70,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light;
@@ -1103,48 +1104,6 @@
   .store-feat-title { font-weight: 700; font-size: 1.08rem; color: #2e1065; }
   .store-feat-sub { font-size: 0.92rem; color: #8b7d97; }
 
-  /* Sección "Esto también le hace falta a tu evento" (Grupo SAE cross-sell) */
-  .store-crosssell {
-    background: linear-gradient(160deg, #3a1568 0%, #2e1065 60%, #24095a 100%);
-    color: #fff; padding: 48px 20px 56px; position: relative; overflow: hidden;
-  }
-  .store-crosssell-confetti { display: flex; justify-content: center; gap: 40px; margin-bottom: 18px; opacity: 0.9; }
-  .store-crosssell-confetti span { font-size: 1.1rem; }
-  .store-crosssell-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
-  .store-crosssell-pill {
-    display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 7px 16px;
-    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 18px;
-  }
-  .store-crosssell-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mf-pink); display: inline-block; }
-  .store-crosssell h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); font-weight: 800; margin: 0 0 14px; line-height: 1.25; }
-  .store-crosssell h2 .highlight { color: #ffd84d; }
-  .store-crosssell p.subtitle { font-size: 1rem; color: #d8c9ec; max-width: 640px; margin: 0 auto 36px; line-height: 1.5; }
-  .store-crosssell-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 28px 20px; text-align: left;
-  }
-  .store-crosssell-card {
-    background: #fff; border-radius: 16px; padding: 26px 20px; position: relative;
-    box-shadow: 0 12px 28px rgba(0,0,0,0.2); transition: transform 0.2s ease;
-  }
-  .store-crosssell-card:hover { transform: translateY(-4px); }
-  .store-crosssell-card::before {
-    content: ''; position: absolute; top: -22px; left: 50%; width: 1px; height: 18px;
-    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.6) 0 4px, transparent 4px 8px);
-  }
-  .store-crosssell-card::after {
-    content: ''; position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
-    width: 6px; height: 6px; border-radius: 50%; background: #fff;
-  }
-  .store-crosssell-icon {
-    width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem; margin-bottom: 14px; color: #fff;
-  }
-  .store-crosssell-card h3 { margin: 0 0 8px; font-size: 1.05rem; color: #2e1065; font-weight: 800; }
-  .store-crosssell-card p { margin: 0 0 14px; font-size: 0.85rem; color: #6b5c7a; line-height: 1.4; min-height: 58px; }
-  .store-crosssell-card a { font-size: 0.85rem; font-weight: 700; color: var(--mf-pink); text-decoration: none; }
-  .store-crosssell-card a:hover { text-decoration: underline; }
-
   .store-footer { background: #f7f5f8; color: #5b4a68; margin-top: 0; font-size: 0.88rem; border-top: 1px solid #f0e6ef; }
   .store-footer-social {
     text-align: center; padding: 34px 24px 30px; background: #efe9f2; border-bottom: 1px solid #e5dce6;
@@ -1489,41 +1448,293 @@
     </div>
 
     <!-- Del mismo equipo que arma tu fiesta (Grupo SAE) -->
-    <section class="store-crosssell">
-      <div class="store-crosssell-confetti" aria-hidden="true">
-        <span style="color:#c084fc;">▼</span><span style="color:#ffb020;">▼</span><span style="color:#34d399;">▼</span><span style="color:#f2652e;">▼</span><span style="color:#c084fc;">▼</span><span style="color:#ffb020;">▼</span>
+    <!-- ================= "TAMBIÉN TE PUEDE INTERESAR" — carrusel de servicios de Grupo SAE ================= -->
+    <section id="tpi3" aria-label="También te puede interesar">
+      <style>
+        #tpi3, #tpi3 *, #tpi3 *::before, #tpi3 *::after{ box-sizing:border-box; }
+        #tpi3{
+          --plum:#2e1065; --purple:#8e3fa8; --green:#4fa83c; --papaya:#f2652e; --sun:#f9e05c; --paper:#fff3de; --lav:#c9aedd;
+          font-family:'Poppins',system-ui,-apple-system,sans-serif;
+          background:var(--plum); color:var(--paper);
+          width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+          isolation:isolate;
+        }
+        #tpi3 .tpi3-torn{ display:block; width:100%; height:34px; position:relative; z-index:2; }
+        #tpi3 .tpi3-torn svg{ display:block; width:100%; height:100%; }
+        #tpi3 .tpi3-garland{ position:relative; z-index:2; display:flex; justify-content:center; gap:clamp(28px,6vw,64px); padding:0 24px; margin-top:-6px; }
+        #tpi3 .tpi3-garland span{ width:16px; height:14px; clip-path:polygon(0 0,100% 0,50% 100%); opacity:.9; }
+        #tpi3 .tpi3-garland span:nth-child(1){ background:var(--purple); }
+        #tpi3 .tpi3-garland span:nth-child(2){ background:var(--sun); }
+        #tpi3 .tpi3-garland span:nth-child(3){ background:var(--green); }
+        #tpi3 .tpi3-garland span:nth-child(4){ background:var(--papaya); }
+        #tpi3 .tpi3-garland span:nth-child(5){ background:var(--purple); }
+        #tpi3 .tpi3-garland span:nth-child(6){ background:var(--sun); }
+        #tpi3 .tpi3-wrap{ position:relative; z-index:2; max-width:1320px; margin:0 auto; padding:20px 0 56px; }
+        #tpi3 .tpi3-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:0 24px; margin:0 0 34px; }
+        #tpi3 .tpi3-head-text{ max-width:600px; }
+        #tpi3 .tpi3-eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:.72rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--plum); background:var(--paper); padding:7px 14px 7px 10px; border-radius:999px; margin:0 0 18px; }
+        #tpi3 .tpi3-eyebrow i{ width:7px; height:7px; border-radius:50%; background:var(--purple); flex-shrink:0; display:block; }
+        #tpi3 h2{ font-family:'Fredoka',system-ui,sans-serif; font-weight:600; font-size:clamp(1.7rem,3.4vw,2.6rem); line-height:1.14; margin:0 0 10px; color:var(--paper); }
+        #tpi3 h2 em{ font-style:normal; color:var(--sun); }
+        #tpi3 .tpi3-sub{ font-size:.98rem; line-height:1.5; color:var(--lav); margin:0; }
+        #tpi3 .tpi3-nav{ display:flex; gap:10px; flex-shrink:0; }
+        #tpi3 .tpi3-nav button{ width:44px; height:44px; border-radius:50%; background:var(--paper); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--plum); transition:transform .15s ease, background .15s ease; }
+        #tpi3 .tpi3-nav button:hover{ background:var(--sun); }
+        #tpi3 .tpi3-nav button:active{ transform:scale(.92); }
+        #tpi3 .tpi3-nav button:focus-visible{ outline:3px solid var(--paper); outline-offset:3px; }
+        #tpi3 .tpi3-nav button:disabled{ opacity:.35; cursor:default; }
+        #tpi3 .tpi3-nav button:disabled:hover{ background:var(--paper); }
+        #tpi3 .tpi3-nav svg{ width:18px; height:18px; }
+        #tpi3 .tpi3-track{ display:flex; gap:24px; overflow-x:auto; scroll-snap-type:x mandatory; padding:26px 24px 40px; margin:0; list-style:none; scrollbar-width:none; -ms-overflow-style:none; }
+        #tpi3 .tpi3-track::-webkit-scrollbar{ display:none; }
+        #tpi3 .tpi3-item{ flex:0 0 auto; width:clamp(210px,26vw,272px); scroll-snap-align:start; }
+        #tpi3 .tpi3-item a{ display:block; text-decoration:none; color:inherit; outline:none; }
+        #tpi3 .tpi3-thread{ width:1px; height:22px; margin:0 auto; background:repeating-linear-gradient(to bottom, rgba(255,243,222,.55) 0 4px, transparent 4px 8px); }
+        #tpi3 .tpi3-tag{ position:relative; background:var(--paper); border-radius:14px; padding:24px 20px 20px; text-align:center; box-shadow:0 14px 30px rgba(0,0,0,.28); transform:rotate(var(--tilt,-2deg)); transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease; }
+        #tpi3 .tpi3-item:nth-child(4n+1) .tpi3-tag{ --tilt:-2deg; }
+        #tpi3 .tpi3-item:nth-child(4n+2) .tpi3-tag{ --tilt:1.5deg; }
+        #tpi3 .tpi3-item:nth-child(4n+3) .tpi3-tag{ --tilt:-1.5deg; }
+        #tpi3 .tpi3-item:nth-child(4n+4) .tpi3-tag{ --tilt:2deg; }
+        #tpi3 .tpi3-item a:hover .tpi3-tag, #tpi3 .tpi3-item a:focus-visible .tpi3-tag{ transform:rotate(0deg) translateY(-6px); box-shadow:0 20px 38px rgba(0,0,0,.34); }
+        #tpi3 .tpi3-item a:focus-visible .tpi3-tag{ outline:3px solid var(--paper); outline-offset:3px; }
+        #tpi3 .tpi3-tag::before{ content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:10px; height:10px; background:var(--plum); border:2px solid var(--paper); border-radius:50%; }
+        #tpi3 .tpi3-badge{ width:50px; height:50px; margin:4px auto 14px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--badge,var(--purple)); }
+        #tpi3 .tpi3-item:nth-child(4n+1) .tpi3-badge{ --badge:var(--purple); }
+        #tpi3 .tpi3-item:nth-child(4n+2) .tpi3-badge{ --badge:var(--green); }
+        #tpi3 .tpi3-item:nth-child(4n+3) .tpi3-badge{ --badge:var(--papaya); }
+        #tpi3 .tpi3-item:nth-child(4n+4) .tpi3-badge{ --badge:var(--sun); }
+        #tpi3 .tpi3-badge svg{ width:24px; height:24px; fill:none; stroke:#fff; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+        #tpi3 .tpi3-title{ font-family:'Fredoka',system-ui,sans-serif; font-weight:600; font-size:1.02rem; color:var(--plum); margin:0 0 6px; }
+        #tpi3 .tpi3-desc{ font-size:.81rem; line-height:1.42; color:#5b4b6b; margin:0 0 14px; min-height:2.6em; }
+        #tpi3 .tpi3-go{ display:inline-flex; align-items:center; gap:6px; font-size:.77rem; font-weight:600; color:var(--plum); }
+        #tpi3 .tpi3-go svg{ width:14px; height:14px; transition:transform .2s ease; }
+        #tpi3 .tpi3-item a:hover .tpi3-go svg, #tpi3 .tpi3-item a:focus-visible .tpi3-go svg{ transform:translateX(3px); }
+        @media (prefers-reduced-motion: reduce){
+          #tpi3 .tpi3-tag{ transition:none; }
+          #tpi3 .tpi3-go svg{ transition:none; }
+          #tpi3 .tpi3-track{ scroll-behavior:auto; }
+        }
+        @media (max-width:720px){
+          #tpi3 .tpi3-garland{ display:none; }
+          #tpi3 .tpi3-nav{ display:none; }
+          #tpi3 .tpi3-item{ width:72vw; }
+        }
+      </style>
+
+      <span class="tpi3-torn" aria-hidden="true">
+        <svg viewBox="0 0 400 20" preserveAspectRatio="none">
+          <polygon points="0,20 0,4 10,20 20,2 30,20 40,5 50,20 60,3 70,20 80,4 90,20 100,2 110,20 120,5 130,20 140,3 150,20 160,4 170,20 180,2 190,20 200,5 210,20 220,3 230,20 240,4 250,20 260,2 270,20 280,5 290,20 300,3 310,20 320,4 330,20 340,2 350,20 360,5 370,20 380,3 390,20 400,4 400,20" fill="#2e1065"></polygon>
+        </svg>
+      </span>
+
+      <div class="tpi3-garland" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
-      <div class="store-crosssell-inner">
-        <span class="store-crosssell-pill"><span class="dot"></span>Del mismo equipo que arma tu fiesta</span>
-        <h2>¡Espera! Esto también <span class="highlight">le hace falta</span> a tu evento</h2>
-        <p class="subtitle">Además de tus artículos de batucada, en Grupo SAE tenemos todo lo demás listo para que solo te preocupes por disfrutar.</p>
-        <div class="store-crosssell-grid">
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#8e3fa8;">🎧</div>
-            <h3>DJ</h3>
-            <p>Música, luces y ambiente para que nadie se quede sentado.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+
+      <div class="tpi3-wrap">
+        <div class="tpi3-head">
+          <div class="tpi3-head-text">
+            <span class="tpi3-eyebrow"><i></i>Del mismo equipo que arma tu fiesta</span>
+            <h2>¡Espera! Esto también <em>le hace falta</em> a tu evento</h2>
+            <p class="tpi3-sub">Además de tus artículos de batucada, en Grupo SAE tenemos todo lo demás listo para que solo te preocupes por disfrutar.</p>
           </div>
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#22a06b;">🛋️</div>
-            <h3>Mobiliario</h3>
-            <p>Salas lounge y mobiliario para vestir el espacio con estilo.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
-          </div>
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#f2652e;">🎈</div>
-            <h3>Decoración</h3>
-            <p>Arcos y figuras de globos que transforman cualquier salón.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
-          </div>
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#e8a415;">🍽️</div>
-            <h3>Meseros</h3>
-            <p>Personal capacitado para atender a tus invitados.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+          <div class="tpi3-nav">
+            <button type="button" class="tpi3-prev" aria-label="Ver servicio anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button type="button" class="tpi3-next" aria-label="Ver siguiente servicio">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
           </div>
         </div>
+
+        <ul class="tpi3-track">
+          <li class="tpi3-item">
+            <a href="https://djparafiesta.com.mx/" target="_blank" rel="noopener" aria-label="DJ para fiestas — djparafiesta.com.mx, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="9" x2="4" y2="15"></line><line x1="8" y1="6" x2="8" y2="18"></line><line x1="12" y1="3" x2="12" y2="21"></line><line x1="16" y1="6" x2="16" y2="18"></line><line x1="20" y1="9" x2="20" y2="15"></line></svg></div>
+                <p class="tpi3-title">DJ</p>
+                <p class="tpi3-desc">Música, luces y ambiente para que nadie se quede sentado.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://rentadesalaslounge.com/" target="_blank" rel="noopener" aria-label="Renta de salas lounge — rentadesalaslounge.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"></path><path d="M3 16h18v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3z"></path><path d="M6 10V8a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2"></path><path d="M13 10V8a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2"></path></svg></div>
+                <p class="tpi3-title">Mobiliario</p>
+                <p class="tpi3-desc">Salas lounge y mobiliario para vestir el espacio con estilo.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://decoracionconglobos.com.mx/" target="_blank" rel="noopener" aria-label="Decoración con globos — decoracionconglobos.com.mx, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a5 5 0 0 1 5 5c0 4-3 7-4.3 8.3a1 1 0 0 1-1.4 0C10 15 7 12 7 8a5 5 0 0 1 5-5z"></path><path d="M11.2 16.3c-.3 1-.9 1.6-1.7 2"></path><line x1="12" y1="18.5" x2="12" y2="21.5"></line></svg></div>
+                <p class="tpi3-title">Decoración</p>
+                <p class="tpi3-desc">Arcos y figuras de globos que transforman cualquier salón.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="http://servicioparaeventos.com/meseros-para-eventos/" target="_blank" rel="noopener" aria-label="Meseros para eventos — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h13l-1.6 3.2a2 2 0 0 1-1.8 1.1H8a2 2 0 0 1-1.8-1.1L4.6 12"></path><path d="M9 12a5 5 0 0 1 8-4"></path><line x1="17" y1="6" x2="20" y2="3"></line><line x1="4" y1="18" x2="18" y2="18"></line></svg></div>
+                <p class="tpi3-title">Meseros</p>
+                <p class="tpi3-desc">Personal capacitado para servir y atender a tus invitados.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://rentaperiqueras.com/" target="_blank" rel="noopener" aria-label="Renta de periqueras — rentaperiqueras.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="6" ry="2.4"></ellipse><line x1="7" y1="6.3" x2="8" y2="21"></line><line x1="17" y1="6.3" x2="16" y2="21"></line><line x1="6" y1="13.5" x2="18" y2="13.5"></line></svg></div>
+                <p class="tpi3-title">Periqueras</p>
+                <p class="tpi3-desc">Bancos altos tipo bar para darle estilo a tu barra o evento.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://rentadekaraoke.com/" target="_blank" rel="noopener" aria-label="Renta de karaoke — rentadekaraoke.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="10" rx="3"></rect><path d="M6 11a6 6 0 0 0 12 0"></path><line x1="12" y1="17" x2="12" y2="21"></line><line x1="8.5" y1="21" x2="15.5" y2="21"></line></svg></div>
+                <p class="tpi3-title">Karaoke</p>
+                <p class="tpi3-desc">Pantalla, micrófonos y catálogo de canciones para cantar toda la noche.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://fiestaspa.com.mx/" target="_blank" rel="noopener" aria-label="Spa para niñas — fiestaspa.com.mx, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c1 2 1 3.3 0 4.6-1-1.3-1-2.6 0-4.6z"></path><path d="M5 10c1.6-.6 3.2-.6 4.6.4C8.2 11.4 6.6 11.4 5 10z"></path><path d="M19 10c-1.6-.6-3.2-.6-4.6.4 1.4 1 3 1 4.6-.4z"></path><path d="M6 14a6 6 0 0 0 12 0c0-1.6-1-2.6-2-3-1 1.6-2.4 2.3-4 2.3S8.6 12.6 8 11c-1 .4-2 1.4-2 3z"></path><line x1="12" y1="17" x2="12" y2="21"></line></svg></div>
+                <p class="tpi3-title">Spa para niñas</p>
+                <p class="tpi3-desc">Manicure, peinados y tratamientos pensados para las peques.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://partypaiute.com/" target="_blank" rel="noopener" aria-label="Picnics y tepees — partypaiute.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 18H6z"></path><path d="M9.5 13h5"></path><line x1="10" y1="3" x2="4" y2="21"></line><line x1="14" y1="3" x2="20" y2="21"></line></svg></div>
+                <p class="tpi3-title">Picnics y tepees</p>
+                <p class="tpi3-desc">Montajes de picnic y tepees para una sesión súper instagrameable.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://partypaiute.com/servicio-de-pinta-caritas/" target="_blank" rel="noopener" aria-label="Pinta caritas — partypaiute.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l2.2-6.2L16 4a2 2 0 0 1 2.8 2.8L9 16.6 4 20z"></path><path d="M13.5 6.5l3 3"></path><circle cx="6.5" cy="17" r="1"></circle></svg></div>
+                <p class="tpi3-title">Pinta caritas</p>
+                <p class="tpi3-desc">Diseños de pintacaritas para que los peques luzcan a su personaje favorito.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/sillas-y-mesas/" target="_blank" rel="noopener" aria-label="Renta de sillas y mesas — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="8" rx="8" ry="2.6"></ellipse><line x1="4.5" y1="8.3" x2="6" y2="20"></line><line x1="19.5" y1="8.3" x2="18" y2="20"></line><line x1="4" y1="16" x2="20" y2="16"></line></svg></div>
+                <p class="tpi3-title">Sillas y mesas</p>
+                <p class="tpi3-desc">Mobiliario básico para montar tu evento de principio a fin.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/servicio-de-barman-cdmx/" target="_blank" rel="noopener" aria-label="Servicio de barman — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8z"></path><line x1="12" y1="12" x2="12" y2="20"></line><line x1="8" y1="20" x2="16" y2="20"></line><line x1="6" y1="4" x2="9" y2="8"></line></svg></div>
+                <p class="tpi3-title">Barman</p>
+                <p class="tpi3-desc">Barman profesional para preparar bebidas y coctelería en tu evento.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/sombrillas-para-eventos-en-cdmx/" target="_blank" rel="noopener" aria-label="Renta de sombrillas — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0z"></path><line x1="12" y1="12" x2="12" y2="20"></line><path d="M12 20a2 2 0 0 1-2-2"></path><line x1="12" y1="4" x2="12" y2="2"></line></svg></div>
+                <p class="tpi3-title">Sombrillas</p>
+                <p class="tpi3-desc">Sombrillas para dar sombra y estilo a espacios al aire libre.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/pista-de-baile-iluminada/" target="_blank" rel="noopener" aria-label="Pista de baile iluminada — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg></div>
+                <p class="tpi3-title">Pista iluminada</p>
+                <p class="tpi3-desc">Pista de baile iluminada para que la fiesta se vea espectacular.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+        </ul>
       </div>
+
+      <script>
+        (function(){
+          var root = document.getElementById('tpi3');
+          if(!root) return;
+          var track = root.querySelector('.tpi3-track');
+          var prevBtn = root.querySelector('.tpi3-prev');
+          var nextBtn = root.querySelector('.tpi3-next');
+          if(!track || !prevBtn || !nextBtn) return;
+
+          function step(){
+            var item = track.querySelector('.tpi3-item');
+            if(!item) return track.clientWidth * 0.8;
+            var style = window.getComputedStyle(track);
+            var gap = parseFloat(style.columnGap || style.gap || 24);
+            return item.getBoundingClientRect().width + gap;
+          }
+          function updateButtons(){
+            var max = track.scrollWidth - track.clientWidth - 2;
+            prevBtn.disabled = track.scrollLeft <= 2;
+            nextBtn.disabled = track.scrollLeft >= max;
+          }
+          prevBtn.addEventListener('click', function(){ track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+          nextBtn.addEventListener('click', function(){ track.scrollBy({ left: step(), behavior: 'smooth' }); });
+          track.addEventListener('scroll', updateButtons, { passive:true });
+          window.addEventListener('resize', updateButtons);
+          updateButtons();
+        })();
+      </script>
     </section>
 
   </div>
