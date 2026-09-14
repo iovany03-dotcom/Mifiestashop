@@ -19,25 +19,37 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // Sin "sort", PrestaShop devuelve los clientes en su orden de creación
-  // (los primeros 200 de siempre, es decir los más antiguos) — se ordena
-  // por fecha de alta descendente para traer a los clientes más recientes.
-  const url = `${baseUrl}/api/customers?display=[id,firstname,lastname,email,date_add,active]&sort=[date_add_DESC]&limit=0,200&output_format=JSON`;
+  // El webservice de esta tienda no deja ordenar/filtrar el recurso
+  // "customers" por date_add (PrestaShop responde 400: "Unable to filter
+  // by this field"), así que se ordena por id descendente — en PrestaShop
+  // los ids son consecutivos según se crea la cuenta, así que sigue
+  // mostrando primero a los clientes más recientes.
+  const PAGE_SIZE = 300;
+  const MAX_PAGES = 20; // hasta 6000 clientes, de sobra para esta tienda
+  const fields = '[id,firstname,lastname,email,date_add,active]';
+
   // El RFC/identificador fiscal en PrestaShop se guarda en la dirección del
   // cliente (campo "dni"), no en el propio recurso "customers".
-  const addressesUrl = `${baseUrl}/api/addresses?display=[id_customer,dni]&limit=0,500&output_format=JSON`;
+  const addressesUrl = `${baseUrl}/api/addresses?display=[id_customer,dni]&limit=0,1000&output_format=JSON`;
 
   try {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const headers = { Authorization: `Basic ${auth}` };
-    const r = await fetch(url, { headers });
-    if (!r.ok) {
-      const detail = await r.text().catch(() => '');
-      throw new Error(`PrestaShop API error ${r.status}: ${detail.slice(0, 300)}`);
-    }
 
-    const data = await r.json();
-    const rawCust = Array.isArray(data.customers) ? data.customers : [];
+    // Trae TODOS los clientes paginando, no solo los primeros 200.
+    let rawCust = [];
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const url = `${baseUrl}/api/customers?display=${encodeURIComponent(fields)}&sort=[id_DESC]&limit=${page * PAGE_SIZE},${PAGE_SIZE}&output_format=JSON`;
+      const r = await fetch(url, { headers });
+      if (!r.ok) {
+        const detail = await r.text().catch(() => '');
+        throw new Error(`PrestaShop API error ${r.status}: ${detail.slice(0, 300)}`);
+      }
+      const data = await r.json();
+      const batch = Array.isArray(data.customers) ? data.customers : [];
+      rawCust = rawCust.concat(batch);
+      if (batch.length < PAGE_SIZE) break; // última página
+    }
 
     const rfcByCustomer = {};
     try {
@@ -62,7 +74,7 @@ module.exports = async function handler(req, res) {
       active: c.active === '1' || c.active === 1
     }));
 
-    res.status(200).json({ customers });
+    res.status(200).json({ customers, count: customers.length });
   } catch (err) {
     res.status(200).json({
       fallback: true,
