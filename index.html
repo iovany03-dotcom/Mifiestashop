@@ -4356,7 +4356,10 @@
       <h2>Historial de Tickets POS</h2>
       <button class="btn small" onclick="closeTicketHistorialModal()">✕</button>
     </div>
-    <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
+      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial(this.value)" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <button class="btn small primary" onclick="downloadTicketHistorialCSV()">Descargar CSV</button>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -6016,9 +6019,15 @@ async function loadTicketHistorial() {
   }
 }
 
+// Lista actualmente visible en la tabla (respeta el filtro de búsqueda
+// activo) — es la que se exporta al descargar el CSV, para que "Descargar"
+// baje exactamente lo que se está viendo en pantalla.
+let ticketHistorialVisible = [];
+
 function renderTicketHistorialTable(tickets) {
   const tbody = document.getElementById('ticketHistorialTableBody');
   if (!tbody) return;
+  ticketHistorialVisible = tickets;
 
   if (tickets.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
@@ -6038,6 +6047,49 @@ function renderTicketHistorialTable(tickets) {
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
     </tr>`;
   }).join('');
+}
+
+// Arma y descarga un CSV (se abre directo en Excel) con el historial de
+// tickets que se está viendo en ese momento en el modal — si hay una
+// búsqueda activa, descarga solo esos resultados.
+function csvEscape(value) {
+  let str = String(value ?? '');
+  // Si un nombre de cliente/artículo empezara con =, +, - o @, Excel podría
+  // interpretarlo como fórmula al abrir el archivo ("CSV injection"); se
+  // antepone un apóstrofe para que se lea siempre como texto plano.
+  if (/^[=+\-@]/.test(str)) str = `'${str}`;
+  return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+}
+
+function downloadTicketHistorialCSV() {
+  if (ticketHistorialVisible.length === 0) {
+    alert('No hay tickets para descargar.');
+    return;
+  }
+
+  const headers = ['Folio', 'Fecha', 'Cliente', 'Almacén', 'Artículos', 'Subtotal', 'IVA', 'Total', 'Pago recibido', 'Cambio'];
+  const rows = ticketHistorialVisible.map(t => {
+    const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+    const items = Array.isArray(t.items) ? t.items.map(i => `${i.qty || 1}x ${i.name || ''}`).join('; ') : '';
+    return [
+      t.folio, fecha, t.cliente || 'Cliente Mostrador', t.almacen || '', items,
+      Number(t.subtotal || 0).toFixed(2), Number(t.iva || 0).toFixed(2), Number(t.total || 0).toFixed(2),
+      Number(t.pago_recibido || 0).toFixed(2), Number(t.cambio || 0).toFixed(2)
+    ];
+  });
+
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
+  // BOM al inicio para que Excel detecte UTF-8 y los acentos se vean bien.
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `historial-tickets-pos-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function filterTicketHistorial(query) {
