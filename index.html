@@ -1471,12 +1471,28 @@
         <div style="display:flex; flex-direction:column; gap:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Código Postal *</label>
-            <input type="text" id="checkoutCP" inputmode="numeric" maxlength="5" placeholder="Ej. 72000" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutCPInput()">
+            <input type="text" id="checkoutCP" inputmode="numeric" maxlength="5" placeholder="Ej. 72000" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Estado *</label>
+              <select id="checkoutEstado" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" onchange="onCheckoutShippingFieldsInput()">
+                <option value="">Selecciona...</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Municipio / Alcaldía *</label>
+              <input type="text" id="checkoutMunicipio" placeholder="Ej. Benito Juárez" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Colonia *</label>
+            <input type="text" id="checkoutColonia" placeholder="Ej. Portales" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
           </div>
           <div id="checkoutShippingQuoteBox" class="hidden" style="background:var(--mf-cream); border-radius:8px; padding:10px 12px; font-size:13px; color:#2e1065;"></div>
           <div>
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Dirección completa *</label>
-            <textarea id="checkoutAddress" rows="3" placeholder="Calle, número, colonia, ciudad" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Calle y número *</label>
+            <textarea id="checkoutAddress" rows="2" placeholder="Calle, número, referencias" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
           </div>
         </div>
 
@@ -8042,6 +8058,29 @@ function setCheckoutPayMethod(method){
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Tarjeta en línea');
 }
 
+// Los 32 estados de México, para el selector de Estado en el checkout. Se
+// piden Estado/Municipio/Colonia directamente al cliente (en vez de
+// derivarlos del código postal con un servicio externo) porque los
+// servicios gratuitos de códigos postales resultaron poco confiables.
+const MEXICAN_STATES = [
+  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua',
+  'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero',
+  'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro',
+  'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz',
+  'Yucatán', 'Zacatecas'
+];
+
+function populateCheckoutEstadoSelect(){
+  const sel = document.getElementById('checkoutEstado');
+  if (!sel || sel.options.length > 1) return;
+  MEXICAN_STATES.forEach(estado => {
+    const opt = document.createElement('option');
+    opt.value = estado;
+    opt.textContent = estado;
+    sel.appendChild(opt);
+  });
+}
+
 // Cotización de envío por código postal. No hay todavía una integración en
 // vivo con la paquetería (Skydropx), así que se simula el costo de la guía
 // por zona a partir del CP; en cuanto se conecte una API real de cotización,
@@ -8063,12 +8102,19 @@ function estimateShippingGuideCost(cp) {
 let checkoutShippingCost = null;
 let checkoutCpRequestSeq = 0;
 
-// Intenta cotizar el envío con la API real de Skydropx; si no hay
-// credenciales configuradas o la consulta falla, cae en la estimación por
-// zona (estimateShippingGuideCost) para que el checkout nunca se bloquee.
-async function quoteShippingGuideCost(cp) {
+// Intenta cotizar el envío con la API real de Skydropx, usando el Estado/
+// Municipio/Colonia que el cliente escribió (Skydropx los exige y los
+// servicios gratuitos para derivarlos solo del código postal resultaron
+// poco confiables). Si no hay credenciales configuradas o la consulta
+// falla, cae en la estimación por zona (estimateShippingGuideCost) para
+// que el checkout nunca se bloquee.
+async function quoteShippingGuideCost(cp, estado, municipio, colonia) {
   try {
-    const r = await fetch(`/api/skydropx-cotizar?cp_origen=72000&cp_destino=${encodeURIComponent(cp)}&peso=1&largo=30&ancho=25&alto=15`);
+    const params = new URLSearchParams({
+      cp_origen: '72000', cp_destino: cp, peso: '1', largo: '30', ancho: '25', alto: '15',
+      estado_destino: estado, municipio_destino: municipio, colonia_destino: colonia
+    });
+    const r = await fetch(`/api/skydropx-cotizar?${params.toString()}`);
     const data = await r.json();
     if (Array.isArray(data.rates) && data.rates.length > 0) {
       return Math.round(Math.min(...data.rates.map(r => Number(r.price))));
@@ -8079,15 +8125,22 @@ async function quoteShippingGuideCost(cp) {
   return estimateShippingGuideCost(cp);
 }
 
-async function onCheckoutCPInput() {
+async function onCheckoutShippingFieldsInput() {
   const cpInput = document.getElementById('checkoutCP');
   const box = document.getElementById('checkoutShippingQuoteBox');
   const cp = (cpInput?.value || '').replace(/\D/g, '').slice(0, 5);
   if (cpInput) cpInput.value = cp;
 
-  if (cp.length !== 5) {
+  const estado = document.getElementById('checkoutEstado')?.value.trim() || '';
+  const municipio = document.getElementById('checkoutMunicipio')?.value.trim() || '';
+  const colonia = document.getElementById('checkoutColonia')?.value.trim() || '';
+
+  if (cp.length !== 5 || !estado || !municipio || !colonia) {
     checkoutShippingCost = null;
-    if (box) box.classList.add('hidden');
+    if (box) {
+      box.classList.remove('hidden');
+      box.innerHTML = `Completa código postal, estado, municipio y colonia para cotizar tu envío.`;
+    }
     renderCheckoutSummary();
     return;
   }
@@ -8095,11 +8148,11 @@ async function onCheckoutCPInput() {
   const requestId = ++checkoutCpRequestSeq;
   if (box) {
     box.classList.remove('hidden');
-    box.innerHTML = `⏳ Cotizando envío a este código postal…`;
+    box.innerHTML = `⏳ Cotizando envío a esta dirección…`;
   }
 
-  const guideCost = await quoteShippingGuideCost(cp);
-  if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió el CP
+  const guideCost = await quoteShippingGuideCost(cp, estado, municipio, colonia);
+  if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió los datos de envío
 
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const envioGratis = guideCost < 250 && subtotal > 1500;
@@ -8109,7 +8162,7 @@ async function onCheckoutCPInput() {
     box.classList.remove('hidden');
     box.innerHTML = envioGratis
       ? `🎉 <b>¡Envío gratis!</b> Tu pedido califica por ser mayor a $1,500 MXN.`
-      : `🚚 Costo de envío estimado a este código postal: <b>${fmtMoney(guideCost)}</b>`;
+      : `🚚 Costo de envío estimado a esta dirección: <b>${fmtMoney(guideCost)}</b>`;
   }
   renderCheckoutSummary();
 }
@@ -8145,6 +8198,7 @@ function renderCheckoutSummary(){
 
 function goToStorefrontCheckout(){
   if (cart.length === 0) return;
+  populateCheckoutEstadoSelect();
   checkoutPayMethod = '';
   checkoutShippingCost = null;
   setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), false);
@@ -8154,6 +8208,12 @@ function goToStorefrontCheckout(){
   if (errEl) errEl.classList.add('hidden');
   const cpInput = document.getElementById('checkoutCP');
   if (cpInput) cpInput.value = '';
+  const estadoSel = document.getElementById('checkoutEstado');
+  if (estadoSel) estadoSel.value = '';
+  const municipioInput = document.getElementById('checkoutMunicipio');
+  if (municipioInput) municipioInput.value = '';
+  const coloniaInput = document.getElementById('checkoutColonia');
+  if (coloniaInput) coloniaInput.value = '';
   const quoteBox = document.getElementById('checkoutShippingQuoteBox');
   if (quoteBox) quoteBox.classList.add('hidden');
   renderCheckoutSummary();
@@ -8162,14 +8222,17 @@ function goToStorefrontCheckout(){
 
 async function submitStorefrontOrder(){
   const cp = document.getElementById('checkoutCP').value.trim();
+  const estado = document.getElementById('checkoutEstado').value.trim();
+  const municipio = document.getElementById('checkoutMunicipio').value.trim();
+  const colonia = document.getElementById('checkoutColonia').value.trim();
   const name = document.getElementById('checkoutName').value.trim();
   const email = document.getElementById('checkoutEmail').value.trim();
   const phone = document.getElementById('checkoutPhone').value.trim();
   const address = document.getElementById('checkoutAddress').value.trim();
   const errEl = document.getElementById('checkoutErrorMsg');
 
-  if (cp.length !== 5 || checkoutShippingCost === null) {
-    errEl.textContent = 'Ingresa tu código postal para cotizar el envío.';
+  if (cp.length !== 5 || !estado || !municipio || !colonia || checkoutShippingCost === null) {
+    errEl.textContent = 'Completa código postal, estado, municipio y colonia para cotizar el envío.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -8184,13 +8247,14 @@ async function submitStorefrontOrder(){
   const shippingCost = checkoutShippingCost;
   const total = subtotal + shippingCost;
   const folio = 'WEB-' + Date.now().toString().slice(-6);
+  const fullAddress = `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
 
   const orderPayload = {
     folio,
     customer_name: name,
     customer_email: email,
     customer_phone: phone,
-    shipping_address: address,
+    shipping_address: fullAddress,
     shipping_cp: cp,
     shipping_cost: shippingCost,
     payment_method: checkoutPayMethod,
@@ -8996,6 +9060,7 @@ loadNotificationPrefs();
 loadClienteSession();
 handleOAuthRedirect();
 loadCmsPagesForFooter();
+populateCheckoutEstadoSelect();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
 function routeApp() {
