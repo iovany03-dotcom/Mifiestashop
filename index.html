@@ -1643,8 +1643,12 @@
           <li><a href="#" onclick="goToAdmin(); return false;">Acceso Administrativo</a></li>
         </ul>
       </div>
-      <div class="store-footer-col hidden" id="cmsFooterCol">
+      <div class="store-footer-col" id="cmsFooterCol">
         <h4>Ayuda y Legal</h4>
+        <ul>
+          <li><a href="#" onclick="showLegalPage('privacidad'); return false;">Aviso de Privacidad</a></li>
+          <li><a href="#" onclick="showLegalPage('terminos'); return false;">Términos y Condiciones</a></li>
+        </ul>
         <ul id="cmsFooterList">
         </ul>
       </div>
@@ -1999,6 +2003,22 @@
   <div class="store-container" style="max-width:900px;">
     <div id="cmsPageBody" style="background:#fff; border:1px solid #f0e6ef; border-radius:16px; padding:32px; margin:30px 0; min-height:300px;">
       <div style="text-align:center; color:#8b7d97; padding:60px 0;">Cargando…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== AVISO DE PRIVACIDAD / TÉRMINOS Y CONDICIONES ==================== -->
+<div id="view-legal-page" class="hidden" style="min-height:100vh; background:var(--mf-cream, #fdf9fb); color:#2e1065;">
+  <header class="store-header">
+    <a href="#" class="store-brand" onclick="closeLegalPage(); return false;">
+      <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+    </a>
+    <button class="btn secondary" style="border-radius:20px; font-weight:700; margin-left:auto;" onclick="closeLegalPage(); return false;">
+      🏪 Volver a la Tienda
+    </button>
+  </header>
+  <div class="store-container" style="max-width:900px;">
+    <div id="legalPageBody" style="background:#fff; border:1px solid #f0e6ef; border-radius:16px; padding:32px; margin:30px 0; min-height:300px; line-height:1.7;">
     </div>
   </div>
 </div>
@@ -7295,6 +7315,144 @@ function closeCmsPage() {
   window.scrollTo(0, 0);
 }
 
+// ============== AVISO DE PRIVACIDAD / TÉRMINOS Y CONDICIONES ==============
+// Páginas propias del sitio (no dependen de PrestaShop) requeridas para
+// publicar el inicio de sesión con Google y Facebook, y para cumplir con la
+// obligación de aviso de privacidad frente a los clientes.
+const LEGAL_PAGES = {
+  privacidad: {
+    title: 'Aviso de Privacidad',
+    html: `
+      <h1 style="margin-top:0;">Aviso de Privacidad</h1>
+      <p style="color:#8b7d97; font-size:0.85rem;">Última actualización: 13 de septiembre de 2026</p>
+
+      <h3>1. Responsable de tus datos</h3>
+      <p>Mi Fiestashop (operado por Grupo SAE) es responsable del tratamiento de tus datos personales conforme a este aviso. Contamos con sucursales físicas en:</p>
+      <ul>
+        <li>Ciudad de México: Rumania 613, Col. Portales, Benito Juárez</li>
+        <li>Querétaro: C. Gral. Lázaro Cárdenas 67, Casa Blanca</li>
+        <li>Puebla: C. 35 Sur 2901, Sta. Cruz Los Ángeles</li>
+      </ul>
+
+      <h3>2. Datos que recabamos</h3>
+      <ul>
+        <li>Al crear una cuenta o hacer un pedido: nombre, correo electrónico, teléfono, dirección de envío y código postal.</li>
+        <li>Al iniciar sesión con Google o Facebook: tu nombre y correo electrónico asociados a esa cuenta. Nunca recibimos ni almacenamos tu contraseña de Google o Facebook.</li>
+        <li>Al navegar el sitio: información básica guardada en tu propio navegador (almacenamiento local) para mantener tu sesión iniciada y recordar los productos de tu carrito.</li>
+        <li>Si te suscribes a nuestro boletín de promociones: tu correo electrónico.</li>
+      </ul>
+
+      <h3>3. Para qué usamos tus datos</h3>
+      <ul>
+        <li>Procesar y dar seguimiento a tus pedidos.</li>
+        <li>Cotizar y generar guías de envío con nuestros proveedores de paquetería.</li>
+        <li>Enviarte confirmaciones de tu compra y de tu envío por correo electrónico.</li>
+        <li>Contactarte por WhatsApp cuando lo solicites o para dar seguimiento a tu pedido.</li>
+        <li>Enviarte promociones y novedades, únicamente si te suscribiste voluntariamente a nuestro boletín.</li>
+      </ul>
+
+      <h3>4. Dónde se almacenan tus datos</h3>
+      <p>Tu cuenta, tus pedidos y tus datos de contacto se guardan de forma segura en Supabase, nuestra plataforma de base de datos. El catálogo de productos se sincroniza desde el sistema de nuestra tienda (PrestaShop). Los correos que te enviamos se procesan a través de nuestro proveedor de correo (Hostinger).</p>
+
+      <h3>5. Con quién compartimos tus datos</h3>
+      <ul>
+        <li>Con empresas de paquetería, únicamente los datos necesarios para generar tu guía de envío (nombre, dirección y teléfono).</li>
+        <li>Google y Facebook no reciben datos de tus compras; solo se usan para confirmar tu identidad cuando eliges iniciar sesión con ellos.</li>
+        <li>No vendemos ni rentamos tus datos personales a terceros.</li>
+      </ul>
+
+      <h3>6. Tus derechos (Acceso, Rectificación, Cancelación y Oposición)</h3>
+      <p>Puedes solicitar acceder, corregir o eliminar tus datos personales, así como darte de baja de nuestras comunicaciones promocionales, escribiéndonos por WhatsApp al <a href="https://wa.me/525612622146" target="_blank" rel="noopener">561 262 2146</a>.</p>
+
+      <h3>7. Uso de cookies y almacenamiento local</h3>
+      <p>Usamos el almacenamiento local de tu navegador para mantener tu sesión iniciada y recordar los productos en tu carrito de compras. Puedes borrar esta información desde la configuración de tu propio navegador en cualquier momento.</p>
+
+      <h3>8. Menores de edad</h3>
+      <p>Nuestros productos están dirigidos al público en general. Si eres menor de edad, te pedimos realizar tus compras acompañado de un adulto responsable.</p>
+
+      <h3>9. Cambios a este aviso</h3>
+      <p>Podemos actualizar este aviso de privacidad para reflejar cambios en nuestras prácticas. Cualquier cambio se publicará en esta misma página.</p>
+    `
+  },
+  terminos: {
+    title: 'Términos y Condiciones',
+    html: `
+      <h1 style="margin-top:0;">Términos y Condiciones</h1>
+      <p style="color:#8b7d97; font-size:0.85rem;">Última actualización: 13 de septiembre de 2026</p>
+
+      <h3>1. Sobre Mi Fiestashop</h3>
+      <p>Mi Fiestashop es una tienda dedicada a la venta de artículos para fiesta, globos, decoración, batucada y pirotecnia fría, al mayoreo y menudeo, con sucursales físicas en Ciudad de México, Querétaro y Puebla, y venta en línea a todo México.</p>
+
+      <h3>2. Precios y moneda</h3>
+      <p>Todos los precios se muestran en pesos mexicanos (MXN). Los precios pueden cambiar sin previo aviso.</p>
+
+      <h3>3. Precios de mayoreo</h3>
+      <p>Aplicamos descuentos de mayoreo a partir de 3 piezas del mismo producto. Los precios de mayoreo se reflejan automáticamente en tu carrito de compras.</p>
+
+      <h3>4. Envíos</h3>
+      <ul>
+        <li>Envío gratis en compras mayores a $1,500 MXN.</li>
+        <li>En compras menores, el costo de envío se cotiza en tiempo real con nuestros proveedores de paquetería según tu código postal.</li>
+        <li>También puedes recoger tu pedido en cualquiera de nuestras sucursales físicas.</li>
+      </ul>
+
+      <h3>5. Métodos de pago</h3>
+      <p>Aceptamos pago con tarjeta de crédito o débito, transferencia bancaria y efectivo contra entrega, según disponibilidad al momento de tu compra. Facturamos bajo petición.</p>
+
+      <h3>6. Devoluciones y cancelaciones</h3>
+      <p>Consulta el detalle de nuestra <a href="#" onclick="openCmsPage('politica-de-envio-gratis-mi-fiesta-shop'); return false;">Política de Envío Gratis</a> y nuestra <a href="#" onclick="openCmsPage('politica-de-devolucion-mi-fiesta-shop'); return false;">Política de Devolución</a> para conocer a detalle los tiempos y condiciones aplicables.</p>
+
+      <h3>7. Cuentas de usuario</h3>
+      <p>Puedes crear una cuenta con tu correo y contraseña, o iniciar sesión con tu cuenta de Google o Facebook. Eres responsable de mantener la confidencialidad de tu contraseña y de toda actividad realizada desde tu cuenta.</p>
+
+      <h3>8. Disponibilidad de productos</h3>
+      <p>Trabajamos para mantener actualizado nuestro inventario; sin embargo, la disponibilidad de un producto puede cambiar entre el momento en que lo agregas al carrito y la confirmación de tu pedido.</p>
+
+      <h3>9. Propiedad intelectual</h3>
+      <p>El contenido, logotipos e imágenes de este sitio son propiedad de Mi Fiestashop y no pueden reproducirse sin autorización.</p>
+
+      <h3>10. Contacto</h3>
+      <p>Para dudas sobre tu pedido o estos términos, contáctanos por WhatsApp al <a href="https://wa.me/525612622146" target="_blank" rel="noopener">561 262 2146</a>.</p>
+
+      <h3>11. Legislación aplicable</h3>
+      <p>Estos términos se rigen por las leyes aplicables en México.</p>
+    `
+  }
+};
+
+function showLegalPage(type, pushState) {
+  const page = LEGAL_PAGES[type];
+  if (!page) return;
+
+  const sf = document.getElementById('view-storefront');
+  const portal = document.getElementById('view-cliente-portal');
+  const dash = document.getElementById('adminDashboardWrapper');
+  const cms = document.getElementById('view-cms-page');
+  const legal = document.getElementById('view-legal-page');
+  if (sf) sf.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
+  if (dash) dash.classList.add('hidden');
+  if (cms) cms.classList.add('hidden');
+  if (legal) legal.classList.remove('hidden');
+  window.scrollTo(0, 0);
+
+  if (pushState !== false) {
+    const target = '/' + type;
+    if (window.location.pathname !== target) history.pushState({}, '', target);
+  }
+
+  document.title = `${page.title} — Mi Fiestashop`;
+  const body = document.getElementById('legalPageBody');
+  if (body) body.innerHTML = page.html;
+}
+
+function closeLegalPage() {
+  if (window.location.pathname !== '/') history.pushState({}, '', '/');
+  resetStorefrontSeoTags();
+  showPublicStorefront();
+  window.scrollTo(0, 0);
+}
+
 let cmsPagesList = [];
 async function loadCmsPagesForFooter() {
   const list = document.getElementById('cmsFooterList');
@@ -9006,6 +9164,10 @@ function routeApp() {
   const cmsMatch = window.location.pathname.match(/^\/pagina\/([^\/]+)\/?$/);
   if (cmsMatch) {
     openCmsPage(decodeURIComponent(cmsMatch[1]), false);
+    return;
+  }
+  if (window.location.pathname === '/privacidad' || window.location.pathname === '/terminos') {
+    showLegalPage(window.location.pathname.slice(1), false);
     return;
   }
   if (window.location.pathname.startsWith('/admin')) {

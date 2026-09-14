@@ -22,6 +22,8 @@
     { "source": "/:id(\\d+)-:slug*.html", "destination": "/index.html" },
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
-    { "source": "/pagina/:slug", "destination": "/index.html" }
+    { "source": "/pagina/:slug", "destination": "/index.html" },
+    { "source": "/privacidad", "destination": "/index.html" },
+    { "source": "/terminos", "destination": "/index.html" }
   ]
 }
