@@ -209,7 +209,13 @@ module.exports = async function handler(req, res) {
         return;
       }
       const data = await r.json();
-      const page = data.content_management_system;
+      // Al pedir un solo recurso por ID, la API de PrestaShop a veces envuelve
+      // el objeto en un arreglo de un elemento (en vez de devolverlo directo);
+      // sin este ajuste, "page" quedaba siendo el arreglo y todos sus campos
+      // (title, link_rewrite, content) se leían como undefined, cayendo en
+      // los textos de repuesto genéricos ("Página").
+      const rawPage = data.content_management_system;
+      const page = Array.isArray(rawPage) ? rawPage[0] : rawPage;
       if (!page || String(page.active) === '0') {
         res.status(404).json({ error: 'Página no encontrada' });
         return;
