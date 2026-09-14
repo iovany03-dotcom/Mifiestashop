@@ -31,7 +31,10 @@ module.exports = async function handler(req, res) {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const headers = { Authorization: `Basic ${auth}` };
     const r = await fetch(url, { headers });
-    if (!r.ok) throw new Error(`PrestaShop API error ${r.status}`);
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      throw new Error(`PrestaShop API error ${r.status}: ${detail.slice(0, 300)}`);
+    }
 
     const data = await r.json();
     const rawCust = Array.isArray(data.customers) ? data.customers : [];
