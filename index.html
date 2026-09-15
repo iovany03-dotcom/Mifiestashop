@@ -2306,13 +2306,42 @@
 
 <!-- ==================== PÁGINAS DE BODA (ancho completo) ==================== -->
 <div id="view-boda-page" class="hidden" style="min-height:100vh; background:#fff; color:#2e1065;">
+  <div class="store-topbar">🎉 Envío GRATIS en compras mayores a $1,500 MXN</div>
+  <div class="store-topbar-yellow">Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊</div>
   <header class="store-header">
-    <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
-      <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
-    </a>
-    <button class="btn secondary" style="border-radius:20px; font-weight:700; margin-left:auto;" onclick="closeBodaPage(); return false;">
-      🏪 Volver a la Tienda
-    </button>
+    <div class="store-header-left">
+      <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
+        <span class="store-brand-logo-wrap">
+          <img class="store-brand-logo store-brand-logo-face" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.png" alt="Mi Fiestashop">
+        </span>
+      </a>
+      <nav class="store-header-nav">
+        <a onclick="closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
+        <a onclick="closeBodaPage(); openClientePortal();">Mis Pedidos</a>
+        <a onclick="closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+      </nav>
+    </div>
+
+    <div class="store-search-box">
+      <span class="store-search-icon">🔍</span>
+      <input type="search" id="bodaSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){ bodaSearchSubmit(this.value); }">
+    </div>
+
+    <div class="store-header-icons">
+      <span class="store-currency">MXN</span>
+      <button class="store-icon-btn" onclick="closeBodaPage(); openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+      <button class="store-icon-btn" onclick="closeBodaPage(); goToAdmin();" aria-label="Acceso administrativo" title="Acceso administrativo">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.7"/></svg>
+      </button>
+      <button class="store-icon-btn" onclick="closeBodaPage(); openStorefrontCart();" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span class="store-cart-badge" id="bodaCartBadge">0</span>
+      </button>
+    </div>
   </header>
   <div id="bodaPageBody"></div>
 </div>
@@ -9962,9 +9991,11 @@ function showBodaPage(slug, pushState) {
   }
 
   document.title = page.title + ' — Mi Fiestashop';
+  const bodaBadge = document.getElementById('bodaCartBadge');
+  if (bodaBadge) bodaBadge.textContent = cart.reduce((sum, item) => sum + item.qty, 0);
   const body = document.getElementById('bodaPageBody');
   if (!body) return;
-  body.innerHTML = bodaHeroHtml(city) + BODA_BLOCKS_HTML;
+  body.innerHTML = bodaHeroHtml(city) + bodaProductsHtml(city) + BODA_BLOCKS_HTML;
 
   // Los <script> insertados vía innerHTML no se ejecutan solos; hay que
   // reconstruirlos como nodos nuevos para que el navegador los corra
@@ -9975,6 +10006,75 @@ function showBodaPage(slug, pushState) {
     newScript.textContent = oldScript.textContent;
     oldScript.replaceWith(newScript);
   });
+}
+
+function bodaSearchSubmit(query) {
+  closeBodaPage();
+  setTimeout(() => {
+    const si = document.getElementById('storeSearchInput');
+    if (si) {
+      si.value = query;
+      filterStorefrontProducts(query);
+      si.focus();
+    }
+  }, 30);
+}
+
+function bodaProductsHtml(city) {
+  return `<!-- ============================================================ -->
+<!-- PRODUCTOS (catálogo real de la tienda) -->
+<!-- ============================================================ -->
+<section id="productos-boda-mfs" aria-label="Catálogo de artículos para boda">
+<style>
+#productos-boda-mfs{
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  font-family:"Poppins",sans-serif; background:#faf7fb; padding:52px 4vw 60px;
+}
+#productos-boda-mfs .pbm-head{ text-align:center; max-width:700px; margin:0 auto 30px; }
+#productos-boda-mfs .pbm-head h2{ font-size:clamp(26px,3.5vw,40px); font-weight:800; color:#2e1065; margin:0 0 6px; letter-spacing:.02em; }
+#productos-boda-mfs .pbm-head p{ font-size:16px; color:#8e3fa8; font-weight:600; margin:0; }
+#productos-boda-mfs .pbm-grid-wrap{ max-width:1280px; margin:0 auto; }
+#productos-boda-mfs .pbm-loading{ text-align:center; color:#8b7d97; padding:40px 0; grid-column:1/-1; }
+#productos-boda-mfs .pbm-cta{ display:flex; justify-content:center; margin-top:30px; }
+#productos-boda-mfs .pbm-cta a{
+  display:inline-flex; align-items:center; gap:8px; background:var(--mf-pink); color:#fff !important;
+  font-weight:800; font-size:14.5px; padding:14px 30px; border-radius:50px; text-decoration:none !important;
+  box-shadow:0 10px 24px rgba(211,0,123,.3); transition:transform .18s ease, box-shadow .18s ease; cursor:pointer;
+}
+#productos-boda-mfs .pbm-cta a:hover{ transform:translateY(-2px); box-shadow:0 14px 30px rgba(211,0,123,.4); }
+</style>
+<div class="pbm-head">
+  <h2>+ DE 400 ARTÍCULOS</h2>
+  <p>Artículos para boda en ${city.name}</p>
+</div>
+<div class="pbm-grid-wrap">
+  <div class="store-prods-grid" id="bodaProductsGrid">
+    <div class="pbm-loading">Cargando productos…</div>
+  </div>
+  <div class="pbm-cta">
+    <a href="#" onclick="closeBodaPage(); openStorefrontCatalog('all'); return false;">Ver Catálogo completo</a>
+  </div>
+</div>
+<script>
+  if (typeof renderBodaProductsGrid === 'function') { renderBodaProductsGrid(); }
+<\/script>
+</section>
+`;
+}
+
+async function renderBodaProductsGrid() {
+  const container = document.getElementById('bodaProductsGrid');
+  if (!container) return;
+  if (liveProducts.length === 0) {
+    try { await syncProductsFromPrestaShopAPI(); } catch (e) {}
+  }
+  const container2 = document.getElementById('bodaProductsGrid');
+  if (!container2) return;
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const items = dataset.filter(p => p.status !== 'Inactivo').slice(0, 8);
+  if (items.length === 0) { container2.innerHTML = ''; return; }
+  container2.innerHTML = items.map(p => buildRelatedProductCardHTML(p)).join('');
+  initScrollReveal();
 }
 
 function closeBodaPage() {
@@ -11336,14 +11436,16 @@ function goToSearchResult(productId) {
 
 function updateStoreCartBadge() {
   saveCartToStorage();
+  const total = cart.reduce((sum, item) => sum + item.qty, 0);
   const badge = document.getElementById('storeCartBadge');
   if (badge) {
-    const total = cart.reduce((sum, item) => sum + item.qty, 0);
     badge.textContent = total;
     badge.classList.remove('bump');
     void badge.offsetWidth;
     badge.classList.add('bump');
   }
+  const bodaBadge = document.getElementById('bodaCartBadge');
+  if (bodaBadge) bodaBadge.textContent = total;
 }
 
 // ================= PRODUCT ANALYTICS & MONTHLY SALES LOGIC =================
