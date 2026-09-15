@@ -26,6 +26,13 @@
     { "source": "/admin/:path*", "destination": "/index.html" },
     { "source": "/pagina/:slug", "destination": "/index.html" },
     { "source": "/privacidad", "destination": "/index.html" },
-    { "source": "/terminos", "destination": "/index.html" }
+    { "source": "/terminos", "destination": "/index.html" },
+    { "source": "/articulos-para-boda-en-mexico", "destination": "/index.html" },
+    { "source": "/articulos-para-boda-en-cdmx", "destination": "/index.html" },
+    { "source": "/articulos-para-boda-en-queretaro", "destination": "/index.html" },
+    { "source": "/articulos-para-boda-en-puebla", "destination": "/index.html" },
+    { "source": "/accesorios-para-batucada-boda-cdmx", "destination": "/index.html" },
+    { "source": "/accesorios-para-batucada-boda-puebla", "destination": "/index.html" },
+    { "source": "/accesorios-para-batucada-boda-queretaro", "destination": "/index.html" }
   ]
 }

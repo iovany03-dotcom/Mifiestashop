@@ -2304,6 +2304,19 @@
   </div>
 </div>
 
+<!-- ==================== PÁGINAS DE BODA (ancho completo) ==================== -->
+<div id="view-boda-page" class="hidden" style="min-height:100vh; background:#fff; color:#2e1065;">
+  <header class="store-header">
+    <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
+      <img class="store-brand-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+    </a>
+    <button class="btn secondary" style="border-radius:20px; font-weight:700; margin-left:auto;" onclick="closeBodaPage(); return false;">
+      🏪 Volver a la Tienda
+    </button>
+  </header>
+  <div id="bodaPageBody"></div>
+</div>
+
 <!-- ==================== ADMIN DASHBOARD WRAPPER ==================== -->
 <div id="adminDashboardWrapper" class="hidden">
 
@@ -9090,6 +9103,889 @@ function closeLegalPage() {
   window.scrollTo(0, 0);
 }
 
+// ================= PÁGINAS DE BODA (hero + beneficios + galería + reseñas + paquetes) =================
+// Igual que LEGAL_PAGES: viven enteramente en este sitio (Vercel), sin
+// depender de PrestaShop. bodaHeroHtml() genera el hero por ciudad; el
+// resto de bloques es el mismo contenido para todas las ciudades.
+const BODA_CITIES = {
+  mexico: { slug: 'mexico', name: 'México' },
+  cdmx: { slug: 'cdmx', name: 'CDMX' },
+  queretaro: { slug: 'queretaro', name: 'Querétaro' },
+  puebla: { slug: 'puebla', name: 'Puebla' }
+};
+
+function bodaHeroHtml(city) {
+  const badge = city.slug === 'mexico'
+    ? 'Envíos a toda la boda, sin salir de casa'
+    : `Envíos a toda la boda en ${city.name}, sin salir de casa`;
+  const title2 = city.slug === 'mexico' ? 'Batucada de Boda' : `Batucada de Boda en ${city.name}`;
+
+  return `<!-- Bloque Hero - Artículos para Batucada de Boda (Compra en línea) -->
+<section id="batucada-${city.slug}" class="batucada-hero" aria-label="Artículos para batucada de boda ${city.name}">
+<style>
+#batucada-${city.slug}{
+  width:100%;
+  overflow:hidden;
+  --accent:#37b6b9;
+  --accent-dark:#2c8f92;
+  --cta:#f2652e;
+  --pink:#d3007b;
+  --pink-dark:#a80063;
+  --text:#111;
+  --muted:#666;
+  --bg:#fff;
+  --ok:#4fa83c;
+  font-family:"Poppins",sans-serif;
+  color:var(--text);
+  background:var(--bg);
+  width:100vw;
+  position:relative;
+  left:50%;
+  margin-left:-50vw;
+  box-sizing:border-box;
+}
+#batucada-${city.slug} .urgency-bar{
+  background:linear-gradient(135deg,var(--pink),var(--pink-dark));
+  color:#fff;
+  text-align:center;
+  padding:10px 20px;
+  font-size:14px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+#batucada-${city.slug} .urgency-bar .pulse{
+  width:10px;height:10px;
+  background:#fff;
+  border-radius:50%;
+  display:inline-block;
+  animation:bp${city.slug} 1.4s ease-in-out infinite;
+  flex-shrink:0;
+}
+#batucada-${city.slug} .urgency-bar .urgency-text{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+#batucada-${city.slug} .urgency-bar .countdown-wrap{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  background:rgba(0,0,0,.2);
+  border-radius:50px;
+  padding:2px 12px;
+  font-size:13px;
+}
+#batucada-${city.slug} .cd-label{ font-size:11px; opacity:.8; }
+#batucada-${city.slug} .bp-countdown{
+  font-weight:900;
+  font-size:15px;
+  letter-spacing:1.5px;
+  font-variant-numeric:tabular-nums;
+  min-width:68px;
+  display:inline-block;
+  text-align:center;
+}
+@keyframes bp${city.slug}{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:.5;transform:scale(1.4);}
+}
+@keyframes fadeInLeft${city.slug}{ from{opacity:0;transform:translateX(-50px);} to{opacity:1;transform:translateX(0);} }
+@keyframes fadeInRight${city.slug}{ from{opacity:0;transform:translateX(50px);} to{opacity:1;transform:translateX(0);} }
+@keyframes fadeInUp${city.slug}{ from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+#batucada-${city.slug} .hero-left{ animation:fadeInLeft${city.slug} 0.8s ease both; }
+#batucada-${city.slug} .badge-location{ animation:fadeInUp${city.slug} 0.6s ease 0.1s both; }
+#batucada-${city.slug} .hero-title{ animation:fadeInLeft${city.slug} 0.8s ease 0.25s both; }
+#batucada-${city.slug} .hero-intro{ animation:fadeInUp${city.slug} 0.6s ease 0.4s both; }
+#batucada-${city.slug} .benefits-grid{ animation:fadeInUp${city.slug} 0.6s ease 0.55s both; }
+#batucada-${city.slug} .cta-group{ animation:fadeInUp${city.slug} 0.7s ease 0.65s both; }
+#batucada-${city.slug} .hero-img-wrap{ animation:fadeInRight${city.slug} 0.9s ease 0.3s both; }
+#batucada-${city.slug} .hero-wrap{
+  max-width:100%;
+  margin:0;
+  padding:48px 4vw 56px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+  align-items:center;
+}
+@media(max-width:768px){
+  #batucada-${city.slug} .hero-wrap{ grid-template-columns:1fr; padding:32px 16px 40px; }
+  #batucada-${city.slug} .hero-img-wrap{order:-1;}
+}
+#batucada-${city.slug} .badge-location{
+  display:inline-flex; align-items:center; gap:6px;
+  background:#ddf3f0; border:1.5px solid var(--accent); color:var(--accent-dark);
+  font-size:12px; font-weight:700; letter-spacing:.8px; text-transform:uppercase;
+  padding:6px 14px; border-radius:50px; margin-bottom:10px;
+}
+#batucada-${city.slug} .badge-location .dot{ width:8px;height:8px; background:var(--accent); border-radius:50%; animation:bp${city.slug} 1.4s ease-in-out infinite; }
+#batucada-${city.slug} .product-tags{ font-size:11px; color:var(--muted); letter-spacing:.5px; font-weight:600; text-transform:uppercase; margin-bottom:8px; }
+#batucada-${city.slug} .hero-title{ font-size:clamp(32px,4.5vw,54px); font-weight:800; line-height:1.05; color:#2e1065; margin:0 0 10px; }
+#batucada-${city.slug} .hero-title span{color:var(--accent);}
+#batucada-${city.slug} .hero-subtitle{ font-size:15px; color:#444; line-height:1.65; margin-bottom:16px; }
+#batucada-${city.slug} .blockquote-info{ background:#f0fbfd; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; padding:10px 16px; font-size:13.5px; color:#333; margin-bottom:20px; line-height:1.5; }
+#batucada-${city.slug} .benefits-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:28px; list-style:none; padding:0; }
+#batucada-${city.slug} .benefits-grid li{ display:flex; align-items:flex-start; gap:7px; font-size:13px; color:#333; font-weight:500; line-height:1.4; }
+#batucada-${city.slug} .benefits-grid li::before{ content:"✓"; color:var(--ok); font-weight:900; font-size:14px; flex-shrink:0; margin-top:1px; }
+@media(max-width:480px){ #batucada-${city.slug} .benefits-grid{grid-template-columns:1fr;} }
+#batucada-${city.slug} .cta-group{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+#batucada-${city.slug} .btn-primary{
+  display:inline-flex; align-items:center; gap:8px;
+  background:linear-gradient(135deg,#f2652e,#f68a5c); color:#fff !important;
+  font-size:15px; font-weight:800; padding:14px 28px; border-radius:50px;
+  text-decoration:none !important; box-shadow:0 6px 20px rgba(242,101,46,.35);
+  transition:transform .2s,box-shadow .2s; border:none; cursor:pointer;
+}
+#batucada-${city.slug} .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 28px rgba(242,101,46,.45); }
+#batucada-${city.slug} .btn-secondary{
+  display:inline-flex; align-items:center; gap:8px; background:transparent; color:var(--accent-dark) !important;
+  font-size:14px; font-weight:700; padding:13px 24px; border-radius:50px; text-decoration:none !important;
+  border:2px solid var(--accent); transition:background .2s,color .2s; cursor:pointer;
+}
+#batucada-${city.slug} .btn-secondary:hover{ background:var(--accent); color:#fff !important; }
+#batucada-${city.slug} .trust-note{ margin-top:14px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+#batucada-${city.slug} .trust-note .stars{ color:#f9e05c; font-size:13px; letter-spacing:1px; }
+#batucada-${city.slug} .hero-img-wrap{ position:relative; border-radius:20px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.18); height:100%; min-height:460px; }
+#batucada-${city.slug} .hero-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; min-height:460px; }
+#batucada-${city.slug} .hero-img-badge{
+  position:absolute; bottom:16px; left:16px; background:rgba(46,16,101,.8); backdrop-filter:blur(6px);
+  color:#fff; font-size:12px; font-weight:700; padding:8px 14px; border-radius:50px; display:flex; align-items:center; gap:6px;
+}
+#batucada-${city.slug} .hero-img-badge .ok-dot{ width:8px;height:8px; background:#4fa83c; border-radius:50%; flex-shrink:0; }
+</style>
+
+<div class="urgency-bar">
+  <span class="pulse"></span>
+  <span class="urgency-text">
+    🎁 <strong>Recibe un regalo al comprar</strong>&nbsp;·&nbsp;Promoción válida por:
+    <span class="countdown-wrap">
+      <span class="cd-label">⏳</span>
+      <span class="bp-countdown" id="bp-countdown-${city.slug}">47:59:59</span>
+    </span>
+  </span>
+</div>
+
+<script>
+(function(){
+  var KEY_PREFIX = 'mfs_promo_end_${city.slug}_';
+  var DURATION   = 48 * 60 * 60 * 1000;
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function tick(endTime){
+    var el = document.getElementById('bp-countdown-${city.slug}');
+    if(!el) return;
+    var diff = endTime - Date.now();
+    if(diff <= 0){ el.textContent = '00:00:00'; return; }
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000)   / 1000);
+    el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+    setTimeout(function(){ tick(endTime); }, 1000);
+  }
+  function startWithIP(ip){
+    var key    = KEY_PREFIX + ip.replace(/[^a-z0-9]/gi,'_');
+    var stored = localStorage.getItem(key);
+    var endTime;
+    if(stored && !isNaN(parseInt(stored,10))){
+      endTime = parseInt(stored, 10);
+      if(Date.now() > endTime){ endTime = Date.now() + DURATION; localStorage.setItem(key, endTime); }
+    } else {
+      endTime = Date.now() + DURATION;
+      localStorage.setItem(key, endTime);
+    }
+    tick(endTime);
+  }
+  fetch('https://api.ipify.org?format=json')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ startWithIP(d.ip || 'guest'); })
+    .catch(function(){
+      var fp = navigator.language + screen.width + screen.height + new Date().getTimezoneOffset();
+      startWithIP(fp);
+    });
+})();
+<\/script>
+
+<div class="hero-wrap">
+  <div class="hero-left">
+    <div class="badge-location">
+      <span class="dot"></span>
+      ${badge}
+    </div>
+    <p class="product-tags">Batucada de Boda · Sombreros Locos · Luminosos · Recuerdos</p>
+    <h1 class="hero-title">
+      Artículos para<br>
+      <span>${title2}</span>
+    </h1>
+    <p class="hero-subtitle">
+      Cierra la pista con la fiesta que todos van a recordar. <strong>Arma tu batucada de boda</strong> con lentes gigantes, boas, sombreros y luminosos que hacen que los invitados no se quieran ir.
+    </p>
+    <div class="blockquote-info">
+      Ideal para el final de la noche: <strong><em>compra en línea y recibe todo listo antes de tu gran día.</em></strong>
+    </div>
+    <ul class="benefits-grid">
+      <li>Compra 100% en línea, fácil y segura</li>
+      <li>Kits diseñados para bodas de cualquier tamaño</li>
+      <li>Personalización con nombres o fecha de la boda</li>
+      <li>Envío gratis en compras mayores a $1,500</li>
+      <li>Asesoría para armar el combo perfecto para tu boda</li>
+      <li>Sin mínimo · Paga con tarjeta</li>
+    </ul>
+    <div class="cta-group">
+      <a class="btn-primary" href="https://mifiestashop.com/266-productos">🛒 Comprar para mi boda</a>
+      <a class="btn-secondary" href="https://mifiestashop.com/266-productos">Ver Catálogo completo</a>
+    </div>
+    <p class="trust-note">
+      <span class="stars">★★★★★</span>
+      +80 reseñas reales en Google · Atención personalizada
+    </p>
+  </div>
+
+  <div class="hero-img-wrap">
+    <img
+      src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-05.png"
+      alt="Artículos para batucada de boda en ${city.name} - Mi Fiesta Shop"
+      loading="eager"
+    />
+    <div class="hero-img-badge">
+      <span class="ok-dot"></span>
+      Compra en línea · Envíos a todo México
+    </div>
+  </div>
+</div>
+</section>
+`;
+}
+
+const BODA_BLOCKS_HTML = `<!-- ============================================================ -->
+<!-- 1) BENEFICIOS -->
+<!-- ============================================================ -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<section id="beneficios-mfs" aria-label="Beneficios Mi Fiesta Shop">
+<style>
+#beneficios-mfs{
+  --pink:#d3007b; --purple-dark:#2e1065; --teal:#37b6b9; --yellow:#f9e05c;
+  font-family:"Poppins",sans-serif;
+  background:var(--teal);
+  color:#fff;
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  padding:56px 20px;
+}
+#beneficios-mfs .grid{
+  max-width:1100px;margin:0 auto;display:grid;gap:40px;grid-template-columns:repeat(3,1fr);
+}
+#beneficios-mfs .item{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  opacity:0; transform:translateY(26px);
+  transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);
+}
+#beneficios-mfs .item.is-visible{opacity:1;transform:translateY(0);}
+#beneficios-mfs .icon-wrap{
+  display:grid;place-items:center;margin-bottom:16px;cursor:pointer;
+  transition:transform .25s ease;
+  background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;
+  outline:none; -webkit-appearance:none; appearance:none;
+}
+#beneficios-mfs .item:hover .icon-wrap{transform:scale(1.12) rotate(-4deg);}
+#beneficios-mfs svg{width:66px;height:66px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#beneficios-mfs .text h3{
+  margin:0 0 8px;font-size:1.15rem;font-weight:800;position:relative;display:inline-block;
+}
+#beneficios-mfs .text h3::after{
+  content:"";position:absolute;left:50%;bottom:-6px;width:0;height:3px;border-radius:2px;
+  background:var(--yellow);transform:translateX(-50%);transition:width .3s ease;
+}
+#beneficios-mfs .item:hover .text h3::after{width:34px;}
+#beneficios-mfs .text p{margin:0;opacity:.92;line-height:1.5;font-size:.95rem;font-weight:400;}
+@keyframes bmfsPop{0%{transform:scale(1)}40%{transform:scale(1.15) rotate(2deg)}100%{transform:scale(1)}}
+#beneficios-mfs .icon-wrap.pop{animation:bmfsPop .28s ease forwards}
+@media (max-width:900px){#beneficios-mfs .grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){#beneficios-mfs .grid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){
+  #beneficios-mfs .item{opacity:1 !important;transform:none !important;transition:none !important;}
+  #beneficios-mfs .icon-wrap,#beneficios-mfs .icon-wrap.pop{animation:none !important;transition:none !important;}
+}
+</style>
+
+  <div class="grid" id="bmfsGrid">
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Paga con tarjeta">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      </span>
+      <div class="text"><h3>Paga con tarjeta</h3><p>Sin mínimo ni comisiones extra.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Mayoreo desde 3 piezas">
+        <svg viewBox="0 0 24 24"><path d="M6 2l2 6h8l2-6"/><path d="M6 8h12l-1.5 12h-9z"/></svg>
+      </span>
+      <div class="text"><h3>Mayoreo desde 3 pzas</h3><p>Precios de mayorista comprando desde 3 piezas.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Los más originales">
+        <svg viewBox="0 0 24 24"><path d="M2 12c2-3 7-3 10 0 3-3 8-3 10 0-1 4-6 6-10 6s-9-2-10-6z"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/></svg>
+      </span>
+      <div class="text"><h3>Los más originales</h3><p>Productos únicos para elevar tu evento.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Envíos gratis">
+        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg>
+      </span>
+      <div class="text"><h3>Envío gratis $1,500+</h3><p>En compras mayores a $1,500 MXN.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Compra por pieza">
+        <svg viewBox="0 0 24 24"><path d="M4 22l4-10 6 6-10 4z"/><path d="M14 3l7 7"/><path d="M14 8l2-2 2 2-2 2z"/></svg>
+      </span>
+      <div class="text"><h3>Sin docena obligatoria</h3><p>Compra por pieza: lleva solo lo que necesitas.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Hacemos factura">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 8h6M9 12h6M9 16h6"/></svg>
+      </span>
+      <div class="text"><h3>Hacemos factura</h3><p>Facturación CFDI disponible en tus compras.</p></div>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var items = document.querySelectorAll('#bmfsGrid .item');
+    items.forEach(function(el, i){ el.style.transitionDelay = Math.min(i, 8) * 70 + 'ms'; });
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+      }, {threshold:0.15});
+      items.forEach(function(el){ io.observe(el); });
+    } else {
+      items.forEach(function(el){ el.classList.add('is-visible'); });
+    }
+    document.querySelectorAll('#beneficios-mfs .icon-wrap').forEach(function(el){
+      var pop = function(){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); };
+      el.addEventListener('click', pop);
+      el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pop(); } });
+    });
+  })();
+  <\/script>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- 2) GALERÍA "BODAS QUE NOS INVITARON" -->
+<!-- ============================================================ -->
+<section id="galeria-boda-mfs" aria-label="Bodas que nos invitaron">
+<style>
+#galeria-boda-mfs{
+  --pink:#d3007b; --purple-dark:#2e1065; --muted:#8b7d97;
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  background:#fff; padding:44px 4vw 56px; font-family:"Poppins",sans-serif;
+}
+#galeria-boda-mfs .gal-title{
+  text-align:center; font-size:clamp(22px,3vw,32px); font-weight:800; color:var(--purple-dark); margin:0 0 26px;
+}
+#galeria-boda-mfs .gal-title span{color:var(--pink);}
+#galeria-boda-mfs .gallery{
+  --cols:6; --gap:10px;
+  display:grid; grid-template-columns:repeat(var(--cols),1fr); grid-auto-rows:1fr; gap:var(--gap);
+  width:100%; max-width:1400px; margin:0 auto; box-sizing:border-box; aspect-ratio:3/1;
+}
+#galeria-boda-mfs .gallery__item{
+  overflow:hidden; border-radius:14px; cursor:pointer; position:relative; background:#f0e6ef;
+  opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1);
+}
+#galeria-boda-mfs .gallery__item.is-visible{opacity:1;transform:translateY(0);}
+#galeria-boda-mfs .gallery__item img{
+  width:100%; height:100%; object-fit:cover; display:block;
+  transition:transform .4s ease, filter .4s ease; will-change:transform;
+}
+#galeria-boda-mfs .gallery__item:hover img{transform:scale(1.06); filter:brightness(.85);}
+#galeria-boda-mfs .gallery__item:hover{box-shadow:0 10px 24px rgba(211,0,123,.25);}
+#galeria-boda-mfs .gallery__overlay{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .35s ease;
+}
+#galeria-boda-mfs .gallery__item:hover .gallery__overlay{opacity:1;}
+#galeria-boda-mfs .gallery__overlay svg{width:30px;height:30px;fill:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));}
+#galeria-boda-mfs .lb{
+  display:none; position:fixed; inset:0; background:rgba(46,16,101,.94); z-index:99999;
+  align-items:center; justify-content:center; padding:20px;
+}
+#galeria-boda-mfs .lb.active{display:flex;}
+#galeria-boda-mfs .lb__img{
+  max-width:90vw; max-height:90vh; object-fit:contain; border-radius:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6); animation:galFadeIn .3s ease;
+}
+@keyframes galFadeIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+#galeria-boda-mfs .lb__close{
+  position:fixed; top:18px; right:22px; color:#fff; font-size:36px; cursor:pointer; line-height:1;
+  background:none; border:none; z-index:100000; text-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+#galeria-boda-mfs .lb__arrow{
+  position:fixed; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.15); border:none;
+  color:#fff; font-size:28px; width:50px; height:50px; border-radius:50%; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); transition:background .2s;
+}
+#galeria-boda-mfs .lb__arrow:hover{background:var(--pink);}
+#galeria-boda-mfs .lb__prev{left:14px;} #galeria-boda-mfs .lb__next{right:14px;}
+@media (max-width:1024px){#galeria-boda-mfs .gallery{--cols:4;aspect-ratio:4/3;}}
+@media (max-width:768px){
+  #galeria-boda-mfs .gallery{--cols:3;aspect-ratio:1/1;}
+}
+@media (max-width:480px){
+  #galeria-boda-mfs .gallery{--cols:2;--gap:6px;aspect-ratio:2/3;}
+}
+@media (prefers-reduced-motion: reduce){
+  #galeria-boda-mfs .gallery__item{opacity:1 !important;transform:none !important;transition:none !important;}
+}
+</style>
+
+<h2 class="gal-title">Bodas que nos <span>invitaron</span></h2>
+
+<div class="gallery" id="galMfsGrid">
+  <div class="gallery__item" data-index="0"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-01-1.png" alt="Boda Mi Fiesta Shop 1" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="1"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-02-1.png" alt="Boda Mi Fiesta Shop 2" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="2"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-03.png" alt="Boda Mi Fiesta Shop 3" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="3"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-04-1.png" alt="Boda Mi Fiesta Shop 4" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="4"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-05.png" alt="Boda Mi Fiesta Shop 5" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="5"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-06-1.png" alt="Boda Mi Fiesta Shop 6" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="6"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-07.png" alt="Boda Mi Fiesta Shop 7" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="7"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-08-1.png" alt="Boda Mi Fiesta Shop 8" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="8"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-10-1.png" alt="Boda Mi Fiesta Shop 9" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="9"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/batucada-para-boda-venta-de-productos-para-animacion-de-boda-mexico-01-1.png" alt="Boda Mi Fiesta Shop 10" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="10"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/batucada-para-boda-venta-de-productos-para-animacion-de-boda-mexico-03-1.png" alt="Boda Mi Fiesta Shop 11" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="11"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/batucada-para-boda-venta-de-productos-para-animacion-de-boda-mexico-04-1.png" alt="Boda Mi Fiesta Shop 12" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+</div>
+
+<div class="lb" id="galMfsLb">
+  <button class="lb__close" id="galMfsClose">&times;</button>
+  <button class="lb__arrow lb__prev" id="galMfsPrev">&#8249;</button>
+  <img class="lb__img" id="galMfsLbImg" src="" alt="">
+  <button class="lb__arrow lb__next" id="galMfsNext">&#8250;</button>
+</div>
+
+<script>
+(function(){
+  var items = document.querySelectorAll('#galMfsGrid .gallery__item');
+  items.forEach(function(el, i){ el.style.transitionDelay = Math.min(i, 10) * 45 + 'ms'; });
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    }, {threshold:0.12});
+    items.forEach(function(el){ io.observe(el); });
+  } else {
+    items.forEach(function(el){ el.classList.add('is-visible'); });
+  }
+
+  var lb = document.getElementById('galMfsLb');
+  var lbImg = document.getElementById('galMfsLbImg');
+  var images = Array.from(items).map(function(el){ return el.querySelector('img').src; });
+  var current = 0;
+  function openLb(idx){
+    current = idx; lbImg.src = images[idx]; lbImg.alt = items[idx].querySelector('img').alt;
+    lb.classList.add('active'); document.body.style.overflow = 'hidden';
+  }
+  function closeLb(){ lb.classList.remove('active'); document.body.style.overflow = ''; }
+  function showNext(){ current = (current + 1) % images.length; lbImg.src = images[current]; }
+  function showPrev(){ current = (current - 1 + images.length) % images.length; lbImg.src = images[current]; }
+  items.forEach(function(item, i){ item.addEventListener('click', function(){ openLb(i); }); });
+  document.getElementById('galMfsClose').addEventListener('click', closeLb);
+  document.getElementById('galMfsNext').addEventListener('click', showNext);
+  document.getElementById('galMfsPrev').addEventListener('click', showPrev);
+  lb.addEventListener('click', function(e){ if(e.target === lb) closeLb(); });
+  document.addEventListener('keydown', function(e){
+    if(!lb.classList.contains('active')) return;
+    if(e.key === 'ArrowRight') showNext();
+    if(e.key === 'ArrowLeft') showPrev();
+    if(e.key === 'Escape') closeLb();
+  });
+})();
+<\/script>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- 3) RESEÑAS DE GOOGLE (convertido de documento completo a bloque) -->
+<!-- ============================================================ -->
+<section id="resenas-google-mfs" aria-label="Reseñas de Google">
+<style>
+#resenas-google-mfs{
+  --pink:#d3007b; --purple-dark:#2e1065; --muted:#8b7d97; --card-border:#f0e6ef;
+  font-family:"Poppins",sans-serif; background:#f7f5f8; color:var(--purple-dark);
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  padding:clamp(40px,5vw,64px) 20px;
+}
+#resenas-google-mfs *{box-sizing:border-box;}
+#resenas-google-mfs .wrap{max-width:1200px;margin:0 auto;}
+#resenas-google-mfs .head{display:grid;gap:8px;justify-items:center;margin-bottom:clamp(16px,2.8vw,24px);}
+#resenas-google-mfs .title{margin:0;font-size:clamp(24px,3.2vw,36px);font-weight:800;display:flex;align-items:center;gap:10px;}
+#resenas-google-mfs .title img{width:26px;height:26px;}
+#resenas-google-mfs .stars{display:flex;gap:4px;align-items:center;}
+#resenas-google-mfs .stars span{font-size:19px;color:#f9e05c;text-shadow:0 1px 1px rgba(0,0,0,.08);}
+#resenas-google-mfs .sub{margin:0;color:var(--muted);font-size:14px;}
+#resenas-google-mfs .carousel{position:relative;}
+#resenas-google-mfs .track{display:flex;gap:18px;transition:transform .5s cubic-bezier(.22,.61,.36,1);will-change:transform;}
+#resenas-google-mfs .card{
+  background:#fff;border:1px solid var(--card-border);border-radius:16px;padding:20px;
+  flex:0 0 calc((100% - 36px)/3); display:flex; flex-direction:column; min-height:250px;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+#resenas-google-mfs .card:hover{transform:translateY(-5px); box-shadow:0 12px 24px rgba(211,0,123,.12); border-color:var(--pink);}
+#resenas-google-mfs .hdr{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+#resenas-google-mfs .avatar{
+  width:42px;height:42px;border-radius:999px;overflow:hidden;flex:0 0 auto;
+  background:#fbe1ee; display:grid; place-items:center; font-weight:700; color:var(--pink);
+}
+#resenas-google-mfs .meta{display:grid;}
+#resenas-google-mfs .name{font-weight:700; font-size:14px; margin:0;}
+#resenas-google-mfs .date{margin:2px 0 0; font-size:12px; color:var(--muted);}
+#resenas-google-mfs .gmark{margin-left:auto; width:20px; height:20px; opacity:.9;}
+#resenas-google-mfs .txt{color:#3a2c4a; font-size:14px; line-height:1.55; margin:6px 0 0;}
+#resenas-google-mfs .arrows{position:absolute; inset:0; pointer-events:none;}
+#resenas-google-mfs .arrows button{
+  pointer-events:auto; position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px;
+  border:none; border-radius:999px; background:#fff; box-shadow:0 10px 24px rgba(46,16,101,.15);
+  display:grid; place-items:center; cursor:pointer; transition:transform .18s ease, background .2s ease;
+}
+#resenas-google-mfs .arrows button:hover{ transform:translateY(-50%) scale(1.08); background:var(--pink); }
+#resenas-google-mfs .arrows button:hover svg{ color:#fff; }
+#resenas-google-mfs .prev{left:-6px;} #resenas-google-mfs .next{right:-6px;}
+#resenas-google-mfs .arrows svg{width:22px;height:22px;color:var(--purple-dark); transition:color .2s ease;}
+#resenas-google-mfs .cta{display:flex; justify-content:center; margin-top:clamp(14px,2.2vw,22px);}
+#resenas-google-mfs .btn{
+  background:var(--pink); color:#fff; border:none; border-radius:999px; padding:13px 26px; font-weight:700;
+  font-size:14.5px; cursor:pointer; box-shadow:0 8px 20px rgba(211,0,123,.35);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+#resenas-google-mfs .btn:hover{ transform:translateY(-2px) scale(1.03); box-shadow:0 10px 24px rgba(211,0,123,.45); }
+#resenas-google-mfs .btn:active{ transform:translateY(0) scale(.97); }
+@media (max-width: 1023px){ #resenas-google-mfs .card{flex-basis: calc((100% - 18px)/2);} }
+@media (max-width: 639px){ #resenas-google-mfs .card{flex-basis:100%;} #resenas-google-mfs .prev{left:4px;} #resenas-google-mfs .next{right:4px;} }
+@media (prefers-reduced-motion: reduce){
+  #resenas-google-mfs .track{transition:none !important;}
+  #resenas-google-mfs .card, #resenas-google-mfs .arrows button, #resenas-google-mfs .btn{transition:none !important;}
+}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h2 class="title"><img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google"/> Reseñas de Google</h2>
+    <div class="stars" aria-label="Calificación 5 de 5"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+    <p class="sub">Clientes reales, servicio real. Así opinan.</p>
+  </header>
+
+  <div class="carousel" id="resMfsReviews">
+    <div class="track">
+      <article class="card">
+        <div class="hdr"><div class="avatar">D</div><div class="meta"><p class="name">Daniela Jimeno</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Muy amables, mucha variedad. Lo recomiendo para todo tipo de eventos.</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">S</div><div class="meta"><p class="name">Sigifredo García Villalobos</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Super muy buenos productos, la atención está genial 😁</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">M</div><div class="meta"><p class="name">Monse</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Excelente lugar, tienen una gran variedad de artículos para fiestas a un muy buen precio.</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">A</div><div class="meta"><p class="name">Alejandro Chávez</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Excelente lugar con todo lo que necesitas para tu fiesta. Además súper amables, nos explicaron cómo funcionaba todo y nos ayudaron a personalizar nuestros vasos 10/10.</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">J</div><div class="meta"><p class="name">José Fernando Castillo</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Muy buenos artículos para fiestas, matrimonios, despedidas de soltero y gran variedad para cualquier evento que necesites. Muy buena atención y asesoría.</p>
+      </article>
+    </div>
+
+    <div class="arrows" aria-hidden="true">
+      <button class="prev" type="button" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="next" type="button" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <div class="cta"><button class="btn" type="button" onclick="window.open('https://www.google.com/search?q=Mi+Fiesta+Shop+reseñas','_blank')">Ver todas</button></div>
+</div>
+
+<script>
+(function(){
+  var root = document.getElementById('resMfsReviews');
+  var track = root.querySelector('.track');
+  var cards = Array.from(track.children);
+  var prev = root.querySelector('.prev');
+  var next = root.querySelector('.next');
+  var index = 0, perView = 3, gap = 18;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function computePerView(){ var w = window.innerWidth; perView = w < 640 ? 1 : (w < 1024 ? 2 : 3); }
+  function cardWidth(){ return cards[0].getBoundingClientRect().width + gap; }
+  function go(i){
+    computePerView();
+    var maxIndex = Math.max(0, cards.length - perView);
+    index = Math.min(Math.max(0, i), maxIndex);
+    track.style.transform = 'translateX(' + (-index * cardWidth()) + 'px)';
+  }
+  function nextSlide(){ go(index+1); }
+  function prevSlide(){ go(index-1); }
+  prev.addEventListener('click', prevSlide);
+  next.addEventListener('click', nextSlide);
+  window.addEventListener('resize', function(){ go(index); });
+
+  var timer = null, D = 5200;
+  function start(){ if(reduceMotion) return; stop(); timer = setInterval(function(){ if(index >= cards.length - perView){ go(0); } else { nextSlide(); } }, D); }
+  function stop(){ if(timer){ clearInterval(timer); timer = null; } }
+  root.addEventListener('mouseenter', stop);
+  root.addEventListener('mouseleave', start);
+
+  computePerView(); go(0); start();
+})();
+<\/script>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- 4) PAQUETES DE BODA -->
+<!-- ============================================================ -->
+<section id="paquetes-boda-mfs" aria-label="Paquetes para boda">
+<style>
+#paquetes-boda-mfs{
+  --pink:#d3007b; --purple:#8e3fa8; --purple-dark:#2e1065; --yellow:#f9e05c;
+  width:100vw; position:relative; left:50%; margin-left:-50vw;
+  font-family:"Poppins",sans-serif; background:#faf7f8; padding:56px 4vw; box-sizing:border-box;
+}
+#paquetes-boda-mfs .pb-header{text-align:center; max-width:700px; margin:0 auto 36px;}
+#paquetes-boda-mfs .pb-header h2{font-size:clamp(26px,3.5vw,38px); font-weight:800; color:var(--purple-dark); margin:0 0 8px;}
+#paquetes-boda-mfs .pb-header h2 span{color:var(--pink);}
+#paquetes-boda-mfs .pb-header p{font-size:15px; color:#6b5c7a; margin:0;}
+#paquetes-boda-mfs .pb-grid{
+  max-width:1400px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; align-items:start;
+}
+@media(max-width:980px){#paquetes-boda-mfs .pb-grid{grid-template-columns:1fr;}}
+#paquetes-boda-mfs .pb-card{
+  border-radius:18px; padding:32px 28px 36px; color:#fff;
+  box-shadow:0 16px 40px rgba(46,16,101,.16); position:relative; overflow:hidden;
+  opacity:0; transform:translateY(26px);
+  transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease;
+}
+#paquetes-boda-mfs .pb-card.is-visible{opacity:1;transform:translateY(0);}
+#paquetes-boda-mfs .pb-card:hover{ transform:translateY(-6px); box-shadow:0 22px 48px rgba(46,16,101,.26); }
+#paquetes-boda-mfs .pb-card.jr{ background:linear-gradient(160deg,#ef7fb3,var(--pink)); }
+#paquetes-boda-mfs .pb-card.estandar{
+  background:linear-gradient(160deg,var(--pink),var(--purple-dark)); transform:scale(1.04); z-index:2;
+}
+#paquetes-boda-mfs .pb-card.estandar.is-visible{transform:scale(1.04) translateY(0);}
+#paquetes-boda-mfs .pb-card.estandar:hover{ transform:scale(1.04) translateY(-6px); }
+#paquetes-boda-mfs .pb-card.vip{ background:linear-gradient(160deg,var(--purple),var(--purple-dark)); }
+@media(max-width:980px){
+  #paquetes-boda-mfs .pb-card.estandar{ transform:scale(1); }
+  #paquetes-boda-mfs .pb-card.estandar.is-visible{ transform:translateY(0); }
+  #paquetes-boda-mfs .pb-card.estandar:hover{ transform:translateY(-6px); }
+}
+#paquetes-boda-mfs .pb-card-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:22px;}
+#paquetes-boda-mfs .pb-card-title{display:flex; align-items:center; gap:10px;}
+#paquetes-boda-mfs .pb-icon{font-size:26px; line-height:1;}
+#paquetes-boda-mfs .pb-card-title h3{font-size:19px; font-weight:800; margin:0; line-height:1.2;}
+#paquetes-boda-mfs .pb-badge{
+  background:rgba(255,255,255,.25); color:#fff; font-size:11px; font-weight:800; letter-spacing:.5px;
+  padding:6px 12px; border-radius:50px; white-space:nowrap; flex-shrink:0;
+}
+#paquetes-boda-mfs .pb-price{text-align:center; font-size:34px; font-weight:800; margin:6px 0 4px;}
+#paquetes-boda-mfs .pb-price-note{text-align:center; font-size:11px; opacity:.85; margin-bottom:18px;}
+#paquetes-boda-mfs .pb-shipping{
+  display:flex; align-items:center; justify-content:center; gap:6px; background:rgba(255,255,255,.22);
+  border-radius:50px; padding:9px 14px; font-size:13px; font-weight:700; margin-bottom:26px;
+}
+#paquetes-boda-mfs .pb-list{list-style:none; margin:0 0 26px; padding:0;}
+#paquetes-boda-mfs .pb-list li{font-size:13.5px; font-weight:600; padding:9px 0; border-bottom:1px dashed rgba(255,255,255,.3);}
+#paquetes-boda-mfs .pb-list li:last-child{border-bottom:none;}
+#paquetes-boda-mfs .pb-note{font-size:12px; font-style:italic; opacity:.85; margin:0 0 22px;}
+#paquetes-boda-mfs .pb-cta{
+  display:block; text-align:center; background:#fff; color:var(--purple-dark) !important; font-size:14.5px; font-weight:800;
+  padding:13px 20px; border-radius:50px; text-decoration:none !important; transition:transform .18s ease, box-shadow .18s ease;
+}
+#paquetes-boda-mfs .pb-cta:hover{ transform:translateY(-2px) scale(1.02); box-shadow:0 10px 24px rgba(0,0,0,.22); }
+#paquetes-boda-mfs .pb-cta:active{ transform:translateY(0) scale(.98); }
+@media (prefers-reduced-motion: reduce){
+  #paquetes-boda-mfs .pb-card{opacity:1 !important;transform:none !important;transition:none !important;}
+  #paquetes-boda-mfs .pb-card.estandar{transform:scale(1.04) !important;}
+}
+</style>
+
+<div class="pb-header">
+  <h2>Elige el <span>Paquete de Boda</span> perfecto</h2>
+  <p>Todo listo para que tu boda no le falte nada · Compra en línea con envío a todo México</p>
+</div>
+
+<div class="pb-grid" id="pbMfsGrid">
+
+  <div class="pb-card jr">
+    <div class="pb-card-head">
+      <div class="pb-card-title"><span class="pb-icon">💍</span><h3>Paquete Boda Jr</h3></div>
+      <span class="pb-badge">BÁSICO</span>
+    </div>
+    <div class="pb-price">$649 MXN</div>
+    <div class="pb-price-note">Sin IVA</div>
+    <div class="pb-shipping">🚚 Envío gratis en compras +$1,500</div>
+    <ul class="pb-list">
+      <li>200 Globos salchicha</li>
+      <li>50 Pulseras luminosas cyalume</li>
+      <li>2 Lentes gigante</li>
+      <li>3 Collares hawaianos</li>
+      <li>2 Antifaces de cartón metálico</li>
+      <li>3 Micrófonos inflables</li>
+      <li>3 Guitarras metálicas inflables</li>
+      <li>2 Cornetas con mechudo</li>
+      <li>2 Letreros selfie</li>
+      <li>2 Antifaz carnaval</li>
+      <li>2 Mandiles personalizados</li>
+      <li>1 Sombrero novia hule espuma</li>
+      <li>1 Sombrero novio hule espuma</li>
+    </ul>
+    <a class="pb-cta" href="https://mifiestashop.com/promociones/83589-promo-boda-economico.html">Comprar Paquete Jr</a>
+  </div>
+
+  <div class="pb-card estandar">
+    <div class="pb-card-head">
+      <div class="pb-card-title"><span class="pb-icon">👰</span><h3>Paquete Boda Estándar</h3></div>
+      <span class="pb-badge">NOVIOS</span>
+    </div>
+    <div class="pb-price">$999 MXN</div>
+    <div class="pb-price-note">Sin IVA</div>
+    <div class="pb-shipping">🚚 Envío gratis en compras +$1,500</div>
+    <ul class="pb-list">
+      <li>5 Antifaz de cartón metálico</li>
+      <li>5 Pelucas metálicas</li>
+      <li>1 Globo salchicha (200 pzas)</li>
+      <li>2 Micrófonos inflables chicos</li>
+      <li>4 Guitarras metálicas inflables</li>
+      <li>3 Bombines con peluca metálica</li>
+      <li>2 Lentes batucada</li>
+      <li>6 Collares de perla</li>
+      <li>7 Diademas con pelitos</li>
+      <li>2 Sombreros de palma</li>
+      <li>1 Máscara de luchador</li>
+      <li>5 Corbatas neón</li>
+      <li>5 Moños neón</li>
+      <li>5 Bombines neón</li>
+      <li>2 Lentes gigantes neón</li>
+      <li>6 Collares hawaianos neón</li>
+      <li>1 Sombrero de hule espuma Novio</li>
+      <li>1 Sombrero de hule espuma Novia</li>
+      <li>5 Diademas con mechudo</li>
+      <li>5 Letreros selfie boda</li>
+      <li>1 Pulsera luminosa cyalume (90 pzas)</li>
+      <li>4 Lentes luminosos cyalume</li>
+      <li>1 Anillo luminoso LED (4 pzas)</li>
+    </ul>
+    <p class="pb-note">*Stock sujeto a bodega</p>
+    <a class="pb-cta" href="https://mifiestashop.com/promociones/83552-promo-boda-estandar-.html">Comprar Paquete Estándar</a>
+  </div>
+
+  <div class="pb-card vip">
+    <div class="pb-card-head">
+      <div class="pb-card-title"><span class="pb-icon">🥂</span><h3>Paquete Boda VIP</h3></div>
+      <span class="pb-badge">TODO INCLUIDO</span>
+    </div>
+    <div class="pb-price">$2,799 MXN</div>
+    <div class="pb-price-note">Sin IVA</div>
+    <div class="pb-shipping">🚚 Envío gratis en compras +$1,500</div>
+    <ul class="pb-list">
+      <li>Paquete boda todo incluido</li>
+      <li>La combinación más completa para animar tu boda de principio a fin</li>
+      <li>Ideal para bodas grandes o con más invitados</li>
+      <li>Consulta el detalle completo de artículos con nuestro equipo</li>
+    </ul>
+    <p class="pb-note">*Contenido sujeto a disponibilidad de bodega</p>
+    <a class="pb-cta" href="https://mifiestashop.com/promociones/83591-promo-boda-vip-3245678903456.html">Comprar Paquete VIP</a>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var cards = document.querySelectorAll('#pbMfsGrid .pb-card');
+  cards.forEach(function(el, i){ el.style.transitionDelay = i * 100 + 'ms'; });
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    }, {threshold:0.12});
+    cards.forEach(function(el){ io.observe(el); });
+  } else {
+    cards.forEach(function(el){ el.classList.add('is-visible'); });
+  }
+})();
+<\/script>
+</section>
+`;
+
+const BODA_PAGES = {
+  'articulos-para-boda-en-mexico': { title: 'Artículos para boda en México', city: 'mexico' },
+  'articulos-para-boda-en-cdmx': { title: 'Artículos para boda en CDMX', city: 'cdmx' },
+  'articulos-para-boda-en-queretaro': { title: 'Artículos para boda en Querétaro', city: 'queretaro' },
+  'articulos-para-boda-en-puebla': { title: 'Artículos para boda en Puebla', city: 'puebla' },
+  'accesorios-para-batucada-boda-cdmx': { title: 'Accesorios para batucada boda CDMX', city: 'cdmx' },
+  'accesorios-para-batucada-boda-puebla': { title: 'Accesorios para batucada boda Puebla', city: 'puebla' },
+  'accesorios-para-batucada-boda-queretaro': { title: 'Accesorios para batucada boda Querétaro', city: 'queretaro' }
+};
+
+function showBodaPage(slug, pushState) {
+  const page = BODA_PAGES[slug];
+  if (!page) return;
+  const city = BODA_CITIES[page.city];
+
+  const sf = document.getElementById('view-storefront');
+  const portal = document.getElementById('view-cliente-portal');
+  const dash = document.getElementById('adminDashboardWrapper');
+  const cms = document.getElementById('view-cms-page');
+  const legal = document.getElementById('view-legal-page');
+  const boda = document.getElementById('view-boda-page');
+  if (sf) sf.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
+  if (dash) dash.classList.add('hidden');
+  if (cms) cms.classList.add('hidden');
+  if (legal) legal.classList.add('hidden');
+  if (boda) boda.classList.remove('hidden');
+  window.scrollTo(0, 0);
+
+  if (pushState !== false) {
+    const target = '/' + slug;
+    if (window.location.pathname !== target) history.pushState({}, '', target);
+  }
+
+  document.title = page.title + ' — Mi Fiestashop';
+  const body = document.getElementById('bodaPageBody');
+  if (!body) return;
+  body.innerHTML = bodaHeroHtml(city) + BODA_BLOCKS_HTML;
+
+  // Los <script> insertados vía innerHTML no se ejecutan solos; hay que
+  // reconstruirlos como nodos nuevos para que el navegador los corra
+  // (cuenta atrás del hero, reveal de beneficios/galería/paquetes,
+  // lightbox de la galería, carrusel de reseñas).
+  body.querySelectorAll('script').forEach(oldScript => {
+    const newScript = document.createElement('script');
+    newScript.textContent = oldScript.textContent;
+    oldScript.replaceWith(newScript);
+  });
+}
+
+function closeBodaPage() {
+  const boda = document.getElementById('view-boda-page');
+  if (boda) boda.classList.add('hidden');
+  if (window.location.pathname !== '/') history.pushState({}, '', '/');
+  resetStorefrontSeoTags();
+  showPublicStorefront();
+  window.scrollTo(0, 0);
+}
+
 let cmsPagesList = [];
 async function loadCmsPagesForFooter() {
   const list = document.getElementById('cmsFooterList');
@@ -11154,6 +12050,10 @@ function routeApp() {
   }
   if (window.location.pathname === '/privacidad' || window.location.pathname === '/terminos') {
     showLegalPage(window.location.pathname.slice(1), false);
+    return;
+  }
+  if (BODA_PAGES[window.location.pathname.slice(1)]) {
+    showBodaPage(window.location.pathname.slice(1), false);
     return;
   }
   if (window.location.pathname.startsWith('/admin')) {
