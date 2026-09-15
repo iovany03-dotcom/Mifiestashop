@@ -3385,6 +3385,7 @@
         </div>
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
           Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda y Legal") están marcadas.
+          Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
         </p>
         <div style="margin-bottom:14px;">
           <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
@@ -3395,25 +3396,6 @@
               <tr><th>ID</th><th>Título</th><th>Slug</th><th>En el footer</th><th style="text-align:center;">Acciones</th></tr>
             </thead>
             <tbody id="cmsPagesAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Páginas de Boda (propias de Vercel)</h2>
-        </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Estas 7 páginas NO viven en PrestaShop — son rutas propias de mifiestashop.vercel.app (código en index.html), creadas para no modificar nada del lado de PrestaShop. Por eso no aparecen en la tabla de "Páginas CMS" de arriba.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Título</th><th>Ruta</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="bodaPagesAdminTableBody">
               <!-- Dynamically populated -->
             </tbody>
           </table>
@@ -9989,20 +9971,6 @@ const BODA_PAGES = {
   'accesorios-para-batucada-boda-queretaro': { title: 'Accesorios para batucada boda Querétaro', city: 'queretaro' }
 };
 
-function renderBodaPagesAdminTable() {
-  const tbody = document.getElementById('bodaPagesAdminTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = Object.keys(BODA_PAGES).map(slug => {
-    const p = BODA_PAGES[slug];
-    return `<tr>
-      <td>${p.title}</td>
-      <td><code>/${slug}</code></td>
-      <td style="text-align:center;"><a class="btn small" href="/${slug}" target="_blank" rel="noopener">Abrir</a></td>
-    </tr>`;
-  }).join('');
-}
-renderBodaPagesAdminTable();
-
 function showBodaPage(slug, pushState) {
   const page = BODA_PAGES[slug];
   if (!page) return;
@@ -10179,7 +10147,25 @@ function renderCmsPagesAdminTable(pages) {
     return;
   }
 
-  tbody.innerHTML = pages.map(p => `
+  tbody.innerHTML = pages.map(p => {
+    // Slug migrado a una página propia del sistema (Vercel) — se respeta el
+    // mismo slug que tenía en PrestaShop para no romper nada. En ese caso ya
+    // no se muestra/edita el contenido de PrestaShop: se marca "EN SISTEMA"
+    // y se enlaza directo a la versión nueva.
+    const migrated = typeof BODA_PAGES !== 'undefined' && BODA_PAGES[p.slug];
+    if (migrated) {
+      return `
+    <tr>
+      <td><b>#${p.id}</b></td>
+      <td>${p.title} <span class="pill ok" style="margin-left:6px; white-space:nowrap;">EN SISTEMA</span></td>
+      <td><code>${p.slug}</code></td>
+      <td>${p.inFooter ? '<span class="pill ok"> Sí</span>' : '<span class="pill">—</span>'}</td>
+      <td style="text-align:center; white-space:nowrap;">
+        <button class="btn small primary" onclick="window.open('/${p.slug}', '_blank')">Ver en sistema</button>
+      </td>
+    </tr>`;
+    }
+    return `
     <tr>
       <td><b>#${p.id}</b></td>
       <td>${p.title}</td>
@@ -10189,8 +10175,8 @@ function renderCmsPagesAdminTable(pages) {
         <button class="btn small primary" onclick="previewCmsPageAdmin('${p.id}')"> Ver</button>
         <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('/pagina/${p.slug}', '_blank')">Abrir</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 function filterCmsPagesAdmin(query) {
