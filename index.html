@@ -10934,11 +10934,6 @@ function renderCartsTable() {
     return matchStatus && matchSearch && matchFrom && matchTo;
   });
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Sin carritos de compra en el rango de fechas o filtro seleccionado.</td></tr>';
-    return;
-  }
-
   const activeCount = filtered.filter(c => c.status === 'active').length;
   const abandonedCount = filtered.filter(c => c.status === 'abandoned').length;
   const convertedCount = filtered.filter(c => c.status === 'converted').length;
@@ -10949,6 +10944,11 @@ function renderCartsTable() {
   if (document.getElementById('cartKpiAbandoned')) document.getElementById('cartKpiAbandoned').textContent = abandonedCount;
   if (document.getElementById('cartKpiTotalValue')) document.getElementById('cartKpiTotalValue').textContent = fmtMoney(totalVal);
   if (document.getElementById('cartKpiConversion')) document.getElementById('cartKpiConversion').textContent = conversionRate;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Sin carritos de compra en el rango de fechas o filtro seleccionado.</td></tr>';
+    return;
+  }
 
   tbody.innerHTML = filtered.map(c => {
     const totalAmount = c.items.reduce((sum, item) => sum + (item.qty * item.price), 0);

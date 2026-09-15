@@ -35,7 +35,10 @@ module.exports = async function handler(req, res) {
   const headers = { Authorization: `Basic ${auth}` };
 
   try {
-    const cartsUrl = `${baseUrl}/api/carts?display=[id,id_customer,date_add,date_upd]&sort=[date_upd_DESC]&limit=0,30&output_format=JSON`;
+    // Ordenar por date_upd hace que el webservice de PrestaShop responda
+    // 500 (esa columna no es ordenable ahí) — se ordena por id, que en la
+    // práctica ya refleja el orden de creación/actualización más reciente.
+    const cartsUrl = `${baseUrl}/api/carts?display=[id,id_customer,date_add,date_upd]&sort=[id_DESC]&limit=0,30&output_format=JSON`;
     const ordersUrl = `${baseUrl}/api/orders?display=[id,id_cart,reference]&limit=0,500&output_format=JSON`;
     const customersUrl = `${baseUrl}/api/customers?display=[id,firstname,lastname,email]&limit=0,500&output_format=JSON`;
     const productsUrl = `${baseUrl}/api/products?display=[id,name,reference,price,id_default_image]&limit=0,1000&output_format=JSON`;
