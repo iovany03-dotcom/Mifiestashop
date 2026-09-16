@@ -12135,6 +12135,8 @@ function openProductDeepLinkIfPresent() {
 }
 
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
+  const category = new URLSearchParams(window.location.search).get('categoria');
+  if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
   const query = new URLSearchParams(window.location.search).get('buscar');
   if (query && window.location.pathname === '/') {
     const input = document.getElementById('storeSearchInput');

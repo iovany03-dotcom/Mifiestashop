@@ -11,7 +11,7 @@ const logo = '/img/cms/logo.webp';
 const header = fs.readFileSync(path.join(__dirname,'cms-header.html'),'utf8');
 const benefits = fs.readFileSync(path.join(__dirname,'cms-benefits.html'),'utf8');
 const categoryIcons = require('../data/cms-category-icons.json');
-const footer = `<footer class="site-footer"><a class="footer-brand" href="/">Mi Fiesta Shop</a><p>Artículos para tus celebraciones.</p><nav aria-label="Ayuda"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envíos</a><a href="/pagina/politica-de-devolucion-mi-fiesta-shop">Devoluciones</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></nav></footer>`;
+const footer = fs.readFileSync(path.join(__dirname,'cms-footer.html'),'utf8');
 function vipHtml(p) {
   if(!p.vip)return '';
   return `<section class="vip-section wrap"><form id="vip-form" data-endpoint="${esc(p.vip.endpoint)}" data-redirect="${esc(p.vip.redirect)}" data-threshold="${p.vip.threshold}"><h2>Beneficio VIP</h2><p>Registra tu compra para recibir tu beneficio.</p><label for="vip-phone">Teléfono (10 dígitos)</label><input id="vip-phone" name="phone" type="tel" autocomplete="tel" required><label for="vip-amount">Monto de compra</label><input id="vip-amount" name="amount" type="number" min="1" step="1" required><div id="vip-email-wrap" hidden><label for="vip-email">Correo electrónico</label><input id="vip-email" name="email" type="email" autocomplete="email"><p class="vip-hint">Si tu compra es menor a $400, te enviamos un cupón del 10% por correo.</p></div><button class="button primary" type="submit">Enviar</button><p id="vip-message" role="status" aria-live="polite"></p></form></section>`;
@@ -31,7 +31,7 @@ function render(page) {
 <meta property="og:type" content="website"><meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(p.description)}"><meta property="og:url" content="${origin}${esc(p.sourcePath)}"><meta property="og:image" content="${esc(new URL(p.heroImage || logo,origin).href)}">
 <link rel="icon" href="/img/icons/icon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
+<link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><link rel="stylesheet" href="/assets/cms-footer.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
 <script defer src="/assets/cms.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
 <body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
 ${header}
@@ -49,7 +49,7 @@ ${p.vip ? vipHtml(p) : p.content.trim() ? `<article class="source-content wrap $
 ${p.reviews.length ? `<section class="reviews wrap"><div class="section-heading"><div><h2>Así celebran nuestros clientes</h2><p>Experiencias compartidas con Mi Fiesta Shop.</p></div></div><div class="review-grid">${p.reviews.map(r=>`<figure><blockquote>${esc(r.quote)}</blockquote><figcaption>${esc(r.name)}</figcaption></figure>`).join('')}</div></section>` : ''}
 ${p.location && !p.location.multiple ? `<section class="location-section wrap" id="ubicacion"><div><p class="section-kicker">Te esperamos</p><h2>${p.location.name ? `Visítanos en ${esc(p.location.name)}` : 'Visita nuestra tienda'}</h2>${p.location.address ? `<address>${esc(p.location.address)}</address>` : ''}${p.location.phone ? `<a class="phone" href="tel:${esc(p.location.phone)}">${esc(p.location.phone)}</a>` : ''}</div><a class="button primary" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></section>` : ''}
 ${!informational && related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu fiesta</h2><div>${related.map(r=>`<a href="${esc(r.sourcePath)}">${esc(r.title)}</a>`).join('')}</div></section>` : ''}
-</main>${footer}</body></html>\n`;
+</main>${footer.replace('<!--CMS_LOCATION-->', p.location?.address ? `<address class="info-line">${esc(p.location.name)}: ${esc(p.location.address)}</address>` : '')}</body></html>\n`;
 }
 const runtime = [];
 for (const model of models) {
