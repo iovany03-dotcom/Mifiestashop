@@ -5,10 +5,11 @@
   const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const terms = JSON.parse(grid.dataset.terms || '[]');
   function productCard(product) {
-    const card = document.createElement('a');
+    const card = document.createElement('article');
+    const link = document.createElement('a');link.className='cms-product-link';
     card.className = 'store-prod-card';
     if (!/^\d+$/.test(String(product.id)) || !product.linkRewrite) return null;
-    card.href = '/' + product.id + '-' + encodeURIComponent(product.linkRewrite) + '.html';
+    link.href = '/' + product.id + '-' + encodeURIComponent(product.linkRewrite) + '.html';
     const image = document.createElement('img');
     if (!/^\/img\/cms-products\/[0-9]+\.jpg$/.test(product.img)) return null;
     image.src = product.img; image.className='store-prod-img';
@@ -16,8 +17,9 @@
     image.addEventListener('error',()=>image.remove(),{once:true});
     const copy=document.createElement('div');copy.className='store-prod-body';
     const title=document.createElement('h3');title.textContent=product.name;title.className='store-prod-title';
-    const action=document.createElement('span');action.className='store-prod-btn';action.textContent='Ver producto';
-    copy.append(title,action);card.append(image,copy);return card;
+    const action=document.createElement('button');action.type='button';action.className='store-prod-btn';action.textContent='Agregar al carrito';action.addEventListener('click',()=>window.cmsAddToCart(product,action,status));
+    const status=document.createElement('p');status.className='cms-cart-status';status.setAttribute('role','status');
+    link.append(image,title);copy.append(action,status);card.append(link,copy);return card;
   }
   async function loadProducts() {
     try {

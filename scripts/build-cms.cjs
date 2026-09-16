@@ -48,7 +48,7 @@ function render(page) {
 <link rel="icon" href="/img/icons/icon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><link rel="stylesheet" href="/assets/cms-footer.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
-<script defer src="/assets/cms.js"></script><script defer src="/assets/cms-gallery.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
+<script defer src="/assets/cms-cart.js"></script><script defer src="/assets/cms.js"></script><script defer src="/assets/cms-gallery.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
 <body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
 ${header}
 <main id="contenido">
