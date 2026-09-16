@@ -8246,17 +8246,32 @@ function renderProducts(category = 'all', query = '') {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const isBrowsingAll = category === 'all' && !query.trim();
 
-  const matched = dataset.filter(p => {
+  // Solo Puebla, CDMX Rumania y Querétaro tienen stock real rastreado
+  // (api/stock-all.js) — al cambiar de sucursal en el selector del POS se
+  // muestran únicamente los productos con existencia > 0 ahí. Atizapán no
+  // se rastrea todavía, así que ahí no se filtra por stock.
+  const POS_STOCK_WAREHOUSES = ['puebla', 'rumania', 'queretaro'];
+  const whKey = document.getElementById('posWarehouseSelect')?.value || 'rumania';
+  const filterByStock = POS_STOCK_WAREHOUSES.includes(whKey);
+
+  const matchedByFilters = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
     const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
     return matchCat && matchQ;
   });
 
+  const matched = filterByStock
+    ? matchedByFilters.filter(p => getStockFor(p.id, whKey) > 0)
+    : matchedByFilters;
+
   const limit = isBrowsingAll ? POS_BROWSE_LIMIT : POS_SEARCH_LIMIT;
   const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
-    grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
+    const msg = filterByStock && matchedByFilters.length > 0
+      ? 'No hay productos con existencia en esta sucursal.'
+      : 'No se encontraron productos en esta categoría.';
+    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">${msg}</div>`;
     return;
   }
 
@@ -8264,6 +8279,7 @@ function renderProducts(category = 'all', query = '') {
     const card = document.createElement('div');
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
+    const stockLabel = filterByStock ? `En stock (${getStockFor(p.id, whKey)})` : 'En stock';
     card.innerHTML = `
       <img src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
@@ -8272,7 +8288,7 @@ function renderProducts(category = 'all', query = '') {
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
-        <div class="p-stock">En stock</div>
+        <div class="p-stock">${stockLabel}</div>
       </div>
     `;
     grid.appendChild(card);
@@ -8302,6 +8318,14 @@ if(document.getElementById('catPillsContainer')){
       e.target.classList.add('active');
       renderProducts(e.target.dataset.cat);
     }
+  });
+}
+
+if(document.getElementById('posWarehouseSelect')){
+  document.getElementById('posWarehouseSelect').addEventListener('change', () => {
+    const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+    const query = document.getElementById('posSearchInput')?.value || '';
+    renderProducts(activeCat, query);
   });
 }
 
@@ -12240,7 +12264,12 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
     filterStorefrontProducts(query);
   }
 }).then(checkLowStockNotifications);
-loadRealStockData();
+loadRealStockData().then(() => {
+  if (document.getElementById('posProductGrid')) {
+    const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+    renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
+  }
+});
 
 loadCartFromStorage();
 if(window.location.pathname==='/'){
