@@ -8,10 +8,29 @@ const models = pages.map(page => modelFor(page, pages));
 const output = path.join(root, 'cms-pages');
 fs.mkdirSync(output, { recursive: true });
 const logo = '/img/cms/logo.webp';
-const footer = `<footer class="site-footer"><a class="footer-brand" href="/">Mi Fiesta Shop</a><p>Artículos para tus celebraciones.</p><nav aria-label="Ayuda"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envíos</a><a href="/pagina/politica-de-devolucion-mi-fiesta-shop">Devoluciones</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></nav></footer>`;
+const header = fs.readFileSync(path.join(__dirname,'cms-header.html'),'utf8');
+const benefits = fs.readFileSync(path.join(__dirname,'cms-benefits.html'),'utf8');
+const categoryIcons = require('../data/cms-category-icons.json');
+const footer = fs.readFileSync(path.join(__dirname,'cms-footer.html'),'utf8');
 function vipHtml(p) {
   if(!p.vip)return '';
   return `<section class="vip-section wrap"><form id="vip-form" data-endpoint="${esc(p.vip.endpoint)}" data-redirect="${esc(p.vip.redirect)}" data-threshold="${p.vip.threshold}"><h2>Beneficio VIP</h2><p>Registra tu compra para recibir tu beneficio.</p><label for="vip-phone">Teléfono (10 dígitos)</label><input id="vip-phone" name="phone" type="tel" autocomplete="tel" required><label for="vip-amount">Monto de compra</label><input id="vip-amount" name="amount" type="number" min="1" step="1" required><div id="vip-email-wrap" hidden><label for="vip-email">Correo electrónico</label><input id="vip-email" name="email" type="email" autocomplete="email"><p class="vip-hint">Si tu compra es menor a $400, te enviamos un cupón del 10% por correo.</p></div><button class="button primary" type="submit">Enviar</button><p id="vip-message" role="status" aria-live="polite"></p></form></section>`;
+}
+function galleryHtml(){
+ return '<div class="celebration-gallery">'+Array.from({length:12},(_,i)=>'<button type="button" class="gallery-photo" aria-label="Ampliar foto '+(i+1)+'"><img src="/img/boda-gallery/boda-'+String(i+1).padStart(2,'0')+'.png" alt="Celebración de boda con accesorios de fiesta, foto '+(i+1)+'" loading="lazy" width="600" height="600"></button>').join('')+'</div><dialog class="gallery-dialog" aria-label="Galería de bodas"><button type="button" class="gallery-close" aria-label="Cerrar">×</button><button type="button" class="gallery-prev" aria-label="Foto anterior">‹</button><img src="/img/boda-gallery/boda-01.png" alt=""><button type="button" class="gallery-next" aria-label="Foto siguiente">›</button><p class="gallery-count" aria-live="polite"></p></dialog>';
+}
+function faqHtml(p) {
+ const items=p.vip ? [
+ ['¿Qué necesito para registrarme?', 'Ten a la mano tu teléfono y el monto de tu compra. El formulario solicita correo electrónico cuando corresponde.'],
+ ['¿Dónde consulto dudas sobre mi registro?', 'Comunícate con Mi Fiesta Shop por WhatsApp desde el enlace de contacto del pie de página.']
+ ] : [
+ ['¿Cómo encuentro productos de '+p.config.label.toLocaleLowerCase('es')+'?', 'Explora los productos de esta página. Abre una ficha para consultar las opciones y los detalles del artículo antes de comprar.'],
+ ['¿Puedo comprar desde una pieza?', 'Sí. Puedes comprar por pieza y consultar las condiciones de mayoreo desde 3 piezas en la tienda.'],
+ ['¿Dónde consulto precios y disponibilidad?', 'Abre la ficha del producto en el catálogo para consultar su información actual antes de hacer tu pedido.'],
+ ['¿Cómo reviso las condiciones de envío?', 'Consulta Política de envíos en el pie de página para revisar las condiciones aplicables a tu compra.']
+ ];
+ if(p.location?.address)items.push(['¿Dónde está la tienda'+(p.location.name?' en '+p.location.name:'')+'?',p.location.address+'. Usa el botón Cómo llegar de esta página para consultar la ruta.']);
+ return '<section class="cms-faq wrap" aria-labelledby="faq-title"><div class="store-section-title"><h2 id="faq-title">Preguntas frecuentes</h2></div><div class="faq-list">'+items.map(([q,a])=>'<details><summary>'+esc(q)+'</summary><p>'+esc(a)+'</p></details>').join('')+'</div></section>';
 }
 function render(page) {
   const p = page, t = p.config;
@@ -28,28 +47,27 @@ function render(page) {
 <meta property="og:type" content="website"><meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(p.description)}"><meta property="og:url" content="${origin}${esc(p.sourcePath)}"><meta property="og:image" content="${esc(new URL(p.heroImage || logo,origin).href)}">
 <link rel="icon" href="/img/icons/icon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/cms.css"><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
-<script defer src="/assets/cms.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
+<link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><link rel="stylesheet" href="/assets/cms-footer.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
+<script defer src="/assets/cms-cart.js"></script><script defer src="/assets/cms.js"></script><script defer src="/assets/cms-gallery.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
 <body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
-<div class="announcement"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envío gratis en compras mayores a $1,500 MXN <span>Consulta condiciones</span></a></div>
-<header class="site-header"><a class="logo" href="/" aria-label="Mi Fiesta Shop, inicio"><img src="${logo}" width="100" height="88" alt="Mi Fiesta Shop"></a>
-<nav aria-label="Principal"><a href="/">Productos</a><a href="/pagina/articulos-para-fiesta-mayoreo-en-mexico">Mayoreo</a><a href="/pagina/contactanos">Contacto</a></nav>
-<form class="site-search" action="/" role="search"><label class="sr-only" for="buscar">Buscar productos</label><input id="buscar" type="search" name="buscar" placeholder="¿Qué buscas para tu evento?"><button type="submit" aria-label="Buscar">⌕</button></form>
-<a class="account-link" href="/?cuenta=1">Mi cuenta</a></header>
-<main id="contenido"><nav class="breadcrumb wrap" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span></nav>
+${header}
+<main id="contenido">
 <section class="hero ${p.heroImage ? '' : 'hero-text-only'}"><div class="hero-inner wrap"><div class="hero-copy">
 ${t.tags.length ? `<ul class="topic-tags">${t.tags.map(tag=>`<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
 <h1>${esc(p.title)}</h1>${p.intro ? `<p class="hero-intro">${esc(p.intro)}</p>` : ''}
 ${!informational ? `<div class="hero-actions"><a class="button primary" href="#productos">Explorar productos</a>${p.location ? '<a class="button secondary" href="#ubicacion">Visita nuestra tienda</a>' : `<a class="button secondary" href="${shopLink}">Ver en la tienda</a>`}</div>` : ''}
 ${p.location && !p.location.multiple ? `<p class="location-note">${p.location.name ? `Tienda en ${esc(p.location.name)}` : 'Consulta nuestra ubicación'}</p>` : ''}
 </div>${p.heroImage ? `<figure class="hero-image"><img src="${esc(p.heroImage)}" alt="${esc(p.title)}" fetchpriority="high" width="720" height="560"><figcaption>${esc(t.label)}</figcaption></figure>` : ''}</div></section>
-${p.benefits.length ? `<section class="benefits wrap" aria-label="Beneficios de compra">${p.benefits.map((b,i)=>`<div class="benefit"><span class="benefit-symbol" aria-hidden="true">${['✓','3+','✦'][i%3]}</span><div><h2>${esc(b.title.toLocaleLowerCase('es'))}</h2><p>${esc(b.content)}</p></div></div>`).join('')}</section>` : ''}
-${!informational ? `<section class="catalog-section" id="productos"><div class="wrap"><div class="section-heading"><div><h2>${esc(t.label)} para tu celebración</h2><p>Encuentra las opciones que van con tu estilo.</p></div><a class="text-link" href="${shopLink}">Ver catálogo</a></div><div class="product-grid" id="cms-products" aria-live="polite" data-terms="${esc(JSON.stringify(t.terms))}"><p class="catalog-status">Cargando productos…</p></div><noscript><p><a href="${shopLink}">Consulta los productos en nuestra tienda.</a></p></noscript></div></section>` : ''}
+${!informational ? `<section class="wrap" aria-label="Beneficios de compra">${benefits}</section>` : ''}
+${!informational && t.tags.length ? `<section class="cms-categories wrap" aria-label="Categorías"><div class="store-section-title"><h2>Explora ${esc(t.label.toLocaleLowerCase('es'))}</h2></div><div class="store-cats-grid">${t.tags.map((tag,i)=>`<a class="store-cat-card" href="/?buscar=${encodeURIComponent(tag)}"><div class="store-cat-icon" style="background:var(--mf-${['teal','pink','gold'][i%3]}-ghost)">${categoryIcons[p.theme==='boda'?3:p.theme==='globos'?2:p.theme==='xv'?4:p.theme==='neon'?1:0]}</div><div class="store-cat-name">${esc(tag)}</div></a>`).join('')}</div></section>` : ''}
+${!informational ? `<section class="catalog-section" id="productos"><div class="wrap"><div class="section-heading store-section-title"><div><h2>${esc(t.label)} para tu celebración</h2><p>Encuentra las opciones que van con tu estilo.</p></div><a class="text-link" href="${shopLink}">Ver catálogo</a></div><div class="store-prods-grid" id="cms-products" aria-live="polite" data-terms="${esc(JSON.stringify(t.terms))}"><p class="catalog-status">Cargando productos…</p></div><noscript><p><a href="${shopLink}">Consulta los productos en nuestra tienda.</a></p></noscript></div></section>` : ''}
 ${p.vip ? vipHtml(p) : p.content.trim() ? `<article class="source-content wrap ${informational ? 'information-content' : ''}" aria-label="Información de ${esc(p.title)}">${p.content}</article>` : ''}
-${p.reviews.length ? `<section class="reviews wrap"><div class="section-heading"><div><h2>Así celebran nuestros clientes</h2><p>Experiencias compartidas con Mi Fiesta Shop.</p></div></div><div class="review-grid">${p.reviews.map(r=>`<figure><blockquote>${esc(r.quote)}</blockquote><figcaption>${esc(r.name)}</figcaption></figure>`).join('')}</div></section>` : ''}
+${(p.reviews.length || p.theme === 'boda') ? `<section class="reviews wrap"><div class="section-heading"><div><h2>Así celebran nuestros clientes</h2><p>Experiencias compartidas con Mi Fiesta Shop.</p></div></div>${['boda','batucada'].includes(p.theme) ? galleryHtml() : ''}<div class="review-grid">${p.reviews.map(r=>`<figure class="review-card"><figcaption class="review-author"><span class="review-avatar" aria-hidden="true">${esc(r.name.trim().split(/\s+/).slice(0,2).map(n=>n[0]).join(''))}</span><span><strong>${esc(r.name)}</strong><span class="review-source">Opinión compartida con Mi Fiesta Shop</span></span></figcaption><blockquote>${esc(r.quote)}</blockquote></figure>`).join('')}</div></section>` : ''}
 ${p.location && !p.location.multiple ? `<section class="location-section wrap" id="ubicacion"><div><p class="section-kicker">Te esperamos</p><h2>${p.location.name ? `Visítanos en ${esc(p.location.name)}` : 'Visita nuestra tienda'}</h2>${p.location.address ? `<address>${esc(p.location.address)}</address>` : ''}${p.location.phone ? `<a class="phone" href="tel:${esc(p.location.phone)}">${esc(p.location.phone)}</a>` : ''}</div><a class="button primary" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></section>` : ''}
+<section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">Promociones${!informational ? ' de '+esc(t.label.toLocaleLowerCase('es')) : ''}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div><div class="promotion-benefits"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop"><span>Envío gratis</span><strong>En compras mayores a $1,500 MXN</strong><small>Consulta condiciones de envío</small></a><a href="/?cuenta=1"><span>Precios de mayoreo</span><strong>Desde 3 piezas</strong><small>Regístrate y consulta los precios del catálogo</small></a><a href="/?vista=promos"><span>Promociones y cupones</span><strong>Consulta las ofertas disponibles</strong><small>Revisa sus condiciones en tu cuenta</small></a></div><div id="cms-promo-products" class="store-prods-grid" data-terms="${esc(JSON.stringify(t.terms))}"></div></section>
+${faqHtml(p)}
 ${!informational && related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu fiesta</h2><div>${related.map(r=>`<a href="${esc(r.sourcePath)}">${esc(r.title)}</a>`).join('')}</div></section>` : ''}
-</main>${footer}</body></html>\n`;
+</main>${footer.replace('<!--CMS_LOCATION-->', p.location?.address ? `<address class="info-line">${esc(p.location.name)}: ${esc(p.location.address)}</address>` : '')}</body></html>\n`;
 }
 const runtime = [];
 for (const model of models) {

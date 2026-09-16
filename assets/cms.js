@@ -1,23 +1,26 @@
 (() => {
   'use strict';
   const grid = document.getElementById('cms-products');
-  if (!grid) return;
+  const promoGrid=document.getElementById('cms-promo-products');
+  if (!grid && !promoGrid) return;
   const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const terms = JSON.parse(grid.dataset.terms || '[]');
+  const terms = JSON.parse((grid || promoGrid).dataset.terms || '[]');
   function productCard(product) {
-    const card = document.createElement('a');
-    card.className = 'product-card';
+    const card = document.createElement('article');
+    const link = document.createElement('a');link.className='cms-product-link';
+    card.className = 'store-prod-card';
     if (!/^\d+$/.test(String(product.id)) || !product.linkRewrite) return null;
-    card.href = '/' + product.id + '-' + encodeURIComponent(product.linkRewrite) + '.html';
+    link.href = '/' + product.id + '-' + encodeURIComponent(product.linkRewrite) + '.html';
     const image = document.createElement('img');
     if (!/^\/img\/cms-products\/[0-9]+\.jpg$/.test(product.img)) return null;
-    image.src = product.img;
+    image.src = product.img; image.className='store-prod-img';
     image.alt=product.name; image.loading='lazy'; image.width=260; image.height=220;
     image.addEventListener('error',()=>image.remove(),{once:true});
-    const copy=document.createElement('div');copy.className='product-copy';
-    const title=document.createElement('h3');title.textContent=product.name;
-    const action=document.createElement('span');action.className='view-product';action.textContent='Ver producto';
-    copy.append(title,action);card.append(image,copy);return card;
+    const copy=document.createElement('div');copy.className='store-prod-body';
+    const title=document.createElement('h3');title.textContent=product.name;title.className='store-prod-title';
+    const action=document.createElement('button');action.type='button';action.className='store-prod-btn';action.textContent='Agregar al carrito';action.addEventListener('click',()=>window.cmsAddToCart(product,action,status));
+    const status=document.createElement('p');status.className='cms-cart-status';status.setAttribute('role','status');
+    link.append(image,title);copy.append(action,status);card.append(link,copy);return card;
   }
   async function loadProducts() {
     try {
@@ -27,11 +30,14 @@
       // Never fill a themed page with unrelated products when there are no matches.
       const selected=(data.products || []).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}))
         .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
+      const promos=(data.products||[]).filter(p=>/promo|paquete/.test(norm(p.name)) && terms.some(t=>norm(p.name).includes(t)));
+      if(promoGrid){promoGrid.replaceChildren(...promos.map(productCard).filter(Boolean));promoGrid.hidden=!promos.length;}
+      if(!grid)return;
       const cards=selected.map(item=>productCard(item.product)).filter(Boolean);
       if(!cards.length){grid.innerHTML='<p class="catalog-status">Consulta las opciones disponibles en el catálogo o escríbenos desde la página de contacto.</p>';return;}
       grid.replaceChildren(...cards);
     } catch {
-      grid.innerHTML='<p class="catalog-status">No pudimos cargar los productos en este momento. Puedes consultar el catálogo de la tienda.</p>';
+      if(grid)grid.innerHTML='<p class="catalog-status">No pudimos cargar los productos en este momento. Puedes consultar el catálogo de la tienda.</p>';
     }
   }
   loadProducts();
