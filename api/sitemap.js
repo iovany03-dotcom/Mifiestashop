@@ -6,6 +6,8 @@ module.exports = async function handler(req, res) {
   const siteOrigin = 'https://mifiestashop.vercel.app';
 
   const urls = [{ loc: `${siteOrigin}/`, priority: '1.0' }];
+  const cmsPages = require('../data/cms-manifest.json');
+  cmsPages.forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
 
   if (apiKey) {
     try {
@@ -26,9 +28,10 @@ module.exports = async function handler(req, res) {
     } catch (e) { /* fall back to just the homepage */ }
   }
 
+  const escapeXml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(u => `  <url><loc>${u.loc}</loc><priority>${u.priority}</priority></url>`).join('\n')}
+${urls.map(u => `  <url><loc>${escapeXml(u.loc)}</loc><priority>${u.priority}</priority></url>`).join('\n')}
 </urlset>`;
 
   res.setHeader('Content-Type', 'application/xml');
