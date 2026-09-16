@@ -6864,6 +6864,7 @@ function applyPeriod(p){
   if(document.getElementById('fromInput')) document.getElementById('fromInput').value = toISO(from);
   if(document.getElementById('toInput')) document.getElementById('toInput').value = toISO(to);
   loadVentas(toISO(from), toISO(to));
+  if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
 }
 
 if(document.getElementById('periodSeg')){
@@ -6878,7 +6879,10 @@ if(document.getElementById('applyRange')){
     document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.remove('active'));
     const from = document.getElementById('fromInput').value;
     const to = document.getElementById('toInput').value;
-    if (from && to) loadVentas(from, to);
+    if (from && to) {
+      loadVentas(from, to);
+      if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
+    }
   });
 }
 
@@ -11686,8 +11690,14 @@ function hashCode(str) {
   return hash;
 }
 
-function getProductMonthlySales(p) {
-  const months = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+function getProductMonthlySales(p, fromISO, toISO) {
+  const allMonths = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+  // fromISO/toISO (YYYY-MM-DD) recortan el rango a los meses del filtro de
+  // fecha del dashboard — comparación lexicográfica sobre 'YYYY-MM' funciona
+  // porque el formato ya viene con ceros a la izquierda.
+  const fromMonth = fromISO ? fromISO.slice(0, 7) : null;
+  const toMonth = toISO ? toISO.slice(0, 7) : null;
+  const months = allMonths.filter(m => (!fromMonth || m >= fromMonth) && (!toMonth || m <= toMonth));
   const pKeySku = String(p.sku || '').trim();
   const pKeyId = String(p.id || '').trim();
   const pName = String(p.name || '').trim().toLowerCase();
@@ -11712,8 +11722,16 @@ function getProductMonthlySales(p) {
     return { month: m, units: Math.max(0, units), revenue: Math.max(0, revenue) };
   });
 
-  const totalUnits = rec ? rec.totalUnits : 0;
-  const totalRevenue = rec ? rec.totalRevenue : 0;
+  // Si se pasó un rango, el total debe reflejar solo los meses filtrados —
+  // no el acumulado histórico completo de rec.totalUnits/totalRevenue
+  // (esto es justo lo que hacía que la tabla no cambiara al mover la fecha).
+  const isFiltered = !!(fromMonth || toMonth);
+  const totalUnits = isFiltered
+    ? monthSales.reduce((s, x) => s + x.units, 0)
+    : (rec ? rec.totalUnits : 0);
+  const totalRevenue = isFiltered
+    ? monthSales.reduce((s, x) => s + x.revenue, 0)
+    : (rec ? rec.totalRevenue : 0);
 
   return { months: monthSales, totalUnits, totalRevenue, hasRealData: !!rec };
 }
@@ -11749,9 +11767,11 @@ function renderTopProductsTable() {
     return;
   }
   const sortMode = document.getElementById('topProductsSortSelect')?.value || 'units';
+  const rangeFrom = document.getElementById('fromInput')?.value || null;
+  const rangeTo = document.getElementById('toInput')?.value || null;
 
   const processed = dataset.map(p => {
-    const salesData = getProductMonthlySales(p);
+    const salesData = getProductMonthlySales(p, rangeFrom, rangeTo);
     return {
       product: p,
       totalUnits: salesData.totalUnits,
