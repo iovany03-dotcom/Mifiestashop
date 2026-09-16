@@ -8,7 +8,7 @@ const models = pages.map(page => modelFor(page, pages));
 const output = path.join(root, 'cms-pages');
 fs.mkdirSync(output, { recursive: true });
 const logo = 'https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp';
-const footer = `<footer class="site-footer"><a class="footer-brand" href="/">Mi Fiesta Shop</a><p>Artículos para tus celebraciones.</p><nav aria-label="Ayuda"><a href="/content/420-politica-de-envio-gratis-mi-fiesta-shop">Envíos</a><a href="/content/421-politica-de-devolucion-mi-fiesta-shop">Devoluciones</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></nav></footer>`;
+const footer = `<footer class="site-footer"><a class="footer-brand" href="/">Mi Fiesta Shop</a><p>Artículos para tus celebraciones.</p><nav aria-label="Ayuda"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envíos</a><a href="/pagina/politica-de-devolucion-mi-fiesta-shop">Devoluciones</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></nav></footer>`;
 function vipHtml(p) {
   if(!p.vip)return '';
   return `<section class="vip-section wrap"><form id="vip-form" data-endpoint="${esc(p.vip.endpoint)}" data-redirect="${esc(p.vip.redirect)}" data-threshold="${p.vip.threshold}"><h2>Beneficio VIP</h2><p>Registra tu compra para recibir tu beneficio.</p><label for="vip-phone">Teléfono (10 dígitos)</label><input id="vip-phone" name="phone" type="tel" autocomplete="tel" required><label for="vip-amount">Monto de compra</label><input id="vip-amount" name="amount" type="number" min="1" step="1" required><div id="vip-email-wrap" hidden><label for="vip-email">Correo electrónico</label><input id="vip-email" name="email" type="email" autocomplete="email"><p class="vip-hint">Si tu compra es menor a $400, te enviamos un cupón del 10% por correo.</p></div><button class="button primary" type="submit">Enviar</button><p id="vip-message" role="status" aria-live="polite"></p></form></section>`;
@@ -31,9 +31,9 @@ function render(page) {
 <link rel="stylesheet" href="/assets/cms.css"><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
 <script defer src="/assets/cms.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
 <body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
-<div class="announcement"><a href="/content/420-politica-de-envio-gratis-mi-fiesta-shop">Envío gratis en compras mayores a $1,500 MXN <span>Consulta condiciones</span></a></div>
+<div class="announcement"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envío gratis en compras mayores a $1,500 MXN <span>Consulta condiciones</span></a></div>
 <header class="site-header"><a class="logo" href="/" aria-label="Mi Fiesta Shop, inicio"><img src="${logo}" width="100" height="88" alt="Mi Fiesta Shop"></a>
-<nav aria-label="Principal"><a href="/">Productos</a><a href="/content/417-articulos-para-fiesta-mayoreo-en-mexico">Mayoreo</a><a href="/content/418-contactanos">Contacto</a></nav>
+<nav aria-label="Principal"><a href="/">Productos</a><a href="/pagina/articulos-para-fiesta-mayoreo-en-mexico">Mayoreo</a><a href="/pagina/contactanos">Contacto</a></nav>
 <form class="site-search" action="/" role="search"><label class="sr-only" for="buscar">Buscar productos</label><input id="buscar" type="search" name="buscar" placeholder="¿Qué buscas para tu evento?"><button type="submit" aria-label="Buscar">⌕</button></form>
 <a class="account-link" href="/?cuenta=1">Mi cuenta</a></header>
 <main id="contenido"><nav class="breadcrumb wrap" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span></nav>
@@ -63,7 +63,7 @@ fs.writeFileSync(path.join(root,'data','cms-runtime.json'), JSON.stringify(runti
 // The ID-bearing source path preserves every original page, including duplicate slugs.
 // Root and /pagina aliases keep existing Vercel links working and select the first source ID,
 // matching the previous API's deterministic behavior. Never normalize the source slug.
-const manifest = models.map(p => ({id:p.id,title:p.title,slug:p.slug,path:p.sourcePath,theme:p.theme,inFooter:p.inFooter,
+const manifest = models.map(p => ({id:p.id,title:p.title,slug:p.slug,path:p.sourcePath,theme:p.theme,inFooter:p.inFooter,categoryId:p.categoryId,categoryName:p.categoryName,
   sourceStatus:p.sourceStatus,sourceWasEmpty:p.sourceWasEmpty,location:p.location}));
 fs.writeFileSync(path.join(root,'data','cms-manifest.json'), JSON.stringify(manifest,null,2)+'\n');
 const config = JSON.parse(fs.readFileSync(path.join(root,'vercel.json')));

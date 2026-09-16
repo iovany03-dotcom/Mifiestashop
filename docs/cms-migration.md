@@ -1,40 +1,30 @@
-# Páginas CMS migradas a Vercel
+# Migración: Publicidad Facebook y Google Ads
 
-## Alcance
+## Alcance confirmado
 
-Se importaron las 152 páginas activas devueltas por el CMS el 15 de septiembre de 2026. Son 140 slugs distintos. Los títulos y slugs se conservan exactamente, incluidos los guiones finales, errores de escritura y duplicados.
+Se migran únicamente las categorías originales de PrestaShop:
 
-Cada página tiene su ruta original `/content/ID-slug`. Las rutas `/<slug>` y `/pagina/<slug>` funcionan como accesos alternativos. Cuando hay un slug repetido, estos accesos apuntan al primer ID, igual que la API anterior; las rutas originales siguen distinguiendo todas las versiones.
+- **33 — PUBLICIDAD FACEBOOK:** 26 páginas activas.
+- **34 — PUBLICIDAD GOOGLE ADS:** 113 páginas activas.
 
-## Contenido y presentación
+Total: **139 páginas, 127 slugs distintos y 393 rutas**. La pertenencia se verificó en las rutas de navegación de las páginas originales; cada registro conserva categoryId y categoryName.
 
-- HTML estático con H1, descripción, URL canónica, Open Graph y datos estructurados propios. El contenido CMS ya no necesita la API de PrestaShop para mostrarse.
-- Diseño basado en la referencia de artículos para boda: Fredoka y Poppins, turquesa, rosa, violeta y botones naranjas. Productos relacionados según el tema del título.
-- Las páginas sin ubicación en su contenido original no reciben una sucursal por defecto. Se conserva la ubicación existente y se corrigen 15 mapas cuya ciudad no correspondía al título, usando mapas verificados de la sucursal correcta. Contacto conserva sus cuatro ubicaciones.
-- Las imágenes CMS disponibles se guardan en `img/cms`. Los originales que no estaban disponibles se omiten o se sustituyen por una imagen existente de la misma temática. El registro de descargas está en `data/cms-assets.json`.
-- Se reconstruyen los formularios VIP de los IDs 294, 295 y 296 con sus endpoints y destinos originales. Conservan el comportamiento `no-cors`; la respuesta opaca del servicio original no permite confirmar la recepción. Las pruebas interceptan la solicitud y no envían registros ni cupones.
-- Los enlaces de cuatro productos antiguos se actualizan con los IDs del catálogo actual. Los slugs CMS no se alteran.
-- Se conserva el texto informativo y legal original. Las plantillas comerciales eliminan titulares duplicados, textos de ejemplo y estilos/scripts del constructor antiguo; las reseñas se conservan como citas y las descripciones comerciales corresponden al tema de la página.
+Quedan fuera las 13 páginas de categorías principales, información, contacto, mayoreo general, descuentos y políticas (IDs 9, 11, 12 y 412–421). Conservan el renderer y la API originales de PrestaShop. No se generan HTML ni rutas nuevas para ellas.
 
-## Particularidades de la fuente
+## Rutas y contenido
 
-- Los IDs 413, 414, 415 y 416 devolvían 404 en la web pública, aunque el CMS los listaba activos. Se conserva el contenido que sí devolvía la API.
-- Los IDs 293, 353, 354, 370, 403 y 419 no contenían texto original o estaban vacíos. Se conserva su identidad y temática sin importar las direcciones que la API antigua inventaba como respaldo. El ID 419 tenía una imagen promocional.
-- El inventario activo incluye páginas antiguas de plantilla (bicicletas, hogar y herramientas). Se preservan sus temas y rutas, sin convertirlas en páginas de bodas.
-- El catálogo de productos sigue consultándose en vivo mediante la API existente. Si no hay productos de la temática, se muestra el estado vacío; nunca se rellena con productos de otro tema.
+Se conservan títulos y slugs exactos, incluyendo errores de escritura y guiones finales. Cada página mantiene /content/ID-slug; los accesos /slug y /pagina/slug siguen disponibles. Los slugs repetidos se distinguen por ID; los accesos sin ID eligen el primero, como la API anterior.
 
-## Mantenimiento
+El diseño sigue la referencia de artículos para boda, con Fredoka, Poppins, turquesa, rosa, violeta y botones naranjas. El título determina la temática del texto y catálogo. Las páginas sin ubicación original no reciben una sucursal. Se corrigen 15 mapas que no correspondían a la ciudad del título utilizando ubicaciones verificadas en las páginas originales.
 
-`data/cms-pages.json` conserva el contenido fuente y la procedencia de cada página. `scripts/cms-content.cjs` construye el modelo, aplica las reglas de ubicación y limpia el HTML. `scripts/cms-themes.cjs` define las temáticas. `scripts/build-cms.cjs` genera los HTML, las rutas y los registros para la API/sitemap.
+Las imágenes CMS disponibles están guardadas en img/cms. Las imágenes originales que no respondían se omiten o se sustituyen por una imagen existente de su temática. Los registros originales sin texto (293, 353, 354, 370 y 403) mantienen título y temática sin inventar una dirección.
 
-```sh
-npm ci
-npm run build:cms
-npm run test:cms
-```
+Las tres páginas de registro VIP pertenecen a Facebook y conservan sus endpoints y destinos originales. Las comprobaciones finales simulan fetch y bloquean el servicio externo, sin enviar registros. El comportamiento original no-cors no permite confirmar la recepción del servicio.
 
-Después de editar datos, plantillas o reglas, regenerar y versionar los archivos resultantes de `cms-pages`, `data/cms-runtime.json`, `data/cms-manifest.json` y `vercel.json`. La generación no consulta servicios externos. Vercel sirve los archivos ya generados y las funciones existentes.
+## Mantenimiento y pruebas
 
-## Verificación
+data/cms-pages.json contiene la fuente y categoría; scripts/cms-content.cjs construye el contenido; scripts/cms-themes.cjs define las temáticas; scripts/build-cms.cjs genera HTML, metadatos, rutas, API y sitemap.
 
-Pruebas automatizadas de todos los IDs, títulos, rutas, slugs repetidos, direcciones, temáticas, imágenes locales, API CMS, sitemap, formularios, sanitización y sintaxis JavaScript. Revisión de las 152 páginas a 390 px de ancho, más revisión visual de bodas, neón, sombreros, Puebla, globos, mayoreo y políticas. La prueba del catálogo usa datos públicos del catálogo y verifica tanto productos pertinentes como ausencia de coincidencias.
+Ejecutar npm ci, npm run build:cms y npm run test:cms. Versionar los resultados generados antes de desplegar. La generación es local y no consulta servicios externos.
+
+Las pruebas recorren todas las páginas incluidas y comprueban títulos, rutas, slugs duplicados, direcciones, temáticas, imágenes, API, sitemap, formularios y sintaxis. La revisión móvil inicial cubrió las 152 páginas del conjunto mayor; las 139 seleccionadas forman parte de esa revisión. Se agregan verificaciones específicas de las categorías y de la conservación del comportamiento de las páginas excluidas.

@@ -1,64 +1,5 @@
 [
   {
-    "id": 9,
-    "title": "bicicletas",
-    "slug": "bicicletas",
-    "inFooter": false,
-    "description": "bicicletas, repuestos, Accesorios",
-    "sourceContent": "<img src=\"https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-1.jpg\" alt=\"\" width=\"890\" height=\"581\" />\n        Bicicletas para todo tipo de Ocacion        \n        <img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-2.jpg\" alt=\"\" width=\"890\" height=\"581\" />\n        Bicicletas Modernas        \n        <h1>Bicicletas Destacadas</h1>        \n        <h1>Bicicletas con Descuento</h1>        \n        <img src=\"https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/bannerrrmontana.jpg\" alt=\"\" width=\"564\" height=\"846\" />",
-    "sourcePath": "/content/9-bicicletas",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-1.jpg": "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-1.jpg",
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-2.jpg": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-2.jpg",
-      "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/bannerrrmontana.jpg": "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/bannerrrmontana.jpg"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 11,
-    "title": "hogar",
-    "slug": "hogar",
-    "inFooter": false,
-    "description": "",
-    "sourceContent": "<figure><a href=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/Slider-2-1920x800.jpg\" data-elementor-open-lightbox=\"yes\" data-elementor-lightbox-slideshow=\"6b3d715\" data-elementor-lightbox-index=\"0\"><img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/Slider-2-1920x800.jpg\" loading=\"auto\" alt=\"\" width=\"1920\" height=\"800\" /></a></figure>\r\n<p><a href=\"#\" role=\"button\"> Ahorre Con Grandes Descuentos OFF% </a> <a href=\"#\" role=\"button\"> Vuelve Pronto estamos Trabajando </a> <img src=\"https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble1.jpg\" loading=\"lazy\" alt=\"\" width=\"564\" height=\"564\" /> <img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble%203_2.jpg\" loading=\"lazy\" alt=\"\" /> <img src=\"https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble%205.jpg\" loading=\"lazy\" alt=\"\" /> <img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/cama.jpg\" loading=\"lazy\" alt=\"\" width=\"1921\" height=\"650\" /></p>\r\n<h2>Tu Hogar te lo Agradecera</h2>\r\n<h2>Productos que te Encantarán</h2>\r\n<figure><img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/cuchilleria.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\" /></figure>\r\n<h3>COCINA</h3>\r\n<p>Encuentra Productos para tu cosina</p>\r\n<figure><img src=\"https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/bano.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\" /></figure>\r\n<h3>BAÑO</h3>\r\n<p>Sorprendete con lo que necesitas para tu Baño</p>\r\n<figure><img src=\"https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/sala-de-estar.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\" /></figure>\r\n<h3>SALA</h3>\r\n<p>no hay nada mas elegante que darle ese toque a tu Sala</p>\r\n<figure><img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/cama.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\" /></figure>\r\n<h3>ALCOBA</h3>\r\n<p>Por que dejarte con las ganas de tener algo bonito</p>",
-    "sourcePath": "/content/11-hogar",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/Slider-2-1920x800.jpg": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/Slider-2-1920x800.jpg",
-      "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble1.jpg": "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble1.jpg",
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble%203_2.jpg": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble%203_2.jpg",
-      "https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble%205.jpg": "https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/mueble%205.jpg",
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/cama.jpg": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/cama.jpg",
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/cuchilleria.png": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/cuchilleria.png",
-      "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/bano.png": "https://cdn2.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/bano.png",
-      "https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/sala-de-estar.png": "https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/sala-de-estar.png",
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/cama.png": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/Hogar/iconos/cama.png"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 12,
-    "title": "Herramientas",
-    "slug": "herramientas",
-    "inFooter": false,
-    "description": "",
-    "sourceContent": "<img src=\"https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/herramientas/banner2.jpg\" alt=\"\" width=\"1903\" height=\"630\" /><h2>Muy Pronto Encontraras lo mejor en Herramienta</h2>        \n        <h2>El Poder del Trabajo en tus manos</h2>        \n        <img src=\"https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/herramientas/banner.jpg\" alt=\"\" width=\"1903\" height=\"800\" />",
-    "sourcePath": "/content/12-herramientas",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/herramientas/banner2.jpg": "https://cdn3.daiscom.com.co/img/cms/Daiscom/paginas-categorias/herramientas/banner2.jpg",
-      "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/herramientas/banner.jpg": "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/herramientas/banner.jpg"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
     "id": 269,
     "title": "Artículos para boda en México",
     "slug": "articulos-para-boda-en-mexico",
@@ -70,7 +11,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 274,
@@ -95,7 +38,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 275,
@@ -124,7 +69,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 276,
@@ -150,7 +97,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 277,
@@ -176,7 +125,9 @@
       "/img/cms/5/0/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 278,
@@ -201,7 +152,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 279,
@@ -231,7 +184,9 @@
       "/img/cms/5/0/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 280,
@@ -258,7 +213,9 @@
       "/img/cms/5/0/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 281,
@@ -285,7 +242,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 282,
@@ -311,7 +270,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 283,
@@ -336,7 +297,9 @@
       "https://cdn1.mifiestashop.com/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 284,
@@ -362,7 +325,9 @@
       "https://cdn1.mifiestashop.com/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 285,
@@ -390,7 +355,9 @@
       "/img/cms/5/0/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 286,
@@ -414,7 +381,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 287,
@@ -439,7 +408,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 288,
@@ -453,7 +424,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 289,
@@ -467,7 +440,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 290,
@@ -481,7 +456,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 291,
@@ -495,7 +472,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 292,
@@ -514,7 +493,9 @@
       "/img/cms/Texto%20del%20p%C3%A1rrafo_1.png": "https://mifiestashop.com/img/cms/5/0/Texto%20del%20p%C3%A1rrafo_1.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 293,
@@ -528,7 +509,9 @@
     "sourceWasEmpty": true,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 294,
@@ -546,7 +529,9 @@
       "redirect": "https://share.google/0mPocZWpkzDaqYTC0",
       "threshold": 400
     },
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 295,
@@ -564,7 +549,9 @@
       "redirect": "https://share.google/OilYcaGMkaEyzv9Ij",
       "threshold": 400
     },
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 296,
@@ -582,7 +569,9 @@
       "redirect": "https://share.google/wbQr8DhwVQht9a4Oy",
       "threshold": 400
     },
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 297,
@@ -607,7 +596,9 @@
       "/img/cms/5/0/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 298,
@@ -632,7 +623,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 299,
@@ -661,7 +654,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 300,
@@ -686,7 +681,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 301,
@@ -715,7 +712,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 302,
@@ -741,7 +740,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 303,
@@ -766,7 +767,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 304,
@@ -791,7 +794,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 305,
@@ -816,7 +821,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 306,
@@ -845,7 +852,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 307,
@@ -874,7 +883,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 308,
@@ -906,7 +917,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 309,
@@ -935,7 +948,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 310,
@@ -965,7 +980,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 311,
@@ -994,7 +1011,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 312,
@@ -1008,7 +1027,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 313,
@@ -1033,7 +1054,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 314,
@@ -1062,7 +1085,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 315,
@@ -1088,7 +1113,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 316,
@@ -1114,7 +1141,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 317,
@@ -1139,7 +1168,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 318,
@@ -1165,7 +1196,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 319,
@@ -1191,7 +1224,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 320,
@@ -1217,7 +1252,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 321,
@@ -1242,7 +1279,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 322,
@@ -1267,7 +1306,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 323,
@@ -1292,7 +1333,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 324,
@@ -1317,7 +1360,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 325,
@@ -1342,7 +1387,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 326,
@@ -1367,7 +1414,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 327,
@@ -1386,7 +1435,9 @@
       "/img/cms/1_1.png": "https://mifiestashop.com/img/cms/5/0/1_1.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 328,
@@ -1405,7 +1456,9 @@
       "/img/cms/1_1.png": "https://mifiestashop.com/img/cms/5/0/1_1.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 329,
@@ -1429,7 +1482,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 330,
@@ -1453,7 +1508,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 331,
@@ -1482,7 +1539,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 332,
@@ -1511,7 +1570,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 333,
@@ -1539,7 +1600,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 334,
@@ -1564,7 +1627,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 335,
@@ -1589,7 +1654,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 336,
@@ -1617,7 +1684,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 337,
@@ -1645,7 +1714,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 338,
@@ -1673,7 +1744,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 339,
@@ -1704,7 +1777,9 @@
       "https://cdn3.mifiestashop.com/img/cms/875.jpg": "https://mifiestashop.com/img/cms/5/0/875.jpg"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 340,
@@ -1735,7 +1810,9 @@
       "https://cdn3.mifiestashop.com/img/cms/875.jpg": "https://mifiestashop.com/img/cms/5/0/875.jpg"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 341,
@@ -1766,7 +1843,9 @@
       "https://cdn3.mifiestashop.com/img/cms/875.jpg": "https://mifiestashop.com/img/cms/5/0/875.jpg"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 342,
@@ -1796,7 +1875,9 @@
       "https://cdn1.mifiestashop.com/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 343,
@@ -1827,7 +1908,9 @@
       "https://cdn3.mifiestashop.com/img/cms/875.jpg": "https://mifiestashop.com/img/cms/5/0/875.jpg"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 344,
@@ -1856,7 +1939,9 @@
       "https://cdn1.mifiestashop.com/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 345,
@@ -1885,7 +1970,9 @@
       "https://cdn1.mifiestashop.com/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 346,
@@ -1916,7 +2003,9 @@
       "https://cdn3.mifiestashop.com/img/cms/875.jpg": "https://mifiestashop.com/img/cms/5/0/875.jpg"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 347,
@@ -1941,7 +2030,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 348,
@@ -1966,7 +2057,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 349,
@@ -1994,7 +2087,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 350,
@@ -2019,7 +2114,9 @@
       "https://cdn1.mifiestashop.com/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 351,
@@ -2051,7 +2148,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 352,
@@ -2073,7 +2172,9 @@
       "https://cdn3.mifiestashop.com/img/cms/1_1.png": "https://mifiestashop.com/img/cms/5/0/1_1.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 353,
@@ -2087,7 +2188,9 @@
     "sourceWasEmpty": true,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 354,
@@ -2101,7 +2204,9 @@
     "sourceWasEmpty": true,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 355,
@@ -2127,7 +2232,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 356,
@@ -2152,7 +2259,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 357,
@@ -2180,7 +2289,9 @@
       "/img/cms/875.jpg": "https://mifiestashop.com/img/cms/5/0/875.jpg"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 358,
@@ -2206,7 +2317,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 359,
@@ -2232,7 +2345,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 360,
@@ -2257,7 +2372,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 361,
@@ -2282,7 +2399,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 362,
@@ -2307,7 +2426,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 363,
@@ -2332,7 +2453,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 364,
@@ -2357,7 +2480,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 365,
@@ -2382,7 +2507,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 366,
@@ -2410,7 +2537,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 367,
@@ -2424,7 +2553,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK"
   },
   {
     "id": 368,
@@ -2452,7 +2583,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 369,
@@ -2480,7 +2613,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 370,
@@ -2494,7 +2629,9 @@
     "sourceWasEmpty": true,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 371,
@@ -2522,7 +2659,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 372,
@@ -2545,7 +2684,9 @@
       "/img/cms/1_1.png": "https://mifiestashop.com/img/cms/5/0/1_1.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 373,
@@ -2573,7 +2714,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 374,
@@ -2601,7 +2744,9 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 375,
@@ -2630,7 +2775,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 376,
@@ -2659,7 +2806,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 377,
@@ -2688,7 +2837,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 378,
@@ -2717,7 +2868,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 379,
@@ -2746,7 +2899,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 380,
@@ -2775,7 +2930,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 381,
@@ -2800,7 +2957,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 382,
@@ -2829,7 +2988,9 @@
       "/img/cms/4.png": "https://mifiestashop.com/img/cms/5/0/4.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 383,
@@ -2854,7 +3015,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 384,
@@ -2879,7 +3042,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 385,
@@ -2904,7 +3069,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 386,
@@ -2929,7 +3096,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 387,
@@ -2954,7 +3123,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 388,
@@ -2979,7 +3150,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(1).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 389,
@@ -3004,7 +3177,9 @@
       "/img/cms/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png": "https://mifiestashop.com/img/cms/5/0/Sin%20t%C3%ADtulo%20(360%20x%20360%20px)%20(2).png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 390,
@@ -3034,7 +3209,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 391,
@@ -3064,7 +3241,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 392,
@@ -3094,7 +3273,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 393,
@@ -3124,7 +3305,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 394,
@@ -3154,7 +3337,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 395,
@@ -3168,7 +3353,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 396,
@@ -3182,7 +3369,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 397,
@@ -3196,7 +3385,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 398,
@@ -3226,7 +3417,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 399,
@@ -3256,7 +3449,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 400,
@@ -3286,7 +3481,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 401,
@@ -3316,7 +3513,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 402,
@@ -3346,7 +3545,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 403,
@@ -3360,7 +3561,9 @@
     "sourceWasEmpty": true,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 404,
@@ -3390,7 +3593,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 405,
@@ -3420,7 +3625,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 406,
@@ -3450,7 +3657,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 407,
@@ -3480,7 +3689,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 408,
@@ -3494,7 +3705,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 409,
@@ -3508,7 +3721,9 @@
     "sourceWasEmpty": false,
     "assetAliases": {},
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 410,
@@ -3538,7 +3753,9 @@
       "/img/cms/Blue%20White%20Simple%20Sale%20Day%20Coupon.png": "https://mifiestashop.com/img/cms/5/0/Blue%20White%20Simple%20Sale%20Day%20Coupon.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   },
   {
     "id": 411,
@@ -3573,182 +3790,8 @@
       "/img/cms/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png"
     },
     "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 412,
-    "title": "Envío",
-    "slug": "entrega",
-    "inFooter": false,
-    "description": "Nuestros términos y condiciones de envío",
-    "sourceContent": "<h2>Envíos y devoluciones</h2><h3>Envío del paquete</h3><p>Como norma general, los paquetes se envían dentro de las 48 horas siguientes a la recepción del pago, través de UPS con número de seguimiento y entrega sin firma. Si prefieres el envío certificado mediante UPS Extra, se aplicará un cargo adicional. Ponte en contacto con nosotros antes de solicitar esta opción. Sea cual sea la forma de envío que elijas, te proporcionaremos un enlace para que puedas seguir tu pedido en línea.</p><p>Los gastos de envío incluyen los gastos de manipulación y empaquetado, así como los gastos postales. Los gastos de manipulación tienen un precio fijo, mientras que los gastos de transporte pueden variar según el peso total del paquete. Te aconsejamos que agrupes todos tus artículos en un mismo pedido. No podemos combinar dos pedidos diferentes, y los gastos de envío se aplicarán para cada uno de manera individual. No nos hacemos responsables de los daños que pueda sufrir tu paquete tras el envío, pero hacemos todo lo posible para proteger todos los artículos frágiles.<br /><br />Las cajas son grandes y tus artículos estarán bien protegidos.</p>",
-    "sourcePath": "/content/412-entrega",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {},
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 413,
-    "title": "Aviso legal",
-    "slug": "aviso-legal",
-    "inFooter": false,
-    "description": "Aviso legal",
-    "sourceContent": "<h2>Legal</h2><h3>Créditos</h3><p>Concepto y producción:</p><p>Esta tienda online fue creada utilizando el <a href=\"http://www.prestashop.com\">Software Prestashop Shopping Cart</a>. No olvides echarle un vistazo al <a href=\"http://www.prestashop.com/blog/en/\">blog de comercio electrónico</a> de PrestaShop para estar al día y leer todos los consejos sobre la venta online y sobre cómo gestionar tu web de comercio electrónico.</p>",
-    "sourcePath": "/content/413-aviso-legal",
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "assetAliases": {},
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 414,
-    "title": "Términos y condiciones",
-    "slug": "terminos-y-condiciones-de-uso",
-    "inFooter": false,
-    "description": "Nuestros términos y condiciones",
-    "sourceContent": "<h1 class=\"page-heading\">Términos y condiciones</h1>\n<h3 class=\"page-subheading\">Norma 1</h3>\n<p class=\"bottom-indent\">Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>\n<h3 class=\"page-subheading\">Norma 2</h3>\n<p class=\"bottom-indent\">Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam&#1102;</p>\n<h3 class=\"page-subheading\">Norma 3</h3>\n<p class=\"bottom-indent\">Tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam&#1102;</p>",
-    "sourcePath": "/content/414-terminos-y-condiciones-de-uso",
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "assetAliases": {},
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 415,
-    "title": "Sobre nosotros",
-    "slug": "sobre-nosotros",
-    "inFooter": false,
-    "description": "Averigüe más sobre nosotros",
-    "sourceContent": "<h1 class=\"page-heading bottom-indent\">Sobre nosotros</h1>\n<div class=\"row\">\n<div class=\"col-xs-12 col-sm-4\">\n<div class=\"cms-block\">\n<h3 class=\"page-subheading\">Nuestra empresa</h3>\n<p><strong class=\"dark\">Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod tempor incididun.</strong></p>\n<p>Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. Lorem ipsum dolor sit amet conse ctetur adipisicing elit.</p>\n<ul class=\"list-1\">\n<li><em class=\"icon-ok\"></em>Productos de alta calidad</li>\n<li><em class=\"icon-ok\"></em>El mejor servicio de atención al cliente</li>\n<li><em class=\"icon-ok\"></em>Garantía de devolución en 30 días</li>\n</ul>\n</div>\n</div>\n<div class=\"col-xs-12 col-sm-4\">\n<div class=\"cms-box\">\n<h3 class=\"page-subheading\">Nuestro equipo</h3>\n<img title=\"cms-img\" src=\"../img/cms/cms-img.jpg\" alt=\"cms-img\" width=\"370\" height=\"192\" />\n<p><strong class=\"dark\">Lorem set sint occaecat cupidatat non </strong></p>\n<p>Eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo.</p>\n</div>\n</div>\n<div class=\"col-xs-12 col-sm-4\">\n<div class=\"cms-box\">\n<h3 class=\"page-subheading\">Opiniones</h3>\n<div class=\"testimonials\">\n<div class=\"inner\"><span class=\"before\">“</span>Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim.<span class=\"after\">”</span></div>\n</div>\n<p><strong class=\"dark\">Lorem ipsum dolor sit</strong></p>\n<div class=\"testimonials\">\n<div class=\"inner\"><span class=\"before\">“</span>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet conse ctetur adipisicing elit. Lorem ipsum dolor sit amet conse ctetur adipisicing elit, sed do eiusmod.<span class=\"after\">”</span></div>\n</div>\n<p><strong class=\"dark\">Ipsum dolor sit</strong></p>\n</div>\n</div>\n</div>",
-    "sourcePath": "/content/415-sobre-nosotros",
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "assetAliases": {},
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 416,
-    "title": "Pago seguro",
-    "slug": "pago-seguro",
-    "inFooter": false,
-    "description": "Nuestra forma de pago segura",
-    "sourceContent": "<h2>Pago seguro</h2>\n<h3>Nuestro pago seguro</h3><p>Con SSL</p>\n<h3>Utilizando Visa/Mastercard/Paypal</h3><p>Sobre este servicio</p>",
-    "sourcePath": "/content/416-pago-seguro",
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "assetAliases": {},
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 417,
-    "title": "Provedores articulos de fiesta",
-    "slug": "articulos-para-fiesta-mayoreo-en-mexico",
-    "inFooter": false,
-    "description": "Mas de 400 productos a precio de mayoreo en México. Mayoreo desde 3 piezas. Te ayudamos a abrir  tu negocio",
-    "sourceContent": "<figure><img src=\"/img/cms/5/0/banner_1_.jpg\" loading=\"auto\" alt=\"\" width=\"1440\" height=\"562\"></figure>                \n                    <figure><img src=\"/img/cms/5/0/banner_2_.jpg\" loading=\"auto\" alt=\"\" width=\"1440\" height=\"562\"></figure>                \n                    <figure><img src=\"/img/cms/5/0/Mesa%20de%20trabajo%203_9.png\" loading=\"auto\" alt=\"\" width=\"1440\" height=\"562\"></figure>                \n        <h2>POR QUE NOSOTROS</h2>        \n        <figure><img src=\"/img/cms/5/0/worldwide_230794.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\"></figure><h3>SOMOS IMPORTADORES</h3><p>Somos importadores directos y fabricantes de todos nuestros productos.</p>        \n        <figure><img src=\"/img/cms/5/0/trophy_506483.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\"></figure><h3>MA MARCA 1° EN MEXICO</h3><p>Somos la marca número 1 en Mexico en venta y distribucion de articulos para fiesta al mayoreo</p>        \n        <figure><img src=\"/img/cms/5/0/increase_5956980.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\"></figure><h3>TE AYUDAMOS</h3><p>Te ayudamos a que tu negocio tenga los beneficios de nuestros programas de afiliados</p>        \n        <h2>ABRIR TIENDA</h2>        \n        <p>Si tienes planeado abrir una tienda y quieres tener la mejor asesoría o ya tienes una tienda y quieres tener el mejor aliado para hacer crecer tu negocio  nosotros estamos aqui</p><h1><strong>Beneficios</strong></h1><p>Precios preferenciales</p><ul><li>Exposición en nuestros canales de comunicación como sucursal o punto de distribución</li><li>Cambia los productos que no logres vender</li><li>Rango exclusivo de 8km a 12 km</li><li>Uso parcial de nuestra marca</li><li>Envió accesibles</li><li>Sofware de punto de venta</li><li>Compra desde una pieza</li><li>Asesoria y capacitacion</li></ul><h1><strong>Como empezar</strong></h1><p>1. Registrate en nuestra plataforma</p><p>2.Mandanos un mensaje por whastapp con tu correo electrónico para darte acceso a nuestros precios de mayoreo desde nuestro sitio web</p><p>3. Agenda una videollamada con nuestro equipo </p><p></p>        \n            <a href=\"https://mifiestashop.com/iniciar-sesion?create_account=1\" role=\"button\">\n                        REGISTRARSE\n                    </a>\n        <img src=\"/img/cms/5/0/Birthday.png\" loading=\"lazy\" alt=\"\" width=\"720\" height=\"720\">\n            <img src=\"/img/cms/5/0/Birthday%20(1080%20%C3%97%201080%C2%A0px)%20(1).png\" loading=\"lazy\" alt=\"\" width=\"1080\" height=\"1080\">                            \n                                            <h4>\n                            Hotspot #1                        </h4>\n                                                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>\n        <h2>ORGANIZO EVENTOS</h2>        \n        <p>Si organizas eventos y quieres adquirir nuestros productos a precios preferenciales ponte en contacto con nosotros. Tenemos muchos beneficios para negocios que quieran manejar precios de mayoreo</p>        \n            <a href=\"https://api.whatsapp.com/send?phone=%2B525612622146&amp;data\" role=\"button\">\n                        CONTACTANOS\n                    </a>\n        <h1>+ DE 400 ARTICULOS </h1>        \n        <h2>Nuestro catalogo de productos</h2>        \n        <h2>⚠️ ES IMPORTANTE REGISTRARTE PARA TENER ACCESO A NUESTROS PRECIOS DE DISTRIBUIDOR ⚠️</h2>        \n        <p>Es importante que te registres en nuestro sitio web para acceder a los precios especiales. Los precios visibles actualmente son al menudeo. Para ver nuestras tarifas preferenciales, por favor regístrate y proporciona el correo con el que te registraste por Whatsapp. ¡Así podrás aprovechar las mejores ofertas!</p>        \n        <img src=\"/img/cms/5/0/Captura%20de%20pantalla%202024-09-06%20174650_1.png\" loading=\"lazy\" alt=\"\">\n            <a href=\"https://mifiestashop.com/iniciar-sesion?back=my-account\" target=\"_blank\" role=\"button\">\n                        Registrarme\n                    </a>\n        <h2>HEMOS TRABAJADO</h2>        \n        <h2>NUESTROS CLIENTES</h2>        \n        <img src=\"/img/cms/5/0/Absolut.gif\" loading=\"lazy\" alt=\"\" width=\"720\" height=\"720\">\n        <img src=\"/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16%20(2).jpeg\" loading=\"lazy\" alt=\"\">\n        <img src=\"/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16%20(1).jpeg\" loading=\"lazy\" alt=\"\">\n        <img src=\"/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-17%20(1).jpeg\" loading=\"lazy\" alt=\"\">\n        <img src=\"/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16.jpeg\" loading=\"lazy\" alt=\"\">\n        <h2>¡HABLEMOS! </h2>        \n                    <a href=\"https://www.facebook.com/AccesoriosparafiestaMexico\">\n        <img src=\"/img/cms/5/0/messenger_889101.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\">\n                    </a>\n                    <a href=\"https://www.instagram.com/articulosparafiestamx/?hl=en\">\n        <img src=\"/img/cms/5/0/instagram_174855.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\">\n                    </a>\n                    <a href=\"https://api.whatsapp.com/send?phone=%2B525612622146&amp;data\" target=\"_blank\">\n        <img src=\"/img/cms/5/0/whatsapp_3670051.png\" loading=\"lazy\" alt=\"\" width=\"512\" height=\"512\">\n                    </a>\n        <h1>OPINIONES DE NUESTROS CLIENTES</h1>        \n        <h1>Descubre lo que nuestros clientes dicen sobre nuestros productos y servicios. Lee sus testimonios y opiniones sinceras para conocer sus experiencias y cómo nuestras soluciones han hecho de sus celebraciones momentos inolvidables.</h1>        \n                        <i>&#61445;</i><i>&#61445;</i><i>&#61445;</i><i>&#61445;</i><i>&#61445;</i> 5/5        \n                                                    Excelente lugar con todo lo que necesitas para tu fiesta, encontramos todo para nuestra boda. Además super amables, nos explicaron cómo funcionaba todo y nos ayudaron a personalizar nuestros vasos 10/10\n                                                            <img src=\"/img/cms/5/0/Mesa%20de%20trabajo%202.png\" loading=\"auto\" alt=\"\" width=\"134\" height=\"136\">                                                        \n                                                                    Alejandro Chávez                                                                \n                                                    Un lugar muy completo para encontrar todo lo que necesites para tu fiesta. Me encantó!   🎉🎈<br>Recomiendo este lugar de productos para fiesta, les doy un 10 de 10. \n                                                            <img src=\"/img/cms/5/0/Mesa%20de%20trabajo%203_7.png\" loading=\"auto\" alt=\"\" width=\"134\" height=\"136\">                                                        \n                                                                    Brenda Samperio                                                                \n                                                    Encontré todo lo que buscaba, y la verdad es que costaba mucho menos de lo que yo pensé. Tienen mucha variedad de artículos. <br>Me agradó bastante.<br>\n                                                            <img src=\"/img/cms/5/0/Mesa%20de%20trabajo%204_1.png\" loading=\"auto\" alt=\"\" width=\"134\" height=\"136\">                                                        \n                                                                    Beto Méndez                                                                \n                                                    Necesitaba dos faldas hawaianas para mis niñas y en todos lados me querian vender la docena completa y con ellos si puede comprar solo dos piezas y mucho mas baratas. \nGran atención y los productos bellísimos. \n                                                            <img src=\"/img/cms/5/0/Mesa%20de%20trabajo%201_1.png\" loading=\"auto\" alt=\"\" width=\"134\" height=\"136\">                                                        \n                                                                    Nereyda Ramírez                                                                \n                                                    Excelente atención!! Tienen muchas cosas muy padres! La chica que atiende es muy amable y conoce todos los productos a la perfección.\n                                                            <img src=\"/img/cms/5/0/Resen%CC%83a_1.jpg\" loading=\"auto\" alt=\"\" width=\"200\" height=\"200\">                                                        \n                                                                    Tania Quezada                                                                \n                                                    Muy buenos artículos para fiestas, matrimonio, despedidas de soltero y gran variedad para cualquier evento que necesites, muy buena atención y asesoría.\n                                                            <img src=\"/img/cms/5/0/Resen%CC%83a_2.jpg\" loading=\"auto\" alt=\"\" width=\"200\" height=\"200\">                                                        \n                                                                    José Fernando Castillo                                                                \n                                                    Super muy buenos productos tos la atención esta genial 😁\n                                                            <img src=\"/img/cms/5/0/Resen%CC%83a_3.jpg\" loading=\"auto\" alt=\"\" width=\"200\" height=\"200\">                                                        \n                                                                    Sigifredo García Villalobos                                                                \n                                                    Excelente atención y ubicación. Un lugar muy surtido, te orientan y atienden muy bien 😄\n                                                            <img src=\"/img/cms/5/0/Resen%CC%83a_4.jpg\" loading=\"auto\" alt=\"\" width=\"200\" height=\"200\">                                                        \n                                                                    Brenda Yatzgara Romero                                                                \n                                                    Excelente servicio muy amables y excelentes precios\n                                                            <img src=\"/img/cms/5/0/Resen%CC%83a_5.jpg\" loading=\"auto\" alt=\"\" width=\"200\" height=\"200\">                                                        \n                                                                    Pamela Cardoso                                                                \n                                                    Excelente aquí si hay las 3 B,bueno,barato y bonito, aunque si les falta un poquito más de variedad y novedades pero todo lo indispensables si lo encuentras aquí 💕\n                                                            <img src=\"/img/cms/5/0/Resen%CC%83a_6.jpg\" loading=\"auto\" alt=\"\" width=\"200\" height=\"200\">                                                        \n                                                                    Jennifer Rodríguez",
-    "sourcePath": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "/img/cms/5/0/banner_1_.jpg": "https://mifiestashop.com/img/cms/5/0/banner_1_.jpg",
-      "/img/cms/5/0/banner_2_.jpg": "https://mifiestashop.com/img/cms/5/0/banner_2_.jpg",
-      "/img/cms/5/0/Mesa%20de%20trabajo%203_9.png": "https://mifiestashop.com/img/cms/5/0/Mesa%20de%20trabajo%203_9.png",
-      "/img/cms/5/0/worldwide_230794.png": "https://mifiestashop.com/img/cms/5/0/worldwide_230794.png",
-      "/img/cms/5/0/trophy_506483.png": "https://mifiestashop.com/img/cms/5/0/trophy_506483.png",
-      "/img/cms/5/0/increase_5956980.png": "https://mifiestashop.com/img/cms/5/0/increase_5956980.png",
-      "/img/cms/5/0/Birthday.png": "https://mifiestashop.com/img/cms/5/0/Birthday.png",
-      "/img/cms/5/0/Birthday%20(1080%20%C3%97%201080%C2%A0px)%20(1).png": "https://mifiestashop.com/img/cms/5/0/Birthday%20(1080%20%C3%97%201080%C2%A0px)%20(1).png",
-      "/img/cms/5/0/Captura%20de%20pantalla%202024-09-06%20174650_1.png": "https://mifiestashop.com/img/cms/5/0/Captura%20de%20pantalla%202024-09-06%20174650_1.png",
-      "/img/cms/5/0/Absolut.gif": "https://mifiestashop.com/img/cms/5/0/Absolut.gif",
-      "/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16%20(2).jpeg": "https://mifiestashop.com/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16%20(2).jpeg",
-      "/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16%20(1).jpeg": "https://mifiestashop.com/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16%20(1).jpeg",
-      "/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-17%20(1).jpeg": "https://mifiestashop.com/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-17%20(1).jpeg",
-      "/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16.jpeg": "https://mifiestashop.com/img/cms/5/0/WhatsApp%20Image%202023-08-30%20at%2012-22-16.jpeg",
-      "/img/cms/5/0/messenger_889101.png": "https://mifiestashop.com/img/cms/5/0/messenger_889101.png",
-      "/img/cms/5/0/instagram_174855.png": "https://mifiestashop.com/img/cms/5/0/instagram_174855.png",
-      "/img/cms/5/0/whatsapp_3670051.png": "https://mifiestashop.com/img/cms/5/0/whatsapp_3670051.png",
-      "/img/cms/5/0/Mesa%20de%20trabajo%202.png": "https://mifiestashop.com/img/cms/5/0/Mesa%20de%20trabajo%202.png",
-      "/img/cms/5/0/Mesa%20de%20trabajo%203_7.png": "https://mifiestashop.com/img/cms/5/0/Mesa%20de%20trabajo%203_7.png",
-      "/img/cms/5/0/Mesa%20de%20trabajo%204_1.png": "https://mifiestashop.com/img/cms/5/0/Mesa%20de%20trabajo%204_1.png",
-      "/img/cms/5/0/Mesa%20de%20trabajo%201_1.png": "https://mifiestashop.com/img/cms/5/0/Mesa%20de%20trabajo%201_1.png",
-      "/img/cms/5/0/Resen%CC%83a_1.jpg": "https://mifiestashop.com/img/cms/5/0/Resen%CC%83a_1.jpg",
-      "/img/cms/5/0/Resen%CC%83a_2.jpg": "https://mifiestashop.com/img/cms/5/0/Resen%CC%83a_2.jpg",
-      "/img/cms/5/0/Resen%CC%83a_3.jpg": "https://mifiestashop.com/img/cms/5/0/Resen%CC%83a_3.jpg",
-      "/img/cms/5/0/Resen%CC%83a_4.jpg": "https://mifiestashop.com/img/cms/5/0/Resen%CC%83a_4.jpg",
-      "/img/cms/5/0/Resen%CC%83a_5.jpg": "https://mifiestashop.com/img/cms/5/0/Resen%CC%83a_5.jpg",
-      "/img/cms/5/0/Resen%CC%83a_6.jpg": "https://mifiestashop.com/img/cms/5/0/Resen%CC%83a_6.jpg"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 418,
-    "title": "Contactanos",
-    "slug": "contactanos",
-    "inFooter": false,
-    "description": "Ponte en contacto con nosotros y te responderemos lo mas rápido posible",
-    "sourceContent": "<img src=\"https://cdn1.mifiestashop.com/img/cms/C.png\" alt=\"\" width=\"1600\" height=\"623\" />                \n        <h1>CONTACTANOS</h1>        \n            <a href=\"tel:\">\n            </a>\n            <a href=\"https://api.whatsapp.com/send?phone=%2B525612622146&amp;data\">\n            </a>\n        <h1>Visitanos</h1>        \n        <h2>CIUDAD DE MEXICO</h2>        \n        <h3>Rumania 613-C . Colonia Portales Norte Benito Juarez<br />Tel 55 5925 0750<br /><br /></h3>        \n            <a href=\"https://goo.gl/maps/oQPABhGofckY9knv6\" target=\"_blank\" rel=\"noreferrer noopener\">\n                        ver Ubicacion\n                    </a>\n        <iframe src=\"https://maps.google.com/maps?q=Rumania%20613%20Colonia%20Portales%20Norte&amp;t=m&amp;z=14&amp;output=embed&amp;iwloc=near\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\"></iframe>        \n        <h2>ATIZAPAN</h2>        \n        <h3>Av Rio San Javier 29 .Atizapan Centro<br />Tel 55 2623 9827<br /></h3>        \n            <a href=\"https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiesta+,+batucada+y+cotillon.+Mi+Fiesta+Shop+Atizapan/@19.5630811,-99.2453059,17z/data=!3m1!4b1!4m6!3m5!1s0x85d21df32278bf05:0x231eae09cd180c22!8m2!3d19.5630811!4d-99.242731!16s%2Fg%2F11v0zzbhy3?entry=ttu\" target=\"_blank\" rel=\"noreferrer noopener\">\n                        ver Ubicacion\n                    </a>\n        <iframe src=\"https://maps.google.com/maps?q=Rio%20san%20javier%2029%20atizapan%20&amp;t=m&amp;z=14&amp;output=embed&amp;iwloc=near\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\"></iframe>        \n        <h2>QUERETARO</h2>        \n        <h3>Av Lazaro Cardenas 67 . Colonia Casa Blanca Queretaro<br />Tel 442 596 7511<br /><br /></h3>        \n            <a href=\"https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiestas+Mi+fiesta+Shop+Queretaro/@20.5772494,-100.3986045,17z/data=!3m1!4b1!4m6!3m5!1s0x85d34579d943e3e5:0x28337ac1a8da7425!8m2!3d20.5772494!4d-100.3960296!16s%2Fg%2F11k5ptjv1h?entry=ttu\" target=\"_blank\" rel=\"noreferrer noopener\">\n                        Ver ubicación\n                    </a>\n        <iframe src=\"https://maps.google.com/maps?q=Av%20L%C3%A1zaro%20C%C3%A1rdenas%2067%20casa%20blanca&amp;t=m&amp;z=14&amp;output=embed&amp;iwloc=near\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\"></iframe>        \n        <h2>PUEBLA</h2>        \n        <h3>Calle 35 Sur 2901 . Colonia Santa Cruz los Angeles Puebla <br />Tel 222 983 6256<br /></h3>        \n            <a href=\"https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiesta+Mi+fiesta+Shop+Puebla/@19.0464305,-98.2335943,17z/data=!3m1!4b1!4m6!3m5!1s0x85cfb8b0d245bf31:0x3ef7a061c650d1d5!8m2!3d19.0464305!4d-98.2310194!16s%2Fg%2F11c1r2bsgn?entry=ttu\" target=\"_blank\" rel=\"noreferrer noopener\">\n                        Ver ubicación\n                    </a>\n        <iframe src=\"https://maps.google.com/maps?q=35%20sur%202901%20santa%20cruz%20los%20angeles&amp;t=m&amp;z=14&amp;output=embed&amp;iwloc=near\" frameborder=\"0\" scrolling=\"no\" marginheight=\"0\" marginwidth=\"0\"></iframe>",
-    "sourcePath": "/content/418-contactanos",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "https://cdn1.mifiestashop.com/img/cms/C.png": "https://mifiestashop.com/img/cms/5/0/C.png"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 419,
-    "title": "Productos Con Descuentos",
-    "slug": "productos-con-descuentos",
-    "inFooter": false,
-    "description": "Prepara la fiesta perfecta sin desbordar tu presupuesto. Explora nuestra colección de productos para fiestas con descuentos que te permitirán celebrar sin preocupaciones. Encuentra todo lo que necesitas, desde decoraciones deslumbrantes hasta accesorios divertidos, a precios reducidos que te harán sonreír. Crea recuerdos inolvidables mientras ahorras dinero en grande. ¡Ven y descubre tus imprescindibles para una celebración espectacular",
-    "sourceContent": "<p><img src=\"/img/cms/BANNERS/pROMOCIONEScomprimida.png\" alt=\"\" width=\"1900\" height=\"600\" /></p>",
-    "sourcePath": "/content/419-productos-con-descuentos",
-    "sourceStatus": 200,
-    "sourceWasEmpty": true,
-    "assetAliases": {
-      "/img/cms/BANNERS/pROMOCIONEScomprimida.png": "https://mifiestashop.com/img/cms/5/0/BANNERS/pROMOCIONEScomprimida.png"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 420,
-    "title": "Política de Envío Gratis Mi Fiesta Shop",
-    "slug": "politica-de-envio-gratis-mi-fiesta-shop",
-    "inFooter": true,
-    "description": "",
-    "sourceContent": "<img src=\"/img/cms/banner%20web%20ENVIOS-01.jpg\" alt=\"\" />\n        <h2>Políticas de Envíos Gratis de Mi Fiesta Shop</h2>        \n        <p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">En Mi Fiesta Shop, nos complace ofrecer a nuestros clientes una política de envío gratuito que hace que sus compras sean aún más convenientes y asequibles. A continuación, detallamos nuestras condiciones y términos para el envío gratis: </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">Condiciones para Envío Gratuito: </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">1. Monto Mínimo de Compra: Ofrecemos envío gratuito en pedidos con un monto mínimo de compra de $1500 MXN. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">2. Destino del Envío: Nuestra oferta de envío gratuito está disponible para entregas dentro de la República Mexicana. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">3. Productos Elegibles: El envío gratuito se aplica a la mayoría de nuestros productos. Sin embargo, no aplicará para productos personalizados, que estarán sujetos a tarifas de envío estándar. Las excepciones se detallarán en la página de descripción del producto correspondiente. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">4. Elección de Paquetería: Utilizaremos la paquetería que mejor se adapte a nuestras necesidades y presupuesto para garantizar un envío gratuito eficiente y confiable. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">5. Falta de Cobertura: No cubrimos el envío gratuito en zonas extendidas o fronterizas. En estos casos, ofreceremos al usuario la opción de recoger su pedido en la sucursal de paquetería más cercana. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">6. Plataformas de Entrega: Podrá aplicar el envío gratuito para plataformas de entrega como Uber y Lala Move, hasta un monto establecido por la empresa. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">7. Exclusiones: El envío gratuito no aplica para pedidos realizados a través de nuestro programa de distribuidores ni con otras promociones vigentes que no estén mencionadas explícitamente como elegibles. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\"> </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">Cambios en la Política de Envío Gratuito: </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">Nos reservamos el derecho de realizar cambios en nuestra política de envío gratuito en cualquier momento. Los cambios se harán efectivos a partir de la fecha de actualización de esta página. </p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:15pt;margin-bottom:15pt;\">Agradecemos tu confianza en Mi Fiesta Shop y esperamos que disfrutes de los beneficios de nuestra política de envío gratuito. Si tienes alguna pregunta o necesitas más información, no dudes en ponerte en contacto con nuestro equipo de atención al cliente. </p><p></p>",
-    "sourcePath": "/content/420-politica-de-envio-gratis-mi-fiesta-shop",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "/img/cms/banner%20web%20ENVIOS-01.jpg": "https://mifiestashop.com/img/cms/5/0/banner%20web%20ENVIOS-01.jpg"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
-  },
-  {
-    "id": 421,
-    "title": "Política de Devolución Mi Fiesta Shop",
-    "slug": "politica-de-devolucion-mi-fiesta-shop",
-    "inFooter": true,
-    "description": "",
-    "sourceContent": "<img src=\"https://cdn2.mifiestashop.com/img/cms/banner%20web-10.jpg\" alt=\"\" />\n        <h2>Políticas de DEVOLUCIÓN Mi Fiesta Shop</h2>        \n        <p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">Políticas de Devolución de Productos para Fiestas</p><p>Condiciones Generales de Devolución<b style=\"font-weight:normal;\"><br /></b></p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">2.1. Plazo de devolución: Los clientes tienen un plazo de 3 dias  a partir de la fecha de compra para solicitar una devolución.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">2.2. Estado del Producto: El producto debe estar sin usar, en su estado original y con todos los accesorios y etiquetas intactos. No se aceptarán devoluciones de productos dañados o utilizados.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">2.3. Comprobante de Compra: Los clientes deben presentar un comprobante de compra válido, como un recibo de venta o confirmación de pedido, al solicitar una devolución.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">3. Proceso de Devolución</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">3.1. Solicitud de Devolución: Para solicitar una devolución, los clientes deben ponerse en contacto con nuestro servicio de atención al cliente y proporcionar la siguiente información:</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">Número de pedido.</p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">Motivo de la devolución.</p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">Detalles del producto a devolver.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">3.2. Aprobación de la devolución: Revisaremos la solicitud de devolución y notificaremos a los clientes si su solicitud ha sido aprobada. En caso de aprobación, se proporcionarán instrucciones adicionales sobre cómo proceder.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">3.3. Costos de Devolución: Los gastos de envío para la devolución del producto serán responsabilidad del cliente, a menos que el producto esté dañado o sea defectuoso.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">3.4. Devoluciones por Retrasos en la Entrega: Sólo se aceptarán devoluciones en paquetes que hayan llegado fuera del tiempo de entrega especificado, y el cliente haya comentado la fecha de entrega y no haya aceptado la modificación. El envío de regreso correrá por parte del cliente.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">4. Opciones de Devolución</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">4.1. Reembolso: Los clientes pueden optar por recibir un reembolso por el monto total de la compra (incluyendo los gastos de envío originales) una vez que hayamos recibido y procesado el producto devuelto.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">4.2. Reemplazo: Si el cliente prefiere, podemos ofrecer un producto de reemplazo en lugar de un reembolso, siempre que el producto esté disponible.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">5. Excepciones a la Devolución</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">Algunos productos pueden estar excluidos de nuestra política de devolución, como productos perecederos o personalizados. Se informará a los clientes de las exclusiones al realizar la compra.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">6. Garantía de Calidad</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">Nos comprometemos a garantizar la calidad de nuestros productos para fiestas. Si un producto es defectuoso o no cumple con las expectativas de calidad, haremos todo lo posible para resolver el problema de manera satisfactoria para el cliente.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">7. Extravío o Daño en el Paquete</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">En caso de que la paquetería extravíe o llegue dañado el paquete, el cliente se compromete a proporcionar la información necesaria para verificar esta información y, en caso de confirmación, se tomarán las medidas necesarias para resolver el problema.</p><p><b style=\"font-weight:normal;\"> </b></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">8. Cancelaciones de Pedido</p><p></p><p dir=\"ltr\" style=\"line-height:1.38;margin-top:0pt;margin-bottom:0pt;\">No se aceptarán devoluciones por cancelaciones de pedido. Los clientes pueden ponerse en contacto con nuestro servicio de atención al cliente para explorar otras opciones, como cambios en el pedido o modificaciones antes del envío.</p>",
-    "sourcePath": "/content/421-politica-de-devolucion-mi-fiesta-shop",
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "assetAliases": {
-      "https://cdn2.mifiestashop.com/img/cms/banner%20web-10.jpg": "https://mifiestashop.com/img/cms/5/0/banner%20web-10.jpg"
-    },
-    "vip": null,
-    "importedAt": "2026-09-15"
+    "importedAt": "2026-09-15",
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS"
   }
 ]

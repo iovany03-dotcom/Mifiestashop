@@ -1,44 +1,13 @@
 [
   {
-    "id": 9,
-    "title": "bicicletas",
-    "slug": "bicicletas",
-    "path": "/content/9-bicicletas",
-    "theme": "bicicletas",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 11,
-    "title": "hogar",
-    "slug": "hogar",
-    "path": "/content/11-hogar",
-    "theme": "hogar",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 12,
-    "title": "Herramientas",
-    "slug": "herramientas",
-    "path": "/content/12-herramientas",
-    "theme": "herramientas",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
     "id": 269,
     "title": "Artículos para boda en México",
     "slug": "articulos-para-boda-en-mexico",
     "path": "/content/269-articulos-para-boda-en-mexico",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -64,6 +33,8 @@
     "path": "/content/274-articulos-para-fiesta-xv-anos-en-mexico",
     "theme": "xv",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -89,6 +60,8 @@
     "path": "/content/275-articulos-para-fiesta-xv-anos-cdmx",
     "theme": "xv",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -114,6 +87,8 @@
     "path": "/content/276-articulos-para-fiesta-xv-anos-en-queretaro",
     "theme": "xv",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -139,6 +114,8 @@
     "path": "/content/277-articulos-para-fiesta-xv-anos-en-atizapan",
     "theme": "xv",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -164,6 +141,8 @@
     "path": "/content/278-articulos-para-fiesta-xv-anos-en-puebla",
     "theme": "xv",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -189,6 +168,8 @@
     "path": "/content/279-articulos-para-boda-en-cdmx",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -214,6 +195,8 @@
     "path": "/content/280-articulos-para-boda-en-atizapan",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -239,6 +222,8 @@
     "path": "/content/281-articulos-para-boda-en-queretaro",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -264,6 +249,8 @@
     "path": "/content/282-articulos-para-boda-en-puebla",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -289,6 +276,8 @@
     "path": "/content/283-articulos-para-fiesta-organizadores-eventos-atizapan",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -314,6 +303,8 @@
     "path": "/content/284-articulos-para-batucada-en-atizapan",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -339,6 +330,8 @@
     "path": "/content/285-articulos-para-fiesta-organizadores-eventos-cdmx",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -364,6 +357,8 @@
     "path": "/content/286-articulos-para-fiesta-organizadores-eventos-puebla",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -389,6 +384,8 @@
     "path": "/content/287-articulos-para-fiesta-organizadores-eventos-queretaro",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -414,6 +411,8 @@
     "path": "/content/288-articulos-pata-batucada-en-cdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -439,6 +438,8 @@
     "path": "/content/289-articulos-para-batucada-en-puebla",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -464,6 +465,8 @@
     "path": "/content/290-articulos-para-batucada",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -475,6 +478,8 @@
     "path": "/content/291-articulos-para-fiesta-organizadores-de-eventos",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -500,6 +505,8 @@
     "path": "/content/292-decoracion-infantil-mexico",
     "theme": "infantil",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -511,6 +518,8 @@
     "path": "/content/293-articulos-para-batucada-cdmx-regalo",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": true,
     "location": null
@@ -522,6 +531,8 @@
     "path": "/content/294-registro-clientes-queretaro",
     "theme": "informacion",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -533,6 +544,8 @@
     "path": "/content/295-registro-clientes-puebla",
     "theme": "informacion",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -544,6 +557,8 @@
     "path": "/content/296-registro-clientes-cdmx",
     "theme": "informacion",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -555,6 +570,8 @@
     "path": "/content/297-venta-de-articulos-neon-para-fiestas",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -581,6 +598,8 @@
     "path": "/content/298-accesorio-de-fiesta-neon",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -592,6 +611,8 @@
     "path": "/content/299-articulos-para-fiesta-neon-cdmx",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -617,6 +638,8 @@
     "path": "/content/300-accesorios-de-neon-para-fiestas-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -642,6 +665,8 @@
     "path": "/content/301-fiesta-neon-glow-cdmx",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -667,6 +692,8 @@
     "path": "/content/302-tematica-neon-queretaro",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -692,6 +719,8 @@
     "path": "/content/303-pintura-neon-puebla",
     "theme": "pintura",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -717,6 +746,8 @@
     "path": "/content/304-fiesta-tematica-neon-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -742,6 +773,8 @@
     "path": "/content/305-fiesta-color-neon-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -767,6 +800,8 @@
     "path": "/content/306-fiesta-glow-party-cdmx",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -792,6 +827,8 @@
     "path": "/content/307-cosas-para-batucada-fiesta-cdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -817,6 +854,8 @@
     "path": "/content/308-articulos-para-batucada-en-cdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -842,6 +881,8 @@
     "path": "/content/309-accesorios-para-batucadas-cdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -867,6 +908,8 @@
     "path": "/content/310-accesorios-para-batucada-boda-cdmx",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -892,6 +935,8 @@
     "path": "/content/311-venta-de-productos-para-batucada-cdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -917,6 +962,8 @@
     "path": "/content/312-articulos-para-batucada-queretaro",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -942,6 +989,8 @@
     "path": "/content/313-cosas-para-batucada-puebla",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -967,6 +1016,8 @@
     "path": "/content/314-sombreros-de-espuma-cdmx",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -992,6 +1043,8 @@
     "path": "/content/315-articulos-de-cumpleanos-queretaro",
     "theme": "cumpleanos",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1017,6 +1070,8 @@
     "path": "/content/316-tienda-de-fiesta-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1042,6 +1097,8 @@
     "path": "/content/317-todo-para-tu-fiesta",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1067,6 +1124,8 @@
     "path": "/content/318-todo-para-tu-fiesta-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1092,6 +1151,8 @@
     "path": "/content/319-tienda-para-fiestas-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1117,6 +1178,8 @@
     "path": "/content/320-todo-para-fiestas-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1142,6 +1205,8 @@
     "path": "/content/321-articulos-de-fiesta-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1167,6 +1232,8 @@
     "path": "/content/322-venta-de-articulos-de-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1192,6 +1259,8 @@
     "path": "/content/323-tienda-para-fiestas-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1218,6 +1287,8 @@
     "path": "/content/324-tienda-de-articulos-para-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1243,6 +1314,8 @@
     "path": "/content/325-accesorios-de-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1268,6 +1341,8 @@
     "path": "/content/326-tienda-de-cosas-para-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1293,6 +1368,8 @@
     "path": "/content/327-tienda-para-fiestas-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1318,6 +1395,8 @@
     "path": "/content/328-venta-de-articulos-de-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1343,6 +1422,8 @@
     "path": "/content/329-todo-para-fiestas-mayoreo",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1354,6 +1435,8 @@
     "path": "/content/330-producto-para-fiestas-mayoreo",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1365,6 +1448,8 @@
     "path": "/content/331-productos-para-fiesta-y-batucada-en-cdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1390,6 +1475,8 @@
     "path": "/content/332-sombreros-locos-para-fiestas-cdmx",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1415,6 +1502,8 @@
     "path": "/content/333-sombreros-goma-espuma",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1426,6 +1515,8 @@
     "path": "/content/334-sombrero-de-espuma-para-fiestas",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1437,6 +1528,8 @@
     "path": "/content/335-sombrero-de-esponja-para-fiestas",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1448,6 +1541,8 @@
     "path": "/content/336-fiesta-de-sombreros-locos",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1459,6 +1554,8 @@
     "path": "/content/337-sombreros-de-espuma-para-fiestas",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1470,6 +1567,8 @@
     "path": "/content/338-gorros-de-esponja-para-fiestas",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1481,6 +1580,8 @@
     "path": "/content/339-articulos-neon-para-fiestas-atizapan",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1506,6 +1607,8 @@
     "path": "/content/340-articulos-de-fiesta-neon-atizapan",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1531,6 +1634,8 @@
     "path": "/content/341-accesorios-fluorescentes-para-fiestas-atizapan",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1556,6 +1661,8 @@
     "path": "/content/342-accesorios-para-batucada-boda-atizapan",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1581,6 +1688,8 @@
     "path": "/content/343-batucada-neon-atizapan",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1606,6 +1715,8 @@
     "path": "/content/344-venta-de-productos-para-batucada-atizapan",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1631,6 +1742,8 @@
     "path": "/content/345-cosas-para-batucada-atizapan",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1656,6 +1769,8 @@
     "path": "/content/346-articulos-fluorescentes-atizapan",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1681,6 +1796,8 @@
     "path": "/content/347-sombreros-locos-puebla",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1706,6 +1823,8 @@
     "path": "/content/348-sombreros-de-hule-espuma-puebla",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1731,6 +1850,8 @@
     "path": "/content/349-productos-para-fiestas-y-batucadas",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1756,6 +1877,8 @@
     "path": "/content/350-articulos-para-fiesta-neon",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1767,6 +1890,8 @@
     "path": "/content/351-articulos-para-fiesta-mayoreo-mexico",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1778,6 +1903,8 @@
     "path": "/content/352-articulos-de-fiesta-mayoreo-mexico",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -1789,6 +1916,8 @@
     "path": "/content/353-souvenirs-para-fiesta-mayoreo",
     "theme": "recuerdos",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": true,
     "location": null
@@ -1800,6 +1929,8 @@
     "path": "/content/354-todo-para-fiestas-mayoreo",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": true,
     "location": null
@@ -1811,6 +1942,8 @@
     "path": "/content/355-articulos-para-fiesta-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1836,6 +1969,8 @@
     "path": "/content/356-tienda-de-fiesta-de-cumpleanos-puebla",
     "theme": "cumpleanos",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1861,6 +1996,8 @@
     "path": "/content/357-accesorios-de-fiesta-neon-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1886,6 +2023,8 @@
     "path": "/content/358-cosas-para-fiestas-queretaro",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1911,6 +2050,8 @@
     "path": "/content/359-accesorios-para-batucada-boda-puebla",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1936,6 +2077,8 @@
     "path": "/content/360-accesorios-para-batucadas-puebla",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1961,6 +2104,8 @@
     "path": "/content/361-articulos-para-fiesta-en-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -1986,6 +2131,8 @@
     "path": "/content/362-articulos-eventos-en-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2011,6 +2158,8 @@
     "path": "/content/363-articulos-fluor-para-fiestas",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2022,6 +2171,8 @@
     "path": "/content/364-cosas-de-fiesta-neon",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2033,6 +2184,8 @@
     "path": "/content/365-polvo-neon-para-fiestas",
     "theme": "polvo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2044,6 +2197,8 @@
     "path": "/content/366-cosas-para-batucada",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2055,6 +2210,8 @@
     "path": "/content/367-articulos-para-batucada",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 33,
+    "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2066,6 +2223,8 @@
     "path": "/content/368-articulos-para-batucada-centro-historico",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2077,6 +2236,8 @@
     "path": "/content/369-productos-para-fiestas-y-batucadas",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2088,6 +2249,8 @@
     "path": "/content/370-productos-para-fiestas-y-batucadas",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": true,
     "location": null
@@ -2099,6 +2262,8 @@
     "path": "/content/371-cosas-para-la-batucada",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2110,6 +2275,8 @@
     "path": "/content/372-accesorios-para-batucada-boda-",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2121,6 +2288,8 @@
     "path": "/content/373-sombreros-locos-de-cumpleanos",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2132,6 +2301,8 @@
     "path": "/content/374-sombreros-de-goma-espuma",
     "theme": "sombreros",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2143,6 +2314,8 @@
     "path": "/content/375-tienda-fiesta-cdmx",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2168,6 +2341,8 @@
     "path": "/content/376-tienda-de-articulos-de-fiesta-cdmx",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2193,6 +2368,8 @@
     "path": "/content/377-tienda-de-fiestas-cdmx",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2218,6 +2395,8 @@
     "path": "/content/378-cosas-para-fiestas-cdmx",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2243,6 +2422,8 @@
     "path": "/content/379-accesorios-para-fiesta-cdmx-",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2268,6 +2449,8 @@
     "path": "/content/380-accesorios-neon-para-fiestas-cdmx",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2293,6 +2476,8 @@
     "path": "/content/381-cosas-para-fiestas-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2318,6 +2503,8 @@
     "path": "/content/382-articulos-para-fiesta-cdmx",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2343,6 +2530,8 @@
     "path": "/content/383-cosas-para-un-cumpleanos-puebla",
     "theme": "cumpleanos",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2368,6 +2557,8 @@
     "path": "/content/384-accesorios-fluorescentes-para-fiestas-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2393,6 +2584,8 @@
     "path": "/content/385-accesorios-de-neon-para-fiestas-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": null
@@ -2404,6 +2597,8 @@
     "path": "/content/386-accesorios-fluor-para-fiestas-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2429,6 +2624,8 @@
     "path": "/content/387-accesorios-hora-loca-neon-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2454,6 +2651,8 @@
     "path": "/content/388-accesorios-fiesta-fluor-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2479,6 +2678,8 @@
     "path": "/content/389-accesorios-color-neon-para-fiestas-puebla",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2504,6 +2705,8 @@
     "path": "/content/390-venta-de-productos-para-batucada-cdmxpropuesta",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2529,6 +2732,8 @@
     "path": "/content/391-accesorios-para-batucadascdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2554,6 +2759,8 @@
     "path": "/content/392-venta-de-productos-para-batucadacdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2579,6 +2786,8 @@
     "path": "/content/393-productos-para-fiestas-y-batucadascdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2604,6 +2813,8 @@
     "path": "/content/394-articulos-para-batucadacdmx",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2629,6 +2840,8 @@
     "path": "/content/395-accesorios-de-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2654,6 +2867,8 @@
     "path": "/content/396-tienda-de-cosas-para-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2679,6 +2894,8 @@
     "path": "/content/397-tienda-de-articulos-para-fiesta-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2704,6 +2921,8 @@
     "path": "/content/398-venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2729,6 +2948,8 @@
     "path": "/content/399-tienda-para-fiestas-en-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2754,6 +2975,8 @@
     "path": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
     "theme": "cumpleanos",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2779,6 +3002,8 @@
     "path": "/content/401-articulos-de-fiesta-mayoreo-en-puebla",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2804,6 +3029,8 @@
     "path": "/content/402-productos-para-fiestas-puebla",
     "theme": "fiesta",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2829,6 +3056,8 @@
     "path": "/content/403-mayoreo-articulos-para-fiestas-puebla",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": true,
     "location": null
@@ -2840,6 +3069,8 @@
     "path": "/content/404-productos-para-fiestas-al-por-mayor-puebla",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2865,6 +3096,8 @@
     "path": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
     "theme": "mayoreo",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2890,6 +3123,8 @@
     "path": "/content/406-accesorios-para-batucada-puebla",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2915,6 +3150,8 @@
     "path": "/content/407-cosas-para-batucada-fiesta-puebla",
     "theme": "batucada",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2940,6 +3177,8 @@
     "path": "/content/408-accesorios-para-batucada-boda-puebla",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2965,6 +3204,8 @@
     "path": "/content/409-accesorios-para-batucada-boda-cdmx",
     "theme": "boda",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -2990,6 +3231,8 @@
     "path": "/content/410-venta-de-articulos-neon-para-fiestas-cdmx",
     "theme": "neon",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -3015,6 +3258,8 @@
     "path": "/content/411-globos-cdmx",
     "theme": "globos",
     "inFooter": false,
+    "categoryId": 34,
+    "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
     "location": {
@@ -3032,133 +3277,5 @@
         "verifiedStorePage": 279
       }
     }
-  },
-  {
-    "id": 412,
-    "title": "Envío",
-    "slug": "entrega",
-    "path": "/content/412-entrega",
-    "theme": "informacion",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 413,
-    "title": "Aviso legal",
-    "slug": "aviso-legal",
-    "path": "/content/413-aviso-legal",
-    "theme": "informacion",
-    "inFooter": false,
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 414,
-    "title": "Términos y condiciones",
-    "slug": "terminos-y-condiciones-de-uso",
-    "path": "/content/414-terminos-y-condiciones-de-uso",
-    "theme": "informacion",
-    "inFooter": false,
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 415,
-    "title": "Sobre nosotros",
-    "slug": "sobre-nosotros",
-    "path": "/content/415-sobre-nosotros",
-    "theme": "informacion",
-    "inFooter": false,
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 416,
-    "title": "Pago seguro",
-    "slug": "pago-seguro",
-    "path": "/content/416-pago-seguro",
-    "theme": "informacion",
-    "inFooter": false,
-    "sourceStatus": 404,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 417,
-    "title": "Provedores articulos de fiesta",
-    "slug": "articulos-para-fiesta-mayoreo-en-mexico",
-    "path": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
-    "theme": "mayoreo",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 418,
-    "title": "Contactanos",
-    "slug": "contactanos",
-    "path": "/content/418-contactanos",
-    "theme": "informacion",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": {
-      "multiple": true,
-      "city": null,
-      "name": "",
-      "address": "",
-      "url": "",
-      "phone": "",
-      "corrected": false,
-      "evidence": {
-        "sourceHadLocation": true,
-        "originalMaps": [
-          "https://goo.gl/maps/oQPABhGofckY9knv6",
-          "https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiesta+,+batucada+y+cotillon.+Mi+Fiesta+Shop+Atizapan/@19.5630811,-99.2453059,17z/data=!3m1!4b1!4m6!3m5!1s0x85d21df32278bf05:0x231eae09cd180c22!8m2!3d19.5630811!4d-99.242731!16s%2Fg%2F11v0zzbhy3?entry=ttu",
-          "https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiestas+Mi+fiesta+Shop+Queretaro/@20.5772494,-100.3986045,17z/data=!3m1!4b1!4m6!3m5!1s0x85d34579d943e3e5:0x28337ac1a8da7425!8m2!3d20.5772494!4d-100.3960296!16s%2Fg%2F11k5ptjv1h?entry=ttu",
-          "https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiesta+Mi+fiesta+Shop+Puebla/@19.0464305,-98.2335943,17z/data=!3m1!4b1!4m6!3m5!1s0x85cfb8b0d245bf31:0x3ef7a061c650d1d5!8m2!3d19.0464305!4d-98.2310194!16s%2Fg%2F11c1r2bsgn?entry=ttu"
-        ],
-        "verifiedStorePage": 418
-      }
-    }
-  },
-  {
-    "id": 419,
-    "title": "Productos Con Descuentos",
-    "slug": "productos-con-descuentos",
-    "path": "/content/419-productos-con-descuentos",
-    "theme": "fiesta",
-    "inFooter": false,
-    "sourceStatus": 200,
-    "sourceWasEmpty": true,
-    "location": null
-  },
-  {
-    "id": 420,
-    "title": "Política de Envío Gratis Mi Fiesta Shop",
-    "slug": "politica-de-envio-gratis-mi-fiesta-shop",
-    "path": "/content/420-politica-de-envio-gratis-mi-fiesta-shop",
-    "theme": "informacion",
-    "inFooter": true,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
-  },
-  {
-    "id": 421,
-    "title": "Política de Devolución Mi Fiesta Shop",
-    "slug": "politica-de-devolucion-mi-fiesta-shop",
-    "path": "/content/421-politica-de-devolucion-mi-fiesta-shop",
-    "theme": "informacion",
-    "inFooter": true,
-    "sourceStatus": 200,
-    "sourceWasEmpty": false,
-    "location": null
   }
 ]
