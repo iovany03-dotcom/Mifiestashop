@@ -6,17 +6,17 @@
   const terms = JSON.parse(grid.dataset.terms || '[]');
   function productCard(product) {
     const card = document.createElement('a');
-    card.className = 'product-card';
+    card.className = 'store-prod-card';
     if (!/^\d+$/.test(String(product.id)) || !product.linkRewrite) return null;
     card.href = '/' + product.id + '-' + encodeURIComponent(product.linkRewrite) + '.html';
     const image = document.createElement('img');
     if (!/^\/img\/cms-products\/[0-9]+\.jpg$/.test(product.img)) return null;
-    image.src = product.img;
+    image.src = product.img; image.className='store-prod-img';
     image.alt=product.name; image.loading='lazy'; image.width=260; image.height=220;
     image.addEventListener('error',()=>image.remove(),{once:true});
-    const copy=document.createElement('div');copy.className='product-copy';
-    const title=document.createElement('h3');title.textContent=product.name;
-    const action=document.createElement('span');action.className='view-product';action.textContent='Ver producto';
+    const copy=document.createElement('div');copy.className='store-prod-body';
+    const title=document.createElement('h3');title.textContent=product.name;title.className='store-prod-title';
+    const action=document.createElement('span');action.className='store-prod-btn';action.textContent='Ver producto';
     copy.append(title,action);card.append(image,copy);return card;
   }
   async function loadProducts() {
