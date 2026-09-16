@@ -2495,6 +2495,7 @@
       </div>
       <div class="submenu">
         <a class="submenu-link active" data-view="pos">Sistema POS</a>
+        <a class="submenu-link" data-view="informe-ventas">Informe de Ventas</a>
         <a class="submenu-link" data-view="pedidos">Pedidos</a>
         <a class="submenu-link" data-view="envios">Envíos & Skydropx</a>
         <a class="submenu-link" data-view="facturacion">Facturación</a>
@@ -2703,6 +2704,64 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ================= VIEW: INFORME DE VENTAS ================= -->
+    <section id="view-informe-ventas" class="view-panel hidden">
+      <div class="card">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end; margin-bottom:18px;">
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Fecha Inicio
+            <input type="date" id="ivFechaInicio" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Fecha Fin
+            <input type="date" id="ivFechaFin" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Tienda/Empresa
+            <select id="ivTienda" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Mi Fiestashop (Todos)</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Punto de Venta
+            <select id="ivPuntoVenta" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+              <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
+              <option value="CDMX Rumania">CDMX Rumania</option>
+              <option value="Querétaro">Querétaro</option>
+              <option value="Atizapán">Atizapán</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Método de pago
+            <select id="ivMetodo" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+              <option value="cash">Efectivo</option>
+              <option value="card">Tarjeta (Débito/Crédito)</option>
+              <option value="transfer">Transferencia</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Empleado
+            <select id="ivEmpleado" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+            </select>
+          </label>
+          <button class="btn primary" style="height:38px;" onclick="renderInformeVentas()">BUSCAR</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-top:16px;" class="iv-charts-grid">
+        <div class="card">
+          <h3 style="margin-top:0;">Tendencia de Ventas</h3>
+          <svg id="ivLineChart" viewBox="0 0 520 260" style="width:100%; height:auto;"></svg>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">Ventas por Método de Pago</h3>
+          <svg id="ivDonutChart" viewBox="0 0 260 260" style="width:100%; max-width:260px; height:auto; display:block; margin:0 auto;"></svg>
+          <div id="ivDonutLegend" style="display:flex; flex-wrap:wrap; gap:10px 16px; justify-content:center; margin-top:14px; font-size:12.5px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div id="ivSummary" style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:var(--text-secondary);"></div>
       </div>
     </section>
 
@@ -5175,6 +5234,7 @@ function getSessionCredsParams(){
 const PERMISSION_GROUPS = [
   { group: 'Vender', items: [
     { key: 'pos', label: 'Sistema POS' },
+    { key: 'informe-ventas', label: 'Informe de Ventas' },
     { key: 'pedidos', label: 'Pedidos' },
     { key: 'envios', label: 'Envíos & Skydropx' },
     { key: 'facturacion', label: 'Facturación' },
@@ -6144,6 +6204,7 @@ function switchView(viewName) {
   // Update header text
   const titles = {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
+    'informe-ventas': ['Informe de Ventas', 'Tendencia y métodos de pago'],
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
@@ -6190,6 +6251,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
+  if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
 
@@ -6411,7 +6473,8 @@ function confirmPOSSale() {
   sbRpc('rpc_pos_ticket_insert', {
     ...getSessionCredsParams(),
     p_folio: folio, p_cliente: clienteNombre, p_almacen: almacen, p_items: cartSnapshot,
-    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change
+    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change,
+    p_metodo: selectedPayMethod, p_registrado_por: nombreSesionActual()
   }).then(rows => {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
@@ -6774,6 +6837,222 @@ function viewPosTicketFromHistorial(id) {
   document.getElementById('tMetodoValor').textContent = fmtMoney(t.total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
   document.getElementById('ticketModal').classList.remove('hidden');
+}
+
+// ================= INFORME DE VENTAS (tendencia + método de pago) =================
+// Se construye 100% a partir de los tickets reales del POS (rpc_pos_ticket_list),
+// sin datos inventados: si un ticket viejo no tiene "metodo" guardado (antes de
+// agregar esa columna), se agrupa como "Sin definir" en vez de asumir Efectivo.
+let informeTicketsCache = [];
+
+async function loadInformeVentas() {
+  try {
+    const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
+    informeTicketsCache = Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    informeTicketsCache = [];
+  }
+
+  const empleados = [...new Set(informeTicketsCache.map(t => t.registrado_por).filter(Boolean))].sort();
+  const empSelect = document.getElementById('ivEmpleado');
+  if (empSelect) {
+    empSelect.innerHTML = '<option value="all">Todos</option>' + empleados.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
+  }
+
+  const fi = document.getElementById('ivFechaInicio');
+  const ff = document.getElementById('ivFechaFin');
+  if (fi && !fi.value) {
+    const now = new Date();
+    fi.value = toISO(new Date(now.getFullYear(), now.getMonth(), 1));
+  }
+  if (ff && !ff.value) ff.value = toISO(new Date());
+
+  renderInformeVentas();
+}
+
+function payMethodShortLabel(m) {
+  if (m === 'card') return 'Débito/Crédito';
+  if (m === 'transfer') return 'Transferencia bancaria';
+  if (m === 'cash') return 'Pago En Efectivo';
+  return 'Sin definir';
+}
+
+function renderInformeVentas() {
+  const fi = document.getElementById('ivFechaInicio')?.value || '';
+  const ff = document.getElementById('ivFechaFin')?.value || '';
+  const puntoVenta = document.getElementById('ivPuntoVenta')?.value || 'all';
+  const metodo = document.getElementById('ivMetodo')?.value || 'all';
+  const empleado = document.getElementById('ivEmpleado')?.value || 'all';
+
+  const filtered = informeTicketsCache.filter(t => {
+    const day = String(t.created_at || '').slice(0, 10);
+    if (fi && day < fi) return false;
+    if (ff && day > ff) return false;
+    if (puntoVenta !== 'all' && t.almacen !== puntoVenta) return false;
+    if (metodo !== 'all' && t.metodo !== metodo) return false;
+    if (empleado !== 'all' && t.registrado_por !== empleado) return false;
+    return true;
+  });
+
+  const byDay = {};
+  filtered.forEach(t => {
+    const day = String(t.created_at || '').slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + (parseFloat(t.total) || 0);
+  });
+  const trendRows = Object.keys(byDay).sort().map(d => ({ label: d, revenue: byDay[d] }));
+  drawInformeLineChart(trendRows);
+
+  const byMethod = { cash: 0, card: 0, transfer: 0, unknown: 0 };
+  filtered.forEach(t => {
+    const m = (t.metodo && byMethod.hasOwnProperty(t.metodo)) ? t.metodo : 'unknown';
+    byMethod[m] += parseFloat(t.total) || 0;
+  });
+  drawInformeDonutChart(byMethod);
+
+  const totalRevenue = filtered.reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+  const summary = document.getElementById('ivSummary');
+  if (summary) {
+    summary.innerHTML = `
+      <div><b>${filtered.length}</b> tickets</div>
+      <div><b>${fmtMoney(totalRevenue)}</b> ingresos</div>
+      <div><b>${fmtMoney(filtered.length ? totalRevenue / filtered.length : 0)}</b> ticket promedio</div>
+    `;
+  }
+}
+
+function drawInformeLineChart(rows) {
+  const svg = document.getElementById('ivLineChart');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (!rows.length) {
+    svg.innerHTML = '<text x="260" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>';
+    return;
+  }
+  const W = 520, H = 260, padL = 60, padR = 12, padT = 14, padB = 34;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const maxV = Math.max(...rows.map(r => r.revenue)) * 1.15 || 1;
+  const n = rows.length;
+  const stepX = n > 1 ? innerW / (n - 1) : 0;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+
+  for (let i = 0; i <= 3; i++) {
+    const y = padT + innerH - (innerH * i / 3);
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', padL + innerW);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', 'var(--grid)');
+    g.appendChild(line);
+    const val = maxV * i / 3;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', padL - 8); t.setAttribute('y', y + 3); t.setAttribute('text-anchor', 'end');
+    t.setAttribute('font-size', '10'); t.setAttribute('fill', 'var(--text-muted)');
+    t.textContent = i === 0 ? '$0' : '$' + fmtNum(Math.round(val));
+    g.appendChild(t);
+  }
+
+  const points = rows.map((r, i) => {
+    const x = padL + stepX * i;
+    const y = padT + innerH - (r.revenue / maxV) * innerH;
+    return [x, y];
+  });
+
+  const areaPath = document.createElementNS(ns, 'path');
+  let d = `M ${points[0][0]} ${padT + innerH} `;
+  points.forEach(p => d += `L ${p[0]} ${p[1]} `);
+  d += `L ${points[points.length - 1][0]} ${padT + innerH} Z`;
+  areaPath.setAttribute('d', d);
+  areaPath.setAttribute('fill', 'rgba(55,182,185,0.15)');
+  g.appendChild(areaPath);
+
+  const linePath = document.createElementNS(ns, 'path');
+  let ld = `M ${points[0][0]} ${points[0][1]} `;
+  points.slice(1).forEach(p => ld += `L ${p[0]} ${p[1]} `);
+  linePath.setAttribute('d', ld);
+  linePath.setAttribute('fill', 'none');
+  linePath.setAttribute('stroke', '#37b6b9');
+  linePath.setAttribute('stroke-width', '2');
+  g.appendChild(linePath);
+
+  points.forEach(p => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]); c.setAttribute('r', '3.5');
+    c.setAttribute('fill', '#fff'); c.setAttribute('stroke', '#37b6b9'); c.setAttribute('stroke-width', '2');
+    g.appendChild(c);
+  });
+
+  const labelEvery = Math.max(1, Math.ceil(n / 8));
+  points.forEach((p, i) => {
+    if (i % labelEvery !== 0 && i !== n - 1) return;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', p[0]); t.setAttribute('y', H - 10); t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '9'); t.setAttribute('fill', 'var(--text-muted)');
+    t.textContent = rows[i].label.slice(5);
+    g.appendChild(t);
+  });
+
+  svg.appendChild(g);
+}
+
+function drawInformeDonutChart(byMethod) {
+  const svg = document.getElementById('ivDonutChart');
+  const legend = document.getElementById('ivDonutLegend');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (legend) legend.innerHTML = '';
+
+  const segments = [
+    { key: 'card', label: 'Débito/Crédito', color: '#8e7cf0', value: byMethod.card },
+    { key: 'cash', label: 'Pago En Efectivo', color: '#d3007b', value: byMethod.cash },
+    { key: 'transfer', label: 'Transferencia bancaria', color: '#22c55e', value: byMethod.transfer },
+    { key: 'unknown', label: 'Sin definir', color: '#f9e05c', value: byMethod.unknown }
+  ].filter(s => s.value > 0);
+
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  if (total <= 0) {
+    svg.innerHTML = '<text x="130" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>';
+    return;
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const cx = 130, cy = 130, r = 90, strokeW = 36;
+
+  if (segments.length === 1) {
+    const circle = document.createElementNS(ns, 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none'); circle.setAttribute('stroke', segments[0].color);
+    circle.setAttribute('stroke-width', strokeW);
+    svg.appendChild(circle);
+  } else {
+    let angleStart = -90;
+    segments.forEach(seg => {
+      const frac = seg.value / total;
+      const angleEnd = angleStart + frac * 360;
+      const largeArc = (angleEnd - angleStart) > 180 ? 1 : 0;
+      const toXY = (ang) => {
+        const rad = (ang * Math.PI) / 180;
+        return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+      };
+      const [x1, y1] = toXY(angleStart);
+      const [x2, y2] = toXY(angleEnd);
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', seg.color);
+      path.setAttribute('stroke-width', strokeW);
+      svg.appendChild(path);
+      angleStart = angleEnd;
+    });
+  }
+
+  if (legend) {
+    legend.innerHTML = segments.map(s => `
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <span style="width:10px; height:10px; border-radius:50%; background:${s.color}; display:inline-block; flex-shrink:0;"></span>
+        ${escapeHtml(s.label)}
+      </span>
+    `).join('');
+  }
 }
 
 // HISTORICAL DATASET & ESTADÍSTICAS DASHBOARD
