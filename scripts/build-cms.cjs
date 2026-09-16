@@ -7,7 +7,7 @@ const origin = 'https://mifiestashop.vercel.app';
 const models = pages.map(page => modelFor(page, pages));
 const output = path.join(root, 'cms-pages');
 fs.mkdirSync(output, { recursive: true });
-const logo = 'https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp';
+const logo = '/img/cms/logo.webp';
 const footer = `<footer class="site-footer"><a class="footer-brand" href="/">Mi Fiesta Shop</a><p>Artículos para tus celebraciones.</p><nav aria-label="Ayuda"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envíos</a><a href="/pagina/politica-de-devolucion-mi-fiesta-shop">Devoluciones</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></nav></footer>`;
 function vipHtml(p) {
   if(!p.vip)return '';

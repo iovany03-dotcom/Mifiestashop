@@ -56,7 +56,7 @@ test('CMS API serves migrated content by exact ID/slug, without a PrestaShop key
   for(const id of [281,322,328,385]){const res=response();handler({query:{id:String(id)}},res);assert.equal(res.code,200);assert.equal(res.data.page.id,id);assert.equal(res.data.page.migrated,true);assert.ok(res.data.page.content);}
   let res=response();handler({query:{slug:'accesorios-para-batucada-boda-'}},res);assert.equal(res.code,200);assert.equal(res.data.page.slug,'accesorios-para-batucada-boda-');
   res=response();handler({query:{slug:'does-not-exist'}},res);assert.equal(res.code,404);
-  res=response();handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,139);assert.equal(res.data.pages[0].content,undefined);
+  res=response();handler({query:{all:'1'}},res);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);assert.equal(res.data.pages[0].content,undefined);
   res=response();handler({query:{}},res);assert.ok(res.data.pages.every(p=>p.inFooter));
 });
 test('only Facebook and Google pages are migrated; VIP forms keep their original integration',()=>{
@@ -76,7 +76,7 @@ test('excluded pages keep their original PrestaShop response and coexist with mi
   global.fetch=async()=>({ok:true,json:async()=>({content_management_system:[legal]})});
   try {
     let res=response();await handler({query:{id:'420'}},res);assert.equal(res.data.page.content,legal.content);assert.equal(res.data.page.migrated,undefined);
-    res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,140);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
+    res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,152);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
     res=response();await handler({query:{}},res);assert.equal(res.data.pages.length,1);assert.equal(res.data.pages[0].id,420);
   }finally{global.fetch=previousFetch;if(previousKey===undefined)delete process.env.PS_API_KEY;else process.env.PS_API_KEY=previousKey;}
 });
@@ -89,4 +89,12 @@ test('storefront and CMS JavaScript compile',()=>{
   $('script:not([src])').each((_,el)=>{if(!$(el).attr('type')||$(el).attr('type')==='text/javascript')new vm.Script($(el).html());});
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms.js'),'utf8'));
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms-vip.js'),'utf8'));
+});
+
+test('migrated pages and admin inventory work without PrestaShop network access',async()=>{
+ const oldFetch=global.fetch;global.fetch=()=>{throw new Error('PrestaShop offline')};
+ try{const res=response();await handler({query:{all:'1'}},res);assert.equal(res.code,200);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);}finally{global.fetch=oldFetch;}
+ for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+p.id+'.html'),'utf8'));$('img').each((_,el)=>{const src=$(el).attr('src');assert.ok(src.startsWith('/img/'),src);assert.ok(fs.existsSync(path.join(root,src)));});}
+ const catalog=require('../data/cms-products.json');assert.ok(catalog.products.length>0);for(const p of catalog.products){assert.ok(fs.existsSync(path.join(root,p.img)));assert.equal(p.price,undefined);}
+ const js=fs.readFileSync(path.join(root,'assets/cms.js'),'utf8');assert.doesNotMatch(js,/mifiestashop\.com|api\/productos/);assert.match(js,/data\/cms-products\.json/);
 });

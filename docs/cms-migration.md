@@ -28,3 +28,11 @@ data/cms-pages.json contiene la fuente y categoría; scripts/cms-content.cjs con
 Ejecutar npm ci, npm run build:cms y npm run test:cms. Versionar los resultados generados antes de desplegar. La generación es local y no consulta servicios externos.
 
 Las pruebas recorren todas las páginas incluidas y comprueban títulos, rutas, slugs duplicados, direcciones, temáticas, imágenes, API, sitemap, formularios y sintaxis. La revisión móvil inicial cubrió las 152 páginas del conjunto mayor; las 139 seleccionadas forman parte de esa revisión. Se agregan verificaciones específicas de las categorías y de la conservación del comportamiento de las páginas excluidas.
+
+## Independencia de PrestaShop
+
+Las 139 páginas sirven HTML, contenido, logo, imágenes y catálogo temático desde el despliegue de Vercel. `data/cms-products.json` contiene 79 productos seleccionados con imágenes locales en `img/cms-products`. Las tarjetas no publican precios copiados que puedan quedar desactualizados; enlazan a la ficha de producto del sistema para consultar la compra.
+
+El inventario del administrador combina las páginas migradas con un índice local de las 13 páginas pendientes, sin consultar PrestaShop. Las migradas muestran EN SISTEMA y Ver en sistema. El contenido de las páginas excluidas sigue utilizando la integración anterior al abrirlas.
+
+Validación: 13 pruebas automatizadas aprobadas y carga de la página de boda de Querétaro en navegador con PrestaShop bloqueado: ocho productos, ninguna imagen rota y ninguna petición a ese dominio. Los mapas y registros VIP conservan sus servicios externos originales; el catálogo general y la compra quedan fuera de esta migración de páginas.

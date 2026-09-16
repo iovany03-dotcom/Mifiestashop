@@ -1,5 +1,6 @@
 // Migrated CMS pages are versioned in this repository, independent of PrestaShop.
 const pages = require('../data/cms-runtime.json');
+const legacyIndex = require('../data/cms-legacy-index.json');
 const legacy = require('../lib/prestashop-pages.js');
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate');
@@ -14,6 +15,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({page});
   }
   const migrated=pages.map(({content,description,...page})=>page);
+  if(all)return res.status(200).json({pages:[...legacyIndex,...migrated]});
   if(!process.env.PS_API_KEY)return res.status(200).json({pages:all?migrated:[]});
   let code=200;
   const proxy={

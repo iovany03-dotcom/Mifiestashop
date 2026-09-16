@@ -1,0 +1,80 @@
+[
+  {
+    "id": 9,
+    "title": "bicicletas",
+    "slug": "bicicletas",
+    "inFooter": false
+  },
+  {
+    "id": 11,
+    "title": "hogar",
+    "slug": "hogar",
+    "inFooter": false
+  },
+  {
+    "id": 12,
+    "title": "Herramientas",
+    "slug": "herramientas",
+    "inFooter": false
+  },
+  {
+    "id": 412,
+    "title": "Envío",
+    "slug": "entrega",
+    "inFooter": false
+  },
+  {
+    "id": 413,
+    "title": "Aviso legal",
+    "slug": "aviso-legal",
+    "inFooter": false
+  },
+  {
+    "id": 414,
+    "title": "Términos y condiciones",
+    "slug": "terminos-y-condiciones-de-uso",
+    "inFooter": false
+  },
+  {
+    "id": 415,
+    "title": "Sobre nosotros",
+    "slug": "sobre-nosotros",
+    "inFooter": false
+  },
+  {
+    "id": 416,
+    "title": "Pago seguro",
+    "slug": "pago-seguro",
+    "inFooter": false
+  },
+  {
+    "id": 417,
+    "title": "Provedores articulos de fiesta",
+    "slug": "articulos-para-fiesta-mayoreo-en-mexico",
+    "inFooter": false
+  },
+  {
+    "id": 418,
+    "title": "Contactanos",
+    "slug": "contactanos",
+    "inFooter": false
+  },
+  {
+    "id": 419,
+    "title": "Productos Con Descuentos",
+    "slug": "productos-con-descuentos",
+    "inFooter": false
+  },
+  {
+    "id": 420,
+    "title": "Política de Envío Gratis Mi Fiesta Shop",
+    "slug": "politica-de-envio-gratis-mi-fiesta-shop",
+    "inFooter": true
+  },
+  {
+    "id": 421,
+    "title": "Política de Devolución Mi Fiesta Shop",
+    "slug": "politica-de-devolucion-mi-fiesta-shop",
+    "inFooter": true
+  }
+]
