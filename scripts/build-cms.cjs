@@ -8,6 +8,7 @@ const models = pages.map(page => modelFor(page, pages));
 const output = path.join(root, 'cms-pages');
 fs.mkdirSync(output, { recursive: true });
 const logo = '/img/cms/logo.webp';
+const header = fs.readFileSync(path.join(__dirname,'cms-header.html'),'utf8');
 const footer = `<footer class="site-footer"><a class="footer-brand" href="/">Mi Fiesta Shop</a><p>Artículos para tus celebraciones.</p><nav aria-label="Ayuda"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envíos</a><a href="/pagina/politica-de-devolucion-mi-fiesta-shop">Devoluciones</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a></nav></footer>`;
 function vipHtml(p) {
   if(!p.vip)return '';
@@ -28,15 +29,11 @@ function render(page) {
 <meta property="og:type" content="website"><meta property="og:title" content="${esc(p.title)}"><meta property="og:description" content="${esc(p.description)}"><meta property="og:url" content="${origin}${esc(p.sourcePath)}"><meta property="og:image" content="${esc(new URL(p.heroImage || logo,origin).href)}">
 <link rel="icon" href="/img/icons/icon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/cms.css"><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
+<link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
 <script defer src="/assets/cms.js"></script>${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
 <body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
-<div class="announcement"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop">Envío gratis en compras mayores a $1,500 MXN <span>Consulta condiciones</span></a></div>
-<header class="site-header"><a class="logo" href="/" aria-label="Mi Fiesta Shop, inicio"><img src="${logo}" width="100" height="88" alt="Mi Fiesta Shop"></a>
-<nav aria-label="Principal"><a href="/">Productos</a><a href="/pagina/articulos-para-fiesta-mayoreo-en-mexico">Mayoreo</a><a href="/pagina/contactanos">Contacto</a></nav>
-<form class="site-search" action="/" role="search"><label class="sr-only" for="buscar">Buscar productos</label><input id="buscar" type="search" name="buscar" placeholder="¿Qué buscas para tu evento?"><button type="submit" aria-label="Buscar">⌕</button></form>
-<a class="account-link" href="/?cuenta=1">Mi cuenta</a></header>
-<main id="contenido"><nav class="breadcrumb wrap" aria-label="Ruta"><a href="/">Inicio</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span></nav>
+${header}
+<main id="contenido">
 <section class="hero ${p.heroImage ? '' : 'hero-text-only'}"><div class="hero-inner wrap"><div class="hero-copy">
 ${t.tags.length ? `<ul class="topic-tags">${t.tags.map(tag=>`<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
 <h1>${esc(p.title)}</h1>${p.intro ? `<p class="hero-intro">${esc(p.intro)}</p>` : ''}
