@@ -1,38 +1,1820 @@
 {
   "functions": {
-    "api/ventas-productos.js": { "maxDuration": 30 },
-    "api/ventas.js": { "maxDuration": 30 },
-    "api/pedidos.js": { "maxDuration": 30 },
-    "api/pedido-detalle.js": { "maxDuration": 30 },
-    "api/stock-sucursal.js": { "maxDuration": 30 },
-    "api/sitemap.js": { "maxDuration": 30 },
-    "api/categorias-tienda.js": { "maxDuration": 30 },
-    "api/categorias.js": { "maxDuration": 30 },
-    "api/productos.js": { "maxDuration": 30 },
-    "api/paginas.js": { "maxDuration": 30 },
-    "api/clientes.js": { "maxDuration": 30 },
-    "api/inventario.js": { "maxDuration": 30 },
-    "api/proveedores.js": { "maxDuration": 30 },
-    "api/carritos.js": { "maxDuration": 30 },
-    "api/skydropx-cotizar.js": { "maxDuration": 30 },
-    "api/enviar-correo.js": { "maxDuration": 30 },
-    "api/mp-crear-preferencia.js": { "maxDuration": 30 },
-    "api/mp-webhook.js": { "maxDuration": 30 }
+    "api/ventas-productos.js": {
+      "maxDuration": 30
+    },
+    "api/ventas.js": {
+      "maxDuration": 30
+    },
+    "api/pedidos.js": {
+      "maxDuration": 30
+    },
+    "api/pedido-detalle.js": {
+      "maxDuration": 30
+    },
+    "api/stock-sucursal.js": {
+      "maxDuration": 30
+    },
+    "api/sitemap.js": {
+      "maxDuration": 30
+    },
+    "api/categorias-tienda.js": {
+      "maxDuration": 30
+    },
+    "api/categorias.js": {
+      "maxDuration": 30
+    },
+    "api/productos.js": {
+      "maxDuration": 30
+    },
+    "api/paginas.js": {
+      "maxDuration": 30
+    },
+    "api/clientes.js": {
+      "maxDuration": 30
+    },
+    "api/inventario.js": {
+      "maxDuration": 30
+    },
+    "api/proveedores.js": {
+      "maxDuration": 30
+    },
+    "api/carritos.js": {
+      "maxDuration": 30
+    },
+    "api/skydropx-cotizar.js": {
+      "maxDuration": 30
+    },
+    "api/enviar-correo.js": {
+      "maxDuration": 30
+    },
+    "api/mp-crear-preferencia.js": {
+      "maxDuration": 30
+    },
+    "api/mp-webhook.js": {
+      "maxDuration": 30
+    }
   },
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
-    { "source": "/:id(\\d+)-:slug*.html", "destination": "/index.html" },
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/admin/:path*", "destination": "/index.html" },
-    { "source": "/pagina/:slug", "destination": "/index.html" },
-    { "source": "/privacidad", "destination": "/index.html" },
-    { "source": "/terminos", "destination": "/index.html" },
-    { "source": "/articulos-para-boda-en-mexico", "destination": "/index.html" },
-    { "source": "/articulos-para-boda-en-cdmx", "destination": "/index.html" },
-    { "source": "/articulos-para-boda-en-queretaro", "destination": "/index.html" },
-    { "source": "/articulos-para-boda-en-puebla", "destination": "/index.html" },
-    { "source": "/accesorios-para-batucada-boda-cdmx", "destination": "/index.html" },
-    { "source": "/accesorios-para-batucada-boda-puebla", "destination": "/index.html" },
-    { "source": "/accesorios-para-batucada-boda-queretaro", "destination": "/index.html" }
+    {
+      "source": "/content/9-bicicletas",
+      "destination": "/cms-pages/9.html"
+    },
+    {
+      "source": "/bicicletas",
+      "destination": "/cms-pages/9.html"
+    },
+    {
+      "source": "/pagina/bicicletas",
+      "destination": "/cms-pages/9.html"
+    },
+    {
+      "source": "/content/11-hogar",
+      "destination": "/cms-pages/11.html"
+    },
+    {
+      "source": "/hogar",
+      "destination": "/cms-pages/11.html"
+    },
+    {
+      "source": "/pagina/hogar",
+      "destination": "/cms-pages/11.html"
+    },
+    {
+      "source": "/content/12-herramientas",
+      "destination": "/cms-pages/12.html"
+    },
+    {
+      "source": "/herramientas",
+      "destination": "/cms-pages/12.html"
+    },
+    {
+      "source": "/pagina/herramientas",
+      "destination": "/cms-pages/12.html"
+    },
+    {
+      "source": "/content/269-articulos-para-boda-en-mexico",
+      "destination": "/cms-pages/269.html"
+    },
+    {
+      "source": "/articulos-para-boda-en-mexico",
+      "destination": "/cms-pages/269.html"
+    },
+    {
+      "source": "/pagina/articulos-para-boda-en-mexico",
+      "destination": "/cms-pages/269.html"
+    },
+    {
+      "source": "/content/274-articulos-para-fiesta-xv-anos-en-mexico",
+      "destination": "/cms-pages/274.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-xv-anos-en-mexico",
+      "destination": "/cms-pages/274.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-xv-anos-en-mexico",
+      "destination": "/cms-pages/274.html"
+    },
+    {
+      "source": "/content/275-articulos-para-fiesta-xv-anos-cdmx",
+      "destination": "/cms-pages/275.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-xv-anos-cdmx",
+      "destination": "/cms-pages/275.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-xv-anos-cdmx",
+      "destination": "/cms-pages/275.html"
+    },
+    {
+      "source": "/content/276-articulos-para-fiesta-xv-anos-en-queretaro",
+      "destination": "/cms-pages/276.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-xv-anos-en-queretaro",
+      "destination": "/cms-pages/276.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-xv-anos-en-queretaro",
+      "destination": "/cms-pages/276.html"
+    },
+    {
+      "source": "/content/277-articulos-para-fiesta-xv-anos-en-atizapan",
+      "destination": "/cms-pages/277.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-xv-anos-en-atizapan",
+      "destination": "/cms-pages/277.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-xv-anos-en-atizapan",
+      "destination": "/cms-pages/277.html"
+    },
+    {
+      "source": "/content/278-articulos-para-fiesta-xv-anos-en-puebla",
+      "destination": "/cms-pages/278.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-xv-anos-en-puebla",
+      "destination": "/cms-pages/278.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-xv-anos-en-puebla",
+      "destination": "/cms-pages/278.html"
+    },
+    {
+      "source": "/content/279-articulos-para-boda-en-cdmx",
+      "destination": "/cms-pages/279.html"
+    },
+    {
+      "source": "/articulos-para-boda-en-cdmx",
+      "destination": "/cms-pages/279.html"
+    },
+    {
+      "source": "/pagina/articulos-para-boda-en-cdmx",
+      "destination": "/cms-pages/279.html"
+    },
+    {
+      "source": "/content/280-articulos-para-boda-en-atizapan",
+      "destination": "/cms-pages/280.html"
+    },
+    {
+      "source": "/articulos-para-boda-en-atizapan",
+      "destination": "/cms-pages/280.html"
+    },
+    {
+      "source": "/pagina/articulos-para-boda-en-atizapan",
+      "destination": "/cms-pages/280.html"
+    },
+    {
+      "source": "/content/281-articulos-para-boda-en-queretaro",
+      "destination": "/cms-pages/281.html"
+    },
+    {
+      "source": "/articulos-para-boda-en-queretaro",
+      "destination": "/cms-pages/281.html"
+    },
+    {
+      "source": "/pagina/articulos-para-boda-en-queretaro",
+      "destination": "/cms-pages/281.html"
+    },
+    {
+      "source": "/content/282-articulos-para-boda-en-puebla",
+      "destination": "/cms-pages/282.html"
+    },
+    {
+      "source": "/articulos-para-boda-en-puebla",
+      "destination": "/cms-pages/282.html"
+    },
+    {
+      "source": "/pagina/articulos-para-boda-en-puebla",
+      "destination": "/cms-pages/282.html"
+    },
+    {
+      "source": "/content/283-articulos-para-fiesta-organizadores-eventos-atizapan",
+      "destination": "/cms-pages/283.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-organizadores-eventos-atizapan",
+      "destination": "/cms-pages/283.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-organizadores-eventos-atizapan",
+      "destination": "/cms-pages/283.html"
+    },
+    {
+      "source": "/content/284-articulos-para-batucada-en-atizapan",
+      "destination": "/cms-pages/284.html"
+    },
+    {
+      "source": "/articulos-para-batucada-en-atizapan",
+      "destination": "/cms-pages/284.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada-en-atizapan",
+      "destination": "/cms-pages/284.html"
+    },
+    {
+      "source": "/content/285-articulos-para-fiesta-organizadores-eventos-cdmx",
+      "destination": "/cms-pages/285.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-organizadores-eventos-cdmx",
+      "destination": "/cms-pages/285.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-organizadores-eventos-cdmx",
+      "destination": "/cms-pages/285.html"
+    },
+    {
+      "source": "/content/286-articulos-para-fiesta-organizadores-eventos-puebla",
+      "destination": "/cms-pages/286.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-organizadores-eventos-puebla",
+      "destination": "/cms-pages/286.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-organizadores-eventos-puebla",
+      "destination": "/cms-pages/286.html"
+    },
+    {
+      "source": "/content/287-articulos-para-fiesta-organizadores-eventos-queretaro",
+      "destination": "/cms-pages/287.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-organizadores-eventos-queretaro",
+      "destination": "/cms-pages/287.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-organizadores-eventos-queretaro",
+      "destination": "/cms-pages/287.html"
+    },
+    {
+      "source": "/content/288-articulos-pata-batucada-en-cdmx",
+      "destination": "/cms-pages/288.html"
+    },
+    {
+      "source": "/articulos-pata-batucada-en-cdmx",
+      "destination": "/cms-pages/288.html"
+    },
+    {
+      "source": "/pagina/articulos-pata-batucada-en-cdmx",
+      "destination": "/cms-pages/288.html"
+    },
+    {
+      "source": "/content/289-articulos-para-batucada-en-puebla",
+      "destination": "/cms-pages/289.html"
+    },
+    {
+      "source": "/articulos-para-batucada-en-puebla",
+      "destination": "/cms-pages/289.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada-en-puebla",
+      "destination": "/cms-pages/289.html"
+    },
+    {
+      "source": "/content/290-articulos-para-batucada",
+      "destination": "/cms-pages/290.html"
+    },
+    {
+      "source": "/articulos-para-batucada",
+      "destination": "/cms-pages/290.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada",
+      "destination": "/cms-pages/290.html"
+    },
+    {
+      "source": "/content/291-articulos-para-fiesta-organizadores-de-eventos",
+      "destination": "/cms-pages/291.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-organizadores-de-eventos",
+      "destination": "/cms-pages/291.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-organizadores-de-eventos",
+      "destination": "/cms-pages/291.html"
+    },
+    {
+      "source": "/content/292-decoracion-infantil-mexico",
+      "destination": "/cms-pages/292.html"
+    },
+    {
+      "source": "/decoracion-infantil-mexico",
+      "destination": "/cms-pages/292.html"
+    },
+    {
+      "source": "/pagina/decoracion-infantil-mexico",
+      "destination": "/cms-pages/292.html"
+    },
+    {
+      "source": "/content/293-articulos-para-batucada-cdmx-regalo",
+      "destination": "/cms-pages/293.html"
+    },
+    {
+      "source": "/articulos-para-batucada-cdmx-regalo",
+      "destination": "/cms-pages/293.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada-cdmx-regalo",
+      "destination": "/cms-pages/293.html"
+    },
+    {
+      "source": "/content/294-registro-clientes-queretaro",
+      "destination": "/cms-pages/294.html"
+    },
+    {
+      "source": "/registro-clientes-queretaro",
+      "destination": "/cms-pages/294.html"
+    },
+    {
+      "source": "/pagina/registro-clientes-queretaro",
+      "destination": "/cms-pages/294.html"
+    },
+    {
+      "source": "/content/295-registro-clientes-puebla",
+      "destination": "/cms-pages/295.html"
+    },
+    {
+      "source": "/registro-clientes-puebla",
+      "destination": "/cms-pages/295.html"
+    },
+    {
+      "source": "/pagina/registro-clientes-puebla",
+      "destination": "/cms-pages/295.html"
+    },
+    {
+      "source": "/content/296-registro-clientes-cdmx",
+      "destination": "/cms-pages/296.html"
+    },
+    {
+      "source": "/registro-clientes-cdmx",
+      "destination": "/cms-pages/296.html"
+    },
+    {
+      "source": "/pagina/registro-clientes-cdmx",
+      "destination": "/cms-pages/296.html"
+    },
+    {
+      "source": "/content/297-venta-de-articulos-neon-para-fiestas",
+      "destination": "/cms-pages/297.html"
+    },
+    {
+      "source": "/venta-de-articulos-neon-para-fiestas",
+      "destination": "/cms-pages/297.html"
+    },
+    {
+      "source": "/pagina/venta-de-articulos-neon-para-fiestas",
+      "destination": "/cms-pages/297.html"
+    },
+    {
+      "source": "/content/298-accesorio-de-fiesta-neon",
+      "destination": "/cms-pages/298.html"
+    },
+    {
+      "source": "/accesorio-de-fiesta-neon",
+      "destination": "/cms-pages/298.html"
+    },
+    {
+      "source": "/pagina/accesorio-de-fiesta-neon",
+      "destination": "/cms-pages/298.html"
+    },
+    {
+      "source": "/content/299-articulos-para-fiesta-neon-cdmx",
+      "destination": "/cms-pages/299.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-neon-cdmx",
+      "destination": "/cms-pages/299.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-neon-cdmx",
+      "destination": "/cms-pages/299.html"
+    },
+    {
+      "source": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/300.html"
+    },
+    {
+      "source": "/accesorios-de-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/300.html"
+    },
+    {
+      "source": "/pagina/accesorios-de-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/300.html"
+    },
+    {
+      "source": "/content/301-fiesta-neon-glow-cdmx",
+      "destination": "/cms-pages/301.html"
+    },
+    {
+      "source": "/fiesta-neon-glow-cdmx",
+      "destination": "/cms-pages/301.html"
+    },
+    {
+      "source": "/pagina/fiesta-neon-glow-cdmx",
+      "destination": "/cms-pages/301.html"
+    },
+    {
+      "source": "/content/302-tematica-neon-queretaro",
+      "destination": "/cms-pages/302.html"
+    },
+    {
+      "source": "/tematica-neon-queretaro",
+      "destination": "/cms-pages/302.html"
+    },
+    {
+      "source": "/pagina/tematica-neon-queretaro",
+      "destination": "/cms-pages/302.html"
+    },
+    {
+      "source": "/content/303-pintura-neon-puebla",
+      "destination": "/cms-pages/303.html"
+    },
+    {
+      "source": "/pintura-neon-puebla",
+      "destination": "/cms-pages/303.html"
+    },
+    {
+      "source": "/pagina/pintura-neon-puebla",
+      "destination": "/cms-pages/303.html"
+    },
+    {
+      "source": "/content/304-fiesta-tematica-neon-puebla",
+      "destination": "/cms-pages/304.html"
+    },
+    {
+      "source": "/fiesta-tematica-neon-puebla",
+      "destination": "/cms-pages/304.html"
+    },
+    {
+      "source": "/pagina/fiesta-tematica-neon-puebla",
+      "destination": "/cms-pages/304.html"
+    },
+    {
+      "source": "/content/305-fiesta-color-neon-puebla",
+      "destination": "/cms-pages/305.html"
+    },
+    {
+      "source": "/fiesta-color-neon-puebla",
+      "destination": "/cms-pages/305.html"
+    },
+    {
+      "source": "/pagina/fiesta-color-neon-puebla",
+      "destination": "/cms-pages/305.html"
+    },
+    {
+      "source": "/content/306-fiesta-glow-party-cdmx",
+      "destination": "/cms-pages/306.html"
+    },
+    {
+      "source": "/fiesta-glow-party-cdmx",
+      "destination": "/cms-pages/306.html"
+    },
+    {
+      "source": "/pagina/fiesta-glow-party-cdmx",
+      "destination": "/cms-pages/306.html"
+    },
+    {
+      "source": "/content/307-cosas-para-batucada-fiesta-cdmx",
+      "destination": "/cms-pages/307.html"
+    },
+    {
+      "source": "/cosas-para-batucada-fiesta-cdmx",
+      "destination": "/cms-pages/307.html"
+    },
+    {
+      "source": "/pagina/cosas-para-batucada-fiesta-cdmx",
+      "destination": "/cms-pages/307.html"
+    },
+    {
+      "source": "/content/308-articulos-para-batucada-en-cdmx",
+      "destination": "/cms-pages/308.html"
+    },
+    {
+      "source": "/articulos-para-batucada-en-cdmx",
+      "destination": "/cms-pages/308.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada-en-cdmx",
+      "destination": "/cms-pages/308.html"
+    },
+    {
+      "source": "/content/309-accesorios-para-batucadas-cdmx",
+      "destination": "/cms-pages/309.html"
+    },
+    {
+      "source": "/accesorios-para-batucadas-cdmx",
+      "destination": "/cms-pages/309.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucadas-cdmx",
+      "destination": "/cms-pages/309.html"
+    },
+    {
+      "source": "/content/310-accesorios-para-batucada-boda-cdmx",
+      "destination": "/cms-pages/310.html"
+    },
+    {
+      "source": "/accesorios-para-batucada-boda-cdmx",
+      "destination": "/cms-pages/310.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-boda-cdmx",
+      "destination": "/cms-pages/310.html"
+    },
+    {
+      "source": "/content/311-venta-de-productos-para-batucada-cdmx",
+      "destination": "/cms-pages/311.html"
+    },
+    {
+      "source": "/venta-de-productos-para-batucada-cdmx",
+      "destination": "/cms-pages/311.html"
+    },
+    {
+      "source": "/pagina/venta-de-productos-para-batucada-cdmx",
+      "destination": "/cms-pages/311.html"
+    },
+    {
+      "source": "/content/312-articulos-para-batucada-queretaro",
+      "destination": "/cms-pages/312.html"
+    },
+    {
+      "source": "/articulos-para-batucada-queretaro",
+      "destination": "/cms-pages/312.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada-queretaro",
+      "destination": "/cms-pages/312.html"
+    },
+    {
+      "source": "/content/313-cosas-para-batucada-puebla",
+      "destination": "/cms-pages/313.html"
+    },
+    {
+      "source": "/cosas-para-batucada-puebla",
+      "destination": "/cms-pages/313.html"
+    },
+    {
+      "source": "/pagina/cosas-para-batucada-puebla",
+      "destination": "/cms-pages/313.html"
+    },
+    {
+      "source": "/content/314-sombreros-de-espuma-cdmx",
+      "destination": "/cms-pages/314.html"
+    },
+    {
+      "source": "/sombreros-de-espuma-cdmx",
+      "destination": "/cms-pages/314.html"
+    },
+    {
+      "source": "/pagina/sombreros-de-espuma-cdmx",
+      "destination": "/cms-pages/314.html"
+    },
+    {
+      "source": "/content/315-articulos-de-cumpleanos-queretaro",
+      "destination": "/cms-pages/315.html"
+    },
+    {
+      "source": "/articulos-de-cumpleanos-queretaro",
+      "destination": "/cms-pages/315.html"
+    },
+    {
+      "source": "/pagina/articulos-de-cumpleanos-queretaro",
+      "destination": "/cms-pages/315.html"
+    },
+    {
+      "source": "/content/316-tienda-de-fiesta-queretaro",
+      "destination": "/cms-pages/316.html"
+    },
+    {
+      "source": "/tienda-de-fiesta-queretaro",
+      "destination": "/cms-pages/316.html"
+    },
+    {
+      "source": "/pagina/tienda-de-fiesta-queretaro",
+      "destination": "/cms-pages/316.html"
+    },
+    {
+      "source": "/content/317-todo-para-tu-fiesta",
+      "destination": "/cms-pages/317.html"
+    },
+    {
+      "source": "/todo-para-tu-fiesta",
+      "destination": "/cms-pages/317.html"
+    },
+    {
+      "source": "/pagina/todo-para-tu-fiesta",
+      "destination": "/cms-pages/317.html"
+    },
+    {
+      "source": "/content/318-todo-para-tu-fiesta-queretaro",
+      "destination": "/cms-pages/318.html"
+    },
+    {
+      "source": "/todo-para-tu-fiesta-queretaro",
+      "destination": "/cms-pages/318.html"
+    },
+    {
+      "source": "/pagina/todo-para-tu-fiesta-queretaro",
+      "destination": "/cms-pages/318.html"
+    },
+    {
+      "source": "/content/319-tienda-para-fiestas-queretaro",
+      "destination": "/cms-pages/319.html"
+    },
+    {
+      "source": "/tienda-para-fiestas-queretaro",
+      "destination": "/cms-pages/319.html"
+    },
+    {
+      "source": "/pagina/tienda-para-fiestas-queretaro",
+      "destination": "/cms-pages/319.html"
+    },
+    {
+      "source": "/content/320-todo-para-fiestas-queretaro",
+      "destination": "/cms-pages/320.html"
+    },
+    {
+      "source": "/todo-para-fiestas-queretaro",
+      "destination": "/cms-pages/320.html"
+    },
+    {
+      "source": "/pagina/todo-para-fiestas-queretaro",
+      "destination": "/cms-pages/320.html"
+    },
+    {
+      "source": "/content/321-articulos-de-fiesta-queretaro",
+      "destination": "/cms-pages/321.html"
+    },
+    {
+      "source": "/articulos-de-fiesta-queretaro",
+      "destination": "/cms-pages/321.html"
+    },
+    {
+      "source": "/pagina/articulos-de-fiesta-queretaro",
+      "destination": "/cms-pages/321.html"
+    },
+    {
+      "source": "/content/322-venta-de-articulos-de-fiesta-puebla",
+      "destination": "/cms-pages/322.html"
+    },
+    {
+      "source": "/venta-de-articulos-de-fiesta-puebla",
+      "destination": "/cms-pages/322.html"
+    },
+    {
+      "source": "/pagina/venta-de-articulos-de-fiesta-puebla",
+      "destination": "/cms-pages/322.html"
+    },
+    {
+      "source": "/content/323-tienda-para-fiestas-puebla",
+      "destination": "/cms-pages/323.html"
+    },
+    {
+      "source": "/tienda-para-fiestas-puebla",
+      "destination": "/cms-pages/323.html"
+    },
+    {
+      "source": "/pagina/tienda-para-fiestas-puebla",
+      "destination": "/cms-pages/323.html"
+    },
+    {
+      "source": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "destination": "/cms-pages/324.html"
+    },
+    {
+      "source": "/tienda-de-articulos-para-fiesta-puebla",
+      "destination": "/cms-pages/324.html"
+    },
+    {
+      "source": "/pagina/tienda-de-articulos-para-fiesta-puebla",
+      "destination": "/cms-pages/324.html"
+    },
+    {
+      "source": "/content/325-accesorios-de-fiesta-puebla",
+      "destination": "/cms-pages/325.html"
+    },
+    {
+      "source": "/accesorios-de-fiesta-puebla",
+      "destination": "/cms-pages/325.html"
+    },
+    {
+      "source": "/pagina/accesorios-de-fiesta-puebla",
+      "destination": "/cms-pages/325.html"
+    },
+    {
+      "source": "/content/326-tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/cms-pages/326.html"
+    },
+    {
+      "source": "/tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/cms-pages/326.html"
+    },
+    {
+      "source": "/pagina/tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/cms-pages/326.html"
+    },
+    {
+      "source": "/content/327-tienda-para-fiestas-puebla",
+      "destination": "/cms-pages/327.html"
+    },
+    {
+      "source": "/content/328-venta-de-articulos-de-fiesta-puebla",
+      "destination": "/cms-pages/328.html"
+    },
+    {
+      "source": "/content/329-todo-para-fiestas-mayoreo",
+      "destination": "/cms-pages/329.html"
+    },
+    {
+      "source": "/todo-para-fiestas-mayoreo",
+      "destination": "/cms-pages/329.html"
+    },
+    {
+      "source": "/pagina/todo-para-fiestas-mayoreo",
+      "destination": "/cms-pages/329.html"
+    },
+    {
+      "source": "/content/330-producto-para-fiestas-mayoreo",
+      "destination": "/cms-pages/330.html"
+    },
+    {
+      "source": "/producto-para-fiestas-mayoreo",
+      "destination": "/cms-pages/330.html"
+    },
+    {
+      "source": "/pagina/producto-para-fiestas-mayoreo",
+      "destination": "/cms-pages/330.html"
+    },
+    {
+      "source": "/content/331-productos-para-fiesta-y-batucada-en-cdmx",
+      "destination": "/cms-pages/331.html"
+    },
+    {
+      "source": "/productos-para-fiesta-y-batucada-en-cdmx",
+      "destination": "/cms-pages/331.html"
+    },
+    {
+      "source": "/pagina/productos-para-fiesta-y-batucada-en-cdmx",
+      "destination": "/cms-pages/331.html"
+    },
+    {
+      "source": "/content/332-sombreros-locos-para-fiestas-cdmx",
+      "destination": "/cms-pages/332.html"
+    },
+    {
+      "source": "/sombreros-locos-para-fiestas-cdmx",
+      "destination": "/cms-pages/332.html"
+    },
+    {
+      "source": "/pagina/sombreros-locos-para-fiestas-cdmx",
+      "destination": "/cms-pages/332.html"
+    },
+    {
+      "source": "/content/333-sombreros-goma-espuma",
+      "destination": "/cms-pages/333.html"
+    },
+    {
+      "source": "/sombreros-goma-espuma",
+      "destination": "/cms-pages/333.html"
+    },
+    {
+      "source": "/pagina/sombreros-goma-espuma",
+      "destination": "/cms-pages/333.html"
+    },
+    {
+      "source": "/content/334-sombrero-de-espuma-para-fiestas",
+      "destination": "/cms-pages/334.html"
+    },
+    {
+      "source": "/sombrero-de-espuma-para-fiestas",
+      "destination": "/cms-pages/334.html"
+    },
+    {
+      "source": "/pagina/sombrero-de-espuma-para-fiestas",
+      "destination": "/cms-pages/334.html"
+    },
+    {
+      "source": "/content/335-sombrero-de-esponja-para-fiestas",
+      "destination": "/cms-pages/335.html"
+    },
+    {
+      "source": "/sombrero-de-esponja-para-fiestas",
+      "destination": "/cms-pages/335.html"
+    },
+    {
+      "source": "/pagina/sombrero-de-esponja-para-fiestas",
+      "destination": "/cms-pages/335.html"
+    },
+    {
+      "source": "/content/336-fiesta-de-sombreros-locos",
+      "destination": "/cms-pages/336.html"
+    },
+    {
+      "source": "/fiesta-de-sombreros-locos",
+      "destination": "/cms-pages/336.html"
+    },
+    {
+      "source": "/pagina/fiesta-de-sombreros-locos",
+      "destination": "/cms-pages/336.html"
+    },
+    {
+      "source": "/content/337-sombreros-de-espuma-para-fiestas",
+      "destination": "/cms-pages/337.html"
+    },
+    {
+      "source": "/sombreros-de-espuma-para-fiestas",
+      "destination": "/cms-pages/337.html"
+    },
+    {
+      "source": "/pagina/sombreros-de-espuma-para-fiestas",
+      "destination": "/cms-pages/337.html"
+    },
+    {
+      "source": "/content/338-gorros-de-esponja-para-fiestas",
+      "destination": "/cms-pages/338.html"
+    },
+    {
+      "source": "/gorros-de-esponja-para-fiestas",
+      "destination": "/cms-pages/338.html"
+    },
+    {
+      "source": "/pagina/gorros-de-esponja-para-fiestas",
+      "destination": "/cms-pages/338.html"
+    },
+    {
+      "source": "/content/339-articulos-neon-para-fiestas-atizapan",
+      "destination": "/cms-pages/339.html"
+    },
+    {
+      "source": "/articulos-neon-para-fiestas-atizapan",
+      "destination": "/cms-pages/339.html"
+    },
+    {
+      "source": "/pagina/articulos-neon-para-fiestas-atizapan",
+      "destination": "/cms-pages/339.html"
+    },
+    {
+      "source": "/content/340-articulos-de-fiesta-neon-atizapan",
+      "destination": "/cms-pages/340.html"
+    },
+    {
+      "source": "/articulos-de-fiesta-neon-atizapan",
+      "destination": "/cms-pages/340.html"
+    },
+    {
+      "source": "/pagina/articulos-de-fiesta-neon-atizapan",
+      "destination": "/cms-pages/340.html"
+    },
+    {
+      "source": "/content/341-accesorios-fluorescentes-para-fiestas-atizapan",
+      "destination": "/cms-pages/341.html"
+    },
+    {
+      "source": "/accesorios-fluorescentes-para-fiestas-atizapan",
+      "destination": "/cms-pages/341.html"
+    },
+    {
+      "source": "/pagina/accesorios-fluorescentes-para-fiestas-atizapan",
+      "destination": "/cms-pages/341.html"
+    },
+    {
+      "source": "/content/342-accesorios-para-batucada-boda-atizapan",
+      "destination": "/cms-pages/342.html"
+    },
+    {
+      "source": "/accesorios-para-batucada-boda-atizapan",
+      "destination": "/cms-pages/342.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-boda-atizapan",
+      "destination": "/cms-pages/342.html"
+    },
+    {
+      "source": "/content/343-batucada-neon-atizapan",
+      "destination": "/cms-pages/343.html"
+    },
+    {
+      "source": "/batucada-neon-atizapan",
+      "destination": "/cms-pages/343.html"
+    },
+    {
+      "source": "/pagina/batucada-neon-atizapan",
+      "destination": "/cms-pages/343.html"
+    },
+    {
+      "source": "/content/344-venta-de-productos-para-batucada-atizapan",
+      "destination": "/cms-pages/344.html"
+    },
+    {
+      "source": "/venta-de-productos-para-batucada-atizapan",
+      "destination": "/cms-pages/344.html"
+    },
+    {
+      "source": "/pagina/venta-de-productos-para-batucada-atizapan",
+      "destination": "/cms-pages/344.html"
+    },
+    {
+      "source": "/content/345-cosas-para-batucada-atizapan",
+      "destination": "/cms-pages/345.html"
+    },
+    {
+      "source": "/cosas-para-batucada-atizapan",
+      "destination": "/cms-pages/345.html"
+    },
+    {
+      "source": "/pagina/cosas-para-batucada-atizapan",
+      "destination": "/cms-pages/345.html"
+    },
+    {
+      "source": "/content/346-articulos-fluorescentes-atizapan",
+      "destination": "/cms-pages/346.html"
+    },
+    {
+      "source": "/articulos-fluorescentes-atizapan",
+      "destination": "/cms-pages/346.html"
+    },
+    {
+      "source": "/pagina/articulos-fluorescentes-atizapan",
+      "destination": "/cms-pages/346.html"
+    },
+    {
+      "source": "/content/347-sombreros-locos-puebla",
+      "destination": "/cms-pages/347.html"
+    },
+    {
+      "source": "/sombreros-locos-puebla",
+      "destination": "/cms-pages/347.html"
+    },
+    {
+      "source": "/pagina/sombreros-locos-puebla",
+      "destination": "/cms-pages/347.html"
+    },
+    {
+      "source": "/content/348-sombreros-de-hule-espuma-puebla",
+      "destination": "/cms-pages/348.html"
+    },
+    {
+      "source": "/sombreros-de-hule-espuma-puebla",
+      "destination": "/cms-pages/348.html"
+    },
+    {
+      "source": "/pagina/sombreros-de-hule-espuma-puebla",
+      "destination": "/cms-pages/348.html"
+    },
+    {
+      "source": "/content/349-productos-para-fiestas-y-batucadas",
+      "destination": "/cms-pages/349.html"
+    },
+    {
+      "source": "/productos-para-fiestas-y-batucadas",
+      "destination": "/cms-pages/349.html"
+    },
+    {
+      "source": "/pagina/productos-para-fiestas-y-batucadas",
+      "destination": "/cms-pages/349.html"
+    },
+    {
+      "source": "/content/350-articulos-para-fiesta-neon",
+      "destination": "/cms-pages/350.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-neon",
+      "destination": "/cms-pages/350.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-neon",
+      "destination": "/cms-pages/350.html"
+    },
+    {
+      "source": "/content/351-articulos-para-fiesta-mayoreo-mexico",
+      "destination": "/cms-pages/351.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-mayoreo-mexico",
+      "destination": "/cms-pages/351.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-mayoreo-mexico",
+      "destination": "/cms-pages/351.html"
+    },
+    {
+      "source": "/content/352-articulos-de-fiesta-mayoreo-mexico",
+      "destination": "/cms-pages/352.html"
+    },
+    {
+      "source": "/articulos-de-fiesta-mayoreo-mexico",
+      "destination": "/cms-pages/352.html"
+    },
+    {
+      "source": "/pagina/articulos-de-fiesta-mayoreo-mexico",
+      "destination": "/cms-pages/352.html"
+    },
+    {
+      "source": "/content/353-souvenirs-para-fiesta-mayoreo",
+      "destination": "/cms-pages/353.html"
+    },
+    {
+      "source": "/souvenirs-para-fiesta-mayoreo",
+      "destination": "/cms-pages/353.html"
+    },
+    {
+      "source": "/pagina/souvenirs-para-fiesta-mayoreo",
+      "destination": "/cms-pages/353.html"
+    },
+    {
+      "source": "/content/354-todo-para-fiestas-mayoreo",
+      "destination": "/cms-pages/354.html"
+    },
+    {
+      "source": "/content/355-articulos-para-fiesta-queretaro",
+      "destination": "/cms-pages/355.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-queretaro",
+      "destination": "/cms-pages/355.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-queretaro",
+      "destination": "/cms-pages/355.html"
+    },
+    {
+      "source": "/content/356-tienda-de-fiesta-de-cumpleanos-puebla",
+      "destination": "/cms-pages/356.html"
+    },
+    {
+      "source": "/tienda-de-fiesta-de-cumpleanos-puebla",
+      "destination": "/cms-pages/356.html"
+    },
+    {
+      "source": "/pagina/tienda-de-fiesta-de-cumpleanos-puebla",
+      "destination": "/cms-pages/356.html"
+    },
+    {
+      "source": "/content/357-accesorios-de-fiesta-neon-puebla",
+      "destination": "/cms-pages/357.html"
+    },
+    {
+      "source": "/accesorios-de-fiesta-neon-puebla",
+      "destination": "/cms-pages/357.html"
+    },
+    {
+      "source": "/pagina/accesorios-de-fiesta-neon-puebla",
+      "destination": "/cms-pages/357.html"
+    },
+    {
+      "source": "/content/358-cosas-para-fiestas-queretaro",
+      "destination": "/cms-pages/358.html"
+    },
+    {
+      "source": "/cosas-para-fiestas-queretaro",
+      "destination": "/cms-pages/358.html"
+    },
+    {
+      "source": "/pagina/cosas-para-fiestas-queretaro",
+      "destination": "/cms-pages/358.html"
+    },
+    {
+      "source": "/content/359-accesorios-para-batucada-boda-puebla",
+      "destination": "/cms-pages/359.html"
+    },
+    {
+      "source": "/accesorios-para-batucada-boda-puebla",
+      "destination": "/cms-pages/359.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-boda-puebla",
+      "destination": "/cms-pages/359.html"
+    },
+    {
+      "source": "/content/360-accesorios-para-batucadas-puebla",
+      "destination": "/cms-pages/360.html"
+    },
+    {
+      "source": "/accesorios-para-batucadas-puebla",
+      "destination": "/cms-pages/360.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucadas-puebla",
+      "destination": "/cms-pages/360.html"
+    },
+    {
+      "source": "/content/361-articulos-para-fiesta-en-puebla",
+      "destination": "/cms-pages/361.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-en-puebla",
+      "destination": "/cms-pages/361.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-en-puebla",
+      "destination": "/cms-pages/361.html"
+    },
+    {
+      "source": "/content/362-articulos-eventos-en-puebla",
+      "destination": "/cms-pages/362.html"
+    },
+    {
+      "source": "/articulos-eventos-en-puebla",
+      "destination": "/cms-pages/362.html"
+    },
+    {
+      "source": "/pagina/articulos-eventos-en-puebla",
+      "destination": "/cms-pages/362.html"
+    },
+    {
+      "source": "/content/363-articulos-fluor-para-fiestas",
+      "destination": "/cms-pages/363.html"
+    },
+    {
+      "source": "/articulos-fluor-para-fiestas",
+      "destination": "/cms-pages/363.html"
+    },
+    {
+      "source": "/pagina/articulos-fluor-para-fiestas",
+      "destination": "/cms-pages/363.html"
+    },
+    {
+      "source": "/content/364-cosas-de-fiesta-neon",
+      "destination": "/cms-pages/364.html"
+    },
+    {
+      "source": "/cosas-de-fiesta-neon",
+      "destination": "/cms-pages/364.html"
+    },
+    {
+      "source": "/pagina/cosas-de-fiesta-neon",
+      "destination": "/cms-pages/364.html"
+    },
+    {
+      "source": "/content/365-polvo-neon-para-fiestas",
+      "destination": "/cms-pages/365.html"
+    },
+    {
+      "source": "/polvo-neon-para-fiestas",
+      "destination": "/cms-pages/365.html"
+    },
+    {
+      "source": "/pagina/polvo-neon-para-fiestas",
+      "destination": "/cms-pages/365.html"
+    },
+    {
+      "source": "/content/366-cosas-para-batucada",
+      "destination": "/cms-pages/366.html"
+    },
+    {
+      "source": "/cosas-para-batucada",
+      "destination": "/cms-pages/366.html"
+    },
+    {
+      "source": "/pagina/cosas-para-batucada",
+      "destination": "/cms-pages/366.html"
+    },
+    {
+      "source": "/content/367-articulos-para-batucada",
+      "destination": "/cms-pages/367.html"
+    },
+    {
+      "source": "/content/368-articulos-para-batucada-centro-historico",
+      "destination": "/cms-pages/368.html"
+    },
+    {
+      "source": "/articulos-para-batucada-centro-historico",
+      "destination": "/cms-pages/368.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucada-centro-historico",
+      "destination": "/cms-pages/368.html"
+    },
+    {
+      "source": "/content/369-productos-para-fiestas-y-batucadas",
+      "destination": "/cms-pages/369.html"
+    },
+    {
+      "source": "/content/370-productos-para-fiestas-y-batucadas",
+      "destination": "/cms-pages/370.html"
+    },
+    {
+      "source": "/content/371-cosas-para-la-batucada",
+      "destination": "/cms-pages/371.html"
+    },
+    {
+      "source": "/cosas-para-la-batucada",
+      "destination": "/cms-pages/371.html"
+    },
+    {
+      "source": "/pagina/cosas-para-la-batucada",
+      "destination": "/cms-pages/371.html"
+    },
+    {
+      "source": "/content/372-accesorios-para-batucada-boda-",
+      "destination": "/cms-pages/372.html"
+    },
+    {
+      "source": "/accesorios-para-batucada-boda-",
+      "destination": "/cms-pages/372.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-boda-",
+      "destination": "/cms-pages/372.html"
+    },
+    {
+      "source": "/content/373-sombreros-locos-de-cumpleanos",
+      "destination": "/cms-pages/373.html"
+    },
+    {
+      "source": "/sombreros-locos-de-cumpleanos",
+      "destination": "/cms-pages/373.html"
+    },
+    {
+      "source": "/pagina/sombreros-locos-de-cumpleanos",
+      "destination": "/cms-pages/373.html"
+    },
+    {
+      "source": "/content/374-sombreros-de-goma-espuma",
+      "destination": "/cms-pages/374.html"
+    },
+    {
+      "source": "/sombreros-de-goma-espuma",
+      "destination": "/cms-pages/374.html"
+    },
+    {
+      "source": "/pagina/sombreros-de-goma-espuma",
+      "destination": "/cms-pages/374.html"
+    },
+    {
+      "source": "/content/375-tienda-fiesta-cdmx",
+      "destination": "/cms-pages/375.html"
+    },
+    {
+      "source": "/tienda-fiesta-cdmx",
+      "destination": "/cms-pages/375.html"
+    },
+    {
+      "source": "/pagina/tienda-fiesta-cdmx",
+      "destination": "/cms-pages/375.html"
+    },
+    {
+      "source": "/content/376-tienda-de-articulos-de-fiesta-cdmx",
+      "destination": "/cms-pages/376.html"
+    },
+    {
+      "source": "/tienda-de-articulos-de-fiesta-cdmx",
+      "destination": "/cms-pages/376.html"
+    },
+    {
+      "source": "/pagina/tienda-de-articulos-de-fiesta-cdmx",
+      "destination": "/cms-pages/376.html"
+    },
+    {
+      "source": "/content/377-tienda-de-fiestas-cdmx",
+      "destination": "/cms-pages/377.html"
+    },
+    {
+      "source": "/tienda-de-fiestas-cdmx",
+      "destination": "/cms-pages/377.html"
+    },
+    {
+      "source": "/pagina/tienda-de-fiestas-cdmx",
+      "destination": "/cms-pages/377.html"
+    },
+    {
+      "source": "/content/378-cosas-para-fiestas-cdmx",
+      "destination": "/cms-pages/378.html"
+    },
+    {
+      "source": "/cosas-para-fiestas-cdmx",
+      "destination": "/cms-pages/378.html"
+    },
+    {
+      "source": "/pagina/cosas-para-fiestas-cdmx",
+      "destination": "/cms-pages/378.html"
+    },
+    {
+      "source": "/content/379-accesorios-para-fiesta-cdmx-",
+      "destination": "/cms-pages/379.html"
+    },
+    {
+      "source": "/accesorios-para-fiesta-cdmx-",
+      "destination": "/cms-pages/379.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-fiesta-cdmx-",
+      "destination": "/cms-pages/379.html"
+    },
+    {
+      "source": "/content/380-accesorios-neon-para-fiestas-cdmx",
+      "destination": "/cms-pages/380.html"
+    },
+    {
+      "source": "/accesorios-neon-para-fiestas-cdmx",
+      "destination": "/cms-pages/380.html"
+    },
+    {
+      "source": "/pagina/accesorios-neon-para-fiestas-cdmx",
+      "destination": "/cms-pages/380.html"
+    },
+    {
+      "source": "/content/381-cosas-para-fiestas-puebla",
+      "destination": "/cms-pages/381.html"
+    },
+    {
+      "source": "/cosas-para-fiestas-puebla",
+      "destination": "/cms-pages/381.html"
+    },
+    {
+      "source": "/pagina/cosas-para-fiestas-puebla",
+      "destination": "/cms-pages/381.html"
+    },
+    {
+      "source": "/content/382-articulos-para-fiesta-cdmx",
+      "destination": "/cms-pages/382.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-cdmx",
+      "destination": "/cms-pages/382.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-cdmx",
+      "destination": "/cms-pages/382.html"
+    },
+    {
+      "source": "/content/383-cosas-para-un-cumpleanos-puebla",
+      "destination": "/cms-pages/383.html"
+    },
+    {
+      "source": "/cosas-para-un-cumpleanos-puebla",
+      "destination": "/cms-pages/383.html"
+    },
+    {
+      "source": "/pagina/cosas-para-un-cumpleanos-puebla",
+      "destination": "/cms-pages/383.html"
+    },
+    {
+      "source": "/content/384-accesorios-fluorescentes-para-fiestas-puebla",
+      "destination": "/cms-pages/384.html"
+    },
+    {
+      "source": "/accesorios-fluorescentes-para-fiestas-puebla",
+      "destination": "/cms-pages/384.html"
+    },
+    {
+      "source": "/pagina/accesorios-fluorescentes-para-fiestas-puebla",
+      "destination": "/cms-pages/384.html"
+    },
+    {
+      "source": "/content/385-accesorios-de-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/385.html"
+    },
+    {
+      "source": "/content/386-accesorios-fluor-para-fiestas-puebla",
+      "destination": "/cms-pages/386.html"
+    },
+    {
+      "source": "/accesorios-fluor-para-fiestas-puebla",
+      "destination": "/cms-pages/386.html"
+    },
+    {
+      "source": "/pagina/accesorios-fluor-para-fiestas-puebla",
+      "destination": "/cms-pages/386.html"
+    },
+    {
+      "source": "/content/387-accesorios-hora-loca-neon-puebla",
+      "destination": "/cms-pages/387.html"
+    },
+    {
+      "source": "/accesorios-hora-loca-neon-puebla",
+      "destination": "/cms-pages/387.html"
+    },
+    {
+      "source": "/pagina/accesorios-hora-loca-neon-puebla",
+      "destination": "/cms-pages/387.html"
+    },
+    {
+      "source": "/content/388-accesorios-fiesta-fluor-puebla",
+      "destination": "/cms-pages/388.html"
+    },
+    {
+      "source": "/accesorios-fiesta-fluor-puebla",
+      "destination": "/cms-pages/388.html"
+    },
+    {
+      "source": "/pagina/accesorios-fiesta-fluor-puebla",
+      "destination": "/cms-pages/388.html"
+    },
+    {
+      "source": "/content/389-accesorios-color-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/389.html"
+    },
+    {
+      "source": "/accesorios-color-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/389.html"
+    },
+    {
+      "source": "/pagina/accesorios-color-neon-para-fiestas-puebla",
+      "destination": "/cms-pages/389.html"
+    },
+    {
+      "source": "/content/390-venta-de-productos-para-batucada-cdmxpropuesta",
+      "destination": "/cms-pages/390.html"
+    },
+    {
+      "source": "/venta-de-productos-para-batucada-cdmxpropuesta",
+      "destination": "/cms-pages/390.html"
+    },
+    {
+      "source": "/pagina/venta-de-productos-para-batucada-cdmxpropuesta",
+      "destination": "/cms-pages/390.html"
+    },
+    {
+      "source": "/content/391-accesorios-para-batucadascdmx",
+      "destination": "/cms-pages/391.html"
+    },
+    {
+      "source": "/accesorios-para-batucadascdmx",
+      "destination": "/cms-pages/391.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucadascdmx",
+      "destination": "/cms-pages/391.html"
+    },
+    {
+      "source": "/content/392-venta-de-productos-para-batucadacdmx",
+      "destination": "/cms-pages/392.html"
+    },
+    {
+      "source": "/venta-de-productos-para-batucadacdmx",
+      "destination": "/cms-pages/392.html"
+    },
+    {
+      "source": "/pagina/venta-de-productos-para-batucadacdmx",
+      "destination": "/cms-pages/392.html"
+    },
+    {
+      "source": "/content/393-productos-para-fiestas-y-batucadascdmx",
+      "destination": "/cms-pages/393.html"
+    },
+    {
+      "source": "/productos-para-fiestas-y-batucadascdmx",
+      "destination": "/cms-pages/393.html"
+    },
+    {
+      "source": "/pagina/productos-para-fiestas-y-batucadascdmx",
+      "destination": "/cms-pages/393.html"
+    },
+    {
+      "source": "/content/394-articulos-para-batucadacdmx",
+      "destination": "/cms-pages/394.html"
+    },
+    {
+      "source": "/articulos-para-batucadacdmx",
+      "destination": "/cms-pages/394.html"
+    },
+    {
+      "source": "/pagina/articulos-para-batucadacdmx",
+      "destination": "/cms-pages/394.html"
+    },
+    {
+      "source": "/content/395-accesorios-de-fiesta-puebla",
+      "destination": "/cms-pages/395.html"
+    },
+    {
+      "source": "/content/396-tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/cms-pages/396.html"
+    },
+    {
+      "source": "/content/397-tienda-de-articulos-para-fiesta-puebla",
+      "destination": "/cms-pages/397.html"
+    },
+    {
+      "source": "/content/398-venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
+      "destination": "/cms-pages/398.html"
+    },
+    {
+      "source": "/venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
+      "destination": "/cms-pages/398.html"
+    },
+    {
+      "source": "/pagina/venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
+      "destination": "/cms-pages/398.html"
+    },
+    {
+      "source": "/content/399-tienda-para-fiestas-en-puebla",
+      "destination": "/cms-pages/399.html"
+    },
+    {
+      "source": "/tienda-para-fiestas-en-puebla",
+      "destination": "/cms-pages/399.html"
+    },
+    {
+      "source": "/pagina/tienda-para-fiestas-en-puebla",
+      "destination": "/cms-pages/399.html"
+    },
+    {
+      "source": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "destination": "/cms-pages/400.html"
+    },
+    {
+      "source": "/tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "destination": "/cms-pages/400.html"
+    },
+    {
+      "source": "/pagina/tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "destination": "/cms-pages/400.html"
+    },
+    {
+      "source": "/content/401-articulos-de-fiesta-mayoreo-en-puebla",
+      "destination": "/cms-pages/401.html"
+    },
+    {
+      "source": "/articulos-de-fiesta-mayoreo-en-puebla",
+      "destination": "/cms-pages/401.html"
+    },
+    {
+      "source": "/pagina/articulos-de-fiesta-mayoreo-en-puebla",
+      "destination": "/cms-pages/401.html"
+    },
+    {
+      "source": "/content/402-productos-para-fiestas-puebla",
+      "destination": "/cms-pages/402.html"
+    },
+    {
+      "source": "/productos-para-fiestas-puebla",
+      "destination": "/cms-pages/402.html"
+    },
+    {
+      "source": "/pagina/productos-para-fiestas-puebla",
+      "destination": "/cms-pages/402.html"
+    },
+    {
+      "source": "/content/403-mayoreo-articulos-para-fiestas-puebla",
+      "destination": "/cms-pages/403.html"
+    },
+    {
+      "source": "/mayoreo-articulos-para-fiestas-puebla",
+      "destination": "/cms-pages/403.html"
+    },
+    {
+      "source": "/pagina/mayoreo-articulos-para-fiestas-puebla",
+      "destination": "/cms-pages/403.html"
+    },
+    {
+      "source": "/content/404-productos-para-fiestas-al-por-mayor-puebla",
+      "destination": "/cms-pages/404.html"
+    },
+    {
+      "source": "/productos-para-fiestas-al-por-mayor-puebla",
+      "destination": "/cms-pages/404.html"
+    },
+    {
+      "source": "/pagina/productos-para-fiestas-al-por-mayor-puebla",
+      "destination": "/cms-pages/404.html"
+    },
+    {
+      "source": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "destination": "/cms-pages/405.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-por-mayoreo-puebla",
+      "destination": "/cms-pages/405.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-por-mayoreo-puebla",
+      "destination": "/cms-pages/405.html"
+    },
+    {
+      "source": "/content/406-accesorios-para-batucada-puebla",
+      "destination": "/cms-pages/406.html"
+    },
+    {
+      "source": "/accesorios-para-batucada-puebla",
+      "destination": "/cms-pages/406.html"
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-puebla",
+      "destination": "/cms-pages/406.html"
+    },
+    {
+      "source": "/content/407-cosas-para-batucada-fiesta-puebla",
+      "destination": "/cms-pages/407.html"
+    },
+    {
+      "source": "/cosas-para-batucada-fiesta-puebla",
+      "destination": "/cms-pages/407.html"
+    },
+    {
+      "source": "/pagina/cosas-para-batucada-fiesta-puebla",
+      "destination": "/cms-pages/407.html"
+    },
+    {
+      "source": "/content/408-accesorios-para-batucada-boda-puebla",
+      "destination": "/cms-pages/408.html"
+    },
+    {
+      "source": "/content/409-accesorios-para-batucada-boda-cdmx",
+      "destination": "/cms-pages/409.html"
+    },
+    {
+      "source": "/content/410-venta-de-articulos-neon-para-fiestas-cdmx",
+      "destination": "/cms-pages/410.html"
+    },
+    {
+      "source": "/venta-de-articulos-neon-para-fiestas-cdmx",
+      "destination": "/cms-pages/410.html"
+    },
+    {
+      "source": "/pagina/venta-de-articulos-neon-para-fiestas-cdmx",
+      "destination": "/cms-pages/410.html"
+    },
+    {
+      "source": "/content/411-globos-cdmx",
+      "destination": "/cms-pages/411.html"
+    },
+    {
+      "source": "/globos-cdmx",
+      "destination": "/cms-pages/411.html"
+    },
+    {
+      "source": "/pagina/globos-cdmx",
+      "destination": "/cms-pages/411.html"
+    },
+    {
+      "source": "/content/412-entrega",
+      "destination": "/cms-pages/412.html"
+    },
+    {
+      "source": "/entrega",
+      "destination": "/cms-pages/412.html"
+    },
+    {
+      "source": "/pagina/entrega",
+      "destination": "/cms-pages/412.html"
+    },
+    {
+      "source": "/content/413-aviso-legal",
+      "destination": "/cms-pages/413.html"
+    },
+    {
+      "source": "/aviso-legal",
+      "destination": "/cms-pages/413.html"
+    },
+    {
+      "source": "/pagina/aviso-legal",
+      "destination": "/cms-pages/413.html"
+    },
+    {
+      "source": "/content/414-terminos-y-condiciones-de-uso",
+      "destination": "/cms-pages/414.html"
+    },
+    {
+      "source": "/terminos-y-condiciones-de-uso",
+      "destination": "/cms-pages/414.html"
+    },
+    {
+      "source": "/pagina/terminos-y-condiciones-de-uso",
+      "destination": "/cms-pages/414.html"
+    },
+    {
+      "source": "/content/415-sobre-nosotros",
+      "destination": "/cms-pages/415.html"
+    },
+    {
+      "source": "/sobre-nosotros",
+      "destination": "/cms-pages/415.html"
+    },
+    {
+      "source": "/pagina/sobre-nosotros",
+      "destination": "/cms-pages/415.html"
+    },
+    {
+      "source": "/content/416-pago-seguro",
+      "destination": "/cms-pages/416.html"
+    },
+    {
+      "source": "/pago-seguro",
+      "destination": "/cms-pages/416.html"
+    },
+    {
+      "source": "/pagina/pago-seguro",
+      "destination": "/cms-pages/416.html"
+    },
+    {
+      "source": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
+      "destination": "/cms-pages/417.html"
+    },
+    {
+      "source": "/articulos-para-fiesta-mayoreo-en-mexico",
+      "destination": "/cms-pages/417.html"
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-mayoreo-en-mexico",
+      "destination": "/cms-pages/417.html"
+    },
+    {
+      "source": "/content/418-contactanos",
+      "destination": "/cms-pages/418.html"
+    },
+    {
+      "source": "/contactanos",
+      "destination": "/cms-pages/418.html"
+    },
+    {
+      "source": "/pagina/contactanos",
+      "destination": "/cms-pages/418.html"
+    },
+    {
+      "source": "/content/419-productos-con-descuentos",
+      "destination": "/cms-pages/419.html"
+    },
+    {
+      "source": "/productos-con-descuentos",
+      "destination": "/cms-pages/419.html"
+    },
+    {
+      "source": "/pagina/productos-con-descuentos",
+      "destination": "/cms-pages/419.html"
+    },
+    {
+      "source": "/content/420-politica-de-envio-gratis-mi-fiesta-shop",
+      "destination": "/cms-pages/420.html"
+    },
+    {
+      "source": "/politica-de-envio-gratis-mi-fiesta-shop",
+      "destination": "/cms-pages/420.html"
+    },
+    {
+      "source": "/pagina/politica-de-envio-gratis-mi-fiesta-shop",
+      "destination": "/cms-pages/420.html"
+    },
+    {
+      "source": "/content/421-politica-de-devolucion-mi-fiesta-shop",
+      "destination": "/cms-pages/421.html"
+    },
+    {
+      "source": "/politica-de-devolucion-mi-fiesta-shop",
+      "destination": "/cms-pages/421.html"
+    },
+    {
+      "source": "/pagina/politica-de-devolucion-mi-fiesta-shop",
+      "destination": "/cms-pages/421.html"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/:id(\\d+)-:slug*.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pagina/:slug",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacidad",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terminos",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/accesorios-para-batucada-boda-queretaro",
+      "destination": "/index.html"
+    }
   ]
 }

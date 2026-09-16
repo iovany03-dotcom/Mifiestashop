@@ -8941,51 +8941,20 @@ function showPublicStorefront() {
 
 // ================= PÁGINAS CMS (PrestaShop content_management_system) =================
 async function openCmsPage(slug, pushState) {
-  const sf = document.getElementById('view-storefront');
-  const portal = document.getElementById('view-cliente-portal');
-  const dash = document.getElementById('adminDashboardWrapper');
-  const cms = document.getElementById('view-cms-page');
-  if (sf) sf.classList.add('hidden');
-  if (portal) portal.classList.add('hidden');
-  if (dash) dash.classList.add('hidden');
-  if (cms) cms.classList.remove('hidden');
-  window.scrollTo(0, 0);
-
-  if (pushState !== false) {
-    const target = '/pagina/' + encodeURIComponent(slug);
-    if (window.location.pathname !== target) history.pushState({}, '', target);
-  }
-
-  const body = document.getElementById('cmsPageBody');
-  if (!body) return;
-  body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">Cargando…</div>';
-  document.getElementById('cmsPageHeroTitle').textContent = '';
-  document.getElementById('cmsPageBreadcrumbTitle').textContent = '';
-
   try {
-    const r = await fetch('/api/paginas?slug=' + encodeURIComponent(slug));
-    const data = await r.json();
-    if (!r.ok || !data.page) {
-      body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se encontró esta página.</div>';
+    const response = await fetch('/api/paginas?slug=' + encodeURIComponent(slug));
+    const data = await response.json();
+    if (response.ok && data.page?.path) {
+      if (pushState === false) window.location.replace(data.page.path);
+      else window.location.assign(data.page.path);
       return;
     }
-    document.title = data.page.title + ' | Mi Fiestashop';
-    const metaDesc = document.getElementById('metaDescription');
-    if (metaDesc && data.page.description) metaDesc.setAttribute('content', data.page.description);
-
-    document.getElementById('cmsPageHeroTitle').textContent = data.page.title;
-    document.getElementById('cmsPageBreadcrumbTitle').textContent = data.page.title;
-    document.getElementById('cmsPageHeroTagline').textContent = data.page.description && data.page.description.trim()
-      ? data.page.description
-      : `Descubre ${data.page.title} en Mi Fiestashop, con envío a toda la República Mexicana.`;
-
-    body.innerHTML = `<div class="cms-page-content">${data.page.content}</div><div id="cmsPageRelatedGrid"></div>`;
-
-    if (liveProducts.length === 0) await syncProductsFromPrestaShopAPI();
-    renderRelatedProductsInto('cmsPageRelatedGrid', data.page.title, null, `Productos relacionados con ${data.page.title}`);
-  } catch (e) {
-    body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se pudo cargar esta página en este momento.</div>';
-  }
+  } catch (e) { /* Show the unavailable state without a redirect loop. */ }
+  ['view-storefront', 'view-cliente-portal', 'adminDashboardWrapper', 'view-boda-page', 'view-legal-page'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+  document.getElementById('view-cms-page')?.classList.remove('hidden');
+  document.getElementById('cmsPageHeroTitle').textContent = 'Página no encontrada';
+  document.getElementById('cmsPageHeroTagline').textContent = '';
+  document.getElementById('cmsPageBody').innerHTML = '<p>No encontramos esta página. <a href="/">Volver a la tienda</a>.</p>';
 }
 
 function closeCmsPage() {
@@ -10101,7 +10070,7 @@ async function loadCmsPagesForFooter() {
     cmsPagesList = Array.isArray(data.pages) ? data.pages : [];
     if (cmsPagesList.length === 0) return;
     list.innerHTML = cmsPagesList.map(p => `
-      <li><a href="#" onclick="event.preventDefault(); openCmsPage('${p.slug}');">${p.title}</a></li>
+      <li><a href="${p.path || '/pagina/' + encodeURIComponent(p.slug)}">${p.title}</a></li>
     `).join('');
     document.getElementById('cmsFooterCol')?.classList.remove('hidden');
   } catch (e) {
@@ -10152,7 +10121,7 @@ function renderCmsPagesAdminTable(pages) {
     // mismo slug que tenía en PrestaShop para no romper nada. En ese caso ya
     // no se muestra/edita el contenido de PrestaShop: se marca "EN SISTEMA"
     // y se enlaza directo a la versión nueva.
-    const migrated = typeof BODA_PAGES !== 'undefined' && BODA_PAGES[p.slug];
+    const migrated = p.migrated || (typeof BODA_PAGES !== 'undefined' && BODA_PAGES[p.slug]);
     if (migrated) {
       return `
     <tr>
@@ -10161,7 +10130,7 @@ function renderCmsPagesAdminTable(pages) {
       <td><code>${p.slug}</code></td>
       <td>${p.inFooter ? '<span class="pill ok"> Sí</span>' : '<span class="pill">—</span>'}</td>
       <td style="text-align:center; white-space:nowrap;">
-        <button class="btn small primary" onclick="window.open('/${p.slug}', '_blank')">Ver en sistema</button>
+        <button class="btn small primary" onclick="window.open('${p.path || '/' + p.slug}', '_blank')">Ver en sistema</button>
       </td>
     </tr>`;
     }
@@ -12133,7 +12102,14 @@ function openProductDeepLinkIfPresent() {
   if (p) renderProductFullPage(p);
 }
 
-syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(checkLowStockNotifications);
+syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
+  const query = new URLSearchParams(window.location.search).get('buscar');
+  if (query && window.location.pathname === '/') {
+    const input = document.getElementById('storeSearchInput');
+    if (input) input.value = query;
+    filterStorefrontProducts(query);
+  }
+}).then(checkLowStockNotifications);
 loadRealStockData();
 
 loadCartFromStorage();
@@ -12193,6 +12169,7 @@ function routeApp() {
   showPublicStorefront();
 }
 routeApp();
+if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('cuenta')) openClientePortal();
 window.addEventListener('popstate', routeApp);
 
 function goToAdmin() {

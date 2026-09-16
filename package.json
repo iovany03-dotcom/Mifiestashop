@@ -4,7 +4,8 @@
   "description": "",
   "main": "sw.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:cms": "node scripts/build-cms.cjs",
+    "test:cms": "node --test tests/cms.test.cjs"
   },
   "repository": {
     "type": "git",
@@ -20,5 +21,8 @@
   "homepage": "https://github.com/iovany03-dotcom/Mifiestashop#readme",
   "dependencies": {
     "nodemailer": "^10.0.9"
+  },
+  "devDependencies": {
+    "cheerio": "1.2.0"
   }
 }
