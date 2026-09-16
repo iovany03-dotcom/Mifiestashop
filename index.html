@@ -2630,8 +2630,10 @@
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
           <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+            <button class="btn small primary" id="btnToggleCaja" onclick="onToggleCajaClick()">Abrir Caja</button>
             <button class="btn small" onclick="openSalidasCajaModal()">Salidas de Caja</button>
             <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+            <button class="btn small" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
           </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
@@ -4852,6 +4854,64 @@
   </div>
 </div>
 
+<!-- ================= ABRIR CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="abrirCajaModal">
+  <div class="modal" style="max-width:420px; width:94%;">
+    <div class="modal-header">
+      <h2>Abrir Caja</h2>
+      <button class="btn small" onclick="closeAbrirCajaModal()">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:13px; margin-top:0; margin-bottom:14px;">
+      Indica con cuánto dinero (caja chica) inicia la caja en esta sucursal.
+    </p>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto de apertura ($):</label>
+    <input type="number" id="abrirCajaMonto" placeholder="0.00" min="0" step="0.01" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:16px;">
+    <button class="btn primary" id="abrirCajaSubmitBtn" style="width:100%;" onclick="confirmAbrirCaja()">Abrir Caja</button>
+  </div>
+</div>
+
+<!-- ================= CERRAR CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="cerrarCajaModal">
+  <div class="modal" style="max-width:460px; width:94%;">
+    <div class="modal-header">
+      <h2>Cerrar Caja</h2>
+      <button class="btn small" onclick="closeCerrarCajaModal()">✕</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--text-secondary); padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--plane); margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between;"><span>Monto de apertura:</span><b id="cerrarCajaApertura" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between;"><span>+ Ventas en efectivo:</span><b id="cerrarCajaVentas" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between;"><span>− Salidas de caja:</span><b id="cerrarCajaSalidas" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:6px; font-size:14px;"><span><b>= Esperado en caja:</b></span><b id="cerrarCajaEsperado" style="color:var(--text-primary);">$0.00</b></div>
+    </div>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto contado en caja ($):</label>
+    <input type="number" id="cerrarCajaContado" placeholder="0.00" min="0" step="0.01" oninput="updateCerrarCajaDiferencia()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:10px;">
+    <div id="cerrarCajaDiferenciaBox" class="hidden" style="text-align:center; font-weight:700; padding:8px; border-radius:8px; margin-bottom:12px;"></div>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Notas (opcional):</label>
+    <input type="text" id="cerrarCajaNotas" placeholder="Ej: faltante por cambio no registrado" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:16px;">
+    <button class="btn primary" id="cerrarCajaSubmitBtn" style="width:100%;" onclick="confirmCerrarCaja()">Cerrar Caja</button>
+  </div>
+</div>
+
+<!-- ================= HISTORIAL DE CIERRES DE CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="cajaHistorialModal">
+  <div class="modal" style="max-width:900px; width:94%; max-height:88vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2>Historial de Cierres de Caja</h2>
+      <button class="btn small" onclick="closeCajaHistorialModal()">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Apertura</th><th>Cierre</th><th>Sucursal</th><th>Apertura ($)</th><th>Ventas Efvo.</th><th>Salidas</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Cerró</th></tr>
+        </thead>
+        <tbody id="cajaHistorialTableBody">
+          <tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- ================= VER FOTO DE SALIDA MODAL ================= -->
 <div class="modal-overlay hidden" id="salidaFotoModal" onclick="if(event.target===this) closeSalidaFotoModal()">
   <div class="modal" style="max-width:520px; width:92%; text-align:center;">
@@ -6670,6 +6730,173 @@ async function openSalidasCajaModal() {
 
 function closeSalidasCajaModal() {
   document.getElementById('salidasCajaModal').classList.add('hidden');
+}
+
+// ================= APERTURA / CIERRE DE CAJA =================
+let cajaActual = null; // registro abierto (caja_cortes) para la sucursal actual, o null
+
+function currentCajaAlmacen() {
+  const sel = document.getElementById('posWarehouseSelect');
+  return sel ? sel.options[sel.selectedIndex].text : '';
+}
+
+async function loadCajaActual() {
+  const btn = document.getElementById('btnToggleCaja');
+  if (!btn) return;
+  try {
+    const row = await sbRpc('rpc_caja_actual', { ...getSessionCredsParams(), p_almacen: currentCajaAlmacen() });
+    cajaActual = (row && row.id) ? row : null;
+  } catch (e) {
+    cajaActual = null;
+  }
+  btn.textContent = cajaActual ? 'Cerrar Caja' : 'Abrir Caja';
+  btn.classList.toggle('primary', !cajaActual);
+}
+
+function onToggleCajaClick() {
+  if (cajaActual) openCerrarCajaModal(); else openAbrirCajaModal();
+}
+
+function openAbrirCajaModal() {
+  document.getElementById('abrirCajaMonto').value = '';
+  document.getElementById('abrirCajaModal').classList.remove('hidden');
+}
+
+function closeAbrirCajaModal() {
+  document.getElementById('abrirCajaModal').classList.add('hidden');
+}
+
+async function confirmAbrirCaja() {
+  const monto = parseFloat(document.getElementById('abrirCajaMonto').value);
+  if (!Number.isFinite(monto) || monto < 0) { alert('Ingresa un monto de apertura válido.'); return; }
+  const btn = document.getElementById('abrirCajaSubmitBtn');
+  btn.disabled = true;
+  try {
+    const row = await sbRpc('rpc_caja_abrir', {
+      ...getSessionCredsParams(),
+      p_almacen: currentCajaAlmacen(), p_monto_apertura: monto, p_abierto_por: nombreSesionActual()
+    });
+    cajaActual = row;
+    closeAbrirCajaModal();
+    await loadCajaActual();
+  } catch (e) {
+    alert(e.message === 'ya_hay_caja_abierta' ? 'Ya hay una caja abierta en esta sucursal.' : 'No se pudo abrir la caja.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openCerrarCajaModal() {
+  if (!cajaActual) { alert('No hay una caja abierta en esta sucursal.'); return; }
+
+  const [ticketRows, salidaRows] = await Promise.all([
+    sbRpc('rpc_pos_ticket_list', getSessionCredsParams()).catch(() => []),
+    sbRpc('rpc_salida_list', getSessionCredsParams()).catch(() => [])
+  ]);
+  const almacen = cajaActual.almacen;
+  const desde = cajaActual.fecha_apertura;
+
+  const ventasEfectivo = (Array.isArray(ticketRows) ? ticketRows : [])
+    .filter(t => t.almacen === almacen && t.metodo === 'cash' && t.created_at >= desde)
+    .reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+  const salidas = (Array.isArray(salidaRows) ? salidaRows : [])
+    .filter(s => s.almacen === almacen && s.created_at >= desde)
+    .reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
+  const esperado = (parseFloat(cajaActual.monto_apertura) || 0) + ventasEfectivo - salidas;
+
+  document.getElementById('cerrarCajaApertura').textContent = fmtMoney(cajaActual.monto_apertura);
+  document.getElementById('cerrarCajaVentas').textContent = fmtMoney(ventasEfectivo);
+  document.getElementById('cerrarCajaSalidas').textContent = fmtMoney(salidas);
+  document.getElementById('cerrarCajaEsperado').textContent = fmtMoney(esperado);
+  document.getElementById('cerrarCajaContado').value = '';
+  document.getElementById('cerrarCajaNotas').value = '';
+  document.getElementById('cerrarCajaDiferenciaBox').classList.add('hidden');
+
+  document.getElementById('cerrarCajaModal').dataset.esperado = esperado;
+  document.getElementById('cerrarCajaModal').dataset.ventasEfectivo = ventasEfectivo;
+  document.getElementById('cerrarCajaModal').dataset.salidas = salidas;
+  document.getElementById('cerrarCajaModal').classList.remove('hidden');
+}
+
+function closeCerrarCajaModal() {
+  document.getElementById('cerrarCajaModal').classList.add('hidden');
+}
+
+function updateCerrarCajaDiferencia() {
+  const modal = document.getElementById('cerrarCajaModal');
+  const esperado = parseFloat(modal.dataset.esperado) || 0;
+  const contado = parseFloat(document.getElementById('cerrarCajaContado').value);
+  const box = document.getElementById('cerrarCajaDiferenciaBox');
+  if (!Number.isFinite(contado)) { box.classList.add('hidden'); return; }
+  const diff = contado - esperado;
+  box.classList.remove('hidden');
+  box.style.background = diff === 0 ? 'var(--ok-bg, #dcfce7)' : (diff > 0 ? '#fef9c3' : '#fee2e2');
+  box.style.color = diff === 0 ? '#166534' : (diff > 0 ? '#854d0e' : '#991b1b');
+  box.textContent = diff === 0 ? 'Cuadra exacto' : (diff > 0 ? `Sobrante: ${fmtMoney(diff)}` : `Faltante: ${fmtMoney(Math.abs(diff))}`);
+}
+
+async function confirmCerrarCaja() {
+  const modal = document.getElementById('cerrarCajaModal');
+  const contado = parseFloat(document.getElementById('cerrarCajaContado').value);
+  if (!Number.isFinite(contado) || contado < 0) { alert('Ingresa el monto contado en caja.'); return; }
+  const esperado = parseFloat(modal.dataset.esperado) || 0;
+  const ventasEfectivo = parseFloat(modal.dataset.ventasEfectivo) || 0;
+  const salidas = parseFloat(modal.dataset.salidas) || 0;
+  const notas = document.getElementById('cerrarCajaNotas').value.trim();
+  const btn = document.getElementById('cerrarCajaSubmitBtn');
+  btn.disabled = true;
+  try {
+    await sbRpc('rpc_caja_cerrar', {
+      ...getSessionCredsParams(),
+      p_id: cajaActual.id, p_monto_esperado: esperado, p_monto_contado: contado,
+      p_ventas_efectivo: ventasEfectivo, p_salidas: salidas, p_notas: notas || null,
+      p_cerrado_por: nombreSesionActual()
+    });
+    cajaActual = null;
+    closeCerrarCajaModal();
+    await loadCajaActual();
+  } catch (e) {
+    alert('No se pudo cerrar la caja.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openCajaHistorialModal() {
+  document.getElementById('cajaHistorialModal').classList.remove('hidden');
+  const tbody = document.getElementById('cajaHistorialTableBody');
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    const rows = await sbRpc('rpc_caja_list', getSessionCredsParams());
+    const list = Array.isArray(rows) ? rows : [];
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Aún no hay cierres de caja registrados.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(r => {
+      const diff = parseFloat(r.diferencia) || 0;
+      const diffColor = diff === 0 ? 'var(--text-primary)' : (diff > 0 ? '#166534' : '#991b1b');
+      return `
+      <tr>
+        <td>${new Date(r.fecha_apertura).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td>${r.fecha_cierre ? new Date(r.fecha_cierre).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td>
+        <td>${escapeHtml(r.almacen || '')}</td>
+        <td>${fmtMoney(r.monto_apertura)}</td>
+        <td>${fmtMoney(r.ventas_efectivo)}</td>
+        <td>${fmtMoney(r.salidas)}</td>
+        <td>${fmtMoney(r.monto_esperado)}</td>
+        <td>${fmtMoney(r.monto_contado)}</td>
+        <td style="color:${diffColor}; font-weight:700;">${fmtMoney(diff)}</td>
+        <td>${escapeHtml(r.cerrado_por || '')}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial.</td></tr>';
+  }
+}
+
+function closeCajaHistorialModal() {
+  document.getElementById('cajaHistorialModal').classList.add('hidden');
 }
 
 // Reduce la foto a un tamaño razonable (máx. 1000px de lado, JPEG) antes de
@@ -8675,8 +8902,10 @@ if(document.getElementById('posWarehouseSelect')){
     const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
     const query = document.getElementById('posSearchInput')?.value || '';
     renderProducts(activeCat, query);
+    loadCajaActual();
   });
 }
+loadCajaActual();
 
 // THEME TOGGLE
 if(document.getElementById('toggleThemeBtn')){
