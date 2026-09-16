@@ -1,9 +1,10 @@
 (() => {
   'use strict';
   const grid = document.getElementById('cms-products');
-  if (!grid) return;
+  const promoGrid=document.getElementById('cms-promo-products');
+  if (!grid && !promoGrid) return;
   const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  const terms = JSON.parse(grid.dataset.terms || '[]');
+  const terms = JSON.parse((grid || promoGrid).dataset.terms || '[]');
   function productCard(product) {
     const card = document.createElement('article');
     const link = document.createElement('a');link.className='cms-product-link';
@@ -29,11 +30,14 @@
       // Never fill a themed page with unrelated products when there are no matches.
       const selected=(data.products || []).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}))
         .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
+      const promos=(data.products||[]).filter(p=>/promo|paquete/.test(norm(p.name)) && terms.some(t=>norm(p.name).includes(t)));
+      if(promoGrid){promoGrid.replaceChildren(...promos.map(productCard).filter(Boolean));promoGrid.hidden=!promos.length;}
+      if(!grid)return;
       const cards=selected.map(item=>productCard(item.product)).filter(Boolean);
       if(!cards.length){grid.innerHTML='<p class="catalog-status">Consulta las opciones disponibles en el catálogo o escríbenos desde la página de contacto.</p>';return;}
       grid.replaceChildren(...cards);
     } catch {
-      grid.innerHTML='<p class="catalog-status">No pudimos cargar los productos en este momento. Puedes consultar el catálogo de la tienda.</p>';
+      if(grid)grid.innerHTML='<p class="catalog-status">No pudimos cargar los productos en este momento. Puedes consultar el catálogo de la tienda.</p>';
     }
   }
   loadProducts();
