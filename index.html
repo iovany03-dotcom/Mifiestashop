@@ -1737,6 +1737,103 @@
       </script>
     </section>
 
+    <!-- ================= FAQ (Preguntas Frecuentes) ================= -->
+    <section id="storeFaq" aria-label="Preguntas frecuentes">
+      <style>
+        #storeFaq{
+          width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+          font-family:"Poppins",sans-serif; background:#faf7fb; padding:56px 20px 64px;
+        }
+        #storeFaq .faq-head{ text-align:center; max-width:640px; margin:0 auto 32px; }
+        #storeFaq .faq-head h2{ font-size:clamp(24px,3.2vw,34px); font-weight:800; color:#2e1065; margin:0 0 8px; }
+        #storeFaq .faq-head p{ font-size:14.5px; color:#6b5c7a; margin:0; }
+        #storeFaq .faq-list{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+        #storeFaq details{
+          background:#fff; border:1px solid #f0e6ef; border-radius:14px;
+          padding:0; overflow:hidden; transition:border-color .2s ease;
+        }
+        #storeFaq details[open]{ border-color:var(--mf-pink,#d3007b); }
+        #storeFaq summary{
+          list-style:none; cursor:pointer; padding:16px 20px; display:flex; align-items:center;
+          justify-content:space-between; gap:14px; font-weight:700; font-size:14.5px; color:#2e1065;
+        }
+        #storeFaq summary::-webkit-details-marker{ display:none; }
+        #storeFaq summary .faq-chevron{
+          flex-shrink:0; width:20px; height:20px; color:var(--mf-pink,#d3007b);
+          transition:transform .25s ease;
+        }
+        #storeFaq details[open] summary .faq-chevron{ transform:rotate(180deg); }
+        #storeFaq .faq-answer{ padding:0 20px 18px; font-size:13.5px; color:#4a3f57; line-height:1.6; }
+        #storeFaq .faq-answer a{ color:var(--mf-pink,#d3007b); font-weight:700; text-decoration:none; }
+        @media (prefers-reduced-motion: reduce){
+          #storeFaq summary .faq-chevron{ transition:none; }
+        }
+      </style>
+
+      <div class="faq-head">
+        <h2>Preguntas Frecuentes</h2>
+        <p>Lo que más nos preguntan nuestros clientes sobre envíos, compras y devoluciones.</p>
+      </div>
+
+      <div class="faq-list">
+        <details>
+          <summary>¿Cuál es el envío mínimo para envío gratis?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">En compras mayores a <b>$1,500 MXN</b> el envío es gratis a cualquier parte de México. En pedidos menores, el costo se calcula según tu código postal y se muestra antes de confirmar tu compra.</div>
+        </details>
+
+        <details>
+          <summary>¿Puedo comprar por pieza o solo por mayoreo?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Puedes comprar por pieza, sin docena obligatoria. Además, desde <b>3 piezas</b> del mismo producto ya obtienes precio de mayorista.</div>
+        </details>
+
+        <details>
+          <summary>¿Cuánto tarda en llegar mi pedido?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">CDMX, Puebla y Querétaro: 1 a 3 días hábiles. Resto de la República: 2 a 6 días hábiles, según la paquetería y el destino.</div>
+        </details>
+
+        <details>
+          <summary>¿Puedo recoger mi pedido en sucursal?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Sí, sin costo de envío, en cualquiera de nuestras sucursales: CDMX (Rumania 613, Col. Portales), Querétaro (Gral. Lázaro Cárdenas 67, Casa Blanca) y Puebla (C. 35 Sur 2901, Sta. Cruz Los Ángeles).</div>
+        </details>
+
+        <details>
+          <summary>¿Hacen factura?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Sí, emitimos factura (CFDI) para tus compras cuando la solicites.</div>
+        </details>
+
+        <details>
+          <summary>¿Puedo cambiar o devolver un producto?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Cuentas con 5 días hábiles desde que recibes tu pedido, siempre que el producto esté sin uso y en su empaque original. Por higiene, los antifaces, artículos de pirotecnia fría y productos personalizados no tienen cambio ni devolución, salvo defecto de fábrica.</div>
+        </details>
+
+        <details>
+          <summary>¿Qué métodos de pago aceptan?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Tarjeta de crédito o débito y Mercado Pago, sin comisiones extra ni compra mínima.</div>
+        </details>
+
+        <details>
+          <summary>¿Cómo los contacto si tengo dudas?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Escríbenos por WhatsApp al <a href="https://wa.me/525612622146" target="_blank" rel="noopener">561 262 2146</a> y te ayudamos a armar el combo perfecto para tu evento.</div>
+        </details>
+      </div>
+    </section>
+
   </div>
 
   <!-- Dedicated Product Page (own URL, replaces home content) -->
