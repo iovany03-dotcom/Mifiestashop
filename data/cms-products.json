@@ -473,6 +473,30 @@
       "name": "Globo Redondo Bautizo",
       "linkRewrite": "globo-bautizo-nino",
       "img": "/img/cms-products/83467.jpg"
+    },
+    {
+      "id": 83392,
+      "name": "Collar hawaiano neón",
+      "linkRewrite": "collar-hawaiano-neon",
+      "img": "/img/cms-products/83392.jpg"
+    },
+    {
+      "id": 83389,
+      "name": "Bombin neón",
+      "linkRewrite": "bombin-neon",
+      "img": "/img/cms-products/83389.jpg"
+    },
+    {
+      "id": 84529,
+      "name": "Lente luminoso led",
+      "linkRewrite": "lente-luminoso-led-",
+      "img": "/img/cms-products/84529.jpg"
+    },
+    {
+      "id": 84535,
+      "name": "Diadema luminosa cyalume",
+      "linkRewrite": "diadema-luminosa-cyalume",
+      "img": "/img/cms-products/84535.jpg"
     }
   ]
 }

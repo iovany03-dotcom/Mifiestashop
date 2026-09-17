@@ -1,5 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
+const {designNeonPage}=require('./neon-page.cjs');
 const { modelFor, esc } = require('./cms-content.cjs');
 const root = path.resolve(__dirname, '..');
 const pages = require('../data/cms-pages.json');
@@ -17,7 +19,7 @@ function vipHtml(p) {
   return `<section class="vip-section wrap"><form id="vip-form" data-endpoint="${esc(p.vip.endpoint)}" data-redirect="${esc(p.vip.redirect)}" data-threshold="${p.vip.threshold}"><h2>Beneficio VIP</h2><p>Registra tu compra para recibir tu beneficio.</p><label for="vip-phone">Teléfono (10 dígitos)</label><input id="vip-phone" name="phone" type="tel" autocomplete="tel" required><label for="vip-amount">Monto de compra</label><input id="vip-amount" name="amount" type="number" min="1" step="1" required><div id="vip-email-wrap" hidden><label for="vip-email">Correo electrónico</label><input id="vip-email" name="email" type="email" autocomplete="email"><p class="vip-hint">Si tu compra es menor a $400, te enviamos un cupón del 10% por correo.</p></div><button class="button primary" type="submit">Enviar</button><p id="vip-message" role="status" aria-live="polite"></p></form></section>`;
 }
 function galleryHtml(){
- return '<div class="celebration-gallery">'+Array.from({length:12},(_,i)=>'<button type="button" class="gallery-photo" aria-label="Ampliar foto '+(i+1)+'"><img src="/img/boda-gallery/boda-'+String(i+1).padStart(2,'0')+'.png" alt="Celebración de boda con accesorios de fiesta, foto '+(i+1)+'" loading="lazy" width="600" height="600"></button>').join('')+'</div><dialog class="gallery-dialog" aria-label="Galería de bodas"><button type="button" class="gallery-close" aria-label="Cerrar">×</button><button type="button" class="gallery-prev" aria-label="Foto anterior">‹</button><img src="/img/boda-gallery/boda-01.png" alt=""><button type="button" class="gallery-next" aria-label="Foto siguiente">›</button><p class="gallery-count" aria-live="polite"></p></dialog>';
+ return '<div class="celebration-gallery">'+Array.from({length:12},(_,i)=>'<button type="button" class="gallery-photo" aria-label="Ampliar foto '+(i+1)+'"><img src="/img/boda-gallery/boda-'+String(i+1).padStart(2,'0')+'.jpg" alt="Celebración de boda con accesorios de fiesta, foto '+(i+1)+'" loading="lazy" width="600" height="600"></button>').join('')+'</div><dialog class="gallery-dialog" aria-label="Galería de bodas"><button type="button" class="gallery-close" aria-label="Cerrar">×</button><button type="button" class="gallery-prev" aria-label="Foto anterior">‹</button><img src="/img/boda-gallery/boda-01.jpg" alt="Celebración de boda con accesorios de fiesta"><button type="button" class="gallery-next" aria-label="Foto siguiente">›</button><p class="gallery-count" aria-live="polite"></p></dialog>';
 }
 function faqHtml(p) {
  const items=p.vip ? [
@@ -64,14 +66,21 @@ ${!informational ? `<section class="catalog-section" id="productos"><div class="
 ${p.vip ? vipHtml(p) : p.content.trim() ? `<article class="source-content wrap ${informational ? 'information-content' : ''}" aria-label="Información de ${esc(p.title)}">${p.content}</article>` : ''}
 ${(p.reviews.length || p.theme === 'boda') ? `<section class="reviews wrap"><div class="section-heading"><div><h2>Así celebran nuestros clientes</h2><p>Experiencias compartidas con Mi Fiesta Shop.</p></div></div>${['boda','batucada'].includes(p.theme) ? galleryHtml() : ''}<div class="review-grid">${p.reviews.map(r=>`<figure class="review-card"><figcaption class="review-author"><span class="review-avatar" aria-hidden="true">${esc(r.name.trim().split(/\s+/).slice(0,2).map(n=>n[0]).join(''))}</span><span><strong>${esc(r.name)}</strong><span class="review-source">Opinión compartida con Mi Fiesta Shop</span></span></figcaption><blockquote>${esc(r.quote)}</blockquote></figure>`).join('')}</div></section>` : ''}
 ${p.location && !p.location.multiple ? `<section class="location-section wrap" id="ubicacion"><div><p class="section-kicker">Te esperamos</p><h2>${p.location.name ? `Visítanos en ${esc(p.location.name)}` : 'Visita nuestra tienda'}</h2>${p.location.address ? `<address>${esc(p.location.address)}</address>` : ''}${p.location.phone ? `<a class="phone" href="tel:${esc(p.location.phone)}">${esc(p.location.phone)}</a>` : ''}</div><a class="button primary" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></section>` : ''}
-<section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">Promociones${!informational ? ' de '+esc(t.label.toLocaleLowerCase('es')) : ''}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div><div class="promotion-benefits"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop"><span>Envío gratis</span><strong>En compras mayores a $1,500 MXN</strong><small>Consulta condiciones de envío</small></a><a href="/?cuenta=1"><span>Precios de mayoreo</span><strong>Desde 3 piezas</strong><small>Regístrate y consulta los precios del catálogo</small></a><a href="/?vista=promos"><span>Promociones y cupones</span><strong>Consulta las ofertas disponibles</strong><small>Revisa sus condiciones en tu cuenta</small></a></div><div id="cms-promo-products" class="store-prods-grid" data-terms="${esc(JSON.stringify(t.terms))}"></div></section>
+<section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">Promociones${!informational ? ' de '+esc(t.label.toLocaleLowerCase('es')) : ''}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div><div id="cms-promo-products" class="store-prods-grid" data-terms="${esc(JSON.stringify(t.terms))}"></div></section>
 ${faqHtml(p)}
 ${!informational && related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu fiesta</h2><div>${related.map(r=>`<a href="${esc(r.sourcePath)}">${esc(r.title)}</a>`).join('')}</div></section>` : ''}
 </main>${footer.replace('<!--CMS_LOCATION-->', p.location?.address ? `<address class="info-line">${esc(p.location.name)}: ${esc(p.location.address)}</address>` : '')}</body></html>\n`;
 }
 const runtime = [];
 for (const model of models) {
-  const html = render(model);
+  let html = render(model);
+  if(model.id===410)html=designNeonPage(html,model);
+  // Revision URLs prevent cached pre-migration JS/CSS from keeping old cards alive.
+  html=html.replace(/(src|href)="(\/assets\/[^"?]+\.(?:js|css))"/g,(_,attr,url)=>{
+    const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,url))).digest('hex').slice(0,12);
+    return attr+'="'+url+'?v='+hash+'"';
+  });
+  html=html.replace(/[ \t]+$/gm,'');
   fs.writeFileSync(path.join(output, `${model.id}.html`), html);
   runtime.push({id:model.id,title:model.title,slug:model.slug,description:model.description,path:model.sourcePath,
     inFooter:model.inFooter,migrated:true,content:html.match(/<main id="contenido">([\s\S]*?)<\/main>/)[1]});
