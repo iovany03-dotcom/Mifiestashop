@@ -1,63 +1,10 @@
-// Vercel serverless function: fetches the real orders list from PrestaShop,
-// resolving every column shown in the admin's "Pedidos" table to real data
-// (no invented text) via bulk lookups against PrestaShop's own resources:
-//   - reference, delivery_date, payment: ya vienen en /api/orders
-//   - Cliente: /api/customers (id_customer -> nombre real)
-//   - Estado: /api/order_states (current_state -> etiqueta real, ej. "Pago aceptado")
-//   - Creado Por: /api/employees (id_employee -> nombre real, ej. "Caja Queretaro")
-//   - Tienda: /api/shops (id_shop -> nombre real, ej. "Mi Fiestashop")
-// Cada lookup se pide una sola vez (no por pedido) para no multiplicar las
-// llamadas a PrestaShop.
-
-function firstLangValue(field, fallback) {
-  if (Array.isArray(field)) {
-    for (const entry of field) {
-      const v = entry && typeof entry === 'object' ? entry.value : entry;
-      if (typeof v === 'string' && v.trim() !== '') return v;
-    }
-    return fallback;
-  }
-  if (typeof field === 'string' && field.trim() !== '') return field;
-  return fallback;
-}
-
-async function fetchLookupMap(baseUrl, headers, resource, fields, mapValue, limit) {
-  try {
-    const url = `${baseUrl}/api/${resource}?display=${encodeURIComponent(fields)}&limit=0,${limit || 2000}&output_format=JSON`;
-    const r = await fetch(url, { headers });
-    if (!r.ok) return {};
-    const data = await r.json();
-    const rows = Array.isArray(data[resource]) ? data[resource] : [];
-    const map = {};
-    rows.forEach(row => { map[String(row.id)] = mapValue(row); });
-    return map;
-  } catch (e) {
-    return {};
-  }
-}
-
-// Los clientes de una tienda con miles de registros no caben en un límite
-// fijo razonable — en vez de traerlos todos, se filtra solo por los
-// id_customer que realmente aparecen en este lote de pedidos (PrestaShop
-// soporta filter[id]=[id1|id2|...] para esto).
-async function fetchCustomersByIds(baseUrl, headers, ids) {
-  const unique = [...new Set(ids.map(String))].filter(Boolean);
-  if (unique.length === 0) return {};
-  try {
-    const fields = '[id,firstname,lastname]';
-    const filter = encodeURIComponent(`[${unique.join('|')}]`);
-    const url = `${baseUrl}/api/customers?display=${encodeURIComponent(fields)}&filter[id]=${filter}&limit=0,${unique.length}&output_format=JSON`;
-    const r = await fetch(url, { headers });
-    if (!r.ok) return {};
-    const data = await r.json();
-    const rows = Array.isArray(data.customers) ? data.customers : (data.customers ? [data.customers] : []);
-    const map = {};
-    rows.forEach(c => { map[String(c.id)] = `${c.firstname || ''} ${c.lastname || ''}`.trim() || 'Cliente'; });
-    return map;
-  } catch (e) {
-    return {};
-  }
-}
+// Vercel serverless function: lee los pedidos desde nuestra propia copia en
+// Supabase (ps_pedidos), sincronizada cada hora por
+// api/cron-sync-prestashop.js — ya no se consulta PrestaShop en cada carga
+// de la lista de "Pedidos" (antes hacía varias llamadas en vivo: orders,
+// customers, employees, order_states, shops, order_details por cada carga).
+const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 const FALLBACK_ORDERS = [
   { id: 'POS-10492', reference: '', date: '2026-09-11 14:10', customer: 'Cliente POS', channel: 'Sistema POS', paymentMethod: 'POS', total: 1250.00, status: 'Pago Aceptado', createdBy: null, shop: 'Mi Fiestashop', deliveryDate: null },
@@ -65,56 +12,55 @@ const FALLBACK_ORDERS = [
 ];
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-
-  if (!apiKey) {
-    res.status(200).json({ fallback: true, orders: FALLBACK_ORDERS });
-    return;
-  }
-
-  const limit = req.query.limit || 100;
-  const fields = '[id,reference,id_customer,current_state,date_add,delivery_date,id_shop,id_employee,payment,total_paid]';
-  const url = `${baseUrl}/api/orders?display=${encodeURIComponent(fields)}&limit=0,${limit}&sort=[id_DESC]&output_format=JSON`;
+  const limit = parseInt(req.query.limit, 10) || 3000;
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const headers = { Authorization: `Basic ${auth}` };
-    const r = await fetch(url, { headers });
-    if (!r.ok) throw new Error(`PrestaShop API error ${r.status}`);
+    const select = 'id,reference,customer_name,total_paid,payment,state_label,date_add,delivery_date,employee_name,shop_name,items';
+    // El límite por defecto de PostgREST (1000 filas) se aplica aunque se
+    // pida ?limit= más grande — hay que paginar con el header Range para
+    // traer más de 1000 (ver el mismo problema resuelto en api/clientes.js).
+    const PAGE_SIZE = 1000;
+    let rawOrders = [];
+    let from = 0;
+    while (rawOrders.length < limit) {
+      const remaining = limit - rawOrders.length;
+      const to = from + Math.min(PAGE_SIZE, remaining) - 1;
+      const url = `${SUPABASE_URL}/rest/v1/ps_pedidos?select=${select}&order=id.desc`;
+      const r = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Range: `${from}-${to}`
+        }
+      });
+      if (!r.ok) throw new Error(`Supabase error ${r.status}`);
+      const batch = await r.json();
+      rawOrders = rawOrders.concat(batch);
+      if (batch.length < (to - from + 1)) break;
+      from = to + 1;
+    }
 
-    const data = await r.json();
-    const rawOrders = Array.isArray(data.orders) ? data.orders : [];
+    const orders = rawOrders.map(o => ({
+      id: String(o.id),
+      rawId: o.id,
+      reference: o.reference || '',
+      date: o.date_add || '—',
+      deliveryDate: o.delivery_date || null,
+      customer: o.customer_name || 'Cliente PrestaShop',
+      channel: o.payment === 'POS' ? 'Sistema POS' : 'Tienda Online',
+      paymentMethod: o.payment || '—',
+      total: parseFloat(o.total_paid || 0),
+      status: o.state_label || 'Pendiente',
+      createdBy: o.employee_name || null,
+      shop: o.shop_name || 'Mi Fiestashop',
+      items: (Array.isArray(o.items) ? o.items : []).map(it => ({
+        name: it.name, sku: it.sku, qty: it.qty, price: it.price, total: it.price * it.qty
+      }))
+    }));
 
-    const [customers, employees, states, shops] = await Promise.all([
-      fetchCustomersByIds(baseUrl, headers, rawOrders.map(o => o.id_customer)),
-      fetchLookupMap(baseUrl, headers, 'employees', '[id,firstname,lastname]', e => `${e.firstname || ''} ${e.lastname || ''}`.trim() || null),
-      fetchLookupMap(baseUrl, headers, 'order_states', '[id,name]', s => firstLangValue(s.name, 'Pendiente')),
-      fetchLookupMap(baseUrl, headers, 'shops', '[id,name]', s => s.name || null)
-    ]);
-
-    const orders = rawOrders.map(o => {
-      const hasDeliveryDate = o.delivery_date && !String(o.delivery_date).startsWith('0000-00-00');
-      return {
-        id: String(o.id),
-        rawId: o.id,
-        reference: o.reference || '',
-        date: o.date_add || '—',
-        deliveryDate: hasDeliveryDate ? o.delivery_date : null,
-        customer: customers[String(o.id_customer)] || `Cliente #${o.id_customer || 'General'}`,
-        channel: o.payment === 'POS' ? 'Sistema POS' : 'Tienda Online',
-        paymentMethod: o.payment || '—',
-        total: parseFloat(o.total_paid || 0),
-        status: states[String(o.current_state)] || 'Pendiente',
-        createdBy: employees[String(o.id_employee)] || null,
-        shop: shops[String(o.id_shop)] || 'Mi Fiestashop'
-      };
-    });
-
-    res.status(200).json({ orders });
+    res.status(200).json({ orders, source: 'supabase' });
   } catch (err) {
     res.status(200).json({ fallback: true, error: err.message, orders: FALLBACK_ORDERS });
   }
