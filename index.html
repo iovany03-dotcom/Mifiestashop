@@ -913,6 +913,18 @@
   }
   .store-header-nav a:hover { color: var(--mf-pink); border-color: var(--mf-pink); }
 
+  .store-mobile-nav {
+    display: none; flex-direction: column; background: #fff;
+    border-top: 1px solid #f0e6ef; padding: 4px 14px 8px;
+  }
+  .store-mobile-nav.open { display: flex; }
+  .store-mobile-nav a {
+    color: #2e1065; text-decoration: none; font-weight: 800; font-size: 1rem;
+    text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer;
+    padding: 14px 4px; border-bottom: 1px solid #f5eef7;
+  }
+  .store-mobile-nav a:last-child { border-bottom: none; }
+
   .store-header-icons { display: flex; align-items: center; gap: 18px; }
   .store-currency { font-weight: 700; font-size: 1.1rem; color: #2e1065; }
   .store-icon-btn {
@@ -922,6 +934,7 @@
   }
   .store-icon-btn:hover { transform: translateY(-2px) scale(1.1); color: var(--mf-pink); }
   .store-icon-btn svg { width: 31px; height: 31px; }
+  .store-mobile-menu-btn { display: none; }
   .store-cart-badge {
     position: absolute; top: -6px; right: -8px; background: var(--mf-pink); color: #fff;
     font-size: 0.83rem; font-weight: 800; min-width: 21px; height: 21px; border-radius: 999px;
@@ -947,6 +960,7 @@
     .store-brand-logo-wrap, .store-brand-logo { width: 48px; height: 48px; }
     .store-brand-tagline { display: none; }
     .store-header-nav { display: none; }
+    .store-mobile-menu-btn { display: flex; }
     .store-search-box {
       order: 3;
       flex: 1 1 100%;
@@ -1296,8 +1310,9 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="openStorefrontCatalog('all')">Productos</a>
-        <a onclick="openClientePortal()">Mis Pedidos</a>
+        <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
         <a onclick="openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
@@ -1311,6 +1326,9 @@
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('storeMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -1324,6 +1342,12 @@
       </button>
     </div>
   </header>
+  <nav id="storeMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openStorefrontCatalog('all');">Productos</a>
+    <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
 
   <!-- Hero Section -->
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
@@ -2430,8 +2454,9 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
-        <a onclick="closeBodaPage(); openClientePortal();">Mis Pedidos</a>
+        <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
         <a onclick="closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
@@ -2442,6 +2467,9 @@
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('bodaMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="closeBodaPage(); openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -2455,6 +2483,12 @@
       </button>
     </div>
   </header>
+  <nav id="bodaMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
+    <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
   <div id="bodaPageBody"></div>
 </div>
 
@@ -12210,6 +12244,11 @@ function updateSearchSuggestions(q) {
     </div>
   `).join('');
   box.classList.remove('hidden');
+}
+
+function toggleStoreMobileNav(navId) {
+  const nav = document.getElementById(navId);
+  if (nav) nav.classList.toggle('open');
 }
 
 function hideSearchSuggestions() {
