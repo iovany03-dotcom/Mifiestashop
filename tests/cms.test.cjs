@@ -94,6 +94,28 @@ test('storefront and CMS JavaScript compile',()=>{
   $('script:not([src])').each((_,el)=>{if(!$(el).attr('type')||$(el).attr('type')==='text/javascript')new vm.Script($(el).html());});
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms.js'),'utf8'));
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms-vip.js'),'utf8'));
+  new vm.Script(fs.readFileSync(path.join(root,'assets/cms-promo-pricing.js'),'utf8'));
+});
+
+test('promo pricing packages always price live from PrestaShop, never hardcoded',()=>{
+  const productos=fs.readFileSync(path.join(root,'api/productos.js'),'utf8');
+  assert.doesNotMatch(productos,/649|999|2,?799/);
+  const promo=fs.readFileSync(path.join(root,'api/promo-paquetes.js'),'utf8');
+  assert.match(promo,/PS_API_KEY/);assert.doesNotMatch(promo,/649|999|2,?799/);
+  for(const id of [269,281,274,411]){
+    const page=source.find(p=>p.id===id);const model=modelFor(page,source);
+    const html=fs.readFileSync(path.join(root,`cms-pages/${page.id}.html`),'utf8');
+    const $=cheerio.load(html);
+    if(model.config.promoPackages){
+      assert.equal($('#cms-promo-pricing').length,1,page.slug);
+      const packages=JSON.parse($('#cms-promo-pricing').attr('data-packages'));
+      assert.deepEqual(packages,model.config.promoPackages);
+      assert.equal($('script[src^="/assets/cms-promo-pricing.js"]').length,1,page.slug);
+    } else {
+      assert.equal($('#cms-promo-pricing').length,0,page.slug);
+      assert.equal($('#cms-promo-products').length,1,page.slug);
+    }
+  }
 });
 
 test('migrated pages and admin inventory work without PrestaShop network access',async()=>{
