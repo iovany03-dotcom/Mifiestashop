@@ -97,15 +97,18 @@ function sanitize(html, page, pages, location) {
     } else a.attr('href', resolved);
     a.attr('rel', 'noopener noreferrer');
   });
-  // Bare social-icon links (Facebook/Instagram/WhatsApp buttons pasted into the
-  // old page builder) are removed wholesale: the shared footer already carries
-  // these same links at a sane icon size, so keeping them in the imported
-  // content only duplicates them at whatever oversized dimensions the
-  // original builder image happened to be.
+  // Bare social-icon links (Facebook/Instagram/WhatsApp buttons pasted into
+  // the old page builder) are removed wholesale: the shared footer already
+  // carries these same links at a sane icon size, so keeping them in the
+  // imported content only duplicates them at whatever oversized dimensions
+  // the original builder image happened to be. The same goes for old
+  // affiliate banner images linking out to unrelated third-party services
+  // (DJs, salón/mobiliario rental) that were scattered across a handful of
+  // pages' hero banners.
   $('a[href]').each((_, el) => {
     const a = $(el);
     const onlyImg = a.contents().length > 0 && a.contents().toArray().every(n => n.type !== 'text' || !n.data.trim());
-    if (onlyImg && a.find('img').length && /facebook\.com|instagram\.com|(api\.)?whatsapp\.com|wa\.me/i.test(a.attr('href') || '')) a.remove();
+    if (onlyImg && a.find('img').length && /facebook\.com|instagram\.com|(api\.)?whatsapp\.com|wa\.me|djparafiesta\.com|servicioparaeventos\.com|partypaiute\.com/i.test(a.attr('href') || '')) a.remove();
   });
   $('img').each((_, el) => {
     const img = $(el), src = assetUrl(img.attr('src'), page);
@@ -118,10 +121,30 @@ function sanitize(html, page, pages, location) {
     if (!img.attr('alt')) img.attr('alt', page.title);
     img.removeAttr('width').removeAttr('height');
   });
+  // "¡Espera! Te podría interesar": an old cross-sell block linking out to
+  // unrelated third-party services (DJs, mobiliario, decoración, meseros) —
+  // removed along with everything up to the next top-level heading. Its own
+  // items are each captioned with an h3 (DJ, Mobiliario…), so the stop
+  // condition must only look for h1/h2 — this runs before h1s are demoted to
+  // h2 below, so the real next section (still an h1 at this point) is the
+  // only thing that can stop the walk.
+  $('h1,h2,h3,h4').each((_, el) => {
+    if (!/espera.*te podr[ií]a interesar/i.test(text($, el))) return;
+    let node = $(el).next();
+    while (node.length && !/^h[12]$/i.test(node.prop('tagName') || '')) {
+      const toRemove = node;
+      node = node.next();
+      toRemove.remove();
+    }
+    $(el).remove();
+  });
   $('h1').each((_, el) => { el.tagName = 'h2'; el.name = 'h2'; });
   $('p,h2,h3,h4,a').each((_, el) => {
     const value = text($, el);
-    if (/lorem ipsum|hotspot #|SIGUE BAJANDO|^¡?HABLEMOS!?$|^D[AÁ]TE DE ALTA$/i.test(value)) $(el).remove();
+    // The "aqui tienes tu primer regalo" teaser is always followed by the
+    // coupon graphic it introduces; both go, or the coupon is left orphaned.
+    if (/aqui tienes tu primer regalo/i.test(value)) $(el).next('img').remove();
+    if (/lorem ipsum|hotspot #|SIGUE BAJANDO|aqui tienes tu primer regalo|^¡?HABLEMOS!?$|^D[AÁ]TE DE ALTA$/i.test(value)) $(el).remove();
   });
   if (location && !location.multiple) {
     $('a[href]').each((_, el) => {
