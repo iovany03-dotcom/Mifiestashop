@@ -1,5 +1,11 @@
 {
+  "crons": [
+    { "path": "/api/cron-sync-prestashop", "schedule": "0 * * * *" }
+  ],
   "functions": {
+    "api/cron-sync-prestashop.js": {
+      "maxDuration": 60
+    },
     "api/ventas-productos.js": {
       "maxDuration": 30
     },
@@ -56,6 +62,10 @@
     }
   },
   "rewrites": [
+    {
+      "source": "/mayoristas",
+      "destination": "/mayoristas.html"
+    },
     {
       "source": "/content/269-articulos-para-boda-en-mexico",
       "destination": "/cms-pages/269.html"

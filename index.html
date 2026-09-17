@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title id="pageTitleTag">Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México</title>
 <meta id="metaDescription" name="description" content="Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.">
+<meta id="metaKeywords" name="keywords" content="fiesta, globos, batucada, pirotecnia fría, antifaces, artículos de fiesta al mayoreo">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#d3007b">
 <link rel="icon" type="image/webp" href="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
@@ -720,7 +721,7 @@
     border-radius: 14px 14px 0 0;
     background: linear-gradient(90deg, #d3007b, #ff6fb3);
   }
-  .ticket-logo { display: block; max-height: 92px; max-width: 100%; margin: 0 auto 10px; object-fit: contain; }
+  .ticket-icon { display: block; height: 44px; width: 44px; margin: 0 auto 6px; object-fit: contain; border-radius: 10px; }
   .ticket-store-name { font-weight: 800; font-size: 16.5px; letter-spacing: 0.01em; }
   .ticket-sub { color: #666; font-size: 11px; }
   .ticket-divider { border-top: 1px dashed #c9c9d2; margin: 12px 0; }
@@ -731,6 +732,20 @@
   .ticket-total-row.grand { font-size: 16px; font-weight: 800; padding-top: 8px; color: #1a1a1a; }
   .ticket-thanks { font-weight: 700; margin-bottom: 2px; font-size: 13px; }
   .ticket-scissors { text-align: center; color: #ccc; font-size: 11px; letter-spacing: 3px; margin-top: 14px; }
+  .ticket-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .ticket-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: #888; font-weight: 700; padding: 0 0 6px; border-bottom: 1px solid #e2e2e8; }
+  .ticket-table th:last-child, .ticket-table td:last-child,
+  .ticket-table th:nth-child(3), .ticket-table td:nth-child(3),
+  .ticket-table th:nth-child(4), .ticket-table td:nth-child(4) { text-align: right; }
+  .ticket-table td { padding: 5px 0; vertical-align: top; }
+  .ticket-table tr + tr td { border-top: 1px dashed #ececf2; }
+  .ticket-table .t-cod { color: #888; font-size: 10px; }
+  .ticket-table .t-prod-name { font-weight: 600; }
+  .ticket-method-table th { border-bottom: none; padding-bottom: 4px; }
+  .ticket-method-table td { font-weight: 600; }
+  .ticket-coupon-box { border: 1px dashed var(--mf-pink, #d3007b); border-radius: 10px; padding: 10px 12px; margin: 12px 0; text-align: center; }
+  .ticket-coupon-title { font-weight: 800; font-size: 12px; color: var(--mf-pink, #d3007b); margin-bottom: 3px; }
+  .ticket-coupon-desc { font-size: 10.5px; color: #555; line-height: 1.4; }
 
   @media print {
     body * { visibility: hidden; }
@@ -898,6 +913,18 @@
   }
   .store-header-nav a:hover { color: var(--mf-pink); border-color: var(--mf-pink); }
 
+  .store-mobile-nav {
+    display: none; flex-direction: column; background: #fff;
+    border-top: 1px solid #f0e6ef; padding: 4px 14px 8px;
+  }
+  .store-mobile-nav.open { display: flex; }
+  .store-mobile-nav a {
+    color: #2e1065; text-decoration: none; font-weight: 800; font-size: 1rem;
+    text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer;
+    padding: 14px 4px; border-bottom: 1px solid #f5eef7;
+  }
+  .store-mobile-nav a:last-child { border-bottom: none; }
+
   .store-header-icons { display: flex; align-items: center; gap: 18px; }
   .store-currency { font-weight: 700; font-size: 1.1rem; color: #2e1065; }
   .store-icon-btn {
@@ -907,6 +934,7 @@
   }
   .store-icon-btn:hover { transform: translateY(-2px) scale(1.1); color: var(--mf-pink); }
   .store-icon-btn svg { width: 31px; height: 31px; }
+  .store-mobile-menu-btn { display: none; }
   .store-cart-badge {
     position: absolute; top: -6px; right: -8px; background: var(--mf-pink); color: #fff;
     font-size: 0.83rem; font-weight: 800; min-width: 21px; height: 21px; border-radius: 999px;
@@ -932,6 +960,7 @@
     .store-brand-logo-wrap, .store-brand-logo { width: 48px; height: 48px; }
     .store-brand-tagline { display: none; }
     .store-header-nav { display: none; }
+    .store-mobile-menu-btn { display: flex; }
     .store-search-box {
       order: 3;
       flex: 1 1 100%;
@@ -954,6 +983,18 @@
     #storefrontOrderConfirmPage [style*="grid-template-columns"],
     #view-cliente-portal [style*="grid-template-columns"],
     #view-cms-page [style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* La ficha de producto (imagen + info a los lados) ya se ve apretada
+     bastante antes del punto de quiebre general de 768px de arriba —
+     con foto e info lado a lado no hay suficiente espacio para el precio,
+     la descripción y el botón, y se veían encimados/cortados en ventanas
+     angostas de escritorio (no solo en celular). Se apila antes, a partir
+     de 960px. */
+  @media (max-width: 960px) {
+    #storefrontProductPage [style*="grid-template-columns"] {
       grid-template-columns: 1fr !important;
     }
   }
@@ -1281,21 +1322,25 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="openStorefrontCatalog('all')">Productos</a>
-        <a onclick="openClientePortal()">Mis Pedidos</a>
+        <a href="/mayoristas">Mayoristas</a>
         <a onclick="openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
     <div class="store-search-box">
       <span class="store-search-icon">🔍</span>
       <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off"
-        oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value);"
+        oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value); scheduleSearchLog(this.value);"
         onfocus="updateSearchSuggestions(this.value)"
         onblur="hideSearchSuggestions()">
       <div id="storeSearchSuggest" class="store-search-suggest hidden"></div>
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('storeMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -1309,6 +1354,12 @@
       </button>
     </div>
   </header>
+  <nav id="storeMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openStorefrontCatalog('all');">Productos</a>
+    <a href="/mayoristas">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
 
   <!-- Hero Section -->
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
@@ -1997,10 +2048,19 @@
       <div class="store-footer-col">
         <h4>Sitios de Interés</h4>
         <ul>
-          <li><a href="#" onclick="openStorefrontCatalog('all'); return false;">Catálogo Completo</a></li>
-          <li><a href="#" onclick="openClientePortal(); switchClienteTab('promos'); return false;">Promociones y Cupones</a></li>
-          <li><a href="#" onclick="event.preventDefault(); document.querySelector('.store-footer-col:last-child').scrollIntoView({behavior:'smooth'});">Nuestras Sucursales</a></li>
-          <li><a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contáctanos por WhatsApp</a></li>
+          <li><a href="https://djparafiesta.com.mx/" target="_blank" rel="noopener">DJ</a></li>
+          <li><a href="https://rentadesalaslounge.com/" target="_blank" rel="noopener">Mobiliario</a></li>
+          <li><a href="https://decoracionconglobos.com.mx/" target="_blank" rel="noopener">Decoración</a></li>
+          <li><a href="http://servicioparaeventos.com/meseros-para-eventos/" target="_blank" rel="noopener">Meseros</a></li>
+          <li><a href="https://rentaperiqueras.com/" target="_blank" rel="noopener">Periqueras</a></li>
+          <li><a href="https://rentadekaraoke.com/" target="_blank" rel="noopener">Karaoke</a></li>
+          <li><a href="https://fiestaspa.com.mx/" target="_blank" rel="noopener">Spa para niñas</a></li>
+          <li><a href="https://partypaiute.com/" target="_blank" rel="noopener">Picnics y tepees</a></li>
+          <li><a href="https://partypaiute.com/servicio-de-pinta-caritas/" target="_blank" rel="noopener">Pinta caritas</a></li>
+          <li><a href="https://servicioparaeventos.com/sillas-y-mesas/" target="_blank" rel="noopener">Sillas y mesas</a></li>
+          <li><a href="https://servicioparaeventos.com/servicio-de-barman-cdmx/" target="_blank" rel="noopener">Barman</a></li>
+          <li><a href="https://servicioparaeventos.com/sombrillas-para-eventos-en-cdmx/" target="_blank" rel="noopener">Sombrillas</a></li>
+          <li><a href="https://servicioparaeventos.com/pista-de-baile-iluminada/" target="_blank" rel="noopener">Pista iluminada</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
@@ -2032,15 +2092,6 @@
         </ul>
       </div>
       <div class="store-footer-col">
-        <h4>Atención al Cliente</h4>
-        <ul>
-          <li><a href="https://wa.me/525612622146" target="_blank" rel="noopener">WhatsApp Directo</a></li>
-          <li>Envío gratis desde $1,500 MXN</li>
-          <li>Precios de mayoreo desde 3 piezas</li>
-          <li>Aceptamos tarjeta y facturamos</li>
-        </ul>
-      </div>
-      <div class="store-footer-col">
         <h4>Mi Cuenta</h4>
         <ul>
           <li><a href="#" onclick="openClientePortal(); switchClienteTab('perfil'); return false;">Mi Perfil</a></li>
@@ -2049,7 +2100,7 @@
         </ul>
       </div>
       <div class="store-footer-col" id="cmsFooterCol">
-        <h4>Ayuda y Legal</h4>
+        <h4>Ayuda</h4>
         <ul>
           <li><a href="#" onclick="showLegalPage('privacidad'); return false;">Aviso de Privacidad</a></li>
           <li><a href="#" onclick="showLegalPage('terminos'); return false;">Términos y Condiciones</a></li>
@@ -2078,7 +2129,7 @@
       </div>
     </div>
     <div class="store-footer-bottom">
-      © 2026 Mi Fiestashop. Todos los derechos reservados.
+      © 2012 Mi Fiestashop. Todos los derechos reservados.
     </div>
   </footer>
 
@@ -2415,8 +2466,9 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
-        <a onclick="closeBodaPage(); openClientePortal();">Mis Pedidos</a>
+        <a href="/mayoristas">Mayoristas</a>
         <a onclick="closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
@@ -2427,6 +2479,9 @@
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('bodaMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="closeBodaPage(); openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -2440,6 +2495,12 @@
       </button>
     </div>
   </header>
+  <nav id="bodaMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
+    <a href="/mayoristas">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
   <div id="bodaPageBody"></div>
 </div>
 
@@ -2481,11 +2542,11 @@
       </div>
       <div class="submenu">
         <a class="submenu-link active" data-view="pos">Sistema POS</a>
+        <a class="submenu-link" data-view="informe-ventas">Informe de Ventas</a>
         <a class="submenu-link" data-view="pedidos">Pedidos</a>
         <a class="submenu-link" data-view="envios">Envíos & Skydropx</a>
         <a class="submenu-link" data-view="facturacion">Facturación</a>
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
-        <a class="submenu-link" data-view="pedidos">Remisiones</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
         <a class="submenu-link" data-view="promociones">Promociones</a>
       </div>
@@ -2557,7 +2618,6 @@
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
         <a class="submenu-link" data-view="plantillas-correo">Plantillas de Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
-        <a class="submenu-link" data-view="param-avanzados-equipo">Equipo</a>
         <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
         <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
         <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
@@ -2616,8 +2676,10 @@
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
           <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+            <button class="btn small primary" id="btnToggleCaja" onclick="onToggleCajaClick()">Abrir Caja</button>
             <button class="btn small" onclick="openSalidasCajaModal()">Salidas de Caja</button>
             <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+            <button class="btn small" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
           </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
@@ -2656,7 +2718,7 @@
           <div style="padding: 10px 16px; background: var(--plane); border-bottom: 1px solid var(--border);">
             <label style="font-size:11.5px; color:var(--text-muted); display:block; margin-bottom:4px;">CLIENTE</label>
             <select id="posCustomerSelect" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border); font-size:12.5px;">
-              <option value="mostrador">Cliente Mostrador (General)</option>
+              <option value="mostrador">Cliente POS (General)</option>
               <option value="juan">Juan Pérez — RFC: PERJ890101XXX</option>
               <option value="maria">María López — RFC: LOPM920405YYY</option>
             </select>
@@ -2690,6 +2752,70 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ================= VIEW: INFORME DE VENTAS ================= -->
+    <section id="view-informe-ventas" class="view-panel hidden">
+      <div class="card">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end; margin-bottom:18px;">
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Fecha Inicio
+            <input type="date" id="ivFechaInicio" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Fecha Fin
+            <input type="date" id="ivFechaFin" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Tienda/Empresa
+            <select id="ivTienda" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Mi Fiestashop (Todos)</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Punto de Venta
+            <select id="ivPuntoVenta" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Método de pago
+            <select id="ivMetodo" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Empleado
+            <select id="ivEmpleado" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+            </select>
+          </label>
+          <button class="btn primary" style="height:38px;" onclick="renderInformeVentas()">BUSCAR</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-top:16px;" class="iv-charts-grid">
+        <div class="card">
+          <h3 style="margin-top:0;">Tendencia de Ventas</h3>
+          <svg id="ivLineChart" viewBox="0 0 520 260" style="width:100%; height:auto;"></svg>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">Ventas por Método de Pago</h3>
+          <svg id="ivDonutChart" viewBox="0 0 260 260" style="width:100%; max-width:260px; height:auto; display:block; margin:0 auto;"></svg>
+          <div id="ivDonutLegend" style="display:flex; flex-wrap:wrap; gap:10px 16px; justify-content:center; margin-top:14px; font-size:12.5px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div id="ivSummary" style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:var(--text-secondary);"></div>
+          <button class="btn small primary" onclick="downloadInformeVentasCSV()">Exportar a Excel</button>
+        </div>
+        <div class="table-wrap" style="margin-top:14px;">
+          <table>
+            <thead>
+              <tr><th>Id Orden</th><th>Referencia</th><th>Fecha</th><th>Tienda/Empresa</th><th>Cliente</th><th>Empleado</th><th>Punto de Venta</th><th>Valor Venta</th><th>Método de Pago</th><th>Monto Pago</th><th>Monto Total</th></tr>
+            </thead>
+            <tbody id="ivResultsTableBody">
+              <tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -3144,44 +3270,10 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Monto Total</th><th>Estado</th><th>Acción</th></tr>
+              <tr><th>ID</th><th>Referencia</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th><th>F. Entrega</th><th>Creado Por</th><th>Tienda</th><th>Acciones</th></tr>
             </thead>
             <tbody id="ordersTableBody">
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#486601')">
-                <td><b>#486601</b> <span style="font-size:11px; color:var(--text-muted);">CPFEGDOQY</span></td>
-                <td>2026-09-11 15:52</td>
-                <td><b>Consumidor Final</b></td>
-                <td><span class="pill ok">Sistema POS</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$180.00</td>
-                <td><span class="pill ok">Pago Aceptado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#486601')"> Ver Orden</button>
-                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#486601', 180)"> Ticket</button>
-                </td>
-              </tr>
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#POS-10492')">
-                <td><b>#POS-10492</b></td>
-                <td>2026-09-11 14:10</td>
-                <td>Cliente Mostrador</td>
-                <td><span class="pill ok">Sistema POS</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$1,250.00</td>
-                <td><span class="pill ok">Pago Aceptado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#POS-10492')"> Ver Orden</button>
-                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#POS-10492', 1250)"> Ticket</button>
-                </td>
-              </tr>
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#PS-89421')">
-                <td><b>#PS-89421</b></td>
-                <td>2026-09-11 11:32</td>
-                <td>Carlos Gutiérrez</td>
-                <td><span class="pill warn">Tienda Online</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$3,480.00</td>
-                <td><span class="pill ok">Entregado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#PS-89421')"> Ver Orden</button>
-                </td>
-              </tr>
+              <tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3481,7 +3573,7 @@
           <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
         </div>
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda y Legal") están marcadas.
+          Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
           Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
         </p>
         <div style="margin-bottom:14px;">
@@ -3538,7 +3630,7 @@
               <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
             </thead>
             <tbody id="customersTableBody">
-              <!-- Dynamically populated -->
+              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3896,6 +3988,27 @@
               <div>Productos indexados: <b style="color:var(--series-2);">5,160 SKUs</b></div>
               <div>Palabras clave en índice: <b>18,420 expresiones</b></div>
               <div>Última actualización de índice: <span class="pill ok">Hoy 15:18:11</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin:20px 0 0; background:var(--plane);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; color:var(--series-2);">Historial de Búsquedas de Clientes</h3>
+            <button class="btn small" onclick="loadSearchHistoryAdmin()">Actualizar</button>
+          </div>
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+            <div class="table-wrap" style="max-height:360px; overflow-y:auto;">
+              <table>
+                <thead><tr><th>Búsqueda</th><th>Resultados</th><th>Fecha</th></tr></thead>
+                <tbody id="searchHistoryTableBody">
+                  <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">Términos más buscados</div>
+              <div id="searchTopTermsList" style="display:flex; flex-direction:column; gap:8px; font-size:13px;">Cargando…</div>
             </div>
           </div>
         </div>
@@ -4646,7 +4759,7 @@
 
     <div class="ticket-paper" id="printableTicket">
       <div class="ticket-brand-bar"></div>
-      <img class="ticket-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+      <img class="ticket-icon" src="img/logo-antifaz.png" alt="Mi Fiestashop">
       <div class="t-center ticket-store-name" id="tHeaderName">MI FIESTASHOP</div>
       <div class="t-center ticket-sub" id="tHeaderRfc">RFC: MFS260101XXX</div>
       <div class="t-center ticket-sub" id="tHeaderAddress">Sucursal Puebla Principal</div>
@@ -4654,18 +4767,31 @@
       <div class="ticket-divider"></div>
       <div class="ticket-total-row"><span>Ticket #:</span><span id="tFolio">#POS-10493</span></div>
       <div class="ticket-total-row"><span>Fecha:</span><span id="tFecha">—</span></div>
-      <div class="ticket-total-row"><span>Cliente:</span><span id="tCliente">Cliente Mostrador</span></div>
+      <div class="ticket-total-row"><span>Cliente:</span><span id="tCliente">Cliente POS</span></div>
       <div class="ticket-divider"></div>
-      <div id="tItemsList">
-        <!-- Item lines -->
+      <table class="ticket-table">
+        <thead>
+          <tr><th>Cod</th><th>Producto</th><th>V/Uni</th><th>Cant</th><th>Total</th></tr>
+        </thead>
+        <tbody id="tItemsList">
+          <!-- Item rows -->
+        </tbody>
+      </table>
+      <div class="ticket-divider"></div>
+      <div class="ticket-total-row" id="tSubtotalRow">
+        <span>SUBTOTAL:</span>
+        <span id="tSubtotal">$0.00</span>
       </div>
-      <div class="ticket-divider"></div>
+      <div class="ticket-total-row hidden" id="tIvaRow">
+        <span>IVA (16%):</span>
+        <span id="tIva">$0.00</span>
+      </div>
       <div class="ticket-total-row grand">
-        <span>TOTAL:</span>
+        <span>TOTAL A PAGAR:</span>
         <span id="tTotal">$0.00</span>
       </div>
       <div class="ticket-total-row">
-        <span>Recibido:</span>
+        <span>Efectivo:</span>
         <span id="tPaid">$0.00</span>
       </div>
       <div class="ticket-total-row">
@@ -4673,7 +4799,21 @@
         <span id="tChange">$0.00</span>
       </div>
       <div class="ticket-divider"></div>
-      <div class="t-center ticket-thanks" id="tFooterMsg">¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com</div>
+      <table class="ticket-table ticket-method-table">
+        <thead>
+          <tr><th>Método</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td id="tMetodoNombre">Pago En Efectivo</td><td id="tMetodoValor">$0.00</td></tr>
+        </tbody>
+      </table>
+      <div class="ticket-coupon-box">
+        <div class="ticket-coupon-title">🎁 CUPÓN DE REGALO</div>
+        <div class="ticket-coupon-desc">10% de descuento en tu segunda compra. Menciona este ticket en tu próxima visita para aplicarlo.</div>
+      </div>
+      <div class="ticket-divider"></div>
+      <div class="t-center ticket-thanks" id="tFooterMsg">Gracias por Tu Compra</div>
+      <div class="t-center ticket-sub">www.mifiestashop.com</div>
       <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
     </div>
 
@@ -4692,16 +4832,19 @@
       <button class="btn small" onclick="closeTicketHistorialModal()">✕</button>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial(this.value)" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial()" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <select id="ticketHistorialAlmacen" onchange="filterTicketHistorial()" style="padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        <option value="">Todas las sucursales</option>
+      </select>
       <button class="btn small primary" onclick="downloadTicketHistorialCSV()">Descargar CSV</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
+          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
         </thead>
         <tbody id="ticketHistorialTableBody">
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -4747,6 +4890,64 @@
         </thead>
         <tbody id="salidasCajaTableBody">
           <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ABRIR CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="abrirCajaModal">
+  <div class="modal" style="max-width:420px; width:94%;">
+    <div class="modal-header">
+      <h2>Abrir Caja</h2>
+      <button class="btn small" onclick="closeAbrirCajaModal()">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:13px; margin-top:0; margin-bottom:14px;">
+      Indica con cuánto dinero (caja chica) inicia la caja en esta sucursal.
+    </p>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto de apertura ($):</label>
+    <input type="number" id="abrirCajaMonto" placeholder="0.00" min="0" step="0.01" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:16px;">
+    <button class="btn primary" id="abrirCajaSubmitBtn" style="width:100%;" onclick="confirmAbrirCaja()">Abrir Caja</button>
+  </div>
+</div>
+
+<!-- ================= CERRAR CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="cerrarCajaModal">
+  <div class="modal" style="max-width:460px; width:94%;">
+    <div class="modal-header">
+      <h2>Cerrar Caja</h2>
+      <button class="btn small" onclick="closeCerrarCajaModal()">✕</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--text-secondary); padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--plane); margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between;"><span>Monto de apertura:</span><b id="cerrarCajaApertura" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between;"><span>+ Ventas en efectivo:</span><b id="cerrarCajaVentas" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between;"><span>− Salidas de caja:</span><b id="cerrarCajaSalidas" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:6px; font-size:14px;"><span><b>= Esperado en caja:</b></span><b id="cerrarCajaEsperado" style="color:var(--text-primary);">$0.00</b></div>
+    </div>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto contado en caja ($):</label>
+    <input type="number" id="cerrarCajaContado" placeholder="0.00" min="0" step="0.01" oninput="updateCerrarCajaDiferencia()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:10px;">
+    <div id="cerrarCajaDiferenciaBox" class="hidden" style="text-align:center; font-weight:700; padding:8px; border-radius:8px; margin-bottom:12px;"></div>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Notas (opcional):</label>
+    <input type="text" id="cerrarCajaNotas" placeholder="Ej: faltante por cambio no registrado" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:16px;">
+    <button class="btn primary" id="cerrarCajaSubmitBtn" style="width:100%;" onclick="confirmCerrarCaja()">Cerrar Caja</button>
+  </div>
+</div>
+
+<!-- ================= HISTORIAL DE CIERRES DE CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="cajaHistorialModal">
+  <div class="modal" style="max-width:900px; width:94%; max-height:88vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2>Historial de Cierres de Caja</h2>
+      <button class="btn small" onclick="closeCajaHistorialModal()">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Apertura</th><th>Cierre</th><th>Sucursal</th><th>Apertura ($)</th><th>Ventas Efvo.</th><th>Salidas</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Cerró</th></tr>
+        </thead>
+        <tbody id="cajaHistorialTableBody">
+          <tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -5135,7 +5336,8 @@ function getSessionCredsParams(){
 const PERMISSION_GROUPS = [
   { group: 'Vender', items: [
     { key: 'pos', label: 'Sistema POS' },
-    { key: 'pedidos', label: 'Pedidos / Remisiones' },
+    { key: 'informe-ventas', label: 'Informe de Ventas' },
+    { key: 'pedidos', label: 'Pedidos' },
     { key: 'envios', label: 'Envíos & Skydropx' },
     { key: 'facturacion', label: 'Facturación' },
     { key: 'costos', label: 'Costos y Gastos' },
@@ -6104,6 +6306,7 @@ function switchView(viewName) {
   // Update header text
   const titles = {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
+    'informe-ventas': ['Informe de Ventas', 'Tendencia y métodos de pago'],
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
@@ -6150,8 +6353,10 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
+  if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
+  if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
 }
@@ -6296,6 +6501,13 @@ function setPayMethod(method) {
   document.getElementById('cashDetailsArea').style.display = method === 'cash' ? 'block' : 'none';
 }
 
+function payMethodTicketLabel(method) {
+  if (method === 'card') return 'Pago con Tarjeta';
+  if (method === 'transfer') return 'Pago por Transferencia';
+  if (method === 'cash' || !method) return 'Pago En Efectivo';
+  return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
+}
+
 function setPresetCash(amount) {
   document.getElementById('cashGivenInput').value = amount;
   calculateChange();
@@ -6317,7 +6529,7 @@ function confirmPOSSale() {
   const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
   const iva = isIvaApplied() ? subtotal * 0.16 : 0;
   const customerSelect = document.getElementById('posCustomerSelect');
-  const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente Mostrador';
+  const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
   const almacenSelect = document.getElementById('posWarehouseSelect');
   const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
   const cartSnapshot = cart.map(i => ({ name: i.name, sku: i.sku || i.id, qty: i.qty, price: i.price }));
@@ -6326,9 +6538,14 @@ function confirmPOSSale() {
   document.getElementById('tFolio').textContent = folio;
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = clienteNombre;
+  document.getElementById('tSubtotal').textContent = fmtMoney(subtotal);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
   document.getElementById('tChange').textContent = fmtMoney(change);
+  document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(selectedPayMethod);
+  document.getElementById('tMetodoValor').textContent = fmtMoney(total);
 
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(cart);
 
@@ -6360,11 +6577,23 @@ function confirmPOSSale() {
   sbRpc('rpc_pos_ticket_insert', {
     ...getSessionCredsParams(),
     p_folio: folio, p_cliente: clienteNombre, p_almacen: almacen, p_items: cartSnapshot,
-    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change
+    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change,
+    p_metodo: selectedPayMethod, p_registrado_por: nombreSesionActual()
   }).then(rows => {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
-  }).catch(() => {});
+  }).catch(e => {
+    // Si esto falla en silencio, el ticket se ve/imprime bien pero nunca
+    // llega al Historial de Tickets ni se descuenta el inventario — antes
+    // no se avisaba nada y parecía que "los pedidos no aparecen" sin
+    // explicación. "unauthorized" significa que la contraseña de admin o
+    // el PIN guardados en este navegador ya no coinciden con los actuales
+    // (p.ej. se cambió la contraseña en otro dispositivo) — se resuelve
+    // cerrando sesión y volviendo a entrar.
+    if (e && e.message === 'unauthorized') {
+      alert('Este ticket se imprimió pero NO se guardó en el Historial ni descontó inventario: tu sesión ya no es válida. Cierra sesión y vuelve a entrar para corregirlo.');
+    }
+  });
 
   // Descuenta el inventario real: registra el movimiento en el ledger de
   // Supabase (best-effort, no bloquea el ticket si falla). Solo aplica a
@@ -6394,12 +6623,16 @@ function closeTicketModal() {
 function buildTicketItemsHTML(items) {
   return items.map(i => {
     const lineTotal = fmtMoney(i.price * i.qty);
-    const name = escapeHtml(i.name.length > 26 ? i.name.slice(0, 26) + '…' : i.name);
+    const name = escapeHtml(i.name || '');
+    const cod = escapeHtml(i.sku || i.id || '');
     return `
-    <div class="ticket-item">
-      <div class="ticket-item-row"><span>${i.qty > 1 ? i.qty + 'x ' : ''}${name}</span><span>${lineTotal}</span></div>
-      ${i.qty > 1 ? `<div class="ticket-item-sub"><span>${i.qty} x ${fmtMoney(i.price)}</span><span></span></div>` : ''}
-    </div>`;
+    <tr>
+      <td class="t-cod">${cod}</td>
+      <td class="t-prod-name">${name}</td>
+      <td>${fmtMoney(i.price)}</td>
+      <td>${i.qty}</td>
+      <td>${lineTotal}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -6421,10 +6654,14 @@ function reprintTicket(folio, total) {
 
   document.getElementById('tFolio').textContent = folio;
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  document.getElementById('tCliente').textContent = 'Cliente Mostrador';
+  document.getElementById('tCliente').textContent = 'Cliente POS';
+  document.getElementById('tSubtotal').textContent = fmtMoney(total);
+  document.getElementById('tIvaRow').classList.add('hidden');
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(total);
   document.getElementById('tChange').textContent = '$0.00';
+  document.getElementById('tMetodoNombre').textContent = 'Pago En Efectivo';
+  document.getElementById('tMetodoValor').textContent = fmtMoney(total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML([{ name: 'Venta Registrada POS', qty: 1, price: total }]);
   document.getElementById('ticketModal').classList.remove('hidden');
 }
@@ -6434,6 +6671,8 @@ async function openTicketHistorialModal() {
   document.getElementById('ticketHistorialModal').classList.remove('hidden');
   const searchInput = document.getElementById('ticketHistorialSearch');
   if (searchInput) searchInput.value = '';
+  const almacenSelect = document.getElementById('ticketHistorialAlmacen');
+  if (almacenSelect) almacenSelect.value = '';
   await loadTicketHistorial();
 }
 
@@ -6444,15 +6683,62 @@ function closeTicketHistorialModal() {
 async function loadTicketHistorial() {
   const tbody = document.getElementById('ticketHistorialTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
+  // El Historial de Tickets combina dos fuentes:
+  // 1) pos_tickets (tabla propia, vía rpc_pos_ticket_list) — el checkout
+  //    interno de este sitio, sin uso real todavía.
+  // 2) Las ventas reales del Sistema POS, que en esta tienda son pedidos
+  //    genuinos de PrestaShop (payment==='POS', creados por las cajas
+  //    físicas Caja Puebla/Caja Queretaro/Caja CDMX) — ver api/pedidos.js.
+  // Antes solo se leía de (1), que está vacía, así que nunca aparecía nada.
+  let sessionInvalid = false;
+  let posTickets = [];
   try {
     const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
-    ticketHistorialCache = Array.isArray(rows) ? rows : [];
-    renderTicketHistorialTable(ticketHistorialCache);
+    posTickets = (Array.isArray(rows) ? rows : []).map(t => ({
+      id: `pt-${t.id}`, folio: t.folio, created_at: t.created_at, cliente: t.cliente || 'Cliente POS',
+      almacen: t.almacen || '', items: Array.isArray(t.items) ? t.items : [],
+      subtotal: t.subtotal, iva: t.iva, total: t.total, pago_recibido: t.pago_recibido, cambio: t.cambio,
+      metodo: t.metodo, registrado_por: t.registrado_por
+    }));
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
+    if (e && e.message === 'unauthorized') sessionInvalid = true;
   }
+
+  let realOrders = [];
+  try {
+    const r = await fetch('/api/pedidos?limit=3000');
+    const data = await r.json();
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    realOrders = orders.filter(o => o.paymentMethod === 'POS').map(o => ({
+      id: `ps-${o.rawId}`, folio: o.reference || String(o.id), created_at: o.date, cliente: o.customer || 'Cliente POS',
+      almacen: o.sucursal || '', items: Array.isArray(o.items) ? o.items : [],
+      subtotal: o.total, iva: 0, total: o.total, pago_recibido: o.total, cambio: 0,
+      metodo: o.paymentMethodDetail, registrado_por: o.createdBy
+    }));
+  } catch (e) { /* si falla, se sigue mostrando al menos pos_tickets */ }
+
+  ticketHistorialCache = [...realOrders, ...posTickets].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (ticketHistorialCache.length === 0 && sessionInvalid) {
+    // Solo se avisa del problema de sesión si de verdad no quedó nada que
+    // mostrar (si los pedidos reales sí cargaron, no vale la pena
+    // interrumpir con un error sobre pos_tickets, que ni se usa).
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
+    return;
+  }
+
+  const sucursales = [...new Set(ticketHistorialCache.map(t => t.almacen).filter(Boolean))].sort();
+  const almacenSelect = document.getElementById('ticketHistorialAlmacen');
+  if (almacenSelect) {
+    const prevVal = almacenSelect.value;
+    almacenSelect.innerHTML = '<option value="">Todas las sucursales</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (sucursales.includes(prevVal)) almacenSelect.value = prevVal;
+  }
+
+  renderTicketHistorialTable(ticketHistorialCache);
 }
 
 // Lista actualmente visible en la tabla (respeta el filtro de búsqueda
@@ -6466,7 +6752,7 @@ function renderTicketHistorialTable(tickets) {
   ticketHistorialVisible = tickets;
 
   if (tickets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
     return;
   }
 
@@ -6477,10 +6763,11 @@ function renderTicketHistorialTable(tickets) {
     <tr>
       <td><b>${escapeHtml(t.folio)}</b></td>
       <td>${fecha}</td>
-      <td>${escapeHtml(t.cliente || 'Cliente Mostrador')}</td>
+      <td>${escapeHtml(t.almacen || '—')}</td>
+      <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
-      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
+      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
   }).join('');
 }
@@ -6508,7 +6795,7 @@ function downloadTicketHistorialCSV() {
     const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     const items = Array.isArray(t.items) ? t.items.map(i => `${i.qty || 1}x ${i.name || ''}`).join('; ') : '';
     return [
-      t.folio, fecha, t.cliente || 'Cliente Mostrador', t.almacen || '', items,
+      t.folio, fecha, t.cliente || 'Cliente POS', t.almacen || '', items,
       Number(t.subtotal || 0).toFixed(2), Number(t.iva || 0).toFixed(2), Number(t.total || 0).toFixed(2),
       Number(t.pago_recibido || 0).toFixed(2), Number(t.cambio || 0).toFixed(2)
     ];
@@ -6548,6 +6835,173 @@ async function openSalidasCajaModal() {
 
 function closeSalidasCajaModal() {
   document.getElementById('salidasCajaModal').classList.add('hidden');
+}
+
+// ================= APERTURA / CIERRE DE CAJA =================
+let cajaActual = null; // registro abierto (caja_cortes) para la sucursal actual, o null
+
+function currentCajaAlmacen() {
+  const sel = document.getElementById('posWarehouseSelect');
+  return sel ? sel.options[sel.selectedIndex].text : '';
+}
+
+async function loadCajaActual() {
+  const btn = document.getElementById('btnToggleCaja');
+  if (!btn) return;
+  try {
+    const row = await sbRpc('rpc_caja_actual', { ...getSessionCredsParams(), p_almacen: currentCajaAlmacen() });
+    cajaActual = (row && row.id) ? row : null;
+  } catch (e) {
+    cajaActual = null;
+  }
+  btn.textContent = cajaActual ? 'Cerrar Caja' : 'Abrir Caja';
+  btn.classList.toggle('primary', !cajaActual);
+}
+
+function onToggleCajaClick() {
+  if (cajaActual) openCerrarCajaModal(); else openAbrirCajaModal();
+}
+
+function openAbrirCajaModal() {
+  document.getElementById('abrirCajaMonto').value = '';
+  document.getElementById('abrirCajaModal').classList.remove('hidden');
+}
+
+function closeAbrirCajaModal() {
+  document.getElementById('abrirCajaModal').classList.add('hidden');
+}
+
+async function confirmAbrirCaja() {
+  const monto = parseFloat(document.getElementById('abrirCajaMonto').value);
+  if (!Number.isFinite(monto) || monto < 0) { alert('Ingresa un monto de apertura válido.'); return; }
+  const btn = document.getElementById('abrirCajaSubmitBtn');
+  btn.disabled = true;
+  try {
+    const row = await sbRpc('rpc_caja_abrir', {
+      ...getSessionCredsParams(),
+      p_almacen: currentCajaAlmacen(), p_monto_apertura: monto, p_abierto_por: nombreSesionActual()
+    });
+    cajaActual = row;
+    closeAbrirCajaModal();
+    await loadCajaActual();
+  } catch (e) {
+    alert(e.message === 'ya_hay_caja_abierta' ? 'Ya hay una caja abierta en esta sucursal.' : 'No se pudo abrir la caja.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openCerrarCajaModal() {
+  if (!cajaActual) { alert('No hay una caja abierta en esta sucursal.'); return; }
+
+  const [ticketRows, salidaRows] = await Promise.all([
+    sbRpc('rpc_pos_ticket_list', getSessionCredsParams()).catch(() => []),
+    sbRpc('rpc_salida_list', getSessionCredsParams()).catch(() => [])
+  ]);
+  const almacen = cajaActual.almacen;
+  const desde = cajaActual.fecha_apertura;
+
+  const ventasEfectivo = (Array.isArray(ticketRows) ? ticketRows : [])
+    .filter(t => t.almacen === almacen && t.metodo === 'cash' && t.created_at >= desde)
+    .reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+  const salidas = (Array.isArray(salidaRows) ? salidaRows : [])
+    .filter(s => s.almacen === almacen && s.created_at >= desde)
+    .reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
+  const esperado = (parseFloat(cajaActual.monto_apertura) || 0) + ventasEfectivo - salidas;
+
+  document.getElementById('cerrarCajaApertura').textContent = fmtMoney(cajaActual.monto_apertura);
+  document.getElementById('cerrarCajaVentas').textContent = fmtMoney(ventasEfectivo);
+  document.getElementById('cerrarCajaSalidas').textContent = fmtMoney(salidas);
+  document.getElementById('cerrarCajaEsperado').textContent = fmtMoney(esperado);
+  document.getElementById('cerrarCajaContado').value = '';
+  document.getElementById('cerrarCajaNotas').value = '';
+  document.getElementById('cerrarCajaDiferenciaBox').classList.add('hidden');
+
+  document.getElementById('cerrarCajaModal').dataset.esperado = esperado;
+  document.getElementById('cerrarCajaModal').dataset.ventasEfectivo = ventasEfectivo;
+  document.getElementById('cerrarCajaModal').dataset.salidas = salidas;
+  document.getElementById('cerrarCajaModal').classList.remove('hidden');
+}
+
+function closeCerrarCajaModal() {
+  document.getElementById('cerrarCajaModal').classList.add('hidden');
+}
+
+function updateCerrarCajaDiferencia() {
+  const modal = document.getElementById('cerrarCajaModal');
+  const esperado = parseFloat(modal.dataset.esperado) || 0;
+  const contado = parseFloat(document.getElementById('cerrarCajaContado').value);
+  const box = document.getElementById('cerrarCajaDiferenciaBox');
+  if (!Number.isFinite(contado)) { box.classList.add('hidden'); return; }
+  const diff = contado - esperado;
+  box.classList.remove('hidden');
+  box.style.background = diff === 0 ? 'var(--ok-bg, #dcfce7)' : (diff > 0 ? '#fef9c3' : '#fee2e2');
+  box.style.color = diff === 0 ? '#166534' : (diff > 0 ? '#854d0e' : '#991b1b');
+  box.textContent = diff === 0 ? 'Cuadra exacto' : (diff > 0 ? `Sobrante: ${fmtMoney(diff)}` : `Faltante: ${fmtMoney(Math.abs(diff))}`);
+}
+
+async function confirmCerrarCaja() {
+  const modal = document.getElementById('cerrarCajaModal');
+  const contado = parseFloat(document.getElementById('cerrarCajaContado').value);
+  if (!Number.isFinite(contado) || contado < 0) { alert('Ingresa el monto contado en caja.'); return; }
+  const esperado = parseFloat(modal.dataset.esperado) || 0;
+  const ventasEfectivo = parseFloat(modal.dataset.ventasEfectivo) || 0;
+  const salidas = parseFloat(modal.dataset.salidas) || 0;
+  const notas = document.getElementById('cerrarCajaNotas').value.trim();
+  const btn = document.getElementById('cerrarCajaSubmitBtn');
+  btn.disabled = true;
+  try {
+    await sbRpc('rpc_caja_cerrar', {
+      ...getSessionCredsParams(),
+      p_id: cajaActual.id, p_monto_esperado: esperado, p_monto_contado: contado,
+      p_ventas_efectivo: ventasEfectivo, p_salidas: salidas, p_notas: notas || null,
+      p_cerrado_por: nombreSesionActual()
+    });
+    cajaActual = null;
+    closeCerrarCajaModal();
+    await loadCajaActual();
+  } catch (e) {
+    alert('No se pudo cerrar la caja.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openCajaHistorialModal() {
+  document.getElementById('cajaHistorialModal').classList.remove('hidden');
+  const tbody = document.getElementById('cajaHistorialTableBody');
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    const rows = await sbRpc('rpc_caja_list', getSessionCredsParams());
+    const list = Array.isArray(rows) ? rows : [];
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Aún no hay cierres de caja registrados.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(r => {
+      const diff = parseFloat(r.diferencia) || 0;
+      const diffColor = diff === 0 ? 'var(--text-primary)' : (diff > 0 ? '#166534' : '#991b1b');
+      return `
+      <tr>
+        <td>${new Date(r.fecha_apertura).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td>${r.fecha_cierre ? new Date(r.fecha_cierre).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td>
+        <td>${escapeHtml(r.almacen || '')}</td>
+        <td>${fmtMoney(r.monto_apertura)}</td>
+        <td>${fmtMoney(r.ventas_efectivo)}</td>
+        <td>${fmtMoney(r.salidas)}</td>
+        <td>${fmtMoney(r.monto_esperado)}</td>
+        <td>${fmtMoney(r.monto_contado)}</td>
+        <td style="color:${diffColor}; font-weight:700;">${fmtMoney(diff)}</td>
+        <td>${escapeHtml(r.cerrado_por || '')}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial.</td></tr>';
+  }
+}
+
+function closeCajaHistorialModal() {
+  document.getElementById('cajaHistorialModal').classList.add('hidden');
 }
 
 // Reduce la foto a un tamaño razonable (máx. 1000px de lado, JPEG) antes de
@@ -6689,11 +7143,14 @@ async function deleteSalidaCaja(id) {
   }
 }
 
-function filterTicketHistorial(query) {
-  const q = normalizeEs(query || '');
-  const filtered = q
-    ? ticketHistorialCache.filter(t => normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q))
-    : ticketHistorialCache;
+function filterTicketHistorial() {
+  const q = normalizeEs(document.getElementById('ticketHistorialSearch')?.value || '');
+  const almacen = document.getElementById('ticketHistorialAlmacen')?.value || '';
+  const filtered = ticketHistorialCache.filter(t => {
+    const matchQ = !q || normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q);
+    const matchAlmacen = !almacen || t.almacen === almacen;
+    return matchQ && matchAlmacen;
+  });
   renderTicketHistorialTable(filtered);
 }
 
@@ -6701,14 +7158,305 @@ function viewPosTicketFromHistorial(id) {
   const t = ticketHistorialCache.find(x => x.id === id);
   if (!t) return;
 
+  const iva = parseFloat(t.iva) || 0;
   document.getElementById('tFolio').textContent = t.folio;
   document.getElementById('tFecha').textContent = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  document.getElementById('tCliente').textContent = t.cliente || 'Cliente Mostrador';
+  document.getElementById('tCliente').textContent = t.cliente || 'Cliente POS';
+  document.getElementById('tSubtotal').textContent = fmtMoney(t.subtotal != null ? t.subtotal : t.total);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(t.total);
   document.getElementById('tPaid').textContent = fmtMoney(t.pago_recibido || t.total);
   document.getElementById('tChange').textContent = fmtMoney(t.cambio || 0);
+  document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(t.metodo);
+  document.getElementById('tMetodoValor').textContent = fmtMoney(t.total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
   document.getElementById('ticketModal').classList.remove('hidden');
+}
+
+// ================= INFORME DE VENTAS (tendencia + método de pago) =================
+// Se construye 100% a partir de los tickets reales del POS (rpc_pos_ticket_list),
+// sin datos inventados: si un ticket viejo no tiene "metodo" guardado (antes de
+// agregar esa columna), se agrupa como "Sin definir" en vez de asumir Efectivo.
+// Ventas reales del Sistema POS: son pedidos reales de PrestaShop
+// (payment === 'POS', creados por las cuentas de caja "Caja Puebla"/"Caja
+// Queretaro"/"Caja CDMX") sincronizados en ps_pedidos — no pos_tickets,
+// que es una tabla propia sin uso real todavía. Ver api/pedidos.js, donde
+// se deriva sucursal/tienda/puntoVenta/paymentMethodDetail de cada pedido.
+let informePedidosCache = [];
+let informeVentasVisible = [];
+
+async function loadInformeVentas() {
+  try {
+    const r = await fetch('/api/pedidos?limit=3000');
+    const data = await r.json();
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    informePedidosCache = orders.filter(o => o.paymentMethod === 'POS');
+  } catch (e) {
+    informePedidosCache = [];
+  }
+
+  const sucursales = [...new Set(informePedidosCache.map(o => o.sucursal).filter(Boolean))].sort();
+  const tiendaSelect = document.getElementById('ivTienda');
+  if (tiendaSelect) {
+    tiendaSelect.innerHTML = '<option value="all">Mi Fiestashop (Todos)</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">Mi Fiesta Shop ${escapeHtml(s)}</option>`).join('');
+  }
+  const puntoSelect = document.getElementById('ivPuntoVenta');
+  if (puntoSelect) {
+    puntoSelect.innerHTML = '<option value="all">Todos</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">Terminal ${escapeHtml(s)}</option>`).join('');
+  }
+  const metodos = [...new Set(informePedidosCache.map(o => o.paymentMethodDetail).filter(Boolean))].sort();
+  const metodoSelect = document.getElementById('ivMetodo');
+  if (metodoSelect) {
+    metodoSelect.innerHTML = '<option value="all">Todos</option>' +
+      metodos.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  }
+  const empleados = [...new Set(informePedidosCache.map(o => o.createdBy).filter(Boolean))].sort();
+  const empSelect = document.getElementById('ivEmpleado');
+  if (empSelect) {
+    empSelect.innerHTML = '<option value="all">Todos</option>' + empleados.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
+  }
+
+  const fi = document.getElementById('ivFechaInicio');
+  const ff = document.getElementById('ivFechaFin');
+  if (fi && !fi.value) {
+    const now = new Date();
+    fi.value = toISO(new Date(now.getFullYear(), now.getMonth(), 1));
+  }
+  if (ff && !ff.value) ff.value = toISO(new Date());
+
+  renderInformeVentas();
+}
+
+function renderInformeVentas() {
+  const fi = document.getElementById('ivFechaInicio')?.value || '';
+  const ff = document.getElementById('ivFechaFin')?.value || '';
+  const tienda = document.getElementById('ivTienda')?.value || 'all';
+  const puntoVenta = document.getElementById('ivPuntoVenta')?.value || 'all';
+  const metodo = document.getElementById('ivMetodo')?.value || 'all';
+  const empleado = document.getElementById('ivEmpleado')?.value || 'all';
+
+  const filtered = informePedidosCache.filter(o => {
+    const day = String(o.date || '').slice(0, 10);
+    if (fi && day < fi) return false;
+    if (ff && day > ff) return false;
+    if (tienda !== 'all' && o.sucursal !== tienda) return false;
+    if (puntoVenta !== 'all' && o.sucursal !== puntoVenta) return false;
+    if (metodo !== 'all' && o.paymentMethodDetail !== metodo) return false;
+    if (empleado !== 'all' && o.createdBy !== empleado) return false;
+    return true;
+  });
+  informeVentasVisible = filtered;
+
+  const byDay = {};
+  filtered.forEach(o => {
+    const day = String(o.date || '').slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + (o.total || 0);
+  });
+  const trendRows = Object.keys(byDay).sort().map(d => ({ label: d, revenue: byDay[d] }));
+  drawInformeLineChart(trendRows);
+
+  const byMethod = {};
+  filtered.forEach(o => {
+    const key = o.paymentMethodDetail || 'Sin definir';
+    byMethod[key] = (byMethod[key] || 0) + (o.total || 0);
+  });
+  drawInformeDonutChart(byMethod);
+
+  const totalRevenue = filtered.reduce((s, o) => s + (o.total || 0), 0);
+  const summary = document.getElementById('ivSummary');
+  if (summary) {
+    summary.innerHTML = `<div>Resultados: total (<b>${filtered.length}</b>) - <b>${fmtMoney(totalRevenue)}</b> MXN</div>`;
+  }
+
+  renderInformeVentasTable(filtered);
+}
+
+function renderInformeVentasTable(orders) {
+  const tbody = document.getElementById('ivResultsTableBody');
+  if (!tbody) return;
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Sin ventas POS en este período/filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td>${escapeHtml(o.id)}</td>
+      <td>${escapeHtml(o.reference || '—')}</td>
+      <td style="font-size:12px;">${escapeHtml(String(o.date || '').replace('T', ' ').slice(0, 16))}</td>
+      <td>${escapeHtml(o.tienda || '—')}</td>
+      <td>${escapeHtml(o.customer || '—')}</td>
+      <td>${escapeHtml(o.createdBy || '—')}</td>
+      <td>${escapeHtml(o.puntoVenta || '—')}</td>
+      <td style="text-align:right;">${fmtMoney(o.total)}</td>
+      <td>${escapeHtml(o.paymentMethodDetail || 'Sin definir')}</td>
+      <td style="text-align:right;">${fmtMoney(o.total)}</td>
+      <td style="text-align:right; font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
+    </tr>
+  `).join('');
+}
+
+function downloadInformeVentasCSV() {
+  if (informeVentasVisible.length === 0) {
+    alert('No hay resultados para exportar.');
+    return;
+  }
+  const headers = ['Id Orden', 'Referencia', 'Fecha', 'Tienda/Empresa', 'Cliente', 'Empleado', 'Punto de Venta', 'Valor Venta', 'Método de Pago', 'Monto Pago', 'Monto Total'];
+  const rows = informeVentasVisible.map(o => [
+    o.id, o.reference || '', String(o.date || '').replace('T', ' ').slice(0, 16), o.tienda || '',
+    o.customer || '', o.createdBy || '', o.puntoVenta || '',
+    Number(o.total || 0).toFixed(2), o.paymentMethodDetail || 'Sin definir',
+    Number(o.total || 0).toFixed(2), Number(o.total || 0).toFixed(2)
+  ]);
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `informe-ventas-pos-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function drawInformeLineChart(rows) {
+  const svg = document.getElementById('ivLineChart');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (!rows.length) {
+    svg.innerHTML = '<text x="260" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>';
+    return;
+  }
+  const W = 520, H = 260, padL = 60, padR = 12, padT = 14, padB = 34;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const maxV = Math.max(...rows.map(r => r.revenue)) * 1.15 || 1;
+  const n = rows.length;
+  const stepX = n > 1 ? innerW / (n - 1) : 0;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+
+  for (let i = 0; i <= 3; i++) {
+    const y = padT + innerH - (innerH * i / 3);
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', padL + innerW);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', 'var(--grid)');
+    g.appendChild(line);
+    const val = maxV * i / 3;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', padL - 8); t.setAttribute('y', y + 3); t.setAttribute('text-anchor', 'end');
+    t.setAttribute('font-size', '10'); t.setAttribute('fill', 'var(--text-muted)');
+    t.textContent = i === 0 ? '$0' : '$' + fmtNum(Math.round(val));
+    g.appendChild(t);
+  }
+
+  const points = rows.map((r, i) => {
+    const x = padL + stepX * i;
+    const y = padT + innerH - (r.revenue / maxV) * innerH;
+    return [x, y];
+  });
+
+  const areaPath = document.createElementNS(ns, 'path');
+  let d = `M ${points[0][0]} ${padT + innerH} `;
+  points.forEach(p => d += `L ${p[0]} ${p[1]} `);
+  d += `L ${points[points.length - 1][0]} ${padT + innerH} Z`;
+  areaPath.setAttribute('d', d);
+  areaPath.setAttribute('fill', 'rgba(55,182,185,0.15)');
+  g.appendChild(areaPath);
+
+  const linePath = document.createElementNS(ns, 'path');
+  let ld = `M ${points[0][0]} ${points[0][1]} `;
+  points.slice(1).forEach(p => ld += `L ${p[0]} ${p[1]} `);
+  linePath.setAttribute('d', ld);
+  linePath.setAttribute('fill', 'none');
+  linePath.setAttribute('stroke', '#37b6b9');
+  linePath.setAttribute('stroke-width', '2');
+  g.appendChild(linePath);
+
+  points.forEach(p => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]); c.setAttribute('r', '3.5');
+    c.setAttribute('fill', '#fff'); c.setAttribute('stroke', '#37b6b9'); c.setAttribute('stroke-width', '2');
+    g.appendChild(c);
+  });
+
+  const labelEvery = Math.max(1, Math.ceil(n / 8));
+  points.forEach((p, i) => {
+    if (i % labelEvery !== 0 && i !== n - 1) return;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', p[0]); t.setAttribute('y', H - 10); t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '9'); t.setAttribute('fill', 'var(--text-muted)');
+    t.textContent = rows[i].label.slice(5);
+    g.appendChild(t);
+  });
+
+  svg.appendChild(g);
+}
+
+function drawInformeDonutChart(byMethod) {
+  const svg = document.getElementById('ivDonutChart');
+  const legend = document.getElementById('ivDonutLegend');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (legend) legend.innerHTML = '';
+
+  // byMethod es un mapa dinámico { "Debito / Credito": 1234.5, ... } — los
+  // métodos reales vienen tal cual los guarda PrestaShop (order_payments),
+  // así que se colorean por posición en vez de por una clave fija.
+  const PALETTE = ['#8e7cf0', '#d3007b', '#22c55e', '#f9e05c', '#37b6b9', '#f97316'];
+  const segments = Object.keys(byMethod)
+    .map((label, i) => ({ label, color: PALETTE[i % PALETTE.length], value: byMethod[label] }))
+    .filter(s => s.value > 0);
+
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  if (total <= 0) {
+    svg.innerHTML = '<text x="130" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>';
+    return;
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const cx = 130, cy = 130, r = 90, strokeW = 36;
+
+  if (segments.length === 1) {
+    const circle = document.createElementNS(ns, 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none'); circle.setAttribute('stroke', segments[0].color);
+    circle.setAttribute('stroke-width', strokeW);
+    svg.appendChild(circle);
+  } else {
+    let angleStart = -90;
+    segments.forEach(seg => {
+      const frac = seg.value / total;
+      const angleEnd = angleStart + frac * 360;
+      const largeArc = (angleEnd - angleStart) > 180 ? 1 : 0;
+      const toXY = (ang) => {
+        const rad = (ang * Math.PI) / 180;
+        return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+      };
+      const [x1, y1] = toXY(angleStart);
+      const [x2, y2] = toXY(angleEnd);
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', seg.color);
+      path.setAttribute('stroke-width', strokeW);
+      svg.appendChild(path);
+      angleStart = angleEnd;
+    });
+  }
+
+  if (legend) {
+    legend.innerHTML = segments.map(s => `
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <span style="width:10px; height:10px; border-radius:50%; background:${s.color}; display:inline-block; flex-shrink:0;"></span>
+        ${escapeHtml(s.label)}
+      </span>
+    `).join('');
+  }
 }
 
 // HISTORICAL DATASET & ESTADÍSTICAS DASHBOARD
@@ -6799,6 +7547,7 @@ function applyPeriod(p){
   if(document.getElementById('fromInput')) document.getElementById('fromInput').value = toISO(from);
   if(document.getElementById('toInput')) document.getElementById('toInput').value = toISO(to);
   loadVentas(toISO(from), toISO(to));
+  if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
 }
 
 if(document.getElementById('periodSeg')){
@@ -6813,7 +7562,10 @@ if(document.getElementById('applyRange')){
     document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.remove('active'));
     const from = document.getElementById('fromInput').value;
     const to = document.getElementById('toInput').value;
-    if (from && to) loadVentas(from, to);
+    if (from && to) {
+      loadVentas(from, to);
+      if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
+    }
   });
 }
 
@@ -7053,10 +7805,25 @@ async function syncProductsFromPrestaShopAPI(){
           id: p.id,
           name: p.name || 'Producto',
           sku: p.sku || `PS-${p.id}`,
+          barcode: p.barcode || '',
           price: parseFloat(p.price || 50),
-          cat: 'general',
-          catLabel: 'General',
+          priceMayoreo: Number.isFinite(p.priceMayoreo) ? p.priceMayoreo : 0,
+          priceMayoreoDesdeUnidades: p.priceMayoreoDesdeUnidades || 0,
+          costoCompra: Number.isFinite(p.costoCompra) ? p.costoCompra : 0,
+          cat: (p.categoryLabel || 'general').toLowerCase().trim(),
+          catLabel: p.categoryLabel || 'General',
+          categoryIds: Array.isArray(p.categoryIds) ? p.categoryIds : undefined,
+          weight: p.weight || 0,
+          width: p.width || 0,
+          height: p.height || 0,
+          depth: p.depth || 0,
+          metaTitle: p.metaTitle || '',
+          metaDescription: p.metaDescription || '',
+          metaKeywords: p.metaKeywords || '',
+          lowStockThreshold: p.lowStockThreshold || 0,
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
+          images: Array.isArray(p.images) ? p.images : undefined,
+          migrated: !!p.migrated,
           desc: p.description && p.description.trim() ? p.description : p.name,
           url: p.url || ''
         }));
@@ -7139,7 +7906,7 @@ function renderCatalogTable(category = 'all', query = ''){
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const filtered = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
 
@@ -8247,17 +9014,32 @@ function renderProducts(category = 'all', query = '') {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const isBrowsingAll = category === 'all' && !query.trim();
 
-  const matched = dataset.filter(p => {
+  // Solo Puebla, CDMX Rumania y Querétaro tienen stock real rastreado
+  // (api/stock-all.js) — al cambiar de sucursal en el selector del POS se
+  // muestran únicamente los productos con existencia > 0 ahí. Atizapán no
+  // se rastrea todavía, así que ahí no se filtra por stock.
+  const POS_STOCK_WAREHOUSES = ['puebla', 'rumania', 'queretaro'];
+  const whKey = document.getElementById('posWarehouseSelect')?.value || 'rumania';
+  const filterByStock = POS_STOCK_WAREHOUSES.includes(whKey);
+
+  const matchedByFilters = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
+
+  const matched = filterByStock
+    ? matchedByFilters.filter(p => getStockFor(p.id, whKey) > 0)
+    : matchedByFilters;
 
   const limit = isBrowsingAll ? POS_BROWSE_LIMIT : POS_SEARCH_LIMIT;
   const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
-    grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
+    const msg = filterByStock && matchedByFilters.length > 0
+      ? 'No hay productos con existencia en esta sucursal.'
+      : 'No se encontraron productos en esta categoría.';
+    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">${msg}</div>`;
     return;
   }
 
@@ -8265,6 +9047,7 @@ function renderProducts(category = 'all', query = '') {
     const card = document.createElement('div');
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
+    const stockLabel = filterByStock ? `En stock (${getStockFor(p.id, whKey)})` : 'En stock';
     card.innerHTML = `
       <img src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
@@ -8273,7 +9056,7 @@ function renderProducts(category = 'all', query = '') {
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
-        <div class="p-stock">En stock</div>
+        <div class="p-stock">${stockLabel}</div>
       </div>
     `;
     grid.appendChild(card);
@@ -8305,6 +9088,16 @@ if(document.getElementById('catPillsContainer')){
     }
   });
 }
+
+if(document.getElementById('posWarehouseSelect')){
+  document.getElementById('posWarehouseSelect').addEventListener('change', () => {
+    const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+    const query = document.getElementById('posSearchInput')?.value || '';
+    renderProducts(activeCat, query);
+    loadCajaActual();
+  });
+}
+loadCajaActual();
 
 // THEME TOGGLE
 if(document.getElementById('toggleThemeBtn')){
@@ -8345,7 +9138,7 @@ const DEFAULT_ORDERS = [
     ]
   },
   { 
-    id: 'FOL-1003', date: '2026-09-11 14:02', customer: 'Cliente Mostrador', channel: 'Sistema POS', total: 380, status: 'Pagado',
+    id: 'FOL-1003', date: '2026-09-11 14:02', customer: 'Cliente POS', channel: 'Sistema POS', total: 380, status: 'Pagado',
     items: [
       { sku: 'parche, pirata, disfraz, fiesta', name: 'Parche Pirata', qty: 10, price: 20.00 },
       { sku: 'Peluca, metálico, fiesta, batucada', name: 'Peluca Metalica', qty: 12, price: 15.00 }
@@ -8419,6 +9212,10 @@ async function loadCustomersFromAPI(){
   const select = document.getElementById('posCustomerSelect');
   const searchInput = document.getElementById('customersSearchInput');
   if (searchInput) searchInput.value = '';
+  // La tienda tiene miles de clientes reales — traerlos puede tardar varios
+  // segundos, así que se avisa que está cargando en vez de dejar la tabla
+  // vacía (que se veía como si el directorio de clientes no funcionara).
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   let list = [];
   try {
@@ -8435,7 +9232,7 @@ async function loadCustomersFromAPI(){
 
   if(select && list.length > 0) {
     const forSelect = list.slice(0, POS_CUSTOMER_SELECT_LIMIT);
-    select.innerHTML = '<option value="mostrador">Cliente Mostrador (General)</option>' + forSelect.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
+    select.innerHTML = '<option value="mostrador">Cliente POS (General)</option>' + forSelect.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
   }
 }
 
@@ -8507,11 +9304,16 @@ async function loadOrdersFromAPI(){
       ticketHistorialCache = tickets; // así "Ticket" reimprime el detalle real sin tener que abrir antes el Historial de Tickets
       const posOrders = tickets.map(t => ({
         id: t.folio,
+        reference: '',
         date: new Date(t.created_at).toLocaleString('es-MX'),
-        customer: t.cliente || 'Cliente Mostrador',
+        deliveryDate: null,
+        customer: t.cliente || 'Cliente POS',
         channel: 'Sistema POS',
+        paymentMethod: payMethodTicketLabel(t.metodo),
         total: Number(t.total || 0),
         status: 'Pago Aceptado',
+        createdBy: t.registrado_por || null,
+        shop: 'Mi Fiestashop',
         items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
         rawId: null,
         _sortDate: new Date(t.created_at).getTime()
@@ -8529,20 +9331,28 @@ async function loadOrdersFromAPI(){
   // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
   // que sí agrega datos reales de PrestaShop (ver loadRealProductSales()).
 
-  tbody.innerHTML = list.map(o => `
+  const POSITIVE_STATES = ['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado'];
+  tbody.innerHTML = list.map(o => {
+    const statusOk = POSITIVE_STATES.includes(String(o.status || '').toLowerCase());
+    return `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
       <td><b>${escapeHtml(o.id)}</b></td>
-      <td>${escapeHtml(o.date)}</td>
-      <td><b>${escapeHtml(o.customer)}</b></td>
-      <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${escapeHtml(o.channel)}</span></td>
+      <td>${escapeHtml(o.reference || '—')}</td>
+      <td>${escapeHtml(o.customer)}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
-      <td><span class="pill ok">${escapeHtml(o.status)}</span></td>
+      <td>${escapeHtml(o.paymentMethod || o.channel || '—')}</td>
+      <td><span class="pill ${statusOk ? 'ok' : 'warn'}">${escapeHtml(o.status)}</span></td>
+      <td>${escapeHtml(o.date)}</td>
+      <td>${escapeHtml(o.deliveryDate || '—')}</td>
+      <td>${escapeHtml(o.createdBy || '—')}</td>
+      <td>${escapeHtml(o.shop || 'Mi Fiestashop')}</td>
       <td>
         <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('${escapeHtml(o.id)}')"> Ver Orden</button>
         <button class="btn small" onclick="event.stopPropagation(); reprintTicket('${escapeHtml(o.id)}', ${o.total})"> Ticket</button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const skSelect = document.getElementById('skSelectOrder');
   if (skSelect && list.length > 0) {
@@ -8795,7 +9605,11 @@ function checkLowStockNotifications() {
   dataset.forEach((p, index) => {
     const pId = p.id || index + 1;
     const stTotal = getStockFor(pId, 'puebla') + getStockFor(pId, 'rumania') + getStockFor(pId, 'queretaro');
-    if (stTotal < 150) lowItems.push(p.name);
+    // Umbral real configurado en PrestaShop por producto (low_stock_threshold)
+    // en vez de un número fijo igual para los ~500 productos — un antifaz de
+    // $2 y una vela de $67 no deberían alertar con el mismo punto de corte.
+    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : 10;
+    if (stTotal < threshold) lowItems.push(p.name);
   });
 
   if (lowItems.length === 0) return;
@@ -8972,9 +9786,12 @@ function showAdminDashboard() {
 function resetStorefrontSeoTags() {
   const defaultTitle = 'Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México';
   const defaultDesc = 'Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.';
+  const defaultKeywords = 'fiesta, globos, batucada, pirotecnia fría, antifaces, artículos de fiesta al mayoreo';
   document.title = defaultTitle;
   const metaDesc = document.getElementById('metaDescription');
   if (metaDesc) metaDesc.setAttribute('content', defaultDesc);
+  const metaKw = document.getElementById('metaKeywords');
+  if (metaKw) metaKw.setAttribute('content', defaultKeywords);
   const canonical = document.getElementById('canonicalLink');
   if (canonical) canonical.setAttribute('href', 'https://mifiestashop.vercel.app/');
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', defaultTitle);
@@ -8986,14 +9803,23 @@ function resetStorefrontSeoTags() {
 
 function applyProductSeoTags(p) {
   if (!p) return;
-  const title = `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
-  const desc = (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
+  // Si PrestaShop ya tiene meta_title/meta_description redactados para este
+  // producto, se usan tal cual (son reales, escritos a mano) — el título y
+  // descripción genéricos solo son un respaldo para productos sin eso.
+  const title = (p.metaTitle && p.metaTitle.trim())
+    ? `${p.metaTitle.trim()} | Mi Fiestashop`
+    : `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
+  const desc = (p.metaDescription && p.metaDescription.trim())
+    ? p.metaDescription.trim().slice(0, 160)
+    : (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
   const path = productPathFor(p) || '/';
   const url = `https://mifiestashop.vercel.app${path}`;
 
   document.title = title;
   const metaDesc = document.getElementById('metaDescription');
   if (metaDesc) metaDesc.setAttribute('content', desc);
+  const metaKw = document.getElementById('metaKeywords');
+  if (metaKw && p.metaKeywords && p.metaKeywords.trim()) metaKw.setAttribute('content', p.metaKeywords.trim());
   const canonical = document.getElementById('canonicalLink');
   if (canonical) canonical.setAttribute('href', url);
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', title);
@@ -9007,12 +9833,17 @@ function applyProductSeoTags(p) {
     ld.id = 'ldJsonProduct';
     document.head.appendChild(ld);
   }
+  // Las fotos migradas son WebP reales de 800x800 (ver scratch/imgtools) —
+  // se describen como ImageObject en vez de una URL suelta, que es lo que
+  // Google recomienda para que las imágenes del producto aparezcan bien en
+  // Google Imágenes / resultados enriquecidos.
+  const productImages = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.img ? [p.img] : []);
   ld.textContent = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: p.name,
     sku: p.sku,
-    image: p.img,
+    image: productImages.map(url => ({ '@type': 'ImageObject', url, width: 800, height: 800 })),
     description: desc,
     offers: {
       '@type': 'Offer',
@@ -10623,7 +11454,7 @@ function trimTrailingPartialRow(grid){
 function buildStorefrontProductCardHTML(p, idx){
   return `
     <div class="store-prod-card store-reveal" style="transition-delay:${Math.min(idx, 8) * 50}ms;">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
@@ -10810,8 +11641,8 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
 
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
-      <div>
-        <img src="${p.img}" alt="${p.name}" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--mf-cream);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <div style="min-width:0;">
+        <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
@@ -10881,7 +11712,7 @@ function openRelatedProduct(productId){
 function buildRelatedProductCardHTML(p){
   return `
     <div class="store-prod-card store-reveal" style="cursor:pointer;" onclick="openRelatedProduct('${p.id}')">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
@@ -11539,9 +12370,83 @@ function updateSearchSuggestions(q) {
   box.classList.remove('hidden');
 }
 
+function toggleStoreMobileNav(navId) {
+  const nav = document.getElementById(navId);
+  if (nav) nav.classList.toggle('open');
+}
+
 function hideSearchSuggestions() {
   const box = document.getElementById('storeSearchSuggest');
   if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+}
+
+// ================= HISTORIAL DE BÚSQUEDAS (real, para el admin) =================
+// Registra en Supabase (busquedas_tienda, vía /api/log-busqueda) las
+// búsquedas reales que hacen los clientes en el buscador de la tienda, con
+// debounce (no en cada tecla) y sin repetir la misma búsqueda mientras el
+// cliente sigue escribiendo/borrando el mismo texto. Se usa en el admin,
+// en "Parámetros de la Tienda > Motor de Búsqueda", para mostrar qué está
+// buscando la gente de verdad.
+let searchLogTimer = null;
+let lastLoggedSearchQuery = '';
+
+function scheduleSearchLog(q) {
+  const query = (q || '').trim();
+  clearTimeout(searchLogTimer);
+  if (query.length < 3) return; // mismo mínimo que "Parámetros de Búsqueda" en el admin
+  searchLogTimer = setTimeout(() => {
+    const key = query.toLowerCase();
+    if (key === lastLoggedSearchQuery) return;
+    lastLoggedSearchQuery = key;
+    const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+    const resultsCount = dataset.filter(p =>
+      p.name.toLowerCase().includes(key) || (p.sku || '').toLowerCase().includes(key)
+    ).length;
+    fetch('/api/log-busqueda', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, resultsCount })
+    }).catch(() => {});
+  }, 800);
+}
+
+async function loadSearchHistoryAdmin() {
+  const tbody = document.getElementById('searchHistoryTableBody');
+  const topBox = document.getElementById('searchTopTermsList');
+  if (!tbody) return;
+
+  try {
+    const r = await fetch('/api/busquedas?limit=100');
+    const data = await r.json();
+    const history = Array.isArray(data.history) ? data.history : [];
+    const top = Array.isArray(data.top) ? data.top : [];
+
+    if (history.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Todavía no hay búsquedas registradas.</td></tr>';
+    } else {
+      tbody.innerHTML = history.map(h => `
+        <tr>
+          <td><b>${escapeHtml(h.query)}</b></td>
+          <td style="text-align:center;">${h.resultsCount}</td>
+          <td style="font-size:12px;">${new Date(h.date).toLocaleString('es-MX')}</td>
+        </tr>
+      `).join('');
+    }
+
+    if (topBox) {
+      topBox.innerHTML = top.length === 0
+        ? '<div style="color:var(--text-muted);">Sin datos todavía.</div>'
+        : top.map(t => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span>${escapeHtml(t.query)}</span>
+            <span class="pill ok">${t.count}x</span>
+          </div>
+        `).join('');
+    }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">No se pudo cargar el historial de búsquedas.</td></tr>';
+    if (topBox) topBox.innerHTML = '<div style="color:var(--text-muted);">—</div>';
+  }
 }
 
 function goToSearchResult(productId) {
@@ -11597,8 +12502,14 @@ function hashCode(str) {
   return hash;
 }
 
-function getProductMonthlySales(p) {
-  const months = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+function getProductMonthlySales(p, fromISO, toISO) {
+  const allMonths = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+  // fromISO/toISO (YYYY-MM-DD) recortan el rango a los meses del filtro de
+  // fecha del dashboard — comparación lexicográfica sobre 'YYYY-MM' funciona
+  // porque el formato ya viene con ceros a la izquierda.
+  const fromMonth = fromISO ? fromISO.slice(0, 7) : null;
+  const toMonth = toISO ? toISO.slice(0, 7) : null;
+  const months = allMonths.filter(m => (!fromMonth || m >= fromMonth) && (!toMonth || m <= toMonth));
   const pKeySku = String(p.sku || '').trim();
   const pKeyId = String(p.id || '').trim();
   const pName = String(p.name || '').trim().toLowerCase();
@@ -11623,8 +12534,16 @@ function getProductMonthlySales(p) {
     return { month: m, units: Math.max(0, units), revenue: Math.max(0, revenue) };
   });
 
-  const totalUnits = rec ? rec.totalUnits : 0;
-  const totalRevenue = rec ? rec.totalRevenue : 0;
+  // Si se pasó un rango, el total debe reflejar solo los meses filtrados —
+  // no el acumulado histórico completo de rec.totalUnits/totalRevenue
+  // (esto es justo lo que hacía que la tabla no cambiara al mover la fecha).
+  const isFiltered = !!(fromMonth || toMonth);
+  const totalUnits = isFiltered
+    ? monthSales.reduce((s, x) => s + x.units, 0)
+    : (rec ? rec.totalUnits : 0);
+  const totalRevenue = isFiltered
+    ? monthSales.reduce((s, x) => s + x.revenue, 0)
+    : (rec ? rec.totalRevenue : 0);
 
   return { months: monthSales, totalUnits, totalRevenue, hasRealData: !!rec };
 }
@@ -11660,9 +12579,11 @@ function renderTopProductsTable() {
     return;
   }
   const sortMode = document.getElementById('topProductsSortSelect')?.value || 'units';
+  const rangeFrom = document.getElementById('fromInput')?.value || null;
+  const rangeTo = document.getElementById('toInput')?.value || null;
 
   const processed = dataset.map(p => {
-    const salesData = getProductMonthlySales(p);
+    const salesData = getProductMonthlySales(p, rangeFrom, rangeTo);
     return {
       product: p,
       totalUnits: salesData.totalUnits,
@@ -12241,7 +13162,12 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
     filterStorefrontProducts(query);
   }
 }).then(checkLowStockNotifications);
-loadRealStockData();
+loadRealStockData().then(() => {
+  if (document.getElementById('posProductGrid')) {
+    const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+    renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
+  }
+});
 
 loadCartFromStorage();
 
