@@ -91,7 +91,8 @@ function sanitize(html, page, pages, location) {
       const product = url.pathname.match(/\/(\d+)-([^/]+\.html)$/);
       if (cms && pages.some(p => String(p.id) === cms[1])) a.attr('href', pages.find(p => String(p.id) === cms[1]).sourcePath);
       else if (product) a.attr('href', productLinks[`${product[1]}-${product[2]}`] || `/${product[1]}-${product[2]}`);
-      else if (/^\/(2-productos|index\.php)?$/.test(url.pathname)) a.attr('href', '/?buscar=' + encodeURIComponent(THEMES[themeFor(page)].query));
+      else if (/^\/(2-productos|266-productos|index\.php)?$/.test(url.pathname)) a.attr('href', '/?buscar=' + encodeURIComponent(THEMES[themeFor(page)].query));
+      else if (/^\/160-kits-infantiles\/?$/.test(url.pathname)) a.attr('href', '/?buscar=kits%20infantiles');
       else if (/iniciar-sesion|mi-cuenta/.test(url.pathname)) a.attr('href', '/?cuenta=1');
       else a.attr('href', resolved);
     } else a.attr('href', resolved);

@@ -27,6 +27,7 @@ async function fetchAllFromSupabase(table, select) {
 }
 
 module.exports = async function handler(req, res) {
+  if (process.env.PS_NATIVE_CUSTOMERS === '1') return require('../lib/native-customers')(req, res);
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
   res.setHeader('Access-Control-Allow-Origin', '*');
 

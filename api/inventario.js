@@ -3,6 +3,7 @@
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  if (process.env.PS_NATIVE_COMMERCE === '1') return require('../lib/native-stock').inventory(req, res);
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;

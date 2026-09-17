@@ -9,12 +9,22 @@ module.exports = async function handler(req, res) {
   const cmsPages = require('../data/cms-manifest.json');
   cmsPages.forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
 
-  if (apiKey) {
+  if (process.env.PS_NATIVE_COMMERCE === '1') {
+    try {
+      const products = await require('../lib/native-catalog').catalog();
+      products.forEach(product => urls.push({ loc: `${siteOrigin}${product.url}`, priority: '0.8' }));
+    } catch (error) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(503).send('Sitemap temporalmente no disponible');
+    }
+  } else if (apiKey) {
     try {
       const auth = Buffer.from(`${apiKey}:`).toString('base64');
       const fields = '[id,link_rewrite]';
-      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&limit=0,1000&output_format=JSON`;
+      for (let offset = 0; ; offset += 500) {
+      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&sort=[id_ASC]&limit=${offset},500&output_format=JSON`;
       const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+      if (!r.ok) throw new Error('No se pudo obtener el catálogo completo');
       if (r.ok) {
         const data = await r.json();
         const products = Array.isArray(data.products) ? data.products : [];
@@ -24,8 +34,13 @@ module.exports = async function handler(req, res) {
             urls.push({ loc: `${siteOrigin}/${p.id}-${rewrite}.html`, priority: '0.8' });
           }
         });
+        if (products.length < 500) break;
       }
-    } catch (e) { /* fall back to just the homepage */ }
+      }
+    } catch (e) {
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(503).send('Sitemap temporalmente no disponible');
+    }
   }
 
   const escapeXml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));

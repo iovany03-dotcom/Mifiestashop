@@ -386,5 +386,20 @@
   "https://mifiestashop.com/img/cms/5/0/BANNERS/pROMOCIONEScomprimida.png": {
     "status": 200,
     "path": "/img/cms/73483ee367496bbc.png"
+  },
+  "https://cdn1.mifiestashop.com/img/cms/C.png": {
+    "path": "/img/cms/info-3c95a21e8891047c.png"
+  },
+  "https://mifiestashop.com/img/cms/banner%20web%20ENVIOS-01.jpg": {
+    "status": 200,
+    "path": "/img/cms/852e620a61a274cc.jpg"
+  },
+  "https://cdn2.mifiestashop.com/img/cms/banner%20web-10.jpg": {
+    "status": 200,
+    "path": "/img/cms/a005f28841bf0f12.jpg"
+  },
+  "https://mifiestashop.com/img/cms/BANNERS/pROMOCIONEScomprimida.png": {
+    "path": "",
+    "status": 404
   }
 }

@@ -5,7 +5,9 @@
   "main": "sw.js",
   "scripts": {
     "build:cms": "node scripts/build-cms.cjs",
-    "test:cms": "node --test tests/cms.test.cjs"
+    "test:cms": "node --test tests/cms.test.cjs",
+    "test:migration": "node --test tests/migration.test.cjs",
+    "migrate:prestashop": "node scripts/migrate-prestashop.cjs"
   },
   "repository": {
     "type": "git",

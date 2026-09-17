@@ -82,6 +82,7 @@ function computeWholesalePrice(basePrice, rule) {
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  if (process.env.PS_NATIVE_COMMERCE === '1') return require('../lib/native-catalog').products(req, res);
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
@@ -153,7 +154,7 @@ module.exports = async function handler(req, res) {
       }
 
       // Liga real y pública del producto en la tienda en vivo (mifiestashop.com).
-      const publicUrl = linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : `${baseUrl}/index.php?id_product=${p.id}&controller=product`;
+      const publicUrl = linkRewrite ? `/${p.id}-${linkRewrite}.html` : `/${p.id}-producto.html`;
 
       const m = migrated[String(p.id)];
       const images = m && Array.isArray(m.images) && m.images.length > 0 ? m.images : null;

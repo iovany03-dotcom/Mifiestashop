@@ -3277,5 +3277,153 @@
         "verifiedStorePage": 279
       }
     }
+  },
+  {
+    "id": 412,
+    "title": "Envío",
+    "slug": "entrega",
+    "path": "/content/412-entrega",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 413,
+    "title": "Aviso legal",
+    "slug": "aviso-legal",
+    "path": "/content/413-aviso-legal",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 414,
+    "title": "Términos y condiciones",
+    "slug": "terminos-y-condiciones-de-uso",
+    "path": "/content/414-terminos-y-condiciones-de-uso",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 415,
+    "title": "Sobre nosotros",
+    "slug": "sobre-nosotros",
+    "path": "/content/415-sobre-nosotros",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 416,
+    "title": "Pago seguro",
+    "slug": "pago-seguro",
+    "path": "/content/416-pago-seguro",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 417,
+    "title": "Provedores articulos de fiesta",
+    "slug": "articulos-para-fiesta-mayoreo-en-mexico",
+    "path": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
+    "theme": "mayoreo",
+    "inFooter": false,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 418,
+    "title": "Contactanos",
+    "slug": "contactanos",
+    "path": "/content/418-contactanos",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": {
+      "multiple": true,
+      "city": null,
+      "name": "",
+      "address": "",
+      "url": "",
+      "phone": "",
+      "corrected": false,
+      "evidence": {
+        "sourceHadLocation": true,
+        "originalMaps": [
+          "https://goo.gl/maps/oQPABhGofckY9knv6",
+          "https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiesta+,+batucada+y+cotillon.+Mi+Fiesta+Shop+Atizapan/@19.5630811,-99.2453059,17z/data=!3m1!4b1!4m6!3m5!1s0x85d21df32278bf05:0x231eae09cd180c22!8m2!3d19.5630811!4d-99.242731!16s%2Fg%2F11v0zzbhy3?entry=ttu",
+          "https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiestas+Mi+fiesta+Shop+Queretaro/@20.5772494,-100.3986045,17z/data=!3m1!4b1!4m6!3m5!1s0x85d34579d943e3e5:0x28337ac1a8da7425!8m2!3d20.5772494!4d-100.3960296!16s%2Fg%2F11k5ptjv1h?entry=ttu",
+          "https://www.google.com.mx/maps/place/Art%C3%ADculos+para+fiesta+Mi+fiesta+Shop+Puebla/@19.0464305,-98.2335943,17z/data=!3m1!4b1!4m6!3m5!1s0x85cfb8b0d245bf31:0x3ef7a061c650d1d5!8m2!3d19.0464305!4d-98.2310194!16s%2Fg%2F11c1r2bsgn?entry=ttu"
+        ],
+        "verifiedStorePage": 418
+      }
+    }
+  },
+  {
+    "id": 419,
+    "title": "Productos Con Descuentos",
+    "slug": "productos-con-descuentos",
+    "path": "/content/419-productos-con-descuentos",
+    "theme": "fiesta",
+    "inFooter": false,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 420,
+    "title": "Política de Envío Gratis Mi Fiesta Shop",
+    "slug": "politica-de-envio-gratis-mi-fiesta-shop",
+    "path": "/content/420-politica-de-envio-gratis-mi-fiesta-shop",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
+  },
+  {
+    "id": 421,
+    "title": "Política de Devolución Mi Fiesta Shop",
+    "slug": "politica-de-devolucion-mi-fiesta-shop",
+    "path": "/content/421-politica-de-devolucion-mi-fiesta-shop",
+    "theme": "informacion",
+    "inFooter": true,
+    "categoryId": null,
+    "categoryName": "Información y contacto",
+    "sourceStatus": 200,
+    "sourceWasEmpty": false,
+    "location": null
   }
 ]
