@@ -2,8 +2,9 @@
 
 ## Estado
 
-Código preparado en `codex/complete-prestashop-migration`, basado en `2527d2d`.
-No se ha desplegado ni ejecutado el backfill en producción. Los interruptores
+Código preparado en `codex/complete-prestashop-migration`, integrado con `b86ee22`.
+Las cuatro tablas privadas ya están creadas y el backfill de direcciones está
+en curso. Todavía no se ha desplegado el código. Los interruptores
 `PS_NATIVE_CUSTOMERS` y `PS_NATIVE_COMMERCE` permanecen desactivados por defecto.
 No activar sin completar la conciliación descrita abajo.
 
@@ -57,7 +58,7 @@ a sobrescribir movimientos hechos en el destino.
   conciliar el contexto fiscal; no se muestra un precio no verificado.
 - El checkout conserva la política previa de precio minorista, validada en
   servidor. No se aplica mayoreo a una identidad de grupo enviada por el cliente.
-  El stock se valida en la tienda 1; no hay reserva atómica nueva de inventario.
+  El stock se valida en la tienda 50 (Mi Fiestashop); no hay reserva atómica nueva de inventario.
   La política de impuestos, descuentos de checkout y reserva concurrente requiere
   validación real antes de activar el cambio comercial.
 - Las diez páginas 412–421 provienen de la exportación local del 15 de septiembre.
@@ -75,10 +76,15 @@ a sobrescribir movimientos hechos en el destino.
 Las pruebas usan datos sintéticos y bloquean escrituras externas. Pasar pruebas
 locales no equivale a haber importado o desplegado datos reales.
 
-## Accesos pendientes
+## Accesos y alcance de la importación
 
-El conector Vercel no devuelve equipos/proyectos. No están disponibles aquí las
-variables de servidor requeridas. El navegador automatizado de PrestaShop abrió
-un login separado; la sesión visible del usuario no pudo controlarse.
-La última solicitud de descarga externa fue rechazada por la revisión automática
-debido al límite de uso de la cuenta. No se intentó eludir ese bloqueo.
+GET de direcciones está confirmado. El navegador permite acceder a PrestaShop
+y Vercel; la variable SUPABASE_SERVICE_ROLE_KEY ya existe en producción.
+La clave CHAT GPT se utiliza únicamente en memoria del importador autorizado.
+
+El recurso addresses no aísla las tiendas del origen. Antes de guardar una
+dirección se exige que id_customer pertenezca al directorio ps_clientes.
+Una primera copia de 5,750 direcciones ajenas quedó en la tabla privada y su
+retirada está pendiente de aprobación explícita; ninguna se vincula con los
+clientes de Mi Fiestashop ni aparece en el sitio. No activar la migración
+hasta completar esta limpieza y conciliar todos los clientes.
