@@ -18,11 +18,13 @@
     const note = document.createElement('p'); note.className = 'promo-pricing-note'; note.textContent = 'Sin IVA';
     const shipping = document.createElement('p'); shipping.className = 'promo-pricing-shipping'; shipping.textContent = '🚚 Envío gratis en compras +$1,500';
     const list = document.createElement('ul'); list.className = 'promo-pricing-items';
-    live.items.slice(0, 12).forEach(item => { const li = document.createElement('li'); li.textContent = item; list.append(li); });
+    live.items.forEach(item => { const li = document.createElement('li'); li.textContent = item; list.append(li); });
     const action = document.createElement('button'); action.type = 'button'; action.className = 'promo-pricing-btn'; action.textContent = 'Agregar al carrito';
     const status = document.createElement('p'); status.className = 'cms-cart-status'; status.setAttribute('role', 'status');
     action.addEventListener('click', () => window.cmsAddToCart({ id: live.id, name: live.name, img: live.img }, action, status));
-    el.append(badge, title, price, note, shipping, list, action, status);
+    el.append(badge, title, price, note, shipping, list);
+    if (pkg.tier === 'VIP') { const stock = document.createElement('p'); stock.className = 'promo-pricing-stock'; stock.textContent = '*Stock sujeto a bodega'; el.append(stock); }
+    el.append(action, status);
     return el;
   }
 
