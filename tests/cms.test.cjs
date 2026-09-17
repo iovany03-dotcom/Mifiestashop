@@ -44,10 +44,15 @@ test('subjects follow the source title, including narrow topics',()=>{
   for(const [id,theme]of Object.entries(expected))assert.equal(modelFor(source.find(p=>p.id===Number(id)),source).theme,theme);
   assert.doesNotMatch(fs.readFileSync(path.join(root,'cms-pages/281.html'),'utf8'),/fiesta de XV años/i);
 });
-test('copied Puebla marketing copy no longer promotes CDMX and product links use current IDs',()=>{
+test('copied Puebla marketing copy no longer promotes CDMX; legacy builder content is not rendered',()=>{
   const html=fs.readFileSync(path.join(root,'cms-pages/395.html'),'utf8');
-  const $=cheerio.load(html);assert.doesNotMatch($('.source-content').text(),/CDMX|Ciudad de M[eé]xico|Quer[eé]taro/i);
-  assert.ok($('.source-content a[href="/83553-promo-batucada-estandar-.html"]').length);
+  // Excludes "Más ideas para tu fiesta": those are legitimate cross-links to
+  // other cities' pages, not copied marketing copy for this one.
+  const $=cheerio.load(html);$('.related-pages').remove();assert.doesNotMatch($('main').text(),/CDMX|Ciudad de M[eé]xico|Quer[eé]taro/i);
+  // Non-informational pages no longer render the imported builder content
+  // (old banners, stock photos, promo package copy) at all — only the
+  // shared modern sections (hero, benefits, catalog, reviews, FAQ) show.
+  assert.equal($('.source-content').length, 0);
 });
 test('all retained CMS images are local and exist; unavailable originals are omitted',()=>{
   for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,`cms-pages/${p.id}.html`),'utf8'));$('.hero img,.source-content img').each((_,e)=>{const src=$(e).attr('src');assert.ok(src.startsWith('/img/'),`${p.id}: ${src}`);assert.ok(fs.existsSync(path.join(root,src)),src)});}
