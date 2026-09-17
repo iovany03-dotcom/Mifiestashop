@@ -98,5 +98,6 @@
 .promo-pricing-items li:last-child{border-bottom:none}
 .promo-pricing-btn{border:none;border-radius:10px;padding:13px;font-weight:700;font-size:14px;background:#fff;color:var(--pink);cursor:pointer}
 .promo-pricing-card.tier-dark .promo-pricing-btn{color:var(--purple)}
+.promo-pricing-stock{margin:-8px 0 12px;font-size:11px;font-style:italic;opacity:.75}
 .promo-pricing-card .cms-cart-status{margin-top:8px;font-size:12px;color:#fff}
 @media(max-width:720px){.promo-pricing-card.featured{transform:none}.promo-pricing-grid{gap:16px}}
