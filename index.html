@@ -1304,7 +1304,7 @@
     <div class="store-search-box">
       <span class="store-search-icon">🔍</span>
       <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off"
-        oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value);"
+        oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value); scheduleSearchLog(this.value);"
         onfocus="updateSearchSuggestions(this.value)"
         onblur="hideSearchSuggestions()">
       <div id="storeSearchSuggest" class="store-search-suggest hidden"></div>
@@ -3940,6 +3940,27 @@
             </div>
           </div>
         </div>
+
+        <div class="card" style="margin:20px 0 0; background:var(--plane);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; color:var(--series-2);">Historial de Búsquedas de Clientes</h3>
+            <button class="btn small" onclick="loadSearchHistoryAdmin()">Actualizar</button>
+          </div>
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+            <div class="table-wrap" style="max-height:360px; overflow-y:auto;">
+              <table>
+                <thead><tr><th>Búsqueda</th><th>Resultados</th><th>Fecha</th></tr></thead>
+                <tbody id="searchHistoryTableBody">
+                  <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">Términos más buscados</div>
+              <div id="searchTopTermsList" style="display:flex; flex-direction:column; gap:8px; font-size:13px;">Cargando…</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -6288,6 +6309,7 @@ function switchView(viewName) {
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
+  if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
 }
@@ -12176,6 +12198,75 @@ function updateSearchSuggestions(q) {
 function hideSearchSuggestions() {
   const box = document.getElementById('storeSearchSuggest');
   if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+}
+
+// ================= HISTORIAL DE BÚSQUEDAS (real, para el admin) =================
+// Registra en Supabase (busquedas_tienda, vía /api/log-busqueda) las
+// búsquedas reales que hacen los clientes en el buscador de la tienda, con
+// debounce (no en cada tecla) y sin repetir la misma búsqueda mientras el
+// cliente sigue escribiendo/borrando el mismo texto. Se usa en el admin,
+// en "Parámetros de la Tienda > Motor de Búsqueda", para mostrar qué está
+// buscando la gente de verdad.
+let searchLogTimer = null;
+let lastLoggedSearchQuery = '';
+
+function scheduleSearchLog(q) {
+  const query = (q || '').trim();
+  clearTimeout(searchLogTimer);
+  if (query.length < 3) return; // mismo mínimo que "Parámetros de Búsqueda" en el admin
+  searchLogTimer = setTimeout(() => {
+    const key = query.toLowerCase();
+    if (key === lastLoggedSearchQuery) return;
+    lastLoggedSearchQuery = key;
+    const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+    const resultsCount = dataset.filter(p =>
+      p.name.toLowerCase().includes(key) || (p.sku || '').toLowerCase().includes(key)
+    ).length;
+    fetch('/api/log-busqueda', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, resultsCount })
+    }).catch(() => {});
+  }, 800);
+}
+
+async function loadSearchHistoryAdmin() {
+  const tbody = document.getElementById('searchHistoryTableBody');
+  const topBox = document.getElementById('searchTopTermsList');
+  if (!tbody) return;
+
+  try {
+    const r = await fetch('/api/busquedas?limit=100');
+    const data = await r.json();
+    const history = Array.isArray(data.history) ? data.history : [];
+    const top = Array.isArray(data.top) ? data.top : [];
+
+    if (history.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Todavía no hay búsquedas registradas.</td></tr>';
+    } else {
+      tbody.innerHTML = history.map(h => `
+        <tr>
+          <td><b>${escapeHtml(h.query)}</b></td>
+          <td style="text-align:center;">${h.resultsCount}</td>
+          <td style="font-size:12px;">${new Date(h.date).toLocaleString('es-MX')}</td>
+        </tr>
+      `).join('');
+    }
+
+    if (topBox) {
+      topBox.innerHTML = top.length === 0
+        ? '<div style="color:var(--text-muted);">Sin datos todavía.</div>'
+        : top.map(t => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span>${escapeHtml(t.query)}</span>
+            <span class="pill ok">${t.count}x</span>
+          </div>
+        `).join('');
+    }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">No se pudo cargar el historial de búsquedas.</td></tr>';
+    if (topBox) topBox.innerHTML = '<div style="color:var(--text-muted);">—</div>';
+  }
 }
 
 function goToSearchResult(productId) {
