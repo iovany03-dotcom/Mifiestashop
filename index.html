@@ -3578,7 +3578,7 @@
               <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
             </thead>
             <tbody id="customersTableBody">
-              <!-- Dynamically populated -->
+              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -8990,6 +8990,10 @@ async function loadCustomersFromAPI(){
   const select = document.getElementById('posCustomerSelect');
   const searchInput = document.getElementById('customersSearchInput');
   if (searchInput) searchInput.value = '';
+  // La tienda tiene miles de clientes reales — traerlos puede tardar varios
+  // segundos, así que se avisa que está cargando en vez de dejar la tabla
+  // vacía (que se veía como si el directorio de clientes no funcionara).
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   let list = [];
   try {
