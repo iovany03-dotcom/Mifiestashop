@@ -4760,16 +4760,23 @@
       <button class="btn small" onclick="closeTicketHistorialModal()">✕</button>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial(this.value)" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial()" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <select id="ticketHistorialAlmacen" onchange="filterTicketHistorial()" style="padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        <option value="">Todas las sucursales</option>
+        <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
+        <option value="CDMX Rumania">CDMX Rumania</option>
+        <option value="Querétaro">Querétaro</option>
+        <option value="Atizapán">Atizapán</option>
+      </select>
       <button class="btn small primary" onclick="downloadTicketHistorialCSV()">Descargar CSV</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
+          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
         </thead>
         <tbody id="ticketHistorialTableBody">
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -6583,6 +6590,8 @@ async function openTicketHistorialModal() {
   document.getElementById('ticketHistorialModal').classList.remove('hidden');
   const searchInput = document.getElementById('ticketHistorialSearch');
   if (searchInput) searchInput.value = '';
+  const almacenSelect = document.getElementById('ticketHistorialAlmacen');
+  if (almacenSelect) almacenSelect.value = '';
   await loadTicketHistorial();
 }
 
@@ -6615,7 +6624,7 @@ function renderTicketHistorialTable(tickets) {
   ticketHistorialVisible = tickets;
 
   if (tickets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
     return;
   }
 
@@ -6626,6 +6635,7 @@ function renderTicketHistorialTable(tickets) {
     <tr>
       <td><b>${escapeHtml(t.folio)}</b></td>
       <td>${fecha}</td>
+      <td>${escapeHtml(t.almacen || '—')}</td>
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
@@ -7005,11 +7015,14 @@ async function deleteSalidaCaja(id) {
   }
 }
 
-function filterTicketHistorial(query) {
-  const q = normalizeEs(query || '');
-  const filtered = q
-    ? ticketHistorialCache.filter(t => normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q))
-    : ticketHistorialCache;
+function filterTicketHistorial() {
+  const q = normalizeEs(document.getElementById('ticketHistorialSearch')?.value || '');
+  const almacen = document.getElementById('ticketHistorialAlmacen')?.value || '';
+  const filtered = ticketHistorialCache.filter(t => {
+    const matchQ = !q || normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q);
+    const matchAlmacen = !almacen || t.almacen === almacen;
+    return matchQ && matchAlmacen;
+  });
   renderTicketHistorialTable(filtered);
 }
 
