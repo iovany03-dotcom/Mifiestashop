@@ -13,7 +13,7 @@ test('every source page has its exact title, slug, original path and static meta
     assert.equal(m.path,`/content/${page.id}-${page.slug}`);
     const route=config.rewrites.find(r=>r.source===m.path);assert.ok(route,m.path);
     const $=cheerio.load(fs.readFileSync(path.join(root,route.destination),'utf8'));
-    assert.equal($('h1').length,1,m.path);assert.equal($('h1').text(),page.title);
+    assert.equal($('h1').length,1,m.path);assert.equal($('h1').text(),page.id===410?page.title.replace(/_+$/,''):page.title);
     assert.equal($('link[rel=canonical]').attr('href'),'https://mifiestashop.vercel.app'+m.path);
     assert.equal($('title').text(),page.title+' | Mi Fiestashop');
     assert.equal($('meta[name=description]').length,1);
@@ -97,4 +97,10 @@ test('migrated pages and admin inventory work without PrestaShop network access'
  for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+p.id+'.html'),'utf8'));$('img').each((_,el)=>{const src=$(el).attr('src');assert.ok(src.startsWith('/img/'),src);assert.ok(fs.existsSync(path.join(root,src)));});}
  const catalog=require('../data/cms-products.json');assert.ok(catalog.products.length>0);for(const p of catalog.products){assert.ok(fs.existsSync(path.join(root,p.img)));assert.equal(p.price,undefined);}
  const js=fs.readFileSync(path.join(root,'assets/cms.js'),'utf8');assert.doesNotMatch(js,/mifiestashop\.com|api\/productos/);assert.match(js,/data\/cms-products\.json/);
+});
+
+test('neon redesign is isolated and imported icon/location banners cannot reappear',()=>{
+ const removed=['b7b3e512c4029e40','69f29cc0e2aaaeb0','6eeaeb9d458892c4'];
+ for(const page of source){const html=fs.readFileSync(path.join(root,'cms-pages/'+page.id+'.html'),'utf8');const $=cheerio.load(html);assert.equal($('body').hasClass('neon-page'),page.id===410);for(const id of removed)assert.ok(!$('.source-content').html()?.includes(id),page.slug);$('script[src],link[rel=stylesheet]').each((_,e)=>{const u=$(e).attr('src')||$(e).attr('href');if(u.startsWith('/assets/'))assert.match(u,/\?v=[a-f0-9]{12}$/);});}
+ const html=fs.readFileSync(path.join(root,'cms-pages/410.html'),'utf8');assert.ok(html.includes('Rumania 613'));assert.ok(!html.includes('Puebla'));new vm.Script(fs.readFileSync(path.join(root,'assets/neon-cdmx.js'),'utf8'));
 });

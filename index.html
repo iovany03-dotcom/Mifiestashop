@@ -12244,12 +12244,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
 loadRealStockData();
 
 loadCartFromStorage();
-if(window.location.pathname==='/'){
- const vista=new URLSearchParams(window.location.search).get('vista');
- if(vista==='carrito')openStorefrontCart();
- else if(vista==='admin')goToAdmin();
- else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
-}
+
 updateStoreCartBadge();
 if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
@@ -12304,6 +12299,12 @@ function routeApp() {
     return;
   }
   showPublicStorefront();
+if(window.location.pathname==='/'){
+ const vista=new URLSearchParams(window.location.search).get('vista');
+ if(vista==='carrito')openStorefrontCart();
+ else if(vista==='admin')goToAdmin();
+ else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
+}
 }
 routeApp();
 if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('cuenta')) openClientePortal();

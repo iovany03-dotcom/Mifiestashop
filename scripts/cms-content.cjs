@@ -99,6 +99,10 @@ function sanitize(html, page, pages, location) {
   });
   $('img').each((_, el) => {
     const img = $(el), src = assetUrl(img.attr('src'), page);
+    // Legacy builder icons, reviewer portraits, coupons and location banners are
+    // replaced by the shared benefits, testimonials, promotions and location blocks.
+    const obsolete = new Set(['1cc4e44c2fbafaaf','4c6a381b678520a6','b7b3e512c4029e40','3cd28f5d4156483d','2bb12300ecbb36d0','88e86b9e82d71af4','13371b35e833529e','f317265bd2e5bda3','69f29cc0e2aaaeb0','6eeaeb9d458892c4','e7d011b55f8424d9']);
+    if(src && [...obsolete].some(id=>src.includes(id))){img.remove();return;}
     if (!src) { img.remove(); return; }
     img.attr('src', src).attr('loading','lazy').attr('decoding','async');
     if (!img.attr('alt')) img.attr('alt', page.title);

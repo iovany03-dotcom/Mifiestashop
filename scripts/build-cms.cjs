@@ -1,5 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
+const {designNeonPage}=require('./neon-page.cjs');
 const { modelFor, esc } = require('./cms-content.cjs');
 const root = path.resolve(__dirname, '..');
 const pages = require('../data/cms-pages.json');
@@ -71,7 +73,13 @@ ${!informational && related.length ? `<section class="related-pages wrap"><h2>MÃ
 }
 const runtime = [];
 for (const model of models) {
-  const html = render(model);
+  let html = render(model);
+  if(model.id===410)html=designNeonPage(html,model);
+  // Revision URLs prevent cached pre-migration JS/CSS from keeping old cards alive.
+  html=html.replace(/(src|href)="(\/assets\/[^"?]+\.(?:js|css))"/g,(_,attr,url)=>{
+    const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,url))).digest('hex').slice(0,12);
+    return attr+'="'+url+'?v='+hash+'"';
+  });
   fs.writeFileSync(path.join(output, `${model.id}.html`), html);
   runtime.push({id:model.id,title:model.title,slug:model.slug,description:model.description,path:model.sourcePath,
     inFooter:model.inFooter,migrated:true,content:html.match(/<main id="contenido">([\s\S]*?)<\/main>/)[1]});

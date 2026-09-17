@@ -1,0 +1,1 @@
+(()=>{const button=document.querySelector('.neon-switch');if(!button)return;button.addEventListener('click',()=>{const on=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(on));document.body.classList.toggle('neon-on',on);button.lastElementChild.textContent=on?'Volver al ambiente inicial':'Enciende el ambiente';});})();
