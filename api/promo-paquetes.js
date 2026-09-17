@@ -29,6 +29,16 @@ function itemsFromDescription(html) {
   return plain.split(/\n+/).map(s => s.trim()).filter(Boolean);
 }
 
+// Transcribed straight from the real site (mifiestashop.com) at the owner's request,
+// since the PrestaShop "Descripción corta" for these products is still the old generic
+// placeholder ("Articulos para boda", etc.), not a real item list. Used only when the
+// live description has fewer than 2 items — the moment someone fills in the real
+// description in the PrestaShop admin, the live one takes over automatically.
+const FALLBACK_ITEMS = {
+  83589: ['200 Globos salchicha', '50 Pulseras luminosas cyalume', '2 Lentes gigante', '3 Collares hawaianos', '2 Antifaces de cartón metálico', '3 Micrófonos inflables', '3 Guitarras metálicas inflables', '2 Cornetas con mechudo', '2 Letreros selfie', '2 Antifaz carnaval', '2 Mandiles personalizados', '1 Sombrero novia hule espuma', '1 Sombrero novio hule espuma'],
+  83552: ['5 Antifaz de cartón metálico', '5 Pelucas metálicas', '1 Globo salchicha (200 pzas)', '2 Micrófonos inflables chicos', '4 Guitarras metálicas inflables', '3 Bombines con peluca metálica', '2 Lentes batucada', '6 Collares de perla', '7 Diademas con pelitos', '2 Sombreros de palma', '1 Máscara de luchador', '5 Corbatas neón', '5 Moños neón', '5 Bombines neón', '2 Lentes gigantes neón', '6 Collares hawaianos neón', '1 Sombrero de hule espuma Novio', '1 Sombrero de hule espuma Novio', '5 Diademas con mechudo', '5 Letreros selfie boda', '1 Pulsera luminosa cyalume (90 pzas)', '4 Lentes luminosos cyalume', '1 Anillo luminoso LED (4 pzas)']
+};
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -68,11 +78,12 @@ module.exports = async function handler(req, res) {
       const linkRewrite = firstLangValue(p.link_rewrite, '');
       const imgId = p.id_default_image;
       const img = imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : '';
+      const liveItems = itemsFromDescription(shortDesc || longDesc);
       return {
         id: Number(p.id),
         name,
         price: parseFloat(p.price || 0),
-        items: itemsFromDescription(shortDesc || longDesc),
+        items: liveItems.length >= 2 ? liveItems : (FALLBACK_ITEMS[p.id] || liveItems),
         img,
         linkRewrite,
         url: linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : undefined
