@@ -3,6 +3,30 @@
 // Requires env vars:
 //   PS_BASE_URL   e.g. https://www.mifiestashop.com
 //   PS_API_KEY    the PrestaShop webservice key
+//
+// Migración a nuestro propio sistema: para los productos que ya tienen un
+// registro en productos_migrados (Supabase) — nombre, descripción, SKU,
+// categoría e imágenes, todo real, con las imágenes ya re-hospedadas en
+// Supabase Storage — se usan esos datos en vez de los de PrestaShop.
+// Precio y stock siguen viniendo siempre en vivo de PrestaShop (decisión
+// explícita: solo se migró lo descriptivo, no el inventario).
+const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
+
+async function fetchMigratedProducts() {
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?select=id,sku,name,description,category_label,images`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    if (!r.ok) return {};
+    const rows = await r.json();
+    const map = {};
+    (Array.isArray(rows) ? rows : []).forEach(row => { map[String(row.id)] = row; });
+    return map;
+  } catch (e) {
+    return {};
+  }
+}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -57,6 +81,7 @@ module.exports = async function handler(req, res) {
 
     const data = await r.json();
     const rawProducts = Array.isArray(data.products) ? data.products : [];
+    const migrated = await fetchMigratedProducts();
 
     const products = rawProducts.map(p => {
       const nameStr = firstLangValue(p.name, 'Producto PrestaShop');
@@ -76,14 +101,20 @@ module.exports = async function handler(req, res) {
       // Liga real y pública del producto en la tienda en vivo (mifiestashop.com).
       const publicUrl = linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : `${baseUrl}/index.php?id_product=${p.id}&controller=product`;
 
+      const m = migrated[String(p.id)];
+      const images = m && Array.isArray(m.images) && m.images.length > 0 ? m.images : null;
+
       return {
         id: p.id,
-        name: nameStr,
-        description: descStr,
-        sku: p.reference || `PS-${p.id}`,
+        name: m ? m.name : nameStr,
+        description: m && m.description ? m.description : descStr,
+        sku: m ? m.sku : (p.reference || `PS-${p.id}`),
         price: parseFloat(p.price || 0),
         categoryId: p.id_category_default || '1',
-        img: imageUrl,
+        categoryLabel: m ? m.category_label : undefined,
+        img: images ? images[0] : imageUrl,
+        images: images || undefined,
+        migrated: !!m,
         linkRewrite,
         url: publicUrl
       };
