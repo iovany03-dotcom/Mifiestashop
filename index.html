@@ -9636,12 +9636,17 @@ function applyProductSeoTags(p) {
     ld.id = 'ldJsonProduct';
     document.head.appendChild(ld);
   }
+  // Las fotos migradas son WebP reales de 800x800 (ver scratch/imgtools) —
+  // se describen como ImageObject en vez de una URL suelta, que es lo que
+  // Google recomienda para que las imágenes del producto aparezcan bien en
+  // Google Imágenes / resultados enriquecidos.
+  const productImages = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.img ? [p.img] : []);
   ld.textContent = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: p.name,
     sku: p.sku,
-    image: p.img,
+    image: productImages.map(url => ({ '@type': 'ImageObject', url, width: 800, height: 800 })),
     description: desc,
     offers: {
       '@type': 'Offer',
@@ -11252,7 +11257,7 @@ function trimTrailingPartialRow(grid){
 function buildStorefrontProductCardHTML(p, idx){
   return `
     <div class="store-prod-card store-reveal" style="transition-delay:${Math.min(idx, 8) * 50}ms;">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
@@ -11440,7 +11445,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
       <div>
-        <img src="${p.img}" alt="${p.name}" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--mf-cream);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--mf-cream);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
@@ -11510,7 +11515,7 @@ function openRelatedProduct(productId){
 function buildRelatedProductCardHTML(p){
   return `
     <div class="store-prod-card store-reveal" style="cursor:pointer;" onclick="openRelatedProduct('${p.id}')">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
