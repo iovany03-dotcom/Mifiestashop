@@ -80,6 +80,7 @@ for (const model of models) {
     const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,url))).digest('hex').slice(0,12);
     return attr+'="'+url+'?v='+hash+'"';
   });
+  html=html.replace(/[ \t]+$/gm,'');
   fs.writeFileSync(path.join(output, `${model.id}.html`), html);
   runtime.push({id:model.id,title:model.title,slug:model.slug,description:model.description,path:model.sourcePath,
     inFooter:model.inFooter,migrated:true,content:html.match(/<main id="contenido">([\s\S]*?)<\/main>/)[1]});
