@@ -4835,10 +4835,6 @@
       <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial()" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
       <select id="ticketHistorialAlmacen" onchange="filterTicketHistorial()" style="padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
         <option value="">Todas las sucursales</option>
-        <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
-        <option value="CDMX Rumania">CDMX Rumania</option>
-        <option value="Querétaro">Querétaro</option>
-        <option value="Atizapán">Atizapán</option>
       </select>
       <button class="btn small primary" onclick="downloadTicketHistorialCSV()">Descargar CSV</button>
     </div>
@@ -6508,7 +6504,8 @@ function setPayMethod(method) {
 function payMethodTicketLabel(method) {
   if (method === 'card') return 'Pago con Tarjeta';
   if (method === 'transfer') return 'Pago por Transferencia';
-  return 'Pago En Efectivo';
+  if (method === 'cash' || !method) return 'Pago En Efectivo';
+  return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
 }
 
 function setPresetCash(amount) {
@@ -6686,21 +6683,62 @@ function closeTicketHistorialModal() {
 async function loadTicketHistorial() {
   const tbody = document.getElementById('ticketHistorialTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
+  // El Historial de Tickets combina dos fuentes:
+  // 1) pos_tickets (tabla propia, vía rpc_pos_ticket_list) — el checkout
+  //    interno de este sitio, sin uso real todavía.
+  // 2) Las ventas reales del Sistema POS, que en esta tienda son pedidos
+  //    genuinos de PrestaShop (payment==='POS', creados por las cajas
+  //    físicas Caja Puebla/Caja Queretaro/Caja CDMX) — ver api/pedidos.js.
+  // Antes solo se leía de (1), que está vacía, así que nunca aparecía nada.
+  let sessionInvalid = false;
+  let posTickets = [];
   try {
     const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
-    ticketHistorialCache = Array.isArray(rows) ? rows : [];
-    renderTicketHistorialTable(ticketHistorialCache);
+    posTickets = (Array.isArray(rows) ? rows : []).map(t => ({
+      id: `pt-${t.id}`, folio: t.folio, created_at: t.created_at, cliente: t.cliente || 'Cliente POS',
+      almacen: t.almacen || '', items: Array.isArray(t.items) ? t.items : [],
+      subtotal: t.subtotal, iva: t.iva, total: t.total, pago_recibido: t.pago_recibido, cambio: t.cambio,
+      metodo: t.metodo, registrado_por: t.registrado_por
+    }));
   } catch (e) {
-    // "unauthorized" = la contraseña de admin o el PIN guardados en este
-    // navegador ya no coinciden con los actuales (se cambiaron en otro
-    // lugar) — se dice explícitamente en vez de un error genérico, porque
-    // se resuelve solo cerrando sesión y volviendo a entrar.
-    tbody.innerHTML = e && e.message === 'unauthorized'
-      ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>'
-      : '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
+    if (e && e.message === 'unauthorized') sessionInvalid = true;
   }
+
+  let realOrders = [];
+  try {
+    const r = await fetch('/api/pedidos?limit=3000');
+    const data = await r.json();
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    realOrders = orders.filter(o => o.paymentMethod === 'POS').map(o => ({
+      id: `ps-${o.rawId}`, folio: o.reference || String(o.id), created_at: o.date, cliente: o.customer || 'Cliente POS',
+      almacen: o.sucursal || '', items: Array.isArray(o.items) ? o.items : [],
+      subtotal: o.total, iva: 0, total: o.total, pago_recibido: o.total, cambio: 0,
+      metodo: o.paymentMethodDetail, registrado_por: o.createdBy
+    }));
+  } catch (e) { /* si falla, se sigue mostrando al menos pos_tickets */ }
+
+  ticketHistorialCache = [...realOrders, ...posTickets].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (ticketHistorialCache.length === 0 && sessionInvalid) {
+    // Solo se avisa del problema de sesión si de verdad no quedó nada que
+    // mostrar (si los pedidos reales sí cargaron, no vale la pena
+    // interrumpir con un error sobre pos_tickets, que ni se usa).
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
+    return;
+  }
+
+  const sucursales = [...new Set(ticketHistorialCache.map(t => t.almacen).filter(Boolean))].sort();
+  const almacenSelect = document.getElementById('ticketHistorialAlmacen');
+  if (almacenSelect) {
+    const prevVal = almacenSelect.value;
+    almacenSelect.innerHTML = '<option value="">Todas las sucursales</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (sucursales.includes(prevVal)) almacenSelect.value = prevVal;
+  }
+
+  renderTicketHistorialTable(ticketHistorialCache);
 }
 
 // Lista actualmente visible en la tabla (respeta el filtro de búsqueda
@@ -6729,7 +6767,7 @@ function renderTicketHistorialTable(tickets) {
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
-      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
+      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
   }).join('');
 }
