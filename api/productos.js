@@ -87,7 +87,7 @@ module.exports = async function handler(req, res) {
   const category = req.query.category;
   const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
   const sort = SORT_MAP[req.query.sort];
-  const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,wholesale_price,ean13,weight,width,height,depth,meta_title,meta_description]';
+  const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,wholesale_price,ean13,weight,width,height,depth,meta_title,meta_description,low_stock_threshold]';
   let filters = 'filter[active]=1';
   if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
   if (sort) filters += `&sort=${sort}`;
@@ -175,6 +175,7 @@ module.exports = async function handler(req, res) {
         weight, width, height, depth,
         metaTitle: metaTitle || undefined,
         metaDescription: metaDescription || undefined,
+        lowStockThreshold: parseInt(p.low_stock_threshold, 10) || undefined,
         img: images ? images[0] : imageUrl,
         images: images || undefined,
         migrated: !!m,

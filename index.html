@@ -7608,6 +7608,7 @@ async function syncProductsFromPrestaShopAPI(){
           depth: p.depth || 0,
           metaTitle: p.metaTitle || '',
           metaDescription: p.metaDescription || '',
+          lowStockThreshold: p.lowStockThreshold || 0,
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
           images: Array.isArray(p.images) ? p.images : undefined,
           migrated: !!p.migrated,
@@ -9392,7 +9393,11 @@ function checkLowStockNotifications() {
   dataset.forEach((p, index) => {
     const pId = p.id || index + 1;
     const stTotal = getStockFor(pId, 'puebla') + getStockFor(pId, 'rumania') + getStockFor(pId, 'queretaro');
-    if (stTotal < 150) lowItems.push(p.name);
+    // Umbral real configurado en PrestaShop por producto (low_stock_threshold)
+    // en vez de un número fijo igual para los ~500 productos — un antifaz de
+    // $2 y una vela de $67 no deberían alertar con el mismo punto de corte.
+    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : 10;
+    if (stTotal < threshold) lowItems.push(p.name);
   });
 
   if (lowItems.length === 0) return;
