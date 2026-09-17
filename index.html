@@ -6534,7 +6534,18 @@ function confirmPOSSale() {
   }).then(rows => {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
-  }).catch(() => {});
+  }).catch(e => {
+    // Si esto falla en silencio, el ticket se ve/imprime bien pero nunca
+    // llega al Historial de Tickets ni se descuenta el inventario — antes
+    // no se avisaba nada y parecía que "los pedidos no aparecen" sin
+    // explicación. "unauthorized" significa que la contraseña de admin o
+    // el PIN guardados en este navegador ya no coinciden con los actuales
+    // (p.ej. se cambió la contraseña en otro dispositivo) — se resuelve
+    // cerrando sesión y volviendo a entrar.
+    if (e && e.message === 'unauthorized') {
+      alert('Este ticket se imprimió pero NO se guardó en el Historial ni descontó inventario: tu sesión ya no es válida. Cierra sesión y vuelve a entrar para corregirlo.');
+    }
+  });
 
   // Descuenta el inventario real: registra el movimiento en el ledger de
   // Supabase (best-effort, no bloquea el ticket si falla). Solo aplica a
@@ -6631,7 +6642,13 @@ async function loadTicketHistorial() {
     ticketHistorialCache = Array.isArray(rows) ? rows : [];
     renderTicketHistorialTable(ticketHistorialCache);
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
+    // "unauthorized" = la contraseña de admin o el PIN guardados en este
+    // navegador ya no coinciden con los actuales (se cambiaron en otro
+    // lugar) — se dice explícitamente en vez de un error genérico, porque
+    // se resuelve solo cerrando sesión y volviendo a entrar.
+    tbody.innerHTML = e && e.message === 'unauthorized'
+      ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>'
+      : '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
   }
 }
 
