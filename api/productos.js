@@ -147,11 +147,7 @@ module.exports = async function handler(req, res) {
       const descStr = shortDesc || longDesc;
       const linkRewrite = firstLangValue(p.link_rewrite, '');
 
-      const imgId = p.id_default_image;
-      let imageUrl = 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
-      if (imgId && imgId !== '0') {
-        imageUrl = `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}`;
-      }
+      const imageUrl = '/img/cms/logo.webp';
 
       // Liga real y pública del producto en la tienda en vivo (mifiestashop.com).
       const publicUrl = linkRewrite ? `/${p.id}-${linkRewrite}.html` : `/${p.id}-producto.html`;

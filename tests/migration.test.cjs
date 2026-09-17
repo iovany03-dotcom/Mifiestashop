@@ -104,6 +104,41 @@ test('wholesale discount follows explicit price and excludes expired or customer
   assert.equal(wholesale(100,[{...rule,reduction_type:'amount',reduction_tax:1}],10),null);
 });
 
+test('authenticated customer directory bounds responses and only reads page addresses',async t=>{
+  t.mock.method(store,'requireSession',async()=>true);
+  t.mock.method(store,'request',async path=>{
+    assert.match(path,/offset=250&limit=251/);
+    return Array.from({length:251},(_,i)=>({id:1000+i,name:'Cliente'}));
+  });
+  t.mock.method(store,'all',async(table,query)=>{
+    assert.equal(table,'ps_direcciones');
+    assert.match(query,/id_customer=in\.\(1000,1001,/);
+    assert.doesNotMatch(query,/1250/);
+    return [{id:1,id_customer:1000,address1:'A',phone:'123',active:true}];
+  });
+  const res=response();
+  await require('../lib/native-customers')({method:'POST',body:{},query:{offset:'250'}},res);
+  assert.equal(res.code,200);assert.equal(res.data.customers.length,250);
+  assert.equal(res.data.hasMore,true);assert.equal(res.data.nextOffset,500);
+  assert.equal(res.data.customers[0].phone,'123');
+});
+
+test('promotion packages use migrated descriptions and local links without source credentials',async t=>{
+  const previous=process.env.PS_NATIVE_COMMERCE;
+  process.env.PS_NATIVE_COMMERCE='1';
+  t.after(()=>{if(previous===undefined)delete process.env.PS_NATIVE_COMMERCE;else process.env.PS_NATIVE_COMMERCE=previous;});
+  t.mock.method(global,'fetch',async()=>{throw new Error('Source network forbidden')});
+  t.mock.method(store,'all',async table=>table==='productos_migrados'
+    ?[{id:10,images:['/img/local.webp']}]
+    :[{id:10,data:{id:10,active:1,price:'100',name:'Paquete',link_rewrite:'paquete',description:'<ul><li>Uno</li><li>Dos</li></ul>'}}]);
+  const res=response();await require('../api/promo-paquetes')({query:{ids:'10'}},res);
+  assert.equal(res.code,200);assert.equal(res.data.packages[0].price,100);
+  assert.deepEqual(res.data.packages[0].items,['Uno','Dos']);
+  assert.equal(res.data.packages[0].url,'/10-paquete.html');
+  assert.equal(res.data.packages[0].img,'/img/local.webp');
+  assert.doesNotMatch(JSON.stringify(res.data),/ws_key|mifiestashop\.com/);
+});
+
 test('checkout uses local authoritative prices and combines duplicated lines for stock validation',async t=>{
   t.mock.method(store,'all',async table=>table==='ps_productos_comercio'
     ?[{id:1,data:{id:1,active:1,price:'25.55',name:'Artículo'}}]
