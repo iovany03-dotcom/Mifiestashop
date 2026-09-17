@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title id="pageTitleTag">Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México</title>
 <meta id="metaDescription" name="description" content="Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.">
+<meta id="metaKeywords" name="keywords" content="fiesta, globos, batucada, pirotecnia fría, antifaces, artículos de fiesta al mayoreo">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#d3007b">
 <link rel="icon" type="image/webp" href="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
@@ -7608,6 +7609,7 @@ async function syncProductsFromPrestaShopAPI(){
           depth: p.depth || 0,
           metaTitle: p.metaTitle || '',
           metaDescription: p.metaDescription || '',
+          metaKeywords: p.metaKeywords || '',
           lowStockThreshold: p.lowStockThreshold || 0,
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
           images: Array.isArray(p.images) ? p.images : undefined,
@@ -9574,9 +9576,12 @@ function showAdminDashboard() {
 function resetStorefrontSeoTags() {
   const defaultTitle = 'Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México';
   const defaultDesc = 'Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.';
+  const defaultKeywords = 'fiesta, globos, batucada, pirotecnia fría, antifaces, artículos de fiesta al mayoreo';
   document.title = defaultTitle;
   const metaDesc = document.getElementById('metaDescription');
   if (metaDesc) metaDesc.setAttribute('content', defaultDesc);
+  const metaKw = document.getElementById('metaKeywords');
+  if (metaKw) metaKw.setAttribute('content', defaultKeywords);
   const canonical = document.getElementById('canonicalLink');
   if (canonical) canonical.setAttribute('href', 'https://mifiestashop.vercel.app/');
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', defaultTitle);
@@ -9603,6 +9608,8 @@ function applyProductSeoTags(p) {
   document.title = title;
   const metaDesc = document.getElementById('metaDescription');
   if (metaDesc) metaDesc.setAttribute('content', desc);
+  const metaKw = document.getElementById('metaKeywords');
+  if (metaKw && p.metaKeywords && p.metaKeywords.trim()) metaKw.setAttribute('content', p.metaKeywords.trim());
   const canonical = document.getElementById('canonicalLink');
   if (canonical) canonical.setAttribute('href', url);
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', title);
