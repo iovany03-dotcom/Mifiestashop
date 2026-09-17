@@ -221,7 +221,7 @@ function modelFor(page, pages) {
     // Recompose those blocks instead of carrying over its duplicate headlines/banners.
     content = '';
   }
-  let description = page.description || config.intro;
+  let description = page.description || config.intro || `${page.title}: consulta la información y completa tu registro en Mi Fiesta Shop.`;
   const pageCity = cityOf(page.title + ' ' + page.slug);
   if (pageCity && theme !== 'informacion') description = description.replace(/Ciudad de M[eé]xico|CDMX|Quer[eé]taro|\bQRO\b|Puebla|Atizap[aá]n/gi, STORES[pageCity].name);
   let heroImage = image ? assetUrl(image,page) : '';
