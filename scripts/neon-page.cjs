@@ -9,7 +9,7 @@ function designNeonPage(html,p){
  $('.reviews').remove(); // Do not attach generic copied testimonials to an unverified city.
  $('#ubicacion').addClass('neon-location');$('#ubicacion .section-kicker').text('De la pantalla a tu fiesta');$('#ubicacion h2').text('Ven por el color.');
  $('#promotions-title').text('La fiesta, en paquete.');
- $('.cms-promotions .promotion-benefits').after('<p class="neon-package-note">Compara los paquetes neón. Consulta el contenido y precio actual en cada ficha.</p>');
+ $('#cms-promo-products').before('<p class="neon-package-note">Compara los paquetes neón. Consulta el contenido y precio actual en cada ficha.</p>');
  $('.related-pages').remove();
  $('meta[name="description"],meta[property="og:description"]').attr('content','Artículos neón para fiestas en CDMX: pulseras, lentes, luminosos y paquetes. Compra por pieza o consulta mayoreo. Visítanos en Rumania 613, Portales.');
  $('script[type="application/ld+json"]').each((_,el)=>{const data=JSON.parse($(el).text());data.description=$('meta[name="description"]').attr('content');$(el).text(JSON.stringify(data).replace(/</g,'\\u003c'));});
