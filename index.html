@@ -3218,44 +3218,10 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Monto Total</th><th>Estado</th><th>Acción</th></tr>
+              <tr><th>ID</th><th>Referencia</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th><th>F. Entrega</th><th>Creado Por</th><th>Tienda</th><th>Acciones</th></tr>
             </thead>
             <tbody id="ordersTableBody">
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#486601')">
-                <td><b>#486601</b> <span style="font-size:11px; color:var(--text-muted);">CPFEGDOQY</span></td>
-                <td>2026-09-11 15:52</td>
-                <td><b>Consumidor Final</b></td>
-                <td><span class="pill ok">Sistema POS</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$180.00</td>
-                <td><span class="pill ok">Pago Aceptado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#486601')"> Ver Orden</button>
-                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#486601', 180)"> Ticket</button>
-                </td>
-              </tr>
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#POS-10492')">
-                <td><b>#POS-10492</b></td>
-                <td>2026-09-11 14:10</td>
-                <td>Cliente POS</td>
-                <td><span class="pill ok">Sistema POS</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$1,250.00</td>
-                <td><span class="pill ok">Pago Aceptado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#POS-10492')"> Ver Orden</button>
-                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#POS-10492', 1250)"> Ticket</button>
-                </td>
-              </tr>
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#PS-89421')">
-                <td><b>#PS-89421</b></td>
-                <td>2026-09-11 11:32</td>
-                <td>Carlos Gutiérrez</td>
-                <td><span class="pill warn">Tienda Online</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$3,480.00</td>
-                <td><span class="pill ok">Entregado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#PS-89421')"> Ver Orden</button>
-                </td>
-              </tr>
+              <tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -9108,11 +9074,16 @@ async function loadOrdersFromAPI(){
       ticketHistorialCache = tickets; // así "Ticket" reimprime el detalle real sin tener que abrir antes el Historial de Tickets
       const posOrders = tickets.map(t => ({
         id: t.folio,
+        reference: '',
         date: new Date(t.created_at).toLocaleString('es-MX'),
+        deliveryDate: null,
         customer: t.cliente || 'Cliente POS',
         channel: 'Sistema POS',
+        paymentMethod: payMethodTicketLabel(t.metodo),
         total: Number(t.total || 0),
         status: 'Pago Aceptado',
+        createdBy: t.registrado_por || null,
+        shop: 'Mi Fiestashop',
         items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
         rawId: null,
         _sortDate: new Date(t.created_at).getTime()
@@ -9130,20 +9101,28 @@ async function loadOrdersFromAPI(){
   // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
   // que sí agrega datos reales de PrestaShop (ver loadRealProductSales()).
 
-  tbody.innerHTML = list.map(o => `
+  const POSITIVE_STATES = ['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado'];
+  tbody.innerHTML = list.map(o => {
+    const statusOk = POSITIVE_STATES.includes(String(o.status || '').toLowerCase());
+    return `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
       <td><b>${escapeHtml(o.id)}</b></td>
-      <td>${escapeHtml(o.date)}</td>
-      <td><b>${escapeHtml(o.customer)}</b></td>
-      <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${escapeHtml(o.channel)}</span></td>
+      <td>${escapeHtml(o.reference || '—')}</td>
+      <td>${escapeHtml(o.customer)}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
-      <td><span class="pill ok">${escapeHtml(o.status)}</span></td>
+      <td>${escapeHtml(o.paymentMethod || o.channel || '—')}</td>
+      <td><span class="pill ${statusOk ? 'ok' : 'warn'}">${escapeHtml(o.status)}</span></td>
+      <td>${escapeHtml(o.date)}</td>
+      <td>${escapeHtml(o.deliveryDate || '—')}</td>
+      <td>${escapeHtml(o.createdBy || '—')}</td>
+      <td>${escapeHtml(o.shop || 'Mi Fiestashop')}</td>
       <td>
         <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('${escapeHtml(o.id)}')"> Ver Orden</button>
         <button class="btn small" onclick="event.stopPropagation(); reprintTicket('${escapeHtml(o.id)}', ${o.total})"> Ticket</button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const skSelect = document.getElementById('skSelectOrder');
   if (skSelect && list.length > 0) {
