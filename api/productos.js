@@ -14,18 +14,31 @@ const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 async function fetchMigratedProducts() {
+  // PostgREST limita a 1000 filas por default — con más de 1000 productos
+  // migrados hay que paginar con el header Range, si no se pierden
+  // silenciosamente los últimos (ya pasó: 1067 migrados, solo llegaban 1000).
+  const PAGE_SIZE = 1000;
+  const map = {};
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?select=id,sku,name,description,category_label,category_ids,images`, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
-    });
-    if (!r.ok) return {};
-    const rows = await r.json();
-    const map = {};
-    (Array.isArray(rows) ? rows : []).forEach(row => { map[String(row.id)] = row; });
-    return map;
+    let from = 0;
+    while (true) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?select=id,sku,name,description,category_label,category_ids,images`, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Range: `${from}-${from + PAGE_SIZE - 1}`
+        }
+      });
+      if (!r.ok) break;
+      const rows = await r.json();
+      const batch = Array.isArray(rows) ? rows : [];
+      batch.forEach(row => { map[String(row.id)] = row; });
+      if (batch.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
   } catch (e) {
-    return {};
+    // se queda con lo que ya haya juntado hasta el momento del error
   }
+  return map;
 }
 
 // Precios de mayoreo reales de PrestaShop (recurso "specific_prices"): para
