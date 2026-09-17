@@ -15,7 +15,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 async function fetchMigratedProducts() {
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?select=id,sku,name,description,category_label,images`, {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?select=id,sku,name,description,category_label,category_ids,images`, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
     });
     if (!r.ok) return {};
@@ -87,7 +87,7 @@ module.exports = async function handler(req, res) {
   const category = req.query.category;
   const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
   const sort = SORT_MAP[req.query.sort];
-  const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite]';
+  const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,wholesale_price,ean13,weight,width,height,depth,meta_title,meta_description]';
   let filters = 'filter[active]=1';
   if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
   if (sort) filters += `&sort=${sort}`;
@@ -147,16 +147,34 @@ module.exports = async function handler(req, res) {
       const basePrice = parseFloat(p.price || 0);
       const wholesale = computeWholesalePrice(basePrice, wholesaleRules[String(p.id)]);
 
+      // costoCompra: PrestaShop llama a este campo "wholesale_price" en su
+      // propio esquema, pero es el costo real que le cuesta a la tienda
+      // (lo que en nuestro admin es "Precio compra"), no un precio de
+      // mayoreo al cliente — eso ya se resuelve arriba con specific_prices.
+      const costoCompra = parseFloat(p.wholesale_price || 0) || undefined;
+      const metaTitle = firstLangValue(p.meta_title, '');
+      const metaDescription = firstLangValue(p.meta_description, '');
+      const weight = parseFloat(p.weight || 0) || undefined;
+      const width = parseFloat(p.width || 0) || undefined;
+      const height = parseFloat(p.height || 0) || undefined;
+      const depth = parseFloat(p.depth || 0) || undefined;
+
       return {
         id: p.id,
         name: m ? m.name : nameStr,
         description: m && m.description ? m.description : descStr,
         sku: m ? m.sku : (p.reference || `PS-${p.id}`),
+        barcode: p.ean13 || undefined,
         price: basePrice,
         priceMayoreo: wholesale ? Math.round(wholesale.price * 100) / 100 : undefined,
         priceMayoreoDesdeUnidades: wholesale ? wholesale.fromQty : undefined,
+        costoCompra,
         categoryId: p.id_category_default || '1',
         categoryLabel: m ? m.category_label : undefined,
+        categoryIds: m && Array.isArray(m.category_ids) && m.category_ids.length > 0 ? m.category_ids : undefined,
+        weight, width, height, depth,
+        metaTitle: metaTitle || undefined,
+        metaDescription: metaDescription || undefined,
         img: images ? images[0] : imageUrl,
         images: images || undefined,
         migrated: !!m,

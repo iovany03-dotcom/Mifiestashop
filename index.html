@@ -7594,11 +7594,20 @@ async function syncProductsFromPrestaShopAPI(){
           id: p.id,
           name: p.name || 'Producto',
           sku: p.sku || `PS-${p.id}`,
+          barcode: p.barcode || '',
           price: parseFloat(p.price || 50),
           priceMayoreo: Number.isFinite(p.priceMayoreo) ? p.priceMayoreo : 0,
           priceMayoreoDesdeUnidades: p.priceMayoreoDesdeUnidades || 0,
+          costoCompra: Number.isFinite(p.costoCompra) ? p.costoCompra : 0,
           cat: (p.categoryLabel || 'general').toLowerCase().trim(),
           catLabel: p.categoryLabel || 'General',
+          categoryIds: Array.isArray(p.categoryIds) ? p.categoryIds : undefined,
+          weight: p.weight || 0,
+          width: p.width || 0,
+          height: p.height || 0,
+          depth: p.depth || 0,
+          metaTitle: p.metaTitle || '',
+          metaDescription: p.metaDescription || '',
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
           images: Array.isArray(p.images) ? p.images : undefined,
           migrated: !!p.migrated,
@@ -7684,7 +7693,7 @@ function renderCatalogTable(category = 'all', query = ''){
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const filtered = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
 
@@ -8802,7 +8811,7 @@ function renderProducts(category = 'all', query = '') {
 
   const matchedByFilters = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
 
@@ -9574,8 +9583,15 @@ function resetStorefrontSeoTags() {
 
 function applyProductSeoTags(p) {
   if (!p) return;
-  const title = `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
-  const desc = (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
+  // Si PrestaShop ya tiene meta_title/meta_description redactados para este
+  // producto, se usan tal cual (son reales, escritos a mano) — el título y
+  // descripción genéricos solo son un respaldo para productos sin eso.
+  const title = (p.metaTitle && p.metaTitle.trim())
+    ? `${p.metaTitle.trim()} | Mi Fiestashop`
+    : `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
+  const desc = (p.metaDescription && p.metaDescription.trim())
+    ? p.metaDescription.trim().slice(0, 160)
+    : (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
   const path = productPathFor(p) || '/';
   const url = `https://mifiestashop.vercel.app${path}`;
 
