@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title id="pageTitleTag">Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México</title>
 <meta id="metaDescription" name="description" content="Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.">
+<meta id="metaKeywords" name="keywords" content="fiesta, globos, batucada, pirotecnia fría, antifaces, artículos de fiesta al mayoreo">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#d3007b">
 <link rel="icon" type="image/webp" href="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp">
@@ -70,6 +71,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light;
@@ -719,7 +721,7 @@
     border-radius: 14px 14px 0 0;
     background: linear-gradient(90deg, #d3007b, #ff6fb3);
   }
-  .ticket-logo { display: block; max-height: 92px; max-width: 100%; margin: 0 auto 10px; object-fit: contain; }
+  .ticket-icon { display: block; height: 44px; width: 44px; margin: 0 auto 6px; object-fit: contain; border-radius: 10px; }
   .ticket-store-name { font-weight: 800; font-size: 16.5px; letter-spacing: 0.01em; }
   .ticket-sub { color: #666; font-size: 11px; }
   .ticket-divider { border-top: 1px dashed #c9c9d2; margin: 12px 0; }
@@ -730,6 +732,20 @@
   .ticket-total-row.grand { font-size: 16px; font-weight: 800; padding-top: 8px; color: #1a1a1a; }
   .ticket-thanks { font-weight: 700; margin-bottom: 2px; font-size: 13px; }
   .ticket-scissors { text-align: center; color: #ccc; font-size: 11px; letter-spacing: 3px; margin-top: 14px; }
+  .ticket-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .ticket-table th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: #888; font-weight: 700; padding: 0 0 6px; border-bottom: 1px solid #e2e2e8; }
+  .ticket-table th:last-child, .ticket-table td:last-child,
+  .ticket-table th:nth-child(3), .ticket-table td:nth-child(3),
+  .ticket-table th:nth-child(4), .ticket-table td:nth-child(4) { text-align: right; }
+  .ticket-table td { padding: 5px 0; vertical-align: top; }
+  .ticket-table tr + tr td { border-top: 1px dashed #ececf2; }
+  .ticket-table .t-cod { color: #888; font-size: 10px; }
+  .ticket-table .t-prod-name { font-weight: 600; }
+  .ticket-method-table th { border-bottom: none; padding-bottom: 4px; }
+  .ticket-method-table td { font-weight: 600; }
+  .ticket-coupon-box { border: 1px dashed var(--mf-pink, #d3007b); border-radius: 10px; padding: 10px 12px; margin: 12px 0; text-align: center; }
+  .ticket-coupon-title { font-weight: 800; font-size: 12px; color: var(--mf-pink, #d3007b); margin-bottom: 3px; }
+  .ticket-coupon-desc { font-size: 10.5px; color: #555; line-height: 1.4; }
 
   @media print {
     body * { visibility: hidden; }
@@ -897,6 +913,18 @@
   }
   .store-header-nav a:hover { color: var(--mf-pink); border-color: var(--mf-pink); }
 
+  .store-mobile-nav {
+    display: none; flex-direction: column; background: #fff;
+    border-top: 1px solid #f0e6ef; padding: 4px 14px 8px;
+  }
+  .store-mobile-nav.open { display: flex; }
+  .store-mobile-nav a {
+    color: #2e1065; text-decoration: none; font-weight: 800; font-size: 1rem;
+    text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer;
+    padding: 14px 4px; border-bottom: 1px solid #f5eef7;
+  }
+  .store-mobile-nav a:last-child { border-bottom: none; }
+
   .store-header-icons { display: flex; align-items: center; gap: 18px; }
   .store-currency { font-weight: 700; font-size: 1.1rem; color: #2e1065; }
   .store-icon-btn {
@@ -906,6 +934,7 @@
   }
   .store-icon-btn:hover { transform: translateY(-2px) scale(1.1); color: var(--mf-pink); }
   .store-icon-btn svg { width: 31px; height: 31px; }
+  .store-mobile-menu-btn { display: none; }
   .store-cart-badge {
     position: absolute; top: -6px; right: -8px; background: var(--mf-pink); color: #fff;
     font-size: 0.83rem; font-weight: 800; min-width: 21px; height: 21px; border-radius: 999px;
@@ -931,6 +960,7 @@
     .store-brand-logo-wrap, .store-brand-logo { width: 48px; height: 48px; }
     .store-brand-tagline { display: none; }
     .store-header-nav { display: none; }
+    .store-mobile-menu-btn { display: flex; }
     .store-search-box {
       order: 3;
       flex: 1 1 100%;
@@ -1102,48 +1132,6 @@
   .store-feat-icon svg { width: 29px; height: 29px; }
   .store-feat-title { font-weight: 700; font-size: 1.08rem; color: #2e1065; }
   .store-feat-sub { font-size: 0.92rem; color: #8b7d97; }
-
-  /* Sección "Esto también le hace falta a tu evento" (Grupo SAE cross-sell) */
-  .store-crosssell {
-    background: linear-gradient(160deg, #3a1568 0%, #2e1065 60%, #24095a 100%);
-    color: #fff; padding: 48px 20px 56px; position: relative; overflow: hidden;
-  }
-  .store-crosssell-confetti { display: flex; justify-content: center; gap: 40px; margin-bottom: 18px; opacity: 0.9; }
-  .store-crosssell-confetti span { font-size: 1.1rem; }
-  .store-crosssell-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
-  .store-crosssell-pill {
-    display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 7px 16px;
-    font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; margin-bottom: 18px;
-  }
-  .store-crosssell-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--mf-pink); display: inline-block; }
-  .store-crosssell h2 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); font-weight: 800; margin: 0 0 14px; line-height: 1.25; }
-  .store-crosssell h2 .highlight { color: #ffd84d; }
-  .store-crosssell p.subtitle { font-size: 1rem; color: #d8c9ec; max-width: 640px; margin: 0 auto 36px; line-height: 1.5; }
-  .store-crosssell-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 28px 20px; text-align: left;
-  }
-  .store-crosssell-card {
-    background: #fff; border-radius: 16px; padding: 26px 20px; position: relative;
-    box-shadow: 0 12px 28px rgba(0,0,0,0.2); transition: transform 0.2s ease;
-  }
-  .store-crosssell-card:hover { transform: translateY(-4px); }
-  .store-crosssell-card::before {
-    content: ''; position: absolute; top: -22px; left: 50%; width: 1px; height: 18px;
-    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.6) 0 4px, transparent 4px 8px);
-  }
-  .store-crosssell-card::after {
-    content: ''; position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
-    width: 6px; height: 6px; border-radius: 50%; background: #fff;
-  }
-  .store-crosssell-icon {
-    width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 1.4rem; margin-bottom: 14px; color: #fff;
-  }
-  .store-crosssell-card h3 { margin: 0 0 8px; font-size: 1.05rem; color: #2e1065; font-weight: 800; }
-  .store-crosssell-card p { margin: 0 0 14px; font-size: 0.85rem; color: #6b5c7a; line-height: 1.4; min-height: 58px; }
-  .store-crosssell-card a { font-size: 0.85rem; font-weight: 700; color: var(--mf-pink); text-decoration: none; }
-  .store-crosssell-card a:hover { text-decoration: underline; }
 
   .store-footer { background: #f7f5f8; color: #5b4a68; margin-top: 0; font-size: 0.88rem; border-top: 1px solid #f0e6ef; }
   .store-footer-social {
@@ -1322,21 +1310,25 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="openStorefrontCatalog('all')">Productos</a>
-        <a onclick="openClientePortal()">Mis Pedidos</a>
+        <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
         <a onclick="openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
     <div class="store-search-box">
       <span class="store-search-icon">🔍</span>
       <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off"
-        oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value);"
+        oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value); scheduleSearchLog(this.value);"
         onfocus="updateSearchSuggestions(this.value)"
         onblur="hideSearchSuggestions()">
       <div id="storeSearchSuggest" class="store-search-suggest hidden"></div>
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('storeMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -1350,6 +1342,12 @@
       </button>
     </div>
   </header>
+  <nav id="storeMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openStorefrontCatalog('all');">Productos</a>
+    <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
 
   <!-- Hero Section -->
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
@@ -1489,40 +1487,389 @@
     </div>
 
     <!-- Del mismo equipo que arma tu fiesta (Grupo SAE) -->
-    <section class="store-crosssell">
-      <div class="store-crosssell-confetti" aria-hidden="true">
-        <span style="color:#c084fc;">▼</span><span style="color:#ffb020;">▼</span><span style="color:#34d399;">▼</span><span style="color:#f2652e;">▼</span><span style="color:#c084fc;">▼</span><span style="color:#ffb020;">▼</span>
+    <!-- ================= "TAMBIÉN TE PUEDE INTERESAR" — carrusel de servicios de Grupo SAE ================= -->
+    <section id="tpi3" aria-label="También te puede interesar">
+      <style>
+        #tpi3, #tpi3 *, #tpi3 *::before, #tpi3 *::after{ box-sizing:border-box; }
+        #tpi3{
+          --plum:#2e1065; --purple:#8e3fa8; --green:#4fa83c; --papaya:#f2652e; --sun:#f9e05c; --paper:#fff3de; --lav:#c9aedd;
+          font-family:'Poppins',system-ui,-apple-system,sans-serif;
+          background:var(--plum); color:var(--paper);
+          width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+          isolation:isolate;
+        }
+        #tpi3 .tpi3-torn{ display:block; width:100%; height:34px; position:relative; z-index:2; }
+        #tpi3 .tpi3-torn svg{ display:block; width:100%; height:100%; }
+        #tpi3 .tpi3-garland{ position:relative; z-index:2; display:flex; justify-content:center; gap:clamp(28px,6vw,64px); padding:0 24px; margin-top:-6px; }
+        #tpi3 .tpi3-garland span{ width:16px; height:14px; clip-path:polygon(0 0,100% 0,50% 100%); opacity:.9; }
+        #tpi3 .tpi3-garland span:nth-child(1){ background:var(--purple); }
+        #tpi3 .tpi3-garland span:nth-child(2){ background:var(--sun); }
+        #tpi3 .tpi3-garland span:nth-child(3){ background:var(--green); }
+        #tpi3 .tpi3-garland span:nth-child(4){ background:var(--papaya); }
+        #tpi3 .tpi3-garland span:nth-child(5){ background:var(--purple); }
+        #tpi3 .tpi3-garland span:nth-child(6){ background:var(--sun); }
+        #tpi3 .tpi3-wrap{ position:relative; z-index:2; max-width:1320px; margin:0 auto; padding:20px 0 56px; }
+        #tpi3 .tpi3-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; padding:0 24px; margin:0 0 34px; }
+        #tpi3 .tpi3-head-text{ max-width:600px; }
+        #tpi3 .tpi3-eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:.72rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--plum); background:var(--paper); padding:7px 14px 7px 10px; border-radius:999px; margin:0 0 18px; }
+        #tpi3 .tpi3-eyebrow i{ width:7px; height:7px; border-radius:50%; background:var(--purple); flex-shrink:0; display:block; }
+        #tpi3 h2{ font-family:'Fredoka',system-ui,sans-serif; font-weight:600; font-size:clamp(1.7rem,3.4vw,2.6rem); line-height:1.14; margin:0 0 10px; color:var(--paper); }
+        #tpi3 h2 em{ font-style:normal; color:var(--sun); }
+        #tpi3 .tpi3-sub{ font-size:.98rem; line-height:1.5; color:var(--lav); margin:0; }
+        #tpi3 .tpi3-nav{ display:flex; gap:10px; flex-shrink:0; }
+        #tpi3 .tpi3-nav button{ width:44px; height:44px; border-radius:50%; background:var(--paper); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--plum); transition:transform .15s ease, background .15s ease; }
+        #tpi3 .tpi3-nav button:hover{ background:var(--sun); }
+        #tpi3 .tpi3-nav button:active{ transform:scale(.92); }
+        #tpi3 .tpi3-nav button:focus-visible{ outline:3px solid var(--paper); outline-offset:3px; }
+        #tpi3 .tpi3-nav button:disabled{ opacity:.35; cursor:default; }
+        #tpi3 .tpi3-nav button:disabled:hover{ background:var(--paper); }
+        #tpi3 .tpi3-nav svg{ width:18px; height:18px; }
+        #tpi3 .tpi3-track{ display:flex; gap:24px; overflow-x:auto; scroll-snap-type:x mandatory; padding:26px 24px 40px; margin:0; list-style:none; scrollbar-width:none; -ms-overflow-style:none; }
+        #tpi3 .tpi3-track::-webkit-scrollbar{ display:none; }
+        #tpi3 .tpi3-item{ flex:0 0 auto; width:clamp(210px,26vw,272px); scroll-snap-align:start; }
+        #tpi3 .tpi3-item a{ display:block; text-decoration:none; color:inherit; outline:none; }
+        #tpi3 .tpi3-thread{ width:1px; height:22px; margin:0 auto; background:repeating-linear-gradient(to bottom, rgba(255,243,222,.55) 0 4px, transparent 4px 8px); }
+        #tpi3 .tpi3-tag{ position:relative; background:var(--paper); border-radius:14px; padding:24px 20px 20px; text-align:center; box-shadow:0 14px 30px rgba(0,0,0,.28); transform:rotate(var(--tilt,-2deg)); transition:transform .25s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease; }
+        #tpi3 .tpi3-item:nth-child(4n+1) .tpi3-tag{ --tilt:-2deg; }
+        #tpi3 .tpi3-item:nth-child(4n+2) .tpi3-tag{ --tilt:1.5deg; }
+        #tpi3 .tpi3-item:nth-child(4n+3) .tpi3-tag{ --tilt:-1.5deg; }
+        #tpi3 .tpi3-item:nth-child(4n+4) .tpi3-tag{ --tilt:2deg; }
+        #tpi3 .tpi3-item a:hover .tpi3-tag, #tpi3 .tpi3-item a:focus-visible .tpi3-tag{ transform:rotate(0deg) translateY(-6px); box-shadow:0 20px 38px rgba(0,0,0,.34); }
+        #tpi3 .tpi3-item a:focus-visible .tpi3-tag{ outline:3px solid var(--paper); outline-offset:3px; }
+        #tpi3 .tpi3-tag::before{ content:""; position:absolute; top:-6px; left:50%; transform:translateX(-50%); width:10px; height:10px; background:var(--plum); border:2px solid var(--paper); border-radius:50%; }
+        #tpi3 .tpi3-badge{ width:50px; height:50px; margin:4px auto 14px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--badge,var(--purple)); }
+        #tpi3 .tpi3-item:nth-child(4n+1) .tpi3-badge{ --badge:var(--purple); }
+        #tpi3 .tpi3-item:nth-child(4n+2) .tpi3-badge{ --badge:var(--green); }
+        #tpi3 .tpi3-item:nth-child(4n+3) .tpi3-badge{ --badge:var(--papaya); }
+        #tpi3 .tpi3-item:nth-child(4n+4) .tpi3-badge{ --badge:var(--sun); }
+        #tpi3 .tpi3-badge svg{ width:24px; height:24px; fill:none; stroke:#fff; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+        #tpi3 .tpi3-title{ font-family:'Fredoka',system-ui,sans-serif; font-weight:600; font-size:1.02rem; color:var(--plum); margin:0 0 6px; }
+        #tpi3 .tpi3-desc{ font-size:.81rem; line-height:1.42; color:#5b4b6b; margin:0 0 14px; min-height:2.6em; }
+        #tpi3 .tpi3-go{ display:inline-flex; align-items:center; gap:6px; font-size:.77rem; font-weight:600; color:var(--plum); }
+        #tpi3 .tpi3-go svg{ width:14px; height:14px; transition:transform .2s ease; }
+        #tpi3 .tpi3-item a:hover .tpi3-go svg, #tpi3 .tpi3-item a:focus-visible .tpi3-go svg{ transform:translateX(3px); }
+        @media (prefers-reduced-motion: reduce){
+          #tpi3 .tpi3-tag{ transition:none; }
+          #tpi3 .tpi3-go svg{ transition:none; }
+          #tpi3 .tpi3-track{ scroll-behavior:auto; }
+        }
+        @media (max-width:720px){
+          #tpi3 .tpi3-garland{ display:none; }
+          #tpi3 .tpi3-nav{ display:none; }
+          #tpi3 .tpi3-item{ width:72vw; }
+        }
+      </style>
+
+      <span class="tpi3-torn" aria-hidden="true">
+        <svg viewBox="0 0 400 20" preserveAspectRatio="none">
+          <polygon points="0,20 0,4 10,20 20,2 30,20 40,5 50,20 60,3 70,20 80,4 90,20 100,2 110,20 120,5 130,20 140,3 150,20 160,4 170,20 180,2 190,20 200,5 210,20 220,3 230,20 240,4 250,20 260,2 270,20 280,5 290,20 300,3 310,20 320,4 330,20 340,2 350,20 360,5 370,20 380,3 390,20 400,4 400,20" fill="#2e1065"></polygon>
+        </svg>
+      </span>
+
+      <div class="tpi3-garland" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
-      <div class="store-crosssell-inner">
-        <span class="store-crosssell-pill"><span class="dot"></span>Del mismo equipo que arma tu fiesta</span>
-        <h2>¡Espera! Esto también <span class="highlight">le hace falta</span> a tu evento</h2>
-        <p class="subtitle">Además de tus artículos de batucada, en Grupo SAE tenemos todo lo demás listo para que solo te preocupes por disfrutar.</p>
-        <div class="store-crosssell-grid">
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#8e3fa8;">🎧</div>
-            <h3>DJ</h3>
-            <p>Música, luces y ambiente para que nadie se quede sentado.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+
+      <div class="tpi3-wrap">
+        <div class="tpi3-head">
+          <div class="tpi3-head-text">
+            <span class="tpi3-eyebrow"><i></i>Del mismo equipo que arma tu fiesta</span>
+            <h2>¡Espera! Esto también <em>le hace falta</em> a tu evento</h2>
+            <p class="tpi3-sub">Además de tus artículos de batucada, en Grupo SAE tenemos todo lo demás listo para que solo te preocupes por disfrutar.</p>
           </div>
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#22a06b;">🛋️</div>
-            <h3>Mobiliario</h3>
-            <p>Salas lounge y mobiliario para vestir el espacio con estilo.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
-          </div>
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#f2652e;">🎈</div>
-            <h3>Decoración</h3>
-            <p>Arcos y figuras de globos que transforman cualquier salón.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
-          </div>
-          <div class="store-crosssell-card">
-            <div class="store-crosssell-icon" style="background:#e8a415;">🍽️</div>
-            <h3>Meseros</h3>
-            <p>Personal capacitado para atender a tus invitados.</p>
-            <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Ver sitio →</a>
+          <div class="tpi3-nav">
+            <button type="button" class="tpi3-prev" aria-label="Ver servicio anterior">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button type="button" class="tpi3-next" aria-label="Ver siguiente servicio">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
           </div>
         </div>
+
+        <ul class="tpi3-track">
+          <li class="tpi3-item">
+            <a href="https://djparafiesta.com.mx/" target="_blank" rel="noopener" aria-label="DJ para fiestas — djparafiesta.com.mx, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="4" y1="9" x2="4" y2="15"></line><line x1="8" y1="6" x2="8" y2="18"></line><line x1="12" y1="3" x2="12" y2="21"></line><line x1="16" y1="6" x2="16" y2="18"></line><line x1="20" y1="9" x2="20" y2="15"></line></svg></div>
+                <p class="tpi3-title">DJ</p>
+                <p class="tpi3-desc">Música, luces y ambiente para que nadie se quede sentado.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://rentadesalaslounge.com/" target="_blank" rel="noopener" aria-label="Renta de salas lounge — rentadesalaslounge.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"></path><path d="M3 16h18v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H6v1a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3z"></path><path d="M6 10V8a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2"></path><path d="M13 10V8a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2"></path></svg></div>
+                <p class="tpi3-title">Mobiliario</p>
+                <p class="tpi3-desc">Salas lounge y mobiliario para vestir el espacio con estilo.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://decoracionconglobos.com.mx/" target="_blank" rel="noopener" aria-label="Decoración con globos — decoracionconglobos.com.mx, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a5 5 0 0 1 5 5c0 4-3 7-4.3 8.3a1 1 0 0 1-1.4 0C10 15 7 12 7 8a5 5 0 0 1 5-5z"></path><path d="M11.2 16.3c-.3 1-.9 1.6-1.7 2"></path><line x1="12" y1="18.5" x2="12" y2="21.5"></line></svg></div>
+                <p class="tpi3-title">Decoración</p>
+                <p class="tpi3-desc">Arcos y figuras de globos que transforman cualquier salón.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="http://servicioparaeventos.com/meseros-para-eventos/" target="_blank" rel="noopener" aria-label="Meseros para eventos — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h13l-1.6 3.2a2 2 0 0 1-1.8 1.1H8a2 2 0 0 1-1.8-1.1L4.6 12"></path><path d="M9 12a5 5 0 0 1 8-4"></path><line x1="17" y1="6" x2="20" y2="3"></line><line x1="4" y1="18" x2="18" y2="18"></line></svg></div>
+                <p class="tpi3-title">Meseros</p>
+                <p class="tpi3-desc">Personal capacitado para servir y atender a tus invitados.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://rentaperiqueras.com/" target="_blank" rel="noopener" aria-label="Renta de periqueras — rentaperiqueras.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="6" rx="6" ry="2.4"></ellipse><line x1="7" y1="6.3" x2="8" y2="21"></line><line x1="17" y1="6.3" x2="16" y2="21"></line><line x1="6" y1="13.5" x2="18" y2="13.5"></line></svg></div>
+                <p class="tpi3-title">Periqueras</p>
+                <p class="tpi3-desc">Bancos altos tipo bar para darle estilo a tu barra o evento.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://rentadekaraoke.com/" target="_blank" rel="noopener" aria-label="Renta de karaoke — rentadekaraoke.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="2.5" width="6" height="10" rx="3"></rect><path d="M6 11a6 6 0 0 0 12 0"></path><line x1="12" y1="17" x2="12" y2="21"></line><line x1="8.5" y1="21" x2="15.5" y2="21"></line></svg></div>
+                <p class="tpi3-title">Karaoke</p>
+                <p class="tpi3-desc">Pantalla, micrófonos y catálogo de canciones para cantar toda la noche.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://fiestaspa.com.mx/" target="_blank" rel="noopener" aria-label="Spa para niñas — fiestaspa.com.mx, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5c1 2 1 3.3 0 4.6-1-1.3-1-2.6 0-4.6z"></path><path d="M5 10c1.6-.6 3.2-.6 4.6.4C8.2 11.4 6.6 11.4 5 10z"></path><path d="M19 10c-1.6-.6-3.2-.6-4.6.4 1.4 1 3 1 4.6-.4z"></path><path d="M6 14a6 6 0 0 0 12 0c0-1.6-1-2.6-2-3-1 1.6-2.4 2.3-4 2.3S8.6 12.6 8 11c-1 .4-2 1.4-2 3z"></path><line x1="12" y1="17" x2="12" y2="21"></line></svg></div>
+                <p class="tpi3-title">Spa para niñas</p>
+                <p class="tpi3-desc">Manicure, peinados y tratamientos pensados para las peques.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://partypaiute.com/" target="_blank" rel="noopener" aria-label="Picnics y tepees — partypaiute.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l6 18H6z"></path><path d="M9.5 13h5"></path><line x1="10" y1="3" x2="4" y2="21"></line><line x1="14" y1="3" x2="20" y2="21"></line></svg></div>
+                <p class="tpi3-title">Picnics y tepees</p>
+                <p class="tpi3-desc">Montajes de picnic y tepees para una sesión súper instagrameable.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://partypaiute.com/servicio-de-pinta-caritas/" target="_blank" rel="noopener" aria-label="Pinta caritas — partypaiute.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l2.2-6.2L16 4a2 2 0 0 1 2.8 2.8L9 16.6 4 20z"></path><path d="M13.5 6.5l3 3"></path><circle cx="6.5" cy="17" r="1"></circle></svg></div>
+                <p class="tpi3-title">Pinta caritas</p>
+                <p class="tpi3-desc">Diseños de pintacaritas para que los peques luzcan a su personaje favorito.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/sillas-y-mesas/" target="_blank" rel="noopener" aria-label="Renta de sillas y mesas — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="8" rx="8" ry="2.6"></ellipse><line x1="4.5" y1="8.3" x2="6" y2="20"></line><line x1="19.5" y1="8.3" x2="18" y2="20"></line><line x1="4" y1="16" x2="20" y2="16"></line></svg></div>
+                <p class="tpi3-title">Sillas y mesas</p>
+                <p class="tpi3-desc">Mobiliario básico para montar tu evento de principio a fin.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/servicio-de-barman-cdmx/" target="_blank" rel="noopener" aria-label="Servicio de barman — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14l-7 8z"></path><line x1="12" y1="12" x2="12" y2="20"></line><line x1="8" y1="20" x2="16" y2="20"></line><line x1="6" y1="4" x2="9" y2="8"></line></svg></div>
+                <p class="tpi3-title">Barman</p>
+                <p class="tpi3-desc">Barman profesional para preparar bebidas y coctelería en tu evento.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/sombrillas-para-eventos-en-cdmx/" target="_blank" rel="noopener" aria-label="Renta de sombrillas — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 16 0z"></path><line x1="12" y1="12" x2="12" y2="20"></line><path d="M12 20a2 2 0 0 1-2-2"></path><line x1="12" y1="4" x2="12" y2="2"></line></svg></div>
+                <p class="tpi3-title">Sombrillas</p>
+                <p class="tpi3-desc">Sombrillas para dar sombra y estilo a espacios al aire libre.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+
+          <li class="tpi3-item">
+            <a href="https://servicioparaeventos.com/pista-de-baile-iluminada/" target="_blank" rel="noopener" aria-label="Pista de baile iluminada — servicioparaeventos.com, abre en pestaña nueva">
+              <div class="tpi3-thread"></div>
+              <div class="tpi3-tag">
+                <div class="tpi3-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg></div>
+                <p class="tpi3-title">Pista iluminada</p>
+                <p class="tpi3-desc">Pista de baile iluminada para que la fiesta se vea espectacular.</p>
+                <span class="tpi3-go">Ver sitio <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></span>
+              </div>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <script>
+        (function(){
+          var root = document.getElementById('tpi3');
+          if(!root) return;
+          var track = root.querySelector('.tpi3-track');
+          var prevBtn = root.querySelector('.tpi3-prev');
+          var nextBtn = root.querySelector('.tpi3-next');
+          if(!track || !prevBtn || !nextBtn) return;
+
+          function step(){
+            var item = track.querySelector('.tpi3-item');
+            if(!item) return track.clientWidth * 0.8;
+            var style = window.getComputedStyle(track);
+            var gap = parseFloat(style.columnGap || style.gap || 24);
+            return item.getBoundingClientRect().width + gap;
+          }
+          function updateButtons(){
+            var max = track.scrollWidth - track.clientWidth - 2;
+            prevBtn.disabled = track.scrollLeft <= 2;
+            nextBtn.disabled = track.scrollLeft >= max;
+          }
+          prevBtn.addEventListener('click', function(){ track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+          nextBtn.addEventListener('click', function(){ track.scrollBy({ left: step(), behavior: 'smooth' }); });
+          track.addEventListener('scroll', updateButtons, { passive:true });
+          window.addEventListener('resize', updateButtons);
+          updateButtons();
+        })();
+      </script>
+    </section>
+
+    <!-- ================= FAQ (Preguntas Frecuentes) ================= -->
+    <section id="storeFaq" aria-label="Preguntas frecuentes">
+      <style>
+        #storeFaq{
+          width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+          font-family:"Poppins",sans-serif; background:#faf7fb; padding:56px 20px 64px;
+        }
+        #storeFaq .faq-head{ text-align:center; max-width:640px; margin:0 auto 32px; }
+        #storeFaq .faq-head h2{ font-size:clamp(24px,3.2vw,34px); font-weight:800; color:#2e1065; margin:0 0 8px; }
+        #storeFaq .faq-head p{ font-size:14.5px; color:#6b5c7a; margin:0; }
+        #storeFaq .faq-list{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
+        #storeFaq details{
+          background:#fff; border:1px solid #f0e6ef; border-radius:14px;
+          padding:0; overflow:hidden; transition:border-color .2s ease;
+        }
+        #storeFaq details[open]{ border-color:var(--mf-pink,#d3007b); }
+        #storeFaq summary{
+          list-style:none; cursor:pointer; padding:16px 20px; display:flex; align-items:center;
+          justify-content:space-between; gap:14px; font-weight:700; font-size:14.5px; color:#2e1065;
+        }
+        #storeFaq summary::-webkit-details-marker{ display:none; }
+        #storeFaq summary .faq-chevron{
+          flex-shrink:0; width:20px; height:20px; color:var(--mf-pink,#d3007b);
+          transition:transform .25s ease;
+        }
+        #storeFaq details[open] summary .faq-chevron{ transform:rotate(180deg); }
+        #storeFaq .faq-answer{ padding:0 20px 18px; font-size:13.5px; color:#4a3f57; line-height:1.6; }
+        #storeFaq .faq-answer a{ color:var(--mf-pink,#d3007b); font-weight:700; text-decoration:none; }
+        @media (prefers-reduced-motion: reduce){
+          #storeFaq summary .faq-chevron{ transition:none; }
+        }
+      </style>
+
+      <div class="faq-head">
+        <h2>Preguntas Frecuentes</h2>
+        <p>Lo que más nos preguntan nuestros clientes sobre envíos, compras y devoluciones.</p>
+      </div>
+
+      <div class="faq-list">
+        <details>
+          <summary>¿Cuál es el envío mínimo para envío gratis?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">En compras mayores a <b>$1,500 MXN</b> el envío es gratis a cualquier parte de México. En pedidos menores, el costo se calcula según tu código postal y se muestra antes de confirmar tu compra.</div>
+        </details>
+
+        <details>
+          <summary>¿Puedo comprar por pieza o solo por mayoreo?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Puedes comprar por pieza, sin docena obligatoria. Además, desde <b>3 piezas</b> del mismo producto ya obtienes precio de mayorista.</div>
+        </details>
+
+        <details>
+          <summary>¿Cuánto tarda en llegar mi pedido?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">CDMX, Puebla y Querétaro: 1 a 3 días hábiles. Resto de la República: 2 a 6 días hábiles, según la paquetería y el destino.</div>
+        </details>
+
+        <details>
+          <summary>¿Puedo recoger mi pedido en sucursal?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Sí, sin costo de envío, en cualquiera de nuestras sucursales: CDMX (Rumania 613, Col. Portales), Querétaro (Gral. Lázaro Cárdenas 67, Casa Blanca) y Puebla (C. 35 Sur 2901, Sta. Cruz Los Ángeles).</div>
+        </details>
+
+        <details>
+          <summary>¿Hacen factura?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Sí, emitimos factura (CFDI) para tus compras cuando la solicites.</div>
+        </details>
+
+        <details>
+          <summary>¿Puedo cambiar o devolver un producto?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Cuentas con 5 días hábiles desde que recibes tu pedido, siempre que el producto esté sin uso y en su empaque original. Por higiene, los antifaces, artículos de pirotecnia fría y productos personalizados no tienen cambio ni devolución, salvo defecto de fábrica.</div>
+        </details>
+
+        <details>
+          <summary>¿Qué métodos de pago aceptan?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Tarjeta de crédito o débito y Mercado Pago, sin comisiones extra ni compra mínima.</div>
+        </details>
+
+        <details>
+          <summary>¿Cómo los contacto si tengo dudas?
+            <svg class="faq-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <div class="faq-answer">Escríbenos por WhatsApp al <a href="https://wa.me/525612622146" target="_blank" rel="noopener">561 262 2146</a> y te ayudamos a armar el combo perfecto para tu evento.</div>
+        </details>
       </div>
     </section>
 
@@ -1689,10 +2036,19 @@
       <div class="store-footer-col">
         <h4>Sitios de Interés</h4>
         <ul>
-          <li><a href="#" onclick="openStorefrontCatalog('all'); return false;">Catálogo Completo</a></li>
-          <li><a href="#" onclick="openClientePortal(); switchClienteTab('promos'); return false;">Promociones y Cupones</a></li>
-          <li><a href="#" onclick="event.preventDefault(); document.querySelector('.store-footer-col:last-child').scrollIntoView({behavior:'smooth'});">Nuestras Sucursales</a></li>
-          <li><a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contáctanos por WhatsApp</a></li>
+          <li><a href="https://djparafiesta.com.mx/" target="_blank" rel="noopener">DJ</a></li>
+          <li><a href="https://rentadesalaslounge.com/" target="_blank" rel="noopener">Mobiliario</a></li>
+          <li><a href="https://decoracionconglobos.com.mx/" target="_blank" rel="noopener">Decoración</a></li>
+          <li><a href="http://servicioparaeventos.com/meseros-para-eventos/" target="_blank" rel="noopener">Meseros</a></li>
+          <li><a href="https://rentaperiqueras.com/" target="_blank" rel="noopener">Periqueras</a></li>
+          <li><a href="https://rentadekaraoke.com/" target="_blank" rel="noopener">Karaoke</a></li>
+          <li><a href="https://fiestaspa.com.mx/" target="_blank" rel="noopener">Spa para niñas</a></li>
+          <li><a href="https://partypaiute.com/" target="_blank" rel="noopener">Picnics y tepees</a></li>
+          <li><a href="https://partypaiute.com/servicio-de-pinta-caritas/" target="_blank" rel="noopener">Pinta caritas</a></li>
+          <li><a href="https://servicioparaeventos.com/sillas-y-mesas/" target="_blank" rel="noopener">Sillas y mesas</a></li>
+          <li><a href="https://servicioparaeventos.com/servicio-de-barman-cdmx/" target="_blank" rel="noopener">Barman</a></li>
+          <li><a href="https://servicioparaeventos.com/sombrillas-para-eventos-en-cdmx/" target="_blank" rel="noopener">Sombrillas</a></li>
+          <li><a href="https://servicioparaeventos.com/pista-de-baile-iluminada/" target="_blank" rel="noopener">Pista iluminada</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
@@ -1724,15 +2080,6 @@
         </ul>
       </div>
       <div class="store-footer-col">
-        <h4>Atención al Cliente</h4>
-        <ul>
-          <li><a href="https://wa.me/525612622146" target="_blank" rel="noopener">WhatsApp Directo</a></li>
-          <li>Envío gratis desde $1,500 MXN</li>
-          <li>Precios de mayoreo desde 3 piezas</li>
-          <li>Aceptamos tarjeta y facturamos</li>
-        </ul>
-      </div>
-      <div class="store-footer-col">
         <h4>Mi Cuenta</h4>
         <ul>
           <li><a href="#" onclick="openClientePortal(); switchClienteTab('perfil'); return false;">Mi Perfil</a></li>
@@ -1741,7 +2088,7 @@
         </ul>
       </div>
       <div class="store-footer-col" id="cmsFooterCol">
-        <h4>Ayuda y Legal</h4>
+        <h4>Ayuda</h4>
         <ul>
           <li><a href="#" onclick="showLegalPage('privacidad'); return false;">Aviso de Privacidad</a></li>
           <li><a href="#" onclick="showLegalPage('terminos'); return false;">Términos y Condiciones</a></li>
@@ -1770,7 +2117,7 @@
       </div>
     </div>
     <div class="store-footer-bottom">
-      © 2026 Mi Fiestashop. Todos los derechos reservados.
+      © 2012 Mi Fiestashop. Todos los derechos reservados.
     </div>
   </footer>
 
@@ -2093,6 +2440,58 @@
   </div>
 </div>
 
+<!-- ==================== PÁGINAS DE BODA (ancho completo) ==================== -->
+<div id="view-boda-page" class="hidden" style="min-height:100vh; background:#fff; color:#2e1065;">
+  <div class="store-topbar">🎉 Envío GRATIS en compras mayores a $1,500 MXN</div>
+  <div class="store-topbar-yellow">Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊</div>
+  <header class="store-header">
+    <div class="store-header-left">
+      <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
+        <span class="store-brand-logo-wrap">
+          <img class="store-brand-logo store-brand-logo-face" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.png" alt="Mi Fiestashop">
+        </span>
+      </a>
+      <nav class="store-header-nav">
+        <a onclick="closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
+        <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
+        <a onclick="closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+      </nav>
+    </div>
+
+    <div class="store-search-box">
+      <span class="store-search-icon">🔍</span>
+      <input type="search" id="bodaSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off"
+        onkeydown="if(event.key==='Enter'){ bodaSearchSubmit(this.value); }">
+    </div>
+
+    <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('bodaMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
+      <span class="store-currency">MXN</span>
+      <button class="store-icon-btn" onclick="closeBodaPage(); openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+      <button class="store-icon-btn" onclick="closeBodaPage(); goToAdmin();" aria-label="Acceso administrativo" title="Acceso administrativo">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.7"/></svg>
+      </button>
+      <button class="store-icon-btn" onclick="closeBodaPage(); openStorefrontCart();" aria-label="Carrito">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.7"/></svg>
+        <span class="store-cart-badge" id="bodaCartBadge">0</span>
+      </button>
+    </div>
+  </header>
+  <nav id="bodaMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
+    <a href="https://wa.me/525612622146?text=Hola%2C%20me%20interesa%20informaci%C3%B3n%20de%20precios%20de%20mayoreo" target="_blank" rel="noopener">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
+  <div id="bodaPageBody"></div>
+</div>
+
 <!-- ==================== ADMIN DASHBOARD WRAPPER ==================== -->
 <div id="adminDashboardWrapper" class="hidden">
 
@@ -2131,11 +2530,11 @@
       </div>
       <div class="submenu">
         <a class="submenu-link active" data-view="pos">Sistema POS</a>
+        <a class="submenu-link" data-view="informe-ventas">Informe de Ventas</a>
         <a class="submenu-link" data-view="pedidos">Pedidos</a>
         <a class="submenu-link" data-view="envios">Envíos & Skydropx</a>
         <a class="submenu-link" data-view="facturacion">Facturación</a>
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
-        <a class="submenu-link" data-view="pedidos">Remisiones</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
         <a class="submenu-link" data-view="promociones">Promociones</a>
       </div>
@@ -2265,8 +2664,10 @@
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
           <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+            <button class="btn small primary" id="btnToggleCaja" onclick="onToggleCajaClick()">Abrir Caja</button>
             <button class="btn small" onclick="openSalidasCajaModal()">Salidas de Caja</button>
             <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+            <button class="btn small" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
           </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
@@ -2305,7 +2706,7 @@
           <div style="padding: 10px 16px; background: var(--plane); border-bottom: 1px solid var(--border);">
             <label style="font-size:11.5px; color:var(--text-muted); display:block; margin-bottom:4px;">CLIENTE</label>
             <select id="posCustomerSelect" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border); font-size:12.5px;">
-              <option value="mostrador">Cliente Mostrador (General)</option>
+              <option value="mostrador">Cliente POS (General)</option>
               <option value="juan">Juan Pérez — RFC: PERJ890101XXX</option>
               <option value="maria">María López — RFC: LOPM920405YYY</option>
             </select>
@@ -2339,6 +2740,64 @@
           </div>
         </div>
 
+      </div>
+    </section>
+
+    <!-- ================= VIEW: INFORME DE VENTAS ================= -->
+    <section id="view-informe-ventas" class="view-panel hidden">
+      <div class="card">
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:12px; align-items:end; margin-bottom:18px;">
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Fecha Inicio
+            <input type="date" id="ivFechaInicio" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Fecha Fin
+            <input type="date" id="ivFechaFin" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Tienda/Empresa
+            <select id="ivTienda" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Mi Fiestashop (Todos)</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Punto de Venta
+            <select id="ivPuntoVenta" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+              <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
+              <option value="CDMX Rumania">CDMX Rumania</option>
+              <option value="Querétaro">Querétaro</option>
+              <option value="Atizapán">Atizapán</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Método de pago
+            <select id="ivMetodo" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+              <option value="cash">Efectivo</option>
+              <option value="card">Tarjeta (Débito/Crédito)</option>
+              <option value="transfer">Transferencia</option>
+            </select>
+          </label>
+          <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Empleado
+            <select id="ivEmpleado" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="all">Todos</option>
+            </select>
+          </label>
+          <button class="btn primary" style="height:38px;" onclick="renderInformeVentas()">BUSCAR</button>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-top:16px;" class="iv-charts-grid">
+        <div class="card">
+          <h3 style="margin-top:0;">Tendencia de Ventas</h3>
+          <svg id="ivLineChart" viewBox="0 0 520 260" style="width:100%; height:auto;"></svg>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">Ventas por Método de Pago</h3>
+          <svg id="ivDonutChart" viewBox="0 0 260 260" style="width:100%; max-width:260px; height:auto; display:block; margin:0 auto;"></svg>
+          <div id="ivDonutLegend" style="display:flex; flex-wrap:wrap; gap:10px 16px; justify-content:center; margin-top:14px; font-size:12.5px;"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div id="ivSummary" style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:var(--text-secondary);"></div>
       </div>
     </section>
 
@@ -2793,44 +3252,10 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Canal</th><th>Monto Total</th><th>Estado</th><th>Acción</th></tr>
+              <tr><th>ID</th><th>Referencia</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th><th>F. Entrega</th><th>Creado Por</th><th>Tienda</th><th>Acciones</th></tr>
             </thead>
             <tbody id="ordersTableBody">
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#486601')">
-                <td><b>#486601</b> <span style="font-size:11px; color:var(--text-muted);">CPFEGDOQY</span></td>
-                <td>2026-09-11 15:52</td>
-                <td><b>Consumidor Final</b></td>
-                <td><span class="pill ok">Sistema POS</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$180.00</td>
-                <td><span class="pill ok">Pago Aceptado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#486601')"> Ver Orden</button>
-                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#486601', 180)"> Ticket</button>
-                </td>
-              </tr>
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#POS-10492')">
-                <td><b>#POS-10492</b></td>
-                <td>2026-09-11 14:10</td>
-                <td>Cliente Mostrador</td>
-                <td><span class="pill ok">Sistema POS</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$1,250.00</td>
-                <td><span class="pill ok">Pago Aceptado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#POS-10492')"> Ver Orden</button>
-                  <button class="btn small" onclick="event.stopPropagation(); reprintTicket('#POS-10492', 1250)"> Ticket</button>
-                </td>
-              </tr>
-              <tr style="cursor:pointer;" onclick="openOrderDetailModal('#PS-89421')">
-                <td><b>#PS-89421</b></td>
-                <td>2026-09-11 11:32</td>
-                <td>Carlos Gutiérrez</td>
-                <td><span class="pill warn">Tienda Online</span></td>
-                <td style="font-weight:700; color:var(--series-2);">$3,480.00</td>
-                <td><span class="pill ok">Entregado</span></td>
-                <td>
-                  <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('#PS-89421')"> Ver Orden</button>
-                </td>
-              </tr>
+              <tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3130,7 +3555,8 @@
           <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
         </div>
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda y Legal") están marcadas.
+          Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
+          Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
         </p>
         <div style="margin-bottom:14px;">
           <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
@@ -3186,7 +3612,7 @@
               <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
             </thead>
             <tbody id="customersTableBody">
-              <!-- Dynamically populated -->
+              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -3544,6 +3970,27 @@
               <div>Productos indexados: <b style="color:var(--series-2);">5,160 SKUs</b></div>
               <div>Palabras clave en índice: <b>18,420 expresiones</b></div>
               <div>Última actualización de índice: <span class="pill ok">Hoy 15:18:11</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin:20px 0 0; background:var(--plane);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; color:var(--series-2);">Historial de Búsquedas de Clientes</h3>
+            <button class="btn small" onclick="loadSearchHistoryAdmin()">Actualizar</button>
+          </div>
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:20px;">
+            <div class="table-wrap" style="max-height:360px; overflow-y:auto;">
+              <table>
+                <thead><tr><th>Búsqueda</th><th>Resultados</th><th>Fecha</th></tr></thead>
+                <tbody id="searchHistoryTableBody">
+                  <tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Cargando…</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:10px;">Términos más buscados</div>
+              <div id="searchTopTermsList" style="display:flex; flex-direction:column; gap:8px; font-size:13px;">Cargando…</div>
             </div>
           </div>
         </div>
@@ -4294,7 +4741,7 @@
 
     <div class="ticket-paper" id="printableTicket">
       <div class="ticket-brand-bar"></div>
-      <img class="ticket-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+      <img class="ticket-icon" src="img/logo-antifaz.png" alt="Mi Fiestashop">
       <div class="t-center ticket-store-name" id="tHeaderName">MI FIESTASHOP</div>
       <div class="t-center ticket-sub" id="tHeaderRfc">RFC: MFS260101XXX</div>
       <div class="t-center ticket-sub" id="tHeaderAddress">Sucursal Puebla Principal</div>
@@ -4302,18 +4749,31 @@
       <div class="ticket-divider"></div>
       <div class="ticket-total-row"><span>Ticket #:</span><span id="tFolio">#POS-10493</span></div>
       <div class="ticket-total-row"><span>Fecha:</span><span id="tFecha">—</span></div>
-      <div class="ticket-total-row"><span>Cliente:</span><span id="tCliente">Cliente Mostrador</span></div>
+      <div class="ticket-total-row"><span>Cliente:</span><span id="tCliente">Cliente POS</span></div>
       <div class="ticket-divider"></div>
-      <div id="tItemsList">
-        <!-- Item lines -->
+      <table class="ticket-table">
+        <thead>
+          <tr><th>Cod</th><th>Producto</th><th>V/Uni</th><th>Cant</th><th>Total</th></tr>
+        </thead>
+        <tbody id="tItemsList">
+          <!-- Item rows -->
+        </tbody>
+      </table>
+      <div class="ticket-divider"></div>
+      <div class="ticket-total-row" id="tSubtotalRow">
+        <span>SUBTOTAL:</span>
+        <span id="tSubtotal">$0.00</span>
       </div>
-      <div class="ticket-divider"></div>
+      <div class="ticket-total-row hidden" id="tIvaRow">
+        <span>IVA (16%):</span>
+        <span id="tIva">$0.00</span>
+      </div>
       <div class="ticket-total-row grand">
-        <span>TOTAL:</span>
+        <span>TOTAL A PAGAR:</span>
         <span id="tTotal">$0.00</span>
       </div>
       <div class="ticket-total-row">
-        <span>Recibido:</span>
+        <span>Efectivo:</span>
         <span id="tPaid">$0.00</span>
       </div>
       <div class="ticket-total-row">
@@ -4321,7 +4781,21 @@
         <span id="tChange">$0.00</span>
       </div>
       <div class="ticket-divider"></div>
-      <div class="t-center ticket-thanks" id="tFooterMsg">¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com</div>
+      <table class="ticket-table ticket-method-table">
+        <thead>
+          <tr><th>Método</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+          <tr><td id="tMetodoNombre">Pago En Efectivo</td><td id="tMetodoValor">$0.00</td></tr>
+        </tbody>
+      </table>
+      <div class="ticket-coupon-box">
+        <div class="ticket-coupon-title">🎁 CUPÓN DE REGALO</div>
+        <div class="ticket-coupon-desc">10% de descuento en tu segunda compra. Menciona este ticket en tu próxima visita para aplicarlo.</div>
+      </div>
+      <div class="ticket-divider"></div>
+      <div class="t-center ticket-thanks" id="tFooterMsg">Gracias por Tu Compra</div>
+      <div class="t-center ticket-sub">www.mifiestashop.com</div>
       <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
     </div>
 
@@ -4340,16 +4814,23 @@
       <button class="btn small" onclick="closeTicketHistorialModal()">✕</button>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;">
-      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial(this.value)" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial()" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+      <select id="ticketHistorialAlmacen" onchange="filterTicketHistorial()" style="padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+        <option value="">Todas las sucursales</option>
+        <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
+        <option value="CDMX Rumania">CDMX Rumania</option>
+        <option value="Querétaro">Querétaro</option>
+        <option value="Atizapán">Atizapán</option>
+      </select>
       <button class="btn small primary" onclick="downloadTicketHistorialCSV()">Descargar CSV</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Folio</th><th>Fecha</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
+          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
         </thead>
         <tbody id="ticketHistorialTableBody">
-          <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -4395,6 +4876,64 @@
         </thead>
         <tbody id="salidasCajaTableBody">
           <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ABRIR CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="abrirCajaModal">
+  <div class="modal" style="max-width:420px; width:94%;">
+    <div class="modal-header">
+      <h2>Abrir Caja</h2>
+      <button class="btn small" onclick="closeAbrirCajaModal()">✕</button>
+    </div>
+    <p style="color:var(--text-secondary); font-size:13px; margin-top:0; margin-bottom:14px;">
+      Indica con cuánto dinero (caja chica) inicia la caja en esta sucursal.
+    </p>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto de apertura ($):</label>
+    <input type="number" id="abrirCajaMonto" placeholder="0.00" min="0" step="0.01" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:16px;">
+    <button class="btn primary" id="abrirCajaSubmitBtn" style="width:100%;" onclick="confirmAbrirCaja()">Abrir Caja</button>
+  </div>
+</div>
+
+<!-- ================= CERRAR CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="cerrarCajaModal">
+  <div class="modal" style="max-width:460px; width:94%;">
+    <div class="modal-header">
+      <h2>Cerrar Caja</h2>
+      <button class="btn small" onclick="closeCerrarCajaModal()">✕</button>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--text-secondary); padding:12px; border:1px solid var(--border); border-radius:10px; background:var(--plane); margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between;"><span>Monto de apertura:</span><b id="cerrarCajaApertura" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between;"><span>+ Ventas en efectivo:</span><b id="cerrarCajaVentas" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between;"><span>− Salidas de caja:</span><b id="cerrarCajaSalidas" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:6px; font-size:14px;"><span><b>= Esperado en caja:</b></span><b id="cerrarCajaEsperado" style="color:var(--text-primary);">$0.00</b></div>
+    </div>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto contado en caja ($):</label>
+    <input type="number" id="cerrarCajaContado" placeholder="0.00" min="0" step="0.01" oninput="updateCerrarCajaDiferencia()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:10px;">
+    <div id="cerrarCajaDiferenciaBox" class="hidden" style="text-align:center; font-weight:700; padding:8px; border-radius:8px; margin-bottom:12px;"></div>
+    <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Notas (opcional):</label>
+    <input type="text" id="cerrarCajaNotas" placeholder="Ej: faltante por cambio no registrado" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:16px;">
+    <button class="btn primary" id="cerrarCajaSubmitBtn" style="width:100%;" onclick="confirmCerrarCaja()">Cerrar Caja</button>
+  </div>
+</div>
+
+<!-- ================= HISTORIAL DE CIERRES DE CAJA MODAL ================= -->
+<div class="modal-overlay hidden" id="cajaHistorialModal">
+  <div class="modal" style="max-width:900px; width:94%; max-height:88vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2>Historial de Cierres de Caja</h2>
+      <button class="btn small" onclick="closeCajaHistorialModal()">✕</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Apertura</th><th>Cierre</th><th>Sucursal</th><th>Apertura ($)</th><th>Ventas Efvo.</th><th>Salidas</th><th>Esperado</th><th>Contado</th><th>Diferencia</th><th>Cerró</th></tr>
+        </thead>
+        <tbody id="cajaHistorialTableBody">
+          <tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -4783,7 +5322,8 @@ function getSessionCredsParams(){
 const PERMISSION_GROUPS = [
   { group: 'Vender', items: [
     { key: 'pos', label: 'Sistema POS' },
-    { key: 'pedidos', label: 'Pedidos / Remisiones' },
+    { key: 'informe-ventas', label: 'Informe de Ventas' },
+    { key: 'pedidos', label: 'Pedidos' },
     { key: 'envios', label: 'Envíos & Skydropx' },
     { key: 'facturacion', label: 'Facturación' },
     { key: 'costos', label: 'Costos y Gastos' },
@@ -5752,6 +6292,7 @@ function switchView(viewName) {
   // Update header text
   const titles = {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
+    'informe-ventas': ['Informe de Ventas', 'Tendencia y métodos de pago'],
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
@@ -5798,8 +6339,10 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
+  if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
+  if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
 }
@@ -5944,6 +6487,12 @@ function setPayMethod(method) {
   document.getElementById('cashDetailsArea').style.display = method === 'cash' ? 'block' : 'none';
 }
 
+function payMethodTicketLabel(method) {
+  if (method === 'card') return 'Pago con Tarjeta';
+  if (method === 'transfer') return 'Pago por Transferencia';
+  return 'Pago En Efectivo';
+}
+
 function setPresetCash(amount) {
   document.getElementById('cashGivenInput').value = amount;
   calculateChange();
@@ -5965,7 +6514,7 @@ function confirmPOSSale() {
   const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
   const iva = isIvaApplied() ? subtotal * 0.16 : 0;
   const customerSelect = document.getElementById('posCustomerSelect');
-  const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente Mostrador';
+  const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
   const almacenSelect = document.getElementById('posWarehouseSelect');
   const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
   const cartSnapshot = cart.map(i => ({ name: i.name, sku: i.sku || i.id, qty: i.qty, price: i.price }));
@@ -5974,9 +6523,14 @@ function confirmPOSSale() {
   document.getElementById('tFolio').textContent = folio;
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = clienteNombre;
+  document.getElementById('tSubtotal').textContent = fmtMoney(subtotal);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
   document.getElementById('tChange').textContent = fmtMoney(change);
+  document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(selectedPayMethod);
+  document.getElementById('tMetodoValor').textContent = fmtMoney(total);
 
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(cart);
 
@@ -6008,11 +6562,23 @@ function confirmPOSSale() {
   sbRpc('rpc_pos_ticket_insert', {
     ...getSessionCredsParams(),
     p_folio: folio, p_cliente: clienteNombre, p_almacen: almacen, p_items: cartSnapshot,
-    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change
+    p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change,
+    p_metodo: selectedPayMethod, p_registrado_por: nombreSesionActual()
   }).then(rows => {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
-  }).catch(() => {});
+  }).catch(e => {
+    // Si esto falla en silencio, el ticket se ve/imprime bien pero nunca
+    // llega al Historial de Tickets ni se descuenta el inventario — antes
+    // no se avisaba nada y parecía que "los pedidos no aparecen" sin
+    // explicación. "unauthorized" significa que la contraseña de admin o
+    // el PIN guardados en este navegador ya no coinciden con los actuales
+    // (p.ej. se cambió la contraseña en otro dispositivo) — se resuelve
+    // cerrando sesión y volviendo a entrar.
+    if (e && e.message === 'unauthorized') {
+      alert('Este ticket se imprimió pero NO se guardó en el Historial ni descontó inventario: tu sesión ya no es válida. Cierra sesión y vuelve a entrar para corregirlo.');
+    }
+  });
 
   // Descuenta el inventario real: registra el movimiento en el ledger de
   // Supabase (best-effort, no bloquea el ticket si falla). Solo aplica a
@@ -6042,12 +6608,16 @@ function closeTicketModal() {
 function buildTicketItemsHTML(items) {
   return items.map(i => {
     const lineTotal = fmtMoney(i.price * i.qty);
-    const name = escapeHtml(i.name.length > 26 ? i.name.slice(0, 26) + '…' : i.name);
+    const name = escapeHtml(i.name || '');
+    const cod = escapeHtml(i.sku || i.id || '');
     return `
-    <div class="ticket-item">
-      <div class="ticket-item-row"><span>${i.qty > 1 ? i.qty + 'x ' : ''}${name}</span><span>${lineTotal}</span></div>
-      ${i.qty > 1 ? `<div class="ticket-item-sub"><span>${i.qty} x ${fmtMoney(i.price)}</span><span></span></div>` : ''}
-    </div>`;
+    <tr>
+      <td class="t-cod">${cod}</td>
+      <td class="t-prod-name">${name}</td>
+      <td>${fmtMoney(i.price)}</td>
+      <td>${i.qty}</td>
+      <td>${lineTotal}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -6069,10 +6639,14 @@ function reprintTicket(folio, total) {
 
   document.getElementById('tFolio').textContent = folio;
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  document.getElementById('tCliente').textContent = 'Cliente Mostrador';
+  document.getElementById('tCliente').textContent = 'Cliente POS';
+  document.getElementById('tSubtotal').textContent = fmtMoney(total);
+  document.getElementById('tIvaRow').classList.add('hidden');
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(total);
   document.getElementById('tChange').textContent = '$0.00';
+  document.getElementById('tMetodoNombre').textContent = 'Pago En Efectivo';
+  document.getElementById('tMetodoValor').textContent = fmtMoney(total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML([{ name: 'Venta Registrada POS', qty: 1, price: total }]);
   document.getElementById('ticketModal').classList.remove('hidden');
 }
@@ -6082,6 +6656,8 @@ async function openTicketHistorialModal() {
   document.getElementById('ticketHistorialModal').classList.remove('hidden');
   const searchInput = document.getElementById('ticketHistorialSearch');
   if (searchInput) searchInput.value = '';
+  const almacenSelect = document.getElementById('ticketHistorialAlmacen');
+  if (almacenSelect) almacenSelect.value = '';
   await loadTicketHistorial();
 }
 
@@ -6099,7 +6675,13 @@ async function loadTicketHistorial() {
     ticketHistorialCache = Array.isArray(rows) ? rows : [];
     renderTicketHistorialTable(ticketHistorialCache);
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
+    // "unauthorized" = la contraseña de admin o el PIN guardados en este
+    // navegador ya no coinciden con los actuales (se cambiaron en otro
+    // lugar) — se dice explícitamente en vez de un error genérico, porque
+    // se resuelve solo cerrando sesión y volviendo a entrar.
+    tbody.innerHTML = e && e.message === 'unauthorized'
+      ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>'
+      : '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
   }
 }
 
@@ -6114,7 +6696,7 @@ function renderTicketHistorialTable(tickets) {
   ticketHistorialVisible = tickets;
 
   if (tickets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
     return;
   }
 
@@ -6125,7 +6707,8 @@ function renderTicketHistorialTable(tickets) {
     <tr>
       <td><b>${escapeHtml(t.folio)}</b></td>
       <td>${fecha}</td>
-      <td>${escapeHtml(t.cliente || 'Cliente Mostrador')}</td>
+      <td>${escapeHtml(t.almacen || '—')}</td>
+      <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
@@ -6156,7 +6739,7 @@ function downloadTicketHistorialCSV() {
     const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     const items = Array.isArray(t.items) ? t.items.map(i => `${i.qty || 1}x ${i.name || ''}`).join('; ') : '';
     return [
-      t.folio, fecha, t.cliente || 'Cliente Mostrador', t.almacen || '', items,
+      t.folio, fecha, t.cliente || 'Cliente POS', t.almacen || '', items,
       Number(t.subtotal || 0).toFixed(2), Number(t.iva || 0).toFixed(2), Number(t.total || 0).toFixed(2),
       Number(t.pago_recibido || 0).toFixed(2), Number(t.cambio || 0).toFixed(2)
     ];
@@ -6196,6 +6779,173 @@ async function openSalidasCajaModal() {
 
 function closeSalidasCajaModal() {
   document.getElementById('salidasCajaModal').classList.add('hidden');
+}
+
+// ================= APERTURA / CIERRE DE CAJA =================
+let cajaActual = null; // registro abierto (caja_cortes) para la sucursal actual, o null
+
+function currentCajaAlmacen() {
+  const sel = document.getElementById('posWarehouseSelect');
+  return sel ? sel.options[sel.selectedIndex].text : '';
+}
+
+async function loadCajaActual() {
+  const btn = document.getElementById('btnToggleCaja');
+  if (!btn) return;
+  try {
+    const row = await sbRpc('rpc_caja_actual', { ...getSessionCredsParams(), p_almacen: currentCajaAlmacen() });
+    cajaActual = (row && row.id) ? row : null;
+  } catch (e) {
+    cajaActual = null;
+  }
+  btn.textContent = cajaActual ? 'Cerrar Caja' : 'Abrir Caja';
+  btn.classList.toggle('primary', !cajaActual);
+}
+
+function onToggleCajaClick() {
+  if (cajaActual) openCerrarCajaModal(); else openAbrirCajaModal();
+}
+
+function openAbrirCajaModal() {
+  document.getElementById('abrirCajaMonto').value = '';
+  document.getElementById('abrirCajaModal').classList.remove('hidden');
+}
+
+function closeAbrirCajaModal() {
+  document.getElementById('abrirCajaModal').classList.add('hidden');
+}
+
+async function confirmAbrirCaja() {
+  const monto = parseFloat(document.getElementById('abrirCajaMonto').value);
+  if (!Number.isFinite(monto) || monto < 0) { alert('Ingresa un monto de apertura válido.'); return; }
+  const btn = document.getElementById('abrirCajaSubmitBtn');
+  btn.disabled = true;
+  try {
+    const row = await sbRpc('rpc_caja_abrir', {
+      ...getSessionCredsParams(),
+      p_almacen: currentCajaAlmacen(), p_monto_apertura: monto, p_abierto_por: nombreSesionActual()
+    });
+    cajaActual = row;
+    closeAbrirCajaModal();
+    await loadCajaActual();
+  } catch (e) {
+    alert(e.message === 'ya_hay_caja_abierta' ? 'Ya hay una caja abierta en esta sucursal.' : 'No se pudo abrir la caja.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openCerrarCajaModal() {
+  if (!cajaActual) { alert('No hay una caja abierta en esta sucursal.'); return; }
+
+  const [ticketRows, salidaRows] = await Promise.all([
+    sbRpc('rpc_pos_ticket_list', getSessionCredsParams()).catch(() => []),
+    sbRpc('rpc_salida_list', getSessionCredsParams()).catch(() => [])
+  ]);
+  const almacen = cajaActual.almacen;
+  const desde = cajaActual.fecha_apertura;
+
+  const ventasEfectivo = (Array.isArray(ticketRows) ? ticketRows : [])
+    .filter(t => t.almacen === almacen && t.metodo === 'cash' && t.created_at >= desde)
+    .reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+  const salidas = (Array.isArray(salidaRows) ? salidaRows : [])
+    .filter(s => s.almacen === almacen && s.created_at >= desde)
+    .reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
+  const esperado = (parseFloat(cajaActual.monto_apertura) || 0) + ventasEfectivo - salidas;
+
+  document.getElementById('cerrarCajaApertura').textContent = fmtMoney(cajaActual.monto_apertura);
+  document.getElementById('cerrarCajaVentas').textContent = fmtMoney(ventasEfectivo);
+  document.getElementById('cerrarCajaSalidas').textContent = fmtMoney(salidas);
+  document.getElementById('cerrarCajaEsperado').textContent = fmtMoney(esperado);
+  document.getElementById('cerrarCajaContado').value = '';
+  document.getElementById('cerrarCajaNotas').value = '';
+  document.getElementById('cerrarCajaDiferenciaBox').classList.add('hidden');
+
+  document.getElementById('cerrarCajaModal').dataset.esperado = esperado;
+  document.getElementById('cerrarCajaModal').dataset.ventasEfectivo = ventasEfectivo;
+  document.getElementById('cerrarCajaModal').dataset.salidas = salidas;
+  document.getElementById('cerrarCajaModal').classList.remove('hidden');
+}
+
+function closeCerrarCajaModal() {
+  document.getElementById('cerrarCajaModal').classList.add('hidden');
+}
+
+function updateCerrarCajaDiferencia() {
+  const modal = document.getElementById('cerrarCajaModal');
+  const esperado = parseFloat(modal.dataset.esperado) || 0;
+  const contado = parseFloat(document.getElementById('cerrarCajaContado').value);
+  const box = document.getElementById('cerrarCajaDiferenciaBox');
+  if (!Number.isFinite(contado)) { box.classList.add('hidden'); return; }
+  const diff = contado - esperado;
+  box.classList.remove('hidden');
+  box.style.background = diff === 0 ? 'var(--ok-bg, #dcfce7)' : (diff > 0 ? '#fef9c3' : '#fee2e2');
+  box.style.color = diff === 0 ? '#166534' : (diff > 0 ? '#854d0e' : '#991b1b');
+  box.textContent = diff === 0 ? 'Cuadra exacto' : (diff > 0 ? `Sobrante: ${fmtMoney(diff)}` : `Faltante: ${fmtMoney(Math.abs(diff))}`);
+}
+
+async function confirmCerrarCaja() {
+  const modal = document.getElementById('cerrarCajaModal');
+  const contado = parseFloat(document.getElementById('cerrarCajaContado').value);
+  if (!Number.isFinite(contado) || contado < 0) { alert('Ingresa el monto contado en caja.'); return; }
+  const esperado = parseFloat(modal.dataset.esperado) || 0;
+  const ventasEfectivo = parseFloat(modal.dataset.ventasEfectivo) || 0;
+  const salidas = parseFloat(modal.dataset.salidas) || 0;
+  const notas = document.getElementById('cerrarCajaNotas').value.trim();
+  const btn = document.getElementById('cerrarCajaSubmitBtn');
+  btn.disabled = true;
+  try {
+    await sbRpc('rpc_caja_cerrar', {
+      ...getSessionCredsParams(),
+      p_id: cajaActual.id, p_monto_esperado: esperado, p_monto_contado: contado,
+      p_ventas_efectivo: ventasEfectivo, p_salidas: salidas, p_notas: notas || null,
+      p_cerrado_por: nombreSesionActual()
+    });
+    cajaActual = null;
+    closeCerrarCajaModal();
+    await loadCajaActual();
+  } catch (e) {
+    alert('No se pudo cerrar la caja.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openCajaHistorialModal() {
+  document.getElementById('cajaHistorialModal').classList.remove('hidden');
+  const tbody = document.getElementById('cajaHistorialTableBody');
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    const rows = await sbRpc('rpc_caja_list', getSessionCredsParams());
+    const list = Array.isArray(rows) ? rows : [];
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">Aún no hay cierres de caja registrados.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = list.map(r => {
+      const diff = parseFloat(r.diferencia) || 0;
+      const diffColor = diff === 0 ? 'var(--text-primary)' : (diff > 0 ? '#166534' : '#991b1b');
+      return `
+      <tr>
+        <td>${new Date(r.fecha_apertura).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td>${r.fecha_cierre ? new Date(r.fecha_cierre).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td>
+        <td>${escapeHtml(r.almacen || '')}</td>
+        <td>${fmtMoney(r.monto_apertura)}</td>
+        <td>${fmtMoney(r.ventas_efectivo)}</td>
+        <td>${fmtMoney(r.salidas)}</td>
+        <td>${fmtMoney(r.monto_esperado)}</td>
+        <td>${fmtMoney(r.monto_contado)}</td>
+        <td style="color:${diffColor}; font-weight:700;">${fmtMoney(diff)}</td>
+        <td>${escapeHtml(r.cerrado_por || '')}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial.</td></tr>';
+  }
+}
+
+function closeCajaHistorialModal() {
+  document.getElementById('cajaHistorialModal').classList.add('hidden');
 }
 
 // Reduce la foto a un tamaño razonable (máx. 1000px de lado, JPEG) antes de
@@ -6337,11 +7087,14 @@ async function deleteSalidaCaja(id) {
   }
 }
 
-function filterTicketHistorial(query) {
-  const q = normalizeEs(query || '');
-  const filtered = q
-    ? ticketHistorialCache.filter(t => normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q))
-    : ticketHistorialCache;
+function filterTicketHistorial() {
+  const q = normalizeEs(document.getElementById('ticketHistorialSearch')?.value || '');
+  const almacen = document.getElementById('ticketHistorialAlmacen')?.value || '';
+  const filtered = ticketHistorialCache.filter(t => {
+    const matchQ = !q || normalizeEs(t.folio || '').includes(q) || normalizeEs(t.cliente || '').includes(q);
+    const matchAlmacen = !almacen || t.almacen === almacen;
+    return matchQ && matchAlmacen;
+  });
   renderTicketHistorialTable(filtered);
 }
 
@@ -6349,14 +7102,236 @@ function viewPosTicketFromHistorial(id) {
   const t = ticketHistorialCache.find(x => x.id === id);
   if (!t) return;
 
+  const iva = parseFloat(t.iva) || 0;
   document.getElementById('tFolio').textContent = t.folio;
   document.getElementById('tFecha').textContent = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
-  document.getElementById('tCliente').textContent = t.cliente || 'Cliente Mostrador';
+  document.getElementById('tCliente').textContent = t.cliente || 'Cliente POS';
+  document.getElementById('tSubtotal').textContent = fmtMoney(t.subtotal != null ? t.subtotal : t.total);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(t.total);
   document.getElementById('tPaid').textContent = fmtMoney(t.pago_recibido || t.total);
   document.getElementById('tChange').textContent = fmtMoney(t.cambio || 0);
+  document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(t.metodo);
+  document.getElementById('tMetodoValor').textContent = fmtMoney(t.total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
   document.getElementById('ticketModal').classList.remove('hidden');
+}
+
+// ================= INFORME DE VENTAS (tendencia + método de pago) =================
+// Se construye 100% a partir de los tickets reales del POS (rpc_pos_ticket_list),
+// sin datos inventados: si un ticket viejo no tiene "metodo" guardado (antes de
+// agregar esa columna), se agrupa como "Sin definir" en vez de asumir Efectivo.
+let informeTicketsCache = [];
+
+async function loadInformeVentas() {
+  try {
+    const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
+    informeTicketsCache = Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    informeTicketsCache = [];
+  }
+
+  const empleados = [...new Set(informeTicketsCache.map(t => t.registrado_por).filter(Boolean))].sort();
+  const empSelect = document.getElementById('ivEmpleado');
+  if (empSelect) {
+    empSelect.innerHTML = '<option value="all">Todos</option>' + empleados.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
+  }
+
+  const fi = document.getElementById('ivFechaInicio');
+  const ff = document.getElementById('ivFechaFin');
+  if (fi && !fi.value) {
+    const now = new Date();
+    fi.value = toISO(new Date(now.getFullYear(), now.getMonth(), 1));
+  }
+  if (ff && !ff.value) ff.value = toISO(new Date());
+
+  renderInformeVentas();
+}
+
+function payMethodShortLabel(m) {
+  if (m === 'card') return 'Débito/Crédito';
+  if (m === 'transfer') return 'Transferencia bancaria';
+  if (m === 'cash') return 'Pago En Efectivo';
+  return 'Sin definir';
+}
+
+function renderInformeVentas() {
+  const fi = document.getElementById('ivFechaInicio')?.value || '';
+  const ff = document.getElementById('ivFechaFin')?.value || '';
+  const puntoVenta = document.getElementById('ivPuntoVenta')?.value || 'all';
+  const metodo = document.getElementById('ivMetodo')?.value || 'all';
+  const empleado = document.getElementById('ivEmpleado')?.value || 'all';
+
+  const filtered = informeTicketsCache.filter(t => {
+    const day = String(t.created_at || '').slice(0, 10);
+    if (fi && day < fi) return false;
+    if (ff && day > ff) return false;
+    if (puntoVenta !== 'all' && t.almacen !== puntoVenta) return false;
+    if (metodo !== 'all' && t.metodo !== metodo) return false;
+    if (empleado !== 'all' && t.registrado_por !== empleado) return false;
+    return true;
+  });
+
+  const byDay = {};
+  filtered.forEach(t => {
+    const day = String(t.created_at || '').slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + (parseFloat(t.total) || 0);
+  });
+  const trendRows = Object.keys(byDay).sort().map(d => ({ label: d, revenue: byDay[d] }));
+  drawInformeLineChart(trendRows);
+
+  const byMethod = { cash: 0, card: 0, transfer: 0, unknown: 0 };
+  filtered.forEach(t => {
+    const m = (t.metodo && byMethod.hasOwnProperty(t.metodo)) ? t.metodo : 'unknown';
+    byMethod[m] += parseFloat(t.total) || 0;
+  });
+  drawInformeDonutChart(byMethod);
+
+  const totalRevenue = filtered.reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+  const summary = document.getElementById('ivSummary');
+  if (summary) {
+    summary.innerHTML = `
+      <div><b>${filtered.length}</b> tickets</div>
+      <div><b>${fmtMoney(totalRevenue)}</b> ingresos</div>
+      <div><b>${fmtMoney(filtered.length ? totalRevenue / filtered.length : 0)}</b> ticket promedio</div>
+    `;
+  }
+}
+
+function drawInformeLineChart(rows) {
+  const svg = document.getElementById('ivLineChart');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (!rows.length) {
+    svg.innerHTML = '<text x="260" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>';
+    return;
+  }
+  const W = 520, H = 260, padL = 60, padR = 12, padT = 14, padB = 34;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const maxV = Math.max(...rows.map(r => r.revenue)) * 1.15 || 1;
+  const n = rows.length;
+  const stepX = n > 1 ? innerW / (n - 1) : 0;
+  const ns = 'http://www.w3.org/2000/svg';
+  const g = document.createElementNS(ns, 'g');
+
+  for (let i = 0; i <= 3; i++) {
+    const y = padT + innerH - (innerH * i / 3);
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', padL); line.setAttribute('x2', padL + innerW);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke', 'var(--grid)');
+    g.appendChild(line);
+    const val = maxV * i / 3;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', padL - 8); t.setAttribute('y', y + 3); t.setAttribute('text-anchor', 'end');
+    t.setAttribute('font-size', '10'); t.setAttribute('fill', 'var(--text-muted)');
+    t.textContent = i === 0 ? '$0' : '$' + fmtNum(Math.round(val));
+    g.appendChild(t);
+  }
+
+  const points = rows.map((r, i) => {
+    const x = padL + stepX * i;
+    const y = padT + innerH - (r.revenue / maxV) * innerH;
+    return [x, y];
+  });
+
+  const areaPath = document.createElementNS(ns, 'path');
+  let d = `M ${points[0][0]} ${padT + innerH} `;
+  points.forEach(p => d += `L ${p[0]} ${p[1]} `);
+  d += `L ${points[points.length - 1][0]} ${padT + innerH} Z`;
+  areaPath.setAttribute('d', d);
+  areaPath.setAttribute('fill', 'rgba(55,182,185,0.15)');
+  g.appendChild(areaPath);
+
+  const linePath = document.createElementNS(ns, 'path');
+  let ld = `M ${points[0][0]} ${points[0][1]} `;
+  points.slice(1).forEach(p => ld += `L ${p[0]} ${p[1]} `);
+  linePath.setAttribute('d', ld);
+  linePath.setAttribute('fill', 'none');
+  linePath.setAttribute('stroke', '#37b6b9');
+  linePath.setAttribute('stroke-width', '2');
+  g.appendChild(linePath);
+
+  points.forEach(p => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', p[0]); c.setAttribute('cy', p[1]); c.setAttribute('r', '3.5');
+    c.setAttribute('fill', '#fff'); c.setAttribute('stroke', '#37b6b9'); c.setAttribute('stroke-width', '2');
+    g.appendChild(c);
+  });
+
+  const labelEvery = Math.max(1, Math.ceil(n / 8));
+  points.forEach((p, i) => {
+    if (i % labelEvery !== 0 && i !== n - 1) return;
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', p[0]); t.setAttribute('y', H - 10); t.setAttribute('text-anchor', 'middle');
+    t.setAttribute('font-size', '9'); t.setAttribute('fill', 'var(--text-muted)');
+    t.textContent = rows[i].label.slice(5);
+    g.appendChild(t);
+  });
+
+  svg.appendChild(g);
+}
+
+function drawInformeDonutChart(byMethod) {
+  const svg = document.getElementById('ivDonutChart');
+  const legend = document.getElementById('ivDonutLegend');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (legend) legend.innerHTML = '';
+
+  const segments = [
+    { key: 'card', label: 'Débito/Crédito', color: '#8e7cf0', value: byMethod.card },
+    { key: 'cash', label: 'Pago En Efectivo', color: '#d3007b', value: byMethod.cash },
+    { key: 'transfer', label: 'Transferencia bancaria', color: '#22c55e', value: byMethod.transfer },
+    { key: 'unknown', label: 'Sin definir', color: '#f9e05c', value: byMethod.unknown }
+  ].filter(s => s.value > 0);
+
+  const total = segments.reduce((s, x) => s + x.value, 0);
+  if (total <= 0) {
+    svg.innerHTML = '<text x="130" y="130" text-anchor="middle" font-size="12" fill="var(--text-muted)">Sin ventas en este período</text>';
+    return;
+  }
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const cx = 130, cy = 130, r = 90, strokeW = 36;
+
+  if (segments.length === 1) {
+    const circle = document.createElementNS(ns, 'circle');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+    circle.setAttribute('fill', 'none'); circle.setAttribute('stroke', segments[0].color);
+    circle.setAttribute('stroke-width', strokeW);
+    svg.appendChild(circle);
+  } else {
+    let angleStart = -90;
+    segments.forEach(seg => {
+      const frac = seg.value / total;
+      const angleEnd = angleStart + frac * 360;
+      const largeArc = (angleEnd - angleStart) > 180 ? 1 : 0;
+      const toXY = (ang) => {
+        const rad = (ang * Math.PI) / 180;
+        return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+      };
+      const [x1, y1] = toXY(angleStart);
+      const [x2, y2] = toXY(angleEnd);
+      const path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', seg.color);
+      path.setAttribute('stroke-width', strokeW);
+      svg.appendChild(path);
+      angleStart = angleEnd;
+    });
+  }
+
+  if (legend) {
+    legend.innerHTML = segments.map(s => `
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <span style="width:10px; height:10px; border-radius:50%; background:${s.color}; display:inline-block; flex-shrink:0;"></span>
+        ${escapeHtml(s.label)}
+      </span>
+    `).join('');
+  }
 }
 
 // HISTORICAL DATASET & ESTADÍSTICAS DASHBOARD
@@ -6447,6 +7422,7 @@ function applyPeriod(p){
   if(document.getElementById('fromInput')) document.getElementById('fromInput').value = toISO(from);
   if(document.getElementById('toInput')) document.getElementById('toInput').value = toISO(to);
   loadVentas(toISO(from), toISO(to));
+  if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
 }
 
 if(document.getElementById('periodSeg')){
@@ -6461,7 +7437,10 @@ if(document.getElementById('applyRange')){
     document.querySelectorAll('#periodSeg button').forEach(b=>b.classList.remove('active'));
     const from = document.getElementById('fromInput').value;
     const to = document.getElementById('toInput').value;
-    if (from && to) loadVentas(from, to);
+    if (from && to) {
+      loadVentas(from, to);
+      if (typeof renderTopProductsTable === 'function') renderTopProductsTable();
+    }
   });
 }
 
@@ -6701,10 +7680,25 @@ async function syncProductsFromPrestaShopAPI(){
           id: p.id,
           name: p.name || 'Producto',
           sku: p.sku || `PS-${p.id}`,
+          barcode: p.barcode || '',
           price: parseFloat(p.price || 50),
-          cat: 'general',
-          catLabel: 'General',
+          priceMayoreo: Number.isFinite(p.priceMayoreo) ? p.priceMayoreo : 0,
+          priceMayoreoDesdeUnidades: p.priceMayoreoDesdeUnidades || 0,
+          costoCompra: Number.isFinite(p.costoCompra) ? p.costoCompra : 0,
+          cat: (p.categoryLabel || 'general').toLowerCase().trim(),
+          catLabel: p.categoryLabel || 'General',
+          categoryIds: Array.isArray(p.categoryIds) ? p.categoryIds : undefined,
+          weight: p.weight || 0,
+          width: p.width || 0,
+          height: p.height || 0,
+          depth: p.depth || 0,
+          metaTitle: p.metaTitle || '',
+          metaDescription: p.metaDescription || '',
+          metaKeywords: p.metaKeywords || '',
+          lowStockThreshold: p.lowStockThreshold || 0,
           img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300',
+          images: Array.isArray(p.images) ? p.images : undefined,
+          migrated: !!p.migrated,
           desc: p.description && p.description.trim() ? p.description : p.name,
           url: p.url || ''
         }));
@@ -6787,7 +7781,7 @@ function renderCatalogTable(category = 'all', query = ''){
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const filtered = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
 
@@ -7895,17 +8889,32 @@ function renderProducts(category = 'all', query = '') {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const isBrowsingAll = category === 'all' && !query.trim();
 
-  const matched = dataset.filter(p => {
+  // Solo Puebla, CDMX Rumania y Querétaro tienen stock real rastreado
+  // (api/stock-all.js) — al cambiar de sucursal en el selector del POS se
+  // muestran únicamente los productos con existencia > 0 ahí. Atizapán no
+  // se rastrea todavía, así que ahí no se filtra por stock.
+  const POS_STOCK_WAREHOUSES = ['puebla', 'rumania', 'queretaro'];
+  const whKey = document.getElementById('posWarehouseSelect')?.value || 'rumania';
+  const filterByStock = POS_STOCK_WAREHOUSES.includes(whKey);
+
+  const matchedByFilters = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase());
+    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
+
+  const matched = filterByStock
+    ? matchedByFilters.filter(p => getStockFor(p.id, whKey) > 0)
+    : matchedByFilters;
 
   const limit = isBrowsingAll ? POS_BROWSE_LIMIT : POS_SEARCH_LIMIT;
   const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
-    grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
+    const msg = filterByStock && matchedByFilters.length > 0
+      ? 'No hay productos con existencia en esta sucursal.'
+      : 'No se encontraron productos en esta categoría.';
+    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">${msg}</div>`;
     return;
   }
 
@@ -7913,6 +8922,7 @@ function renderProducts(category = 'all', query = '') {
     const card = document.createElement('div');
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
+    const stockLabel = filterByStock ? `En stock (${getStockFor(p.id, whKey)})` : 'En stock';
     card.innerHTML = `
       <img src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
@@ -7921,7 +8931,7 @@ function renderProducts(category = 'all', query = '') {
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
-        <div class="p-stock">En stock</div>
+        <div class="p-stock">${stockLabel}</div>
       </div>
     `;
     grid.appendChild(card);
@@ -7953,6 +8963,16 @@ if(document.getElementById('catPillsContainer')){
     }
   });
 }
+
+if(document.getElementById('posWarehouseSelect')){
+  document.getElementById('posWarehouseSelect').addEventListener('change', () => {
+    const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+    const query = document.getElementById('posSearchInput')?.value || '';
+    renderProducts(activeCat, query);
+    loadCajaActual();
+  });
+}
+loadCajaActual();
 
 // THEME TOGGLE
 if(document.getElementById('toggleThemeBtn')){
@@ -7993,7 +9013,7 @@ const DEFAULT_ORDERS = [
     ]
   },
   { 
-    id: 'FOL-1003', date: '2026-09-11 14:02', customer: 'Cliente Mostrador', channel: 'Sistema POS', total: 380, status: 'Pagado',
+    id: 'FOL-1003', date: '2026-09-11 14:02', customer: 'Cliente POS', channel: 'Sistema POS', total: 380, status: 'Pagado',
     items: [
       { sku: 'parche, pirata, disfraz, fiesta', name: 'Parche Pirata', qty: 10, price: 20.00 },
       { sku: 'Peluca, metálico, fiesta, batucada', name: 'Peluca Metalica', qty: 12, price: 15.00 }
@@ -8067,6 +9087,10 @@ async function loadCustomersFromAPI(){
   const select = document.getElementById('posCustomerSelect');
   const searchInput = document.getElementById('customersSearchInput');
   if (searchInput) searchInput.value = '';
+  // La tienda tiene miles de clientes reales — traerlos puede tardar varios
+  // segundos, así que se avisa que está cargando en vez de dejar la tabla
+  // vacía (que se veía como si el directorio de clientes no funcionara).
+  if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   let list = [];
   try {
@@ -8083,7 +9107,7 @@ async function loadCustomersFromAPI(){
 
   if(select && list.length > 0) {
     const forSelect = list.slice(0, POS_CUSTOMER_SELECT_LIMIT);
-    select.innerHTML = '<option value="mostrador">Cliente Mostrador (General)</option>' + forSelect.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
+    select.innerHTML = '<option value="mostrador">Cliente POS (General)</option>' + forSelect.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)} — ${escapeHtml(c.email)}</option>`).join('');
   }
 }
 
@@ -8155,11 +9179,16 @@ async function loadOrdersFromAPI(){
       ticketHistorialCache = tickets; // así "Ticket" reimprime el detalle real sin tener que abrir antes el Historial de Tickets
       const posOrders = tickets.map(t => ({
         id: t.folio,
+        reference: '',
         date: new Date(t.created_at).toLocaleString('es-MX'),
-        customer: t.cliente || 'Cliente Mostrador',
+        deliveryDate: null,
+        customer: t.cliente || 'Cliente POS',
         channel: 'Sistema POS',
+        paymentMethod: payMethodTicketLabel(t.metodo),
         total: Number(t.total || 0),
         status: 'Pago Aceptado',
+        createdBy: t.registrado_por || null,
+        shop: 'Mi Fiestashop',
         items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
         rawId: null,
         _sortDate: new Date(t.created_at).getTime()
@@ -8177,20 +9206,28 @@ async function loadOrdersFromAPI(){
   // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
   // que sí agrega datos reales de PrestaShop (ver loadRealProductSales()).
 
-  tbody.innerHTML = list.map(o => `
+  const POSITIVE_STATES = ['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado'];
+  tbody.innerHTML = list.map(o => {
+    const statusOk = POSITIVE_STATES.includes(String(o.status || '').toLowerCase());
+    return `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
       <td><b>${escapeHtml(o.id)}</b></td>
-      <td>${escapeHtml(o.date)}</td>
-      <td><b>${escapeHtml(o.customer)}</b></td>
-      <td><span class="pill ${o.channel==='Sistema POS'?'ok':'warn'}">${escapeHtml(o.channel)}</span></td>
+      <td>${escapeHtml(o.reference || '—')}</td>
+      <td>${escapeHtml(o.customer)}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
-      <td><span class="pill ok">${escapeHtml(o.status)}</span></td>
+      <td>${escapeHtml(o.paymentMethod || o.channel || '—')}</td>
+      <td><span class="pill ${statusOk ? 'ok' : 'warn'}">${escapeHtml(o.status)}</span></td>
+      <td>${escapeHtml(o.date)}</td>
+      <td>${escapeHtml(o.deliveryDate || '—')}</td>
+      <td>${escapeHtml(o.createdBy || '—')}</td>
+      <td>${escapeHtml(o.shop || 'Mi Fiestashop')}</td>
       <td>
         <button class="btn small primary" onclick="event.stopPropagation(); openOrderDetailModal('${escapeHtml(o.id)}')"> Ver Orden</button>
         <button class="btn small" onclick="event.stopPropagation(); reprintTicket('${escapeHtml(o.id)}', ${o.total})"> Ticket</button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   const skSelect = document.getElementById('skSelectOrder');
   if (skSelect && list.length > 0) {
@@ -8443,7 +9480,11 @@ function checkLowStockNotifications() {
   dataset.forEach((p, index) => {
     const pId = p.id || index + 1;
     const stTotal = getStockFor(pId, 'puebla') + getStockFor(pId, 'rumania') + getStockFor(pId, 'queretaro');
-    if (stTotal < 150) lowItems.push(p.name);
+    // Umbral real configurado en PrestaShop por producto (low_stock_threshold)
+    // en vez de un número fijo igual para los ~500 productos — un antifaz de
+    // $2 y una vela de $67 no deberían alertar con el mismo punto de corte.
+    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : 10;
+    if (stTotal < threshold) lowItems.push(p.name);
   });
 
   if (lowItems.length === 0) return;
@@ -8620,9 +9661,12 @@ function showAdminDashboard() {
 function resetStorefrontSeoTags() {
   const defaultTitle = 'Mi Fiestashop | Artículos para Fiesta y Batucada al Mayoreo en México';
   const defaultDesc = 'Compra globos, batucada, pirotecnia fría, antifaces y artículos de fiesta al mayoreo y menudeo en México. Envío gratis desde $1,500 MXN. Precios de mayoreo desde 3 piezas.';
+  const defaultKeywords = 'fiesta, globos, batucada, pirotecnia fría, antifaces, artículos de fiesta al mayoreo';
   document.title = defaultTitle;
   const metaDesc = document.getElementById('metaDescription');
   if (metaDesc) metaDesc.setAttribute('content', defaultDesc);
+  const metaKw = document.getElementById('metaKeywords');
+  if (metaKw) metaKw.setAttribute('content', defaultKeywords);
   const canonical = document.getElementById('canonicalLink');
   if (canonical) canonical.setAttribute('href', 'https://mifiestashop.vercel.app/');
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', defaultTitle);
@@ -8634,14 +9678,23 @@ function resetStorefrontSeoTags() {
 
 function applyProductSeoTags(p) {
   if (!p) return;
-  const title = `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
-  const desc = (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
+  // Si PrestaShop ya tiene meta_title/meta_description redactados para este
+  // producto, se usan tal cual (son reales, escritos a mano) — el título y
+  // descripción genéricos solo son un respaldo para productos sin eso.
+  const title = (p.metaTitle && p.metaTitle.trim())
+    ? `${p.metaTitle.trim()} | Mi Fiestashop`
+    : `${p.name} — $${Number(p.price || 0).toFixed(2)} MXN | Mi Fiestashop`;
+  const desc = (p.metaDescription && p.metaDescription.trim())
+    ? p.metaDescription.trim().slice(0, 160)
+    : (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
   const path = productPathFor(p) || '/';
   const url = `https://mifiestashop.vercel.app${path}`;
 
   document.title = title;
   const metaDesc = document.getElementById('metaDescription');
   if (metaDesc) metaDesc.setAttribute('content', desc);
+  const metaKw = document.getElementById('metaKeywords');
+  if (metaKw && p.metaKeywords && p.metaKeywords.trim()) metaKw.setAttribute('content', p.metaKeywords.trim());
   const canonical = document.getElementById('canonicalLink');
   if (canonical) canonical.setAttribute('href', url);
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', title);
@@ -8655,12 +9708,17 @@ function applyProductSeoTags(p) {
     ld.id = 'ldJsonProduct';
     document.head.appendChild(ld);
   }
+  // Las fotos migradas son WebP reales de 800x800 (ver scratch/imgtools) —
+  // se describen como ImageObject en vez de una URL suelta, que es lo que
+  // Google recomienda para que las imágenes del producto aparezcan bien en
+  // Google Imágenes / resultados enriquecidos.
+  const productImages = Array.isArray(p.images) && p.images.length > 0 ? p.images : (p.img ? [p.img] : []);
   ld.textContent = JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: p.name,
     sku: p.sku,
-    image: p.img,
+    image: productImages.map(url => ({ '@type': 'ImageObject', url, width: 800, height: 800 })),
     description: desc,
     offers: {
       '@type': 'Offer',
@@ -8714,6 +9772,7 @@ async function openCmsPage(slug, pushState) {
       body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se encontró esta página.</div>';
       return;
     }
+    if (data.page.migrated && data.page.path) { window.location.replace(data.page.path); return; }
     document.title = data.page.title + ' | Mi Fiestashop';
     const metaDesc = document.getElementById('metaDescription');
     if (metaDesc && data.page.description) metaDesc.setAttribute('content', data.page.description);
@@ -8878,6 +9937,964 @@ function closeLegalPage() {
   window.scrollTo(0, 0);
 }
 
+// ================= PÁGINAS DE BODA (hero + beneficios + galería + reseñas + paquetes) =================
+// Igual que LEGAL_PAGES: viven enteramente en este sitio (Vercel), sin
+// depender de PrestaShop. bodaHeroHtml() genera el hero por ciudad; el
+// resto de bloques es el mismo contenido para todas las ciudades.
+const BODA_CITIES = {
+  mexico: { slug: 'mexico', name: 'México' },
+  cdmx: { slug: 'cdmx', name: 'CDMX' },
+  queretaro: { slug: 'queretaro', name: 'Querétaro' },
+  puebla: { slug: 'puebla', name: 'Puebla' }
+};
+
+function bodaHeroHtml(city) {
+  const badge = city.slug === 'mexico'
+    ? 'Envíos a toda la boda, sin salir de casa'
+    : `Envíos a toda la boda en ${city.name}, sin salir de casa`;
+  const title2 = city.slug === 'mexico' ? 'Batucada de Boda' : `Batucada de Boda en ${city.name}`;
+
+  return `<!-- Bloque Hero - Artículos para Batucada de Boda (Compra en línea) -->
+<section id="batucada-${city.slug}" class="batucada-hero" aria-label="Artículos para batucada de boda ${city.name}">
+<style>
+#batucada-${city.slug}{
+  width:100%;
+  overflow:hidden;
+  --accent:#37b6b9;
+  --accent-dark:#2c8f92;
+  --cta:#f2652e;
+  --pink:#d3007b;
+  --pink-dark:#a80063;
+  --text:#111;
+  --muted:#666;
+  --bg:#fff;
+  --ok:#2c8f92;
+  font-family:"Poppins",sans-serif;
+  color:var(--text);
+  background:radial-gradient(1100px 500px at 88% 0%, rgba(55,182,185,.08), transparent 60%), var(--bg);
+  width:100vw;
+  position:relative;
+  left:50%;
+  margin-left:-50vw;
+  box-sizing:border-box;
+}
+#batucada-${city.slug} .hero-title{ font-family:"Fredoka","Poppins",sans-serif; }
+#batucada-${city.slug} .urgency-bar{
+  background:linear-gradient(135deg,var(--pink),var(--pink-dark));
+  color:#fff;
+  text-align:center;
+  padding:10px 20px;
+  font-size:14px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+#batucada-${city.slug} .urgency-bar .pulse{
+  width:10px;height:10px;
+  background:#fff;
+  border-radius:50%;
+  display:inline-block;
+  animation:bp${city.slug} 1.4s ease-in-out infinite;
+  flex-shrink:0;
+}
+#batucada-${city.slug} .urgency-bar .urgency-text{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+#batucada-${city.slug} .urgency-bar .countdown-wrap{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  background:rgba(0,0,0,.2);
+  border-radius:50px;
+  padding:2px 12px;
+  font-size:13px;
+}
+#batucada-${city.slug} .cd-label{ font-size:11px; opacity:.8; }
+#batucada-${city.slug} .bp-countdown{
+  font-weight:900;
+  font-size:15px;
+  letter-spacing:1.5px;
+  font-variant-numeric:tabular-nums;
+  min-width:68px;
+  display:inline-block;
+  text-align:center;
+}
+@keyframes bp${city.slug}{
+  0%,100%{opacity:1;transform:scale(1);}
+  50%{opacity:.5;transform:scale(1.4);}
+}
+@keyframes fadeInLeft${city.slug}{ from{opacity:0;transform:translateX(-50px);} to{opacity:1;transform:translateX(0);} }
+@keyframes fadeInRight${city.slug}{ from{opacity:0;transform:translateX(50px);} to{opacity:1;transform:translateX(0);} }
+@keyframes fadeInUp${city.slug}{ from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+#batucada-${city.slug} .hero-left{ animation:fadeInLeft${city.slug} 0.8s ease both; }
+#batucada-${city.slug} .badge-location{ animation:fadeInUp${city.slug} 0.6s ease 0.1s both; }
+#batucada-${city.slug} .hero-title{ animation:fadeInLeft${city.slug} 0.8s ease 0.25s both; }
+#batucada-${city.slug} .hero-intro{ animation:fadeInUp${city.slug} 0.6s ease 0.4s both; }
+#batucada-${city.slug} .benefits-grid{ animation:fadeInUp${city.slug} 0.6s ease 0.55s both; }
+#batucada-${city.slug} .cta-group{ animation:fadeInUp${city.slug} 0.7s ease 0.65s both; }
+#batucada-${city.slug} .hero-img-wrap{ animation:fadeInRight${city.slug} 0.9s ease 0.3s both; }
+#batucada-${city.slug} .hero-wrap{
+  max-width:100%;
+  margin:0;
+  padding:48px 4vw 56px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:40px;
+  align-items:center;
+}
+@media(max-width:768px){
+  #batucada-${city.slug} .hero-wrap{ grid-template-columns:1fr; padding:32px 16px 40px; }
+  #batucada-${city.slug} .hero-img-wrap{order:-1;}
+}
+#batucada-${city.slug} .badge-location{
+  display:inline-flex; align-items:center; gap:7px;
+  background:#eafcfa; color:var(--accent-dark);
+  font-size:12px; font-weight:700; letter-spacing:.6px; text-transform:uppercase;
+  padding:8px 16px; border-radius:50px; margin-bottom:14px;
+}
+#batucada-${city.slug} .badge-location .dot{ width:8px;height:8px; background:var(--accent); border-radius:50%; animation:bp${city.slug} 1.4s ease-in-out infinite; }
+#batucada-${city.slug} .product-tags{ font-size:11px; color:var(--muted); letter-spacing:.5px; font-weight:600; text-transform:uppercase; margin-bottom:10px; }
+#batucada-${city.slug} .hero-title{ font-size:clamp(34px,5vw,60px); font-weight:700; line-height:1.08; color:#111; margin:0 0 14px; letter-spacing:-.01em; text-wrap:balance; }
+#batucada-${city.slug} .hero-title span{color:var(--accent);}
+#batucada-${city.slug} .hero-subtitle{ font-size:15px; color:#444; line-height:1.65; margin-bottom:16px; }
+#batucada-${city.slug} .blockquote-info{ background:#f0fbfd; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; padding:10px 16px; font-size:13.5px; color:#333; margin-bottom:20px; line-height:1.5; }
+#batucada-${city.slug} .benefits-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:28px; list-style:none; padding:0; }
+#batucada-${city.slug} .benefits-grid li{ display:flex; align-items:flex-start; gap:7px; font-size:13px; color:#333; font-weight:500; line-height:1.4; }
+#batucada-${city.slug} .benefits-grid li::before{ content:"✓"; color:var(--ok); font-weight:900; font-size:14px; flex-shrink:0; margin-top:1px; }
+@media(max-width:480px){ #batucada-${city.slug} .benefits-grid{grid-template-columns:1fr;} }
+#batucada-${city.slug} .cta-group{ display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+#batucada-${city.slug} .btn-primary{
+  display:inline-flex; align-items:center; gap:8px;
+  background:linear-gradient(135deg,#f2652e,#f68a5c); color:#fff !important;
+  font-size:15px; font-weight:800; padding:14px 28px; border-radius:50px;
+  text-decoration:none !important; box-shadow:0 6px 20px rgba(242,101,46,.35);
+  transition:transform .2s,box-shadow .2s; border:none; cursor:pointer;
+}
+#batucada-${city.slug} .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 10px 28px rgba(242,101,46,.45); }
+#batucada-${city.slug} .btn-secondary{
+  display:inline-flex; align-items:center; gap:8px; background:transparent; color:var(--accent-dark) !important;
+  font-size:14px; font-weight:700; padding:13px 24px; border-radius:50px; text-decoration:none !important;
+  border:2px solid var(--accent); transition:background .2s,color .2s; cursor:pointer;
+}
+#batucada-${city.slug} .btn-secondary:hover{ background:var(--accent); color:#fff !important; }
+#batucada-${city.slug} .trust-note{ margin-top:14px; font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; }
+#batucada-${city.slug} .trust-note .stars{ color:#f9e05c; font-size:13px; letter-spacing:1px; }
+#batucada-${city.slug} .hero-img-wrap{ position:relative; border-radius:20px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.18); height:100%; min-height:460px; }
+#batucada-${city.slug} .hero-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; min-height:460px; }
+#batucada-${city.slug} .hero-img-badge{
+  position:absolute; bottom:16px; left:16px; background:rgba(46,16,101,.8); backdrop-filter:blur(6px);
+  color:#fff; font-size:12px; font-weight:700; padding:8px 14px; border-radius:50px; display:flex; align-items:center; gap:6px;
+}
+#batucada-${city.slug} .hero-img-badge .ok-dot{ width:8px;height:8px; background:#4fa83c; border-radius:50%; flex-shrink:0; }
+</style>
+
+<div class="urgency-bar">
+  <span class="pulse"></span>
+  <span class="urgency-text">
+    🎁 <strong>Recibe un regalo al comprar</strong>&nbsp;·&nbsp;Promoción válida por:
+    <span class="countdown-wrap">
+      <span class="cd-label">⏳</span>
+      <span class="bp-countdown" id="bp-countdown-${city.slug}">47:59:59</span>
+    </span>
+  </span>
+</div>
+
+<script>
+(function(){
+  var KEY_PREFIX = 'mfs_promo_end_${city.slug}_';
+  var DURATION   = 48 * 60 * 60 * 1000;
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function tick(endTime){
+    var el = document.getElementById('bp-countdown-${city.slug}');
+    if(!el) return;
+    var diff = endTime - Date.now();
+    if(diff <= 0){ el.textContent = '00:00:00'; return; }
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000)   / 1000);
+    el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+    setTimeout(function(){ tick(endTime); }, 1000);
+  }
+  function startWithIP(ip){
+    var key    = KEY_PREFIX + ip.replace(/[^a-z0-9]/gi,'_');
+    var stored = localStorage.getItem(key);
+    var endTime;
+    if(stored && !isNaN(parseInt(stored,10))){
+      endTime = parseInt(stored, 10);
+      if(Date.now() > endTime){ endTime = Date.now() + DURATION; localStorage.setItem(key, endTime); }
+    } else {
+      endTime = Date.now() + DURATION;
+      localStorage.setItem(key, endTime);
+    }
+    tick(endTime);
+  }
+  fetch('https://api.ipify.org?format=json')
+    .then(function(r){ return r.json(); })
+    .then(function(d){ startWithIP(d.ip || 'guest'); })
+    .catch(function(){
+      var fp = navigator.language + screen.width + screen.height + new Date().getTimezoneOffset();
+      startWithIP(fp);
+    });
+})();
+<\/script>
+
+<div class="hero-wrap">
+  <div class="hero-left">
+    <div class="badge-location">
+      <span class="dot"></span>
+      ${badge}
+    </div>
+    <p class="product-tags">Batucada de Boda · Sombreros Locos · Luminosos · Recuerdos</p>
+    <h1 class="hero-title">
+      Artículos para<br>
+      <span>${title2}</span>
+    </h1>
+    <p class="hero-subtitle">
+      Cierra la pista con la fiesta que todos van a recordar. <strong>Arma tu batucada de boda</strong> con lentes gigantes, boas, sombreros y luminosos que hacen que los invitados no se quieran ir.
+    </p>
+    <div class="blockquote-info">
+      Ideal para el final de la noche: <strong><em>compra en línea y recibe todo listo antes de tu gran día.</em></strong>
+    </div>
+    <ul class="benefits-grid">
+      <li>Compra 100% en línea, fácil y segura</li>
+      <li>Kits diseñados para bodas de cualquier tamaño</li>
+      <li>Personalización con nombres o fecha de la boda</li>
+      <li>Envío gratis en compras mayores a $1,500</li>
+      <li>Asesoría para armar el combo perfecto para tu boda</li>
+      <li>Sin mínimo · Paga con tarjeta</li>
+    </ul>
+    <div class="cta-group">
+      <a class="btn-primary" href="https://mifiestashop.com/266-productos">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        Comprar para mi boda
+      </a>
+      <a class="btn-secondary" href="https://mifiestashop.com/266-productos">Ver Catálogo completo</a>
+    </div>
+    <p class="trust-note">
+      <span class="stars">★★★★★</span>
+      +80 reseñas reales en Google · Atención personalizada
+    </p>
+  </div>
+
+  <div class="hero-img-wrap">
+    <img
+      src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-01-1.png"
+      alt="Artículos para batucada de boda en ${city.name} - Mi Fiesta Shop"
+      loading="eager"
+    />
+    <div class="hero-img-badge">
+      <span class="ok-dot"></span>
+      Compra en línea · Envíos a todo México
+    </div>
+  </div>
+</div>
+</section>
+`;
+}
+
+const BODA_BLOCKS_HTML = `<!-- ============================================================ -->
+<!-- 1) BENEFICIOS -->
+<!-- ============================================================ -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<section id="beneficios-mfs" aria-label="Beneficios Mi Fiesta Shop">
+<style>
+#beneficios-mfs{
+  --pink:#d3007b; --purple-dark:#2e1065; --teal:#37b6b9; --yellow:#f9e05c;
+  font-family:"Poppins",sans-serif;
+  background:var(--teal);
+  color:#fff;
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  padding:56px 20px;
+}
+#beneficios-mfs .grid{
+  max-width:1100px;margin:0 auto;display:grid;gap:40px;grid-template-columns:repeat(3,1fr);
+}
+#beneficios-mfs .item{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  opacity:0; transform:translateY(26px);
+  transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1);
+}
+#beneficios-mfs .item.is-visible{opacity:1;transform:translateY(0);}
+#beneficios-mfs .icon-wrap{
+  display:grid;place-items:center;margin-bottom:16px;cursor:pointer;
+  transition:transform .25s ease;
+  background:transparent !important; border:none !important; box-shadow:none !important; padding:0 !important;
+  outline:none; -webkit-appearance:none; appearance:none;
+}
+#beneficios-mfs .item:hover .icon-wrap{transform:scale(1.12) rotate(-4deg);}
+#beneficios-mfs svg{width:66px;height:66px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+#beneficios-mfs .text h3{
+  margin:0 0 8px;font-size:1.15rem;font-weight:800;position:relative;display:inline-block;
+}
+#beneficios-mfs .text h3::after{
+  content:"";position:absolute;left:50%;bottom:-6px;width:0;height:3px;border-radius:2px;
+  background:var(--yellow);transform:translateX(-50%);transition:width .3s ease;
+}
+#beneficios-mfs .item:hover .text h3::after{width:34px;}
+#beneficios-mfs .text p{margin:0;opacity:.92;line-height:1.5;font-size:.95rem;font-weight:400;}
+@keyframes bmfsPop{0%{transform:scale(1)}40%{transform:scale(1.15) rotate(2deg)}100%{transform:scale(1)}}
+#beneficios-mfs .icon-wrap.pop{animation:bmfsPop .28s ease forwards}
+@media (max-width:900px){#beneficios-mfs .grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:600px){#beneficios-mfs .grid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){
+  #beneficios-mfs .item{opacity:1 !important;transform:none !important;transition:none !important;}
+  #beneficios-mfs .icon-wrap,#beneficios-mfs .icon-wrap.pop{animation:none !important;transition:none !important;}
+}
+</style>
+
+  <div class="grid" id="bmfsGrid">
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Paga con tarjeta">
+        <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      </span>
+      <div class="text"><h3>Paga con tarjeta</h3><p>Sin mínimo ni comisiones extra.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Mayoreo desde 3 piezas">
+        <svg viewBox="0 0 24 24"><path d="M6 2l2 6h8l2-6"/><path d="M6 8h12l-1.5 12h-9z"/></svg>
+      </span>
+      <div class="text"><h3>Mayoreo desde 3 pzas</h3><p>Precios de mayorista comprando desde 3 piezas.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Los más originales">
+        <svg viewBox="0 0 24 24"><path d="M2 12c2-3 7-3 10 0 3-3 8-3 10 0-1 4-6 6-10 6s-9-2-10-6z"/><circle cx="8" cy="12" r="1"/><circle cx="16" cy="12" r="1"/></svg>
+      </span>
+      <div class="text"><h3>Los más originales</h3><p>Productos únicos para elevar tu evento.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Envíos gratis">
+        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg>
+      </span>
+      <div class="text"><h3>Envío gratis $1,500+</h3><p>En compras mayores a $1,500 MXN.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Compra por pieza">
+        <svg viewBox="0 0 24 24"><path d="M4 22l4-10 6 6-10 4z"/><path d="M14 3l7 7"/><path d="M14 8l2-2 2 2-2 2z"/></svg>
+      </span>
+      <div class="text"><h3>Sin docena obligatoria</h3><p>Compra por pieza: lleva solo lo que necesitas.</p></div>
+    </article>
+
+    <article class="item">
+      <span class="icon-wrap" role="button" tabindex="0" aria-label="Hacemos factura">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M9 8h6M9 12h6M9 16h6"/></svg>
+      </span>
+      <div class="text"><h3>Hacemos factura</h3><p>Facturación CFDI disponible en tus compras.</p></div>
+    </article>
+  </div>
+
+  <script>
+  (function(){
+    var items = document.querySelectorAll('#bmfsGrid .item');
+    items.forEach(function(el, i){ el.style.transitionDelay = Math.min(i, 8) * 70 + 'ms'; });
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+      }, {threshold:0.15});
+      items.forEach(function(el){ io.observe(el); });
+    } else {
+      items.forEach(function(el){ el.classList.add('is-visible'); });
+    }
+    document.querySelectorAll('#beneficios-mfs .icon-wrap').forEach(function(el){
+      var pop = function(){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); };
+      el.addEventListener('click', pop);
+      el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); pop(); } });
+    });
+  })();
+  <\/script>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- 2) GALERÍA "BODAS QUE NOS INVITARON" -->
+<!-- ============================================================ -->
+<section id="galeria-boda-mfs" aria-label="Bodas que nos invitaron">
+<style>
+#galeria-boda-mfs{
+  --pink:#d3007b; --purple-dark:#2e1065; --muted:#8b7d97;
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  background:#fff; padding:44px 4vw 56px; font-family:"Poppins",sans-serif;
+}
+#galeria-boda-mfs .gal-title{
+  text-align:center; font-size:clamp(22px,3vw,32px); font-weight:800; color:var(--purple-dark); margin:0 0 26px;
+}
+#galeria-boda-mfs .gal-title span{color:var(--pink);}
+#galeria-boda-mfs .gallery{
+  --cols:6; --gap:10px;
+  display:grid; grid-template-columns:repeat(var(--cols),1fr); grid-auto-rows:1fr; gap:var(--gap);
+  width:100%; max-width:1400px; margin:0 auto; box-sizing:border-box; aspect-ratio:3/1;
+}
+#galeria-boda-mfs .gallery__item{
+  overflow:hidden; border-radius:14px; cursor:pointer; position:relative; background:#f0e6ef;
+  opacity:0; transform:translateY(20px); transition:opacity .6s cubic-bezier(.2,.7,.3,1), transform .6s cubic-bezier(.2,.7,.3,1);
+}
+#galeria-boda-mfs .gallery__item.is-visible{opacity:1;transform:translateY(0);}
+#galeria-boda-mfs .gallery__item img{
+  width:100%; height:100%; object-fit:cover; display:block;
+  transition:transform .4s ease, filter .4s ease; will-change:transform;
+}
+#galeria-boda-mfs .gallery__item:hover img{transform:scale(1.06); filter:brightness(.85);}
+#galeria-boda-mfs .gallery__item:hover{box-shadow:0 10px 24px rgba(211,0,123,.25);}
+#galeria-boda-mfs .gallery__overlay{
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .35s ease;
+}
+#galeria-boda-mfs .gallery__item:hover .gallery__overlay{opacity:1;}
+#galeria-boda-mfs .gallery__overlay svg{width:30px;height:30px;fill:#fff;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));}
+#galeria-boda-mfs .lb{
+  display:none; position:fixed; inset:0; background:rgba(46,16,101,.94); z-index:99999;
+  align-items:center; justify-content:center; padding:20px;
+}
+#galeria-boda-mfs .lb.active{display:flex;}
+#galeria-boda-mfs .lb__img{
+  max-width:90vw; max-height:90vh; object-fit:contain; border-radius:8px;
+  box-shadow:0 8px 40px rgba(0,0,0,.6); animation:galFadeIn .3s ease;
+}
+@keyframes galFadeIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+#galeria-boda-mfs .lb__close{
+  position:fixed; top:18px; right:22px; color:#fff; font-size:36px; cursor:pointer; line-height:1;
+  background:none; border:none; z-index:100000; text-shadow:0 2px 8px rgba(0,0,0,.5);
+}
+#galeria-boda-mfs .lb__arrow{
+  position:fixed; top:50%; transform:translateY(-50%); background:rgba(255,255,255,.15); border:none;
+  color:#fff; font-size:28px; width:50px; height:50px; border-radius:50%; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px); transition:background .2s;
+}
+#galeria-boda-mfs .lb__arrow:hover{background:var(--pink);}
+#galeria-boda-mfs .lb__prev{left:14px;} #galeria-boda-mfs .lb__next{right:14px;}
+@media (max-width:1024px){#galeria-boda-mfs .gallery{--cols:4;aspect-ratio:4/3;}}
+@media (max-width:768px){
+  #galeria-boda-mfs .gallery{--cols:3;aspect-ratio:1/1;}
+}
+@media (max-width:480px){
+  #galeria-boda-mfs .gallery{--cols:2;--gap:6px;aspect-ratio:2/3;}
+}
+@media (prefers-reduced-motion: reduce){
+  #galeria-boda-mfs .gallery__item{opacity:1 !important;transform:none !important;transition:none !important;}
+}
+</style>
+
+<h2 class="gal-title">Bodas que nos <span>invitaron</span></h2>
+
+<div class="gallery" id="galMfsGrid">
+  <div class="gallery__item" data-index="0"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-01-1.png" alt="Boda Mi Fiesta Shop 1" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="1"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-02-1.png" alt="Boda Mi Fiesta Shop 2" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="2"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-03.png" alt="Boda Mi Fiesta Shop 3" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="3"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-04-1.png" alt="Boda Mi Fiesta Shop 4" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="4"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-05.png" alt="Boda Mi Fiesta Shop 5" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="5"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-06-1.png" alt="Boda Mi Fiesta Shop 6" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="6"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-07.png" alt="Boda Mi Fiesta Shop 7" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="7"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-08-1.png" alt="Boda Mi Fiesta Shop 8" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="8"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/articulos-para-batucada-en-mexico-articulos-para-fiesta-en-ciudad-de-mexico-ciudad-de-mexico-10-1.png" alt="Boda Mi Fiesta Shop 9" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="9"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/batucada-para-boda-venta-de-productos-para-animacion-de-boda-mexico-01-1.png" alt="Boda Mi Fiesta Shop 10" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="10"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/batucada-para-boda-venta-de-productos-para-animacion-de-boda-mexico-03-1.png" alt="Boda Mi Fiesta Shop 11" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+  <div class="gallery__item" data-index="11"><img src="https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/boda/batucada-para-boda-venta-de-productos-para-animacion-de-boda-mexico-04-1.png" alt="Boda Mi Fiesta Shop 12" loading="lazy" decoding="async"><div class="gallery__overlay"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div></div>
+</div>
+
+<div class="lb" id="galMfsLb">
+  <button class="lb__close" id="galMfsClose">&times;</button>
+  <button class="lb__arrow lb__prev" id="galMfsPrev">&#8249;</button>
+  <img class="lb__img" id="galMfsLbImg" src="" alt="">
+  <button class="lb__arrow lb__next" id="galMfsNext">&#8250;</button>
+</div>
+
+<script>
+(function(){
+  var items = document.querySelectorAll('#galMfsGrid .gallery__item');
+  items.forEach(function(el, i){ el.style.transitionDelay = Math.min(i, 10) * 45 + 'ms'; });
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    }, {threshold:0.12});
+    items.forEach(function(el){ io.observe(el); });
+  } else {
+    items.forEach(function(el){ el.classList.add('is-visible'); });
+  }
+
+  var lb = document.getElementById('galMfsLb');
+  var lbImg = document.getElementById('galMfsLbImg');
+  var images = Array.from(items).map(function(el){ return el.querySelector('img').src; });
+  var current = 0;
+  function openLb(idx){
+    current = idx; lbImg.src = images[idx]; lbImg.alt = items[idx].querySelector('img').alt;
+    lb.classList.add('active'); document.body.style.overflow = 'hidden';
+  }
+  function closeLb(){ lb.classList.remove('active'); document.body.style.overflow = ''; }
+  function showNext(){ current = (current + 1) % images.length; lbImg.src = images[current]; }
+  function showPrev(){ current = (current - 1 + images.length) % images.length; lbImg.src = images[current]; }
+  items.forEach(function(item, i){ item.addEventListener('click', function(){ openLb(i); }); });
+  document.getElementById('galMfsClose').addEventListener('click', closeLb);
+  document.getElementById('galMfsNext').addEventListener('click', showNext);
+  document.getElementById('galMfsPrev').addEventListener('click', showPrev);
+  lb.addEventListener('click', function(e){ if(e.target === lb) closeLb(); });
+  document.addEventListener('keydown', function(e){
+    if(!lb.classList.contains('active')) return;
+    if(e.key === 'ArrowRight') showNext();
+    if(e.key === 'ArrowLeft') showPrev();
+    if(e.key === 'Escape') closeLb();
+  });
+})();
+<\/script>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- 3) RESEÑAS DE GOOGLE (convertido de documento completo a bloque) -->
+<!-- ============================================================ -->
+<section id="resenas-google-mfs" aria-label="Reseñas de Google">
+<style>
+#resenas-google-mfs{
+  --pink:#d3007b; --purple-dark:#2e1065; --muted:#8b7d97; --card-border:#f0e6ef;
+  font-family:"Poppins",sans-serif; background:#f7f5f8; color:var(--purple-dark);
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  padding:clamp(40px,5vw,64px) 20px;
+}
+#resenas-google-mfs *{box-sizing:border-box;}
+#resenas-google-mfs .wrap{max-width:1200px;margin:0 auto;}
+#resenas-google-mfs .head{display:grid;gap:8px;justify-items:center;margin-bottom:clamp(16px,2.8vw,24px);}
+#resenas-google-mfs .title{margin:0;font-size:clamp(24px,3.2vw,36px);font-weight:800;display:flex;align-items:center;gap:10px;}
+#resenas-google-mfs .title img{width:26px;height:26px;}
+#resenas-google-mfs .stars{display:flex;gap:4px;align-items:center;}
+#resenas-google-mfs .stars span{font-size:19px;color:#f9e05c;text-shadow:0 1px 1px rgba(0,0,0,.08);}
+#resenas-google-mfs .sub{margin:0;color:var(--muted);font-size:14px;}
+#resenas-google-mfs .carousel{position:relative;}
+#resenas-google-mfs .track{display:flex;gap:18px;transition:transform .5s cubic-bezier(.22,.61,.36,1);will-change:transform;}
+#resenas-google-mfs .card{
+  background:#fff;border:1px solid var(--card-border);border-radius:16px;padding:20px;
+  flex:0 0 calc((100% - 36px)/3); display:flex; flex-direction:column; min-height:250px;
+  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+}
+#resenas-google-mfs .card:hover{transform:translateY(-5px); box-shadow:0 12px 24px rgba(211,0,123,.12); border-color:var(--pink);}
+#resenas-google-mfs .hdr{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+#resenas-google-mfs .avatar{
+  width:42px;height:42px;border-radius:999px;overflow:hidden;flex:0 0 auto;
+  background:#fbe1ee; display:grid; place-items:center; font-weight:700; color:var(--pink);
+}
+#resenas-google-mfs .meta{display:grid;}
+#resenas-google-mfs .name{font-weight:700; font-size:14px; margin:0;}
+#resenas-google-mfs .date{margin:2px 0 0; font-size:12px; color:var(--muted);}
+#resenas-google-mfs .gmark{margin-left:auto; width:20px; height:20px; opacity:.9;}
+#resenas-google-mfs .txt{color:#3a2c4a; font-size:14px; line-height:1.55; margin:6px 0 0;}
+#resenas-google-mfs .arrows{position:absolute; inset:0; pointer-events:none;}
+#resenas-google-mfs .arrows button{
+  pointer-events:auto; position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px;
+  border:none; border-radius:999px; background:#fff; box-shadow:0 10px 24px rgba(46,16,101,.15);
+  display:grid; place-items:center; cursor:pointer; transition:transform .18s ease, background .2s ease;
+}
+#resenas-google-mfs .arrows button:hover{ transform:translateY(-50%) scale(1.08); background:var(--pink); }
+#resenas-google-mfs .arrows button:hover svg{ color:#fff; }
+#resenas-google-mfs .prev{left:-6px;} #resenas-google-mfs .next{right:-6px;}
+#resenas-google-mfs .arrows svg{width:22px;height:22px;color:var(--purple-dark); transition:color .2s ease;}
+#resenas-google-mfs .cta{display:flex; justify-content:center; margin-top:clamp(14px,2.2vw,22px);}
+#resenas-google-mfs .btn{
+  background:var(--pink); color:#fff; border:none; border-radius:999px; padding:13px 26px; font-weight:700;
+  font-size:14.5px; cursor:pointer; box-shadow:0 8px 20px rgba(211,0,123,.35);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+#resenas-google-mfs .btn:hover{ transform:translateY(-2px) scale(1.03); box-shadow:0 10px 24px rgba(211,0,123,.45); }
+#resenas-google-mfs .btn:active{ transform:translateY(0) scale(.97); }
+@media (max-width: 1023px){ #resenas-google-mfs .card{flex-basis: calc((100% - 18px)/2);} }
+@media (max-width: 639px){ #resenas-google-mfs .card{flex-basis:100%;} #resenas-google-mfs .prev{left:4px;} #resenas-google-mfs .next{right:4px;} }
+@media (prefers-reduced-motion: reduce){
+  #resenas-google-mfs .track{transition:none !important;}
+  #resenas-google-mfs .card, #resenas-google-mfs .arrows button, #resenas-google-mfs .btn{transition:none !important;}
+}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h2 class="title"><img src="https://cdn-icons-png.flaticon.com/512/281/281764.png" alt="Google"/> Reseñas de Google</h2>
+    <div class="stars" aria-label="Calificación 5 de 5"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+    <p class="sub">Clientes reales, servicio real. Así opinan.</p>
+  </header>
+
+  <div class="carousel" id="resMfsReviews">
+    <div class="track">
+      <article class="card">
+        <div class="hdr"><div class="avatar">D</div><div class="meta"><p class="name">Daniela Jimeno</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Muy amables, mucha variedad. Lo recomiendo para todo tipo de eventos.</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">S</div><div class="meta"><p class="name">Sigifredo García Villalobos</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Super muy buenos productos, la atención está genial 😁</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">M</div><div class="meta"><p class="name">Monse</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Excelente lugar, tienen una gran variedad de artículos para fiestas a un muy buen precio.</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">A</div><div class="meta"><p class="name">Alejandro Chávez</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Excelente lugar con todo lo que necesitas para tu fiesta. Además súper amables, nos explicaron cómo funcionaba todo y nos ayudaron a personalizar nuestros vasos 10/10.</p>
+      </article>
+      <article class="card">
+        <div class="hdr"><div class="avatar">J</div><div class="meta"><p class="name">José Fernando Castillo</p><p class="date">Hace 1 año</p></div><img class="gmark" alt="Google" src="https://cdn-icons-png.flaticon.com/512/281/281764.png"/></div>
+        <div class="stars"><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span></div>
+        <p class="txt">Muy buenos artículos para fiestas, matrimonios, despedidas de soltero y gran variedad para cualquier evento que necesites. Muy buena atención y asesoría.</p>
+      </article>
+    </div>
+
+    <div class="arrows" aria-hidden="true">
+      <button class="prev" type="button" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="next" type="button" aria-label="Siguiente"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
+
+  <div class="cta"><button class="btn" type="button" onclick="window.open('https://www.google.com/search?q=Mi+Fiesta+Shop+reseñas','_blank')">Ver todas</button></div>
+</div>
+
+<script>
+(function(){
+  var root = document.getElementById('resMfsReviews');
+  var track = root.querySelector('.track');
+  var cards = Array.from(track.children);
+  var prev = root.querySelector('.prev');
+  var next = root.querySelector('.next');
+  var index = 0, perView = 3, gap = 18;
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function computePerView(){ var w = window.innerWidth; perView = w < 640 ? 1 : (w < 1024 ? 2 : 3); }
+  function cardWidth(){ return cards[0].getBoundingClientRect().width + gap; }
+  function go(i){
+    computePerView();
+    var maxIndex = Math.max(0, cards.length - perView);
+    index = Math.min(Math.max(0, i), maxIndex);
+    track.style.transform = 'translateX(' + (-index * cardWidth()) + 'px)';
+  }
+  function nextSlide(){ go(index+1); }
+  function prevSlide(){ go(index-1); }
+  prev.addEventListener('click', prevSlide);
+  next.addEventListener('click', nextSlide);
+  window.addEventListener('resize', function(){ go(index); });
+
+  var timer = null, D = 5200;
+  function start(){ if(reduceMotion) return; stop(); timer = setInterval(function(){ if(index >= cards.length - perView){ go(0); } else { nextSlide(); } }, D); }
+  function stop(){ if(timer){ clearInterval(timer); timer = null; } }
+  root.addEventListener('mouseenter', stop);
+  root.addEventListener('mouseleave', start);
+
+  computePerView(); go(0); start();
+})();
+<\/script>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- 4) PAQUETES DE BODA -->
+<!-- ============================================================ -->
+<section id="paquetes-boda-mfs" aria-label="Paquetes para boda">
+<style>
+#paquetes-boda-mfs{
+  --pink:#d3007b; --purple:#8e3fa8; --purple-dark:#2e1065; --yellow:#f9e05c;
+  width:100vw; position:relative; left:50%; margin-left:-50vw;
+  font-family:"Poppins",sans-serif; background:#faf7f8; padding:56px 4vw; box-sizing:border-box;
+}
+#paquetes-boda-mfs .pb-header{text-align:center; max-width:700px; margin:0 auto 36px;}
+#paquetes-boda-mfs .pb-header h2{font-size:clamp(26px,3.5vw,38px); font-weight:800; color:var(--purple-dark); margin:0 0 8px;}
+#paquetes-boda-mfs .pb-header h2 span{color:var(--pink);}
+#paquetes-boda-mfs .pb-header p{font-size:15px; color:#6b5c7a; margin:0;}
+#paquetes-boda-mfs .pb-grid{
+  max-width:1400px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; align-items:start;
+}
+@media(max-width:980px){#paquetes-boda-mfs .pb-grid{grid-template-columns:1fr;}}
+#paquetes-boda-mfs .pb-card{
+  border-radius:18px; padding:32px 28px 36px; color:#fff;
+  box-shadow:0 16px 40px rgba(46,16,101,.16); position:relative; overflow:hidden;
+  opacity:0; transform:translateY(26px);
+  transition:opacity .7s cubic-bezier(.2,.7,.3,1), transform .7s cubic-bezier(.2,.7,.3,1), box-shadow .25s ease;
+}
+#paquetes-boda-mfs .pb-card.is-visible{opacity:1;transform:translateY(0);}
+#paquetes-boda-mfs .pb-card:hover{ transform:translateY(-6px); box-shadow:0 22px 48px rgba(46,16,101,.26); }
+#paquetes-boda-mfs .pb-card.jr{ background:linear-gradient(160deg,#ef7fb3,var(--pink)); }
+#paquetes-boda-mfs .pb-card.estandar{
+  background:linear-gradient(160deg,var(--pink),var(--purple-dark)); transform:scale(1.04); z-index:2;
+}
+#paquetes-boda-mfs .pb-card.estandar.is-visible{transform:scale(1.04) translateY(0);}
+#paquetes-boda-mfs .pb-card.estandar:hover{ transform:scale(1.04) translateY(-6px); }
+#paquetes-boda-mfs .pb-card.vip{ background:linear-gradient(160deg,var(--purple),var(--purple-dark)); }
+@media(max-width:980px){
+  #paquetes-boda-mfs .pb-card.estandar{ transform:scale(1); }
+  #paquetes-boda-mfs .pb-card.estandar.is-visible{ transform:translateY(0); }
+  #paquetes-boda-mfs .pb-card.estandar:hover{ transform:translateY(-6px); }
+}
+#paquetes-boda-mfs .pb-card-head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:22px;}
+#paquetes-boda-mfs .pb-card-title{display:flex; align-items:center; gap:10px;}
+#paquetes-boda-mfs .pb-icon{font-size:26px; line-height:1;}
+#paquetes-boda-mfs .pb-card-title h3{font-size:19px; font-weight:800; margin:0; line-height:1.2;}
+#paquetes-boda-mfs .pb-badge{
+  background:rgba(255,255,255,.25); color:#fff; font-size:11px; font-weight:800; letter-spacing:.5px;
+  padding:6px 12px; border-radius:50px; white-space:nowrap; flex-shrink:0;
+}
+#paquetes-boda-mfs .pb-price{text-align:center; font-size:34px; font-weight:800; margin:6px 0 4px;}
+#paquetes-boda-mfs .pb-price-note{text-align:center; font-size:11px; opacity:.85; margin-bottom:18px;}
+#paquetes-boda-mfs .pb-shipping{
+  display:flex; align-items:center; justify-content:center; gap:6px; background:rgba(255,255,255,.22);
+  border-radius:50px; padding:9px 14px; font-size:13px; font-weight:700; margin-bottom:26px;
+}
+#paquetes-boda-mfs .pb-list{list-style:none; margin:0 0 26px; padding:0;}
+#paquetes-boda-mfs .pb-list li{font-size:13.5px; font-weight:600; padding:9px 0; border-bottom:1px dashed rgba(255,255,255,.3);}
+#paquetes-boda-mfs .pb-list li:last-child{border-bottom:none;}
+#paquetes-boda-mfs .pb-note{font-size:12px; font-style:italic; opacity:.85; margin:0 0 22px;}
+#paquetes-boda-mfs .pb-cta{
+  display:block; text-align:center; background:#fff; color:var(--purple-dark) !important; font-size:14.5px; font-weight:800;
+  padding:13px 20px; border-radius:50px; text-decoration:none !important; transition:transform .18s ease, box-shadow .18s ease;
+}
+#paquetes-boda-mfs .pb-cta:hover{ transform:translateY(-2px) scale(1.02); box-shadow:0 10px 24px rgba(0,0,0,.22); }
+#paquetes-boda-mfs .pb-cta:active{ transform:translateY(0) scale(.98); }
+@media (prefers-reduced-motion: reduce){
+  #paquetes-boda-mfs .pb-card{opacity:1 !important;transform:none !important;transition:none !important;}
+  #paquetes-boda-mfs .pb-card.estandar{transform:scale(1.04) !important;}
+}
+</style>
+
+<div class="pb-header">
+  <h2>Elige el <span>Paquete de Boda</span> perfecto</h2>
+  <p>Todo listo para que tu boda no le falte nada · Compra en línea con envío a todo México</p>
+</div>
+
+<div class="pb-grid" id="pbMfsGrid">
+
+  <div class="pb-card jr">
+    <div class="pb-card-head">
+      <div class="pb-card-title"><span class="pb-icon">💍</span><h3>Paquete Boda Jr</h3></div>
+      <span class="pb-badge">BÁSICO</span>
+    </div>
+    <div class="pb-price">$649 MXN</div>
+    <div class="pb-price-note">Sin IVA</div>
+    <div class="pb-shipping">🚚 Envío gratis en compras +$1,500</div>
+    <ul class="pb-list">
+      <li>200 Globos salchicha</li>
+      <li>50 Pulseras luminosas cyalume</li>
+      <li>2 Lentes gigante</li>
+      <li>3 Collares hawaianos</li>
+      <li>2 Antifaces de cartón metálico</li>
+      <li>3 Micrófonos inflables</li>
+      <li>3 Guitarras metálicas inflables</li>
+      <li>2 Cornetas con mechudo</li>
+      <li>2 Letreros selfie</li>
+      <li>2 Antifaz carnaval</li>
+      <li>2 Mandiles personalizados</li>
+      <li>1 Sombrero novia hule espuma</li>
+      <li>1 Sombrero novio hule espuma</li>
+    </ul>
+    <a class="pb-cta" href="https://mifiestashop.com/promociones/83589-promo-boda-economico.html">Comprar Paquete Jr</a>
+  </div>
+
+  <div class="pb-card estandar">
+    <div class="pb-card-head">
+      <div class="pb-card-title"><span class="pb-icon">👰</span><h3>Paquete Boda Estándar</h3></div>
+      <span class="pb-badge">NOVIOS</span>
+    </div>
+    <div class="pb-price">$999 MXN</div>
+    <div class="pb-price-note">Sin IVA</div>
+    <div class="pb-shipping">🚚 Envío gratis en compras +$1,500</div>
+    <ul class="pb-list">
+      <li>5 Antifaz de cartón metálico</li>
+      <li>5 Pelucas metálicas</li>
+      <li>1 Globo salchicha (200 pzas)</li>
+      <li>2 Micrófonos inflables chicos</li>
+      <li>4 Guitarras metálicas inflables</li>
+      <li>3 Bombines con peluca metálica</li>
+      <li>2 Lentes batucada</li>
+      <li>6 Collares de perla</li>
+      <li>7 Diademas con pelitos</li>
+      <li>2 Sombreros de palma</li>
+      <li>1 Máscara de luchador</li>
+      <li>5 Corbatas neón</li>
+      <li>5 Moños neón</li>
+      <li>5 Bombines neón</li>
+      <li>2 Lentes gigantes neón</li>
+      <li>6 Collares hawaianos neón</li>
+      <li>1 Sombrero de hule espuma Novio</li>
+      <li>1 Sombrero de hule espuma Novia</li>
+      <li>5 Diademas con mechudo</li>
+      <li>5 Letreros selfie boda</li>
+      <li>1 Pulsera luminosa cyalume (90 pzas)</li>
+      <li>4 Lentes luminosos cyalume</li>
+      <li>1 Anillo luminoso LED (4 pzas)</li>
+    </ul>
+    <p class="pb-note">*Stock sujeto a bodega</p>
+    <a class="pb-cta" href="https://mifiestashop.com/promociones/83552-promo-boda-estandar-.html">Comprar Paquete Estándar</a>
+  </div>
+
+  <div class="pb-card vip">
+    <div class="pb-card-head">
+      <div class="pb-card-title"><span class="pb-icon">🥂</span><h3>Paquete Boda VIP</h3></div>
+      <span class="pb-badge">TODO INCLUIDO</span>
+    </div>
+    <div class="pb-price">$2,799 MXN</div>
+    <div class="pb-price-note">Sin IVA</div>
+    <div class="pb-shipping">🚚 Envío gratis en compras +$1,500</div>
+    <ul class="pb-list">
+      <li>Paquete boda todo incluido</li>
+      <li>La combinación más completa para animar tu boda de principio a fin</li>
+      <li>Ideal para bodas grandes o con más invitados</li>
+      <li>Consulta el detalle completo de artículos con nuestro equipo</li>
+    </ul>
+    <p class="pb-note">*Contenido sujeto a disponibilidad de bodega</p>
+    <a class="pb-cta" href="https://mifiestashop.com/promociones/83591-promo-boda-vip-3245678903456.html">Comprar Paquete VIP</a>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var cards = document.querySelectorAll('#pbMfsGrid .pb-card');
+  cards.forEach(function(el, i){ el.style.transitionDelay = i * 100 + 'ms'; });
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-visible'); io.unobserve(e.target); } });
+    }, {threshold:0.12});
+    cards.forEach(function(el){ io.observe(el); });
+  } else {
+    cards.forEach(function(el){ el.classList.add('is-visible'); });
+  }
+})();
+<\/script>
+</section>
+`;
+
+const BODA_PAGES = {
+  'articulos-para-boda-en-mexico': { title: 'Artículos para boda en México', city: 'mexico' },
+  'articulos-para-boda-en-cdmx': { title: 'Artículos para boda en CDMX', city: 'cdmx' },
+  'articulos-para-boda-en-queretaro': { title: 'Artículos para boda en Querétaro', city: 'queretaro' },
+  'articulos-para-boda-en-puebla': { title: 'Artículos para boda en Puebla', city: 'puebla' },
+  'accesorios-para-batucada-boda-cdmx': { title: 'Accesorios para batucada boda CDMX', city: 'cdmx' },
+  'accesorios-para-batucada-boda-puebla': { title: 'Accesorios para batucada boda Puebla', city: 'puebla' },
+  'accesorios-para-batucada-boda-queretaro': { title: 'Accesorios para batucada boda Querétaro', city: 'queretaro' }
+};
+
+function showBodaPage(slug, pushState) {
+  const page = BODA_PAGES[slug];
+  if (!page) return;
+  const city = BODA_CITIES[page.city];
+
+  const sf = document.getElementById('view-storefront');
+  const portal = document.getElementById('view-cliente-portal');
+  const dash = document.getElementById('adminDashboardWrapper');
+  const cms = document.getElementById('view-cms-page');
+  const legal = document.getElementById('view-legal-page');
+  const boda = document.getElementById('view-boda-page');
+  if (sf) sf.classList.add('hidden');
+  if (portal) portal.classList.add('hidden');
+  if (dash) dash.classList.add('hidden');
+  if (cms) cms.classList.add('hidden');
+  if (legal) legal.classList.add('hidden');
+  if (boda) boda.classList.remove('hidden');
+  window.scrollTo(0, 0);
+
+  if (pushState !== false) {
+    const target = '/' + slug;
+    if (window.location.pathname !== target) history.pushState({}, '', target);
+  }
+
+  document.title = page.title + ' — Mi Fiestashop';
+  const bodaBadge = document.getElementById('bodaCartBadge');
+  if (bodaBadge) bodaBadge.textContent = cart.reduce((sum, item) => sum + item.qty, 0);
+  const body = document.getElementById('bodaPageBody');
+  if (!body) return;
+  body.innerHTML = bodaHeroHtml(city) + bodaProductsHtml(city) + BODA_BLOCKS_HTML;
+
+  // Los <script> insertados vía innerHTML no se ejecutan solos; hay que
+  // reconstruirlos como nodos nuevos para que el navegador los corra
+  // (cuenta atrás del hero, reveal de beneficios/galería/paquetes,
+  // lightbox de la galería, carrusel de reseñas).
+  body.querySelectorAll('script').forEach(oldScript => {
+    const newScript = document.createElement('script');
+    newScript.textContent = oldScript.textContent;
+    oldScript.replaceWith(newScript);
+  });
+}
+
+function bodaSearchSubmit(query) {
+  closeBodaPage();
+  setTimeout(() => {
+    const si = document.getElementById('storeSearchInput');
+    if (si) {
+      si.value = query;
+      filterStorefrontProducts(query);
+      si.focus();
+    }
+  }, 30);
+}
+
+function bodaProductsHtml(city) {
+  return `<!-- ============================================================ -->
+<!-- PRODUCTOS (catálogo real de la tienda) -->
+<!-- ============================================================ -->
+<section id="productos-boda-mfs" aria-label="Catálogo de artículos para boda">
+<style>
+#productos-boda-mfs{
+  width:100vw; position:relative; left:50%; margin-left:-50vw; box-sizing:border-box;
+  font-family:"Poppins",sans-serif; background:#faf7fb; padding:52px 4vw 60px;
+}
+#productos-boda-mfs .pbm-head{ text-align:center; max-width:700px; margin:0 auto 30px; }
+#productos-boda-mfs .pbm-head h2{ font-size:clamp(26px,3.5vw,40px); font-weight:800; color:#2e1065; margin:0 0 6px; letter-spacing:.02em; }
+#productos-boda-mfs .pbm-head p{ font-size:16px; color:#8e3fa8; font-weight:600; margin:0; }
+#productos-boda-mfs .pbm-grid-wrap{ max-width:1280px; margin:0 auto; }
+#productos-boda-mfs .pbm-loading{ text-align:center; color:#8b7d97; padding:40px 0; grid-column:1/-1; }
+#productos-boda-mfs .pbm-cta{ display:flex; justify-content:center; margin-top:30px; }
+#productos-boda-mfs .pbm-cta a{
+  display:inline-flex; align-items:center; gap:8px; background:var(--mf-pink); color:#fff !important;
+  font-weight:800; font-size:14.5px; padding:14px 30px; border-radius:50px; text-decoration:none !important;
+  box-shadow:0 10px 24px rgba(211,0,123,.3); transition:transform .18s ease, box-shadow .18s ease; cursor:pointer;
+}
+#productos-boda-mfs .pbm-cta a:hover{ transform:translateY(-2px); box-shadow:0 14px 30px rgba(211,0,123,.4); }
+</style>
+<div class="pbm-head">
+  <h2>+ DE 400 ARTÍCULOS</h2>
+  <p>Artículos para boda en ${city.name}</p>
+</div>
+<div class="pbm-grid-wrap">
+  <div class="store-prods-grid" id="bodaProductsGrid">
+    <div class="pbm-loading">Cargando productos…</div>
+  </div>
+  <div class="pbm-cta">
+    <a href="#" onclick="closeBodaPage(); openStorefrontCatalog('all'); return false;">Ver Catálogo completo</a>
+  </div>
+</div>
+<script>
+  if (typeof renderBodaProductsGrid === 'function') { renderBodaProductsGrid(); }
+<\/script>
+</section>
+`;
+}
+
+async function renderBodaProductsGrid() {
+  const container = document.getElementById('bodaProductsGrid');
+  if (!container) return;
+  if (liveProducts.length === 0) {
+    try { await syncProductsFromPrestaShopAPI(); } catch (e) {}
+  }
+  const container2 = document.getElementById('bodaProductsGrid');
+  if (!container2) return;
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const items = dataset.filter(p => p.status !== 'Inactivo').slice(0, 8);
+  if (items.length === 0) { container2.innerHTML = ''; return; }
+  container2.innerHTML = items.map(p => buildRelatedProductCardHTML(p)).join('');
+  initScrollReveal();
+}
+
+function closeBodaPage() {
+  const boda = document.getElementById('view-boda-page');
+  if (boda) boda.classList.add('hidden');
+  if (window.location.pathname !== '/') history.pushState({}, '', '/');
+  resetStorefrontSeoTags();
+  showPublicStorefront();
+  window.scrollTo(0, 0);
+}
+
 let cmsPagesList = [];
 async function loadCmsPagesForFooter() {
   const list = document.getElementById('cmsFooterList');
@@ -8888,7 +10905,7 @@ async function loadCmsPagesForFooter() {
     cmsPagesList = Array.isArray(data.pages) ? data.pages : [];
     if (cmsPagesList.length === 0) return;
     list.innerHTML = cmsPagesList.map(p => `
-      <li><a href="#" onclick="event.preventDefault(); openCmsPage('${p.slug}');">${p.title}</a></li>
+      <li><a href="${p.path || '/pagina/' + encodeURIComponent(p.slug)}">${p.title}</a></li>
     `).join('');
     document.getElementById('cmsFooterCol')?.classList.remove('hidden');
   } catch (e) {
@@ -8934,7 +10951,25 @@ function renderCmsPagesAdminTable(pages) {
     return;
   }
 
-  tbody.innerHTML = pages.map(p => `
+  tbody.innerHTML = pages.map(p => {
+    // Slug migrado a una página propia del sistema (Vercel) — se respeta el
+    // mismo slug que tenía en PrestaShop para no romper nada. En ese caso ya
+    // no se muestra/edita el contenido de PrestaShop: se marca "EN SISTEMA"
+    // y se enlaza directo a la versión nueva.
+    const migrated = p.migrated || (typeof BODA_PAGES !== 'undefined' && BODA_PAGES[p.slug]);
+    if (migrated) {
+      return `
+    <tr>
+      <td><b>#${p.id}</b></td>
+      <td>${p.title} <span class="pill ok" style="margin-left:6px; white-space:nowrap;">EN SISTEMA</span></td>
+      <td><code>${p.slug}</code></td>
+      <td>${p.inFooter ? '<span class="pill ok"> Sí</span>' : '<span class="pill">—</span>'}</td>
+      <td style="text-align:center; white-space:nowrap;">
+        <button class="btn small primary" onclick="window.open('${p.path || '/' + p.slug}', '_blank')">Ver en sistema</button>
+      </td>
+    </tr>`;
+    }
+    return `
     <tr>
       <td><b>#${p.id}</b></td>
       <td>${p.title}</td>
@@ -8944,8 +10979,8 @@ function renderCmsPagesAdminTable(pages) {
         <button class="btn small primary" onclick="previewCmsPageAdmin('${p.id}')"> Ver</button>
         <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('/pagina/${p.slug}', '_blank')">Abrir</button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 function filterCmsPagesAdmin(query) {
@@ -9294,7 +11329,7 @@ function trimTrailingPartialRow(grid){
 function buildStorefrontProductCardHTML(p, idx){
   return `
     <div class="store-prod-card store-reveal" style="transition-delay:${Math.min(idx, 8) * 50}ms;">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
@@ -9482,7 +11517,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
       <div>
-        <img src="${p.img}" alt="${p.name}" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--mf-cream);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--mf-cream);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
@@ -9552,7 +11587,7 @@ function openRelatedProduct(productId){
 function buildRelatedProductCardHTML(p){
   return `
     <div class="store-prod-card store-reveal" style="cursor:pointer;" onclick="openRelatedProduct('${p.id}')">
-      <img src="${p.img}" alt="${p.name}" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
           <div class="store-prod-sku">SKU: ${p.sku}</div>
@@ -10210,9 +12245,83 @@ function updateSearchSuggestions(q) {
   box.classList.remove('hidden');
 }
 
+function toggleStoreMobileNav(navId) {
+  const nav = document.getElementById(navId);
+  if (nav) nav.classList.toggle('open');
+}
+
 function hideSearchSuggestions() {
   const box = document.getElementById('storeSearchSuggest');
   if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+}
+
+// ================= HISTORIAL DE BÚSQUEDAS (real, para el admin) =================
+// Registra en Supabase (busquedas_tienda, vía /api/log-busqueda) las
+// búsquedas reales que hacen los clientes en el buscador de la tienda, con
+// debounce (no en cada tecla) y sin repetir la misma búsqueda mientras el
+// cliente sigue escribiendo/borrando el mismo texto. Se usa en el admin,
+// en "Parámetros de la Tienda > Motor de Búsqueda", para mostrar qué está
+// buscando la gente de verdad.
+let searchLogTimer = null;
+let lastLoggedSearchQuery = '';
+
+function scheduleSearchLog(q) {
+  const query = (q || '').trim();
+  clearTimeout(searchLogTimer);
+  if (query.length < 3) return; // mismo mínimo que "Parámetros de Búsqueda" en el admin
+  searchLogTimer = setTimeout(() => {
+    const key = query.toLowerCase();
+    if (key === lastLoggedSearchQuery) return;
+    lastLoggedSearchQuery = key;
+    const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+    const resultsCount = dataset.filter(p =>
+      p.name.toLowerCase().includes(key) || (p.sku || '').toLowerCase().includes(key)
+    ).length;
+    fetch('/api/log-busqueda', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, resultsCount })
+    }).catch(() => {});
+  }, 800);
+}
+
+async function loadSearchHistoryAdmin() {
+  const tbody = document.getElementById('searchHistoryTableBody');
+  const topBox = document.getElementById('searchTopTermsList');
+  if (!tbody) return;
+
+  try {
+    const r = await fetch('/api/busquedas?limit=100');
+    const data = await r.json();
+    const history = Array.isArray(data.history) ? data.history : [];
+    const top = Array.isArray(data.top) ? data.top : [];
+
+    if (history.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Todavía no hay búsquedas registradas.</td></tr>';
+    } else {
+      tbody.innerHTML = history.map(h => `
+        <tr>
+          <td><b>${escapeHtml(h.query)}</b></td>
+          <td style="text-align:center;">${h.resultsCount}</td>
+          <td style="font-size:12px;">${new Date(h.date).toLocaleString('es-MX')}</td>
+        </tr>
+      `).join('');
+    }
+
+    if (topBox) {
+      topBox.innerHTML = top.length === 0
+        ? '<div style="color:var(--text-muted);">Sin datos todavía.</div>'
+        : top.map(t => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">
+            <span>${escapeHtml(t.query)}</span>
+            <span class="pill ok">${t.count}x</span>
+          </div>
+        `).join('');
+    }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">No se pudo cargar el historial de búsquedas.</td></tr>';
+    if (topBox) topBox.innerHTML = '<div style="color:var(--text-muted);">—</div>';
+  }
 }
 
 function goToSearchResult(productId) {
@@ -10228,14 +12337,16 @@ function goToSearchResult(productId) {
 
 function updateStoreCartBadge() {
   saveCartToStorage();
+  const total = cart.reduce((sum, item) => sum + item.qty, 0);
   const badge = document.getElementById('storeCartBadge');
   if (badge) {
-    const total = cart.reduce((sum, item) => sum + item.qty, 0);
     badge.textContent = total;
     badge.classList.remove('bump');
     void badge.offsetWidth;
     badge.classList.add('bump');
   }
+  const bodaBadge = document.getElementById('bodaCartBadge');
+  if (bodaBadge) bodaBadge.textContent = total;
 }
 
 // ================= PRODUCT ANALYTICS & MONTHLY SALES LOGIC =================
@@ -10266,8 +12377,14 @@ function hashCode(str) {
   return hash;
 }
 
-function getProductMonthlySales(p) {
-  const months = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+function getProductMonthlySales(p, fromISO, toISO) {
+  const allMonths = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+  // fromISO/toISO (YYYY-MM-DD) recortan el rango a los meses del filtro de
+  // fecha del dashboard — comparación lexicográfica sobre 'YYYY-MM' funciona
+  // porque el formato ya viene con ceros a la izquierda.
+  const fromMonth = fromISO ? fromISO.slice(0, 7) : null;
+  const toMonth = toISO ? toISO.slice(0, 7) : null;
+  const months = allMonths.filter(m => (!fromMonth || m >= fromMonth) && (!toMonth || m <= toMonth));
   const pKeySku = String(p.sku || '').trim();
   const pKeyId = String(p.id || '').trim();
   const pName = String(p.name || '').trim().toLowerCase();
@@ -10292,8 +12409,16 @@ function getProductMonthlySales(p) {
     return { month: m, units: Math.max(0, units), revenue: Math.max(0, revenue) };
   });
 
-  const totalUnits = rec ? rec.totalUnits : 0;
-  const totalRevenue = rec ? rec.totalRevenue : 0;
+  // Si se pasó un rango, el total debe reflejar solo los meses filtrados —
+  // no el acumulado histórico completo de rec.totalUnits/totalRevenue
+  // (esto es justo lo que hacía que la tabla no cambiara al mover la fecha).
+  const isFiltered = !!(fromMonth || toMonth);
+  const totalUnits = isFiltered
+    ? monthSales.reduce((s, x) => s + x.units, 0)
+    : (rec ? rec.totalUnits : 0);
+  const totalRevenue = isFiltered
+    ? monthSales.reduce((s, x) => s + x.revenue, 0)
+    : (rec ? rec.totalRevenue : 0);
 
   return { months: monthSales, totalUnits, totalRevenue, hasRealData: !!rec };
 }
@@ -10329,9 +12454,11 @@ function renderTopProductsTable() {
     return;
   }
   const sortMode = document.getElementById('topProductsSortSelect')?.value || 'units';
+  const rangeFrom = document.getElementById('fromInput')?.value || null;
+  const rangeTo = document.getElementById('toInput')?.value || null;
 
   const processed = dataset.map(p => {
-    const salesData = getProductMonthlySales(p);
+    const salesData = getProductMonthlySales(p, rangeFrom, rangeTo);
     return {
       product: p,
       totalUnits: salesData.totalUnits,
@@ -10722,11 +12849,6 @@ function renderCartsTable() {
     return matchStatus && matchSearch && matchFrom && matchTo;
   });
 
-  if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Sin carritos de compra en el rango de fechas o filtro seleccionado.</td></tr>';
-    return;
-  }
-
   const activeCount = filtered.filter(c => c.status === 'active').length;
   const abandonedCount = filtered.filter(c => c.status === 'abandoned').length;
   const convertedCount = filtered.filter(c => c.status === 'converted').length;
@@ -10737,6 +12859,11 @@ function renderCartsTable() {
   if (document.getElementById('cartKpiAbandoned')) document.getElementById('cartKpiAbandoned').textContent = abandonedCount;
   if (document.getElementById('cartKpiTotalValue')) document.getElementById('cartKpiTotalValue').textContent = fmtMoney(totalVal);
   if (document.getElementById('cartKpiConversion')) document.getElementById('cartKpiConversion').textContent = conversionRate;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Sin carritos de compra en el rango de fechas o filtro seleccionado.</td></tr>';
+    return;
+  }
 
   tbody.innerHTML = filtered.map(c => {
     const totalAmount = c.items.reduce((sum, item) => sum + (item.qty * item.price), 0);
@@ -10900,10 +13027,30 @@ function openProductDeepLinkIfPresent() {
   if (p) renderProductFullPage(p);
 }
 
-syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(checkLowStockNotifications);
-loadRealStockData();
+syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
+  const category = new URLSearchParams(window.location.search).get('categoria');
+  if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
+  const query = new URLSearchParams(window.location.search).get('buscar');
+  if (query && window.location.pathname === '/') {
+    const input = document.getElementById('storeSearchInput');
+    if (input) input.value = query;
+    filterStorefrontProducts(query);
+  }
+}).then(checkLowStockNotifications);
+loadRealStockData().then(() => {
+  if (document.getElementById('posProductGrid')) {
+    const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+    renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
+  }
+});
 
 loadCartFromStorage();
+if(window.location.pathname==='/'){
+ const vista=new URLSearchParams(window.location.search).get('vista');
+ if(vista==='carrito')openStorefrontCart();
+ else if(vista==='admin')goToAdmin();
+ else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
+}
 updateStoreCartBadge();
 if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
@@ -10944,6 +13091,10 @@ function routeApp() {
     showLegalPage(window.location.pathname.slice(1), false);
     return;
   }
+  if (BODA_PAGES[window.location.pathname.slice(1)]) {
+    showBodaPage(window.location.pathname.slice(1), false);
+    return;
+  }
   if (window.location.pathname.startsWith('/admin')) {
     if (localStorage.getItem('mf_admin_logged_in') === 'true') {
       showAdminDashboard();
@@ -10956,6 +13107,7 @@ function routeApp() {
   showPublicStorefront();
 }
 routeApp();
+if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('cuenta')) openClientePortal();
 window.addEventListener('popstate', routeApp);
 
 function goToAdmin() {

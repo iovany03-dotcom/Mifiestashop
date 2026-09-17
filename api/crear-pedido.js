@@ -100,7 +100,14 @@ module.exports = async function handler(req, res) {
       const r = await fetch(url, { headers });
       if (!r.ok) return null;
       const data = await r.json();
-      const raw = Array.isArray(data.product) ? data.product[0] : data.product;
+      // Con display=[...campos específicos...] PrestaShop responde con la
+      // clave en plural "products" (arreglo), aunque se consulte un solo ID
+      // — no "product" (singular) como con display=full. Sin este fallback,
+      // raw siempre salía undefined y CADA producto se marcaba como "ya no
+      // disponible", bloqueando el checkout por completo.
+      const raw = Array.isArray(data.products) ? data.products[0]
+        : Array.isArray(data.product) ? data.product[0]
+        : data.product;
       if (!raw || String(raw.active) === '0') return null;
       return {
         id: it.id,

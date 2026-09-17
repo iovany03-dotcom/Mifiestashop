@@ -1,55 +1,45 @@
-// Vercel serverless function: fetches full detail (order + product lines + customer)
-// for a single PrestaShop order, used by the "Ver Orden" modal.
+// Vercel serverless function: detalle de un pedido (líneas de producto +
+// datos del cliente) para el modal "Ver Orden", leído desde nuestras
+// tablas espejo en Supabase (ps_pedidos.items ya trae las líneas, ps_clientes
+// el email/fecha de alta) en vez de PrestaShop en vivo.
+const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
+
+async function sbGet(path) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+  });
+  if (!r.ok) return [];
+  return r.json();
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
   const id = req.query.id;
-
   if (!id) {
     res.status(400).json({ error: 'Falta parámetro id' });
     return;
   }
-  if (!apiKey) {
-    res.status(200).json({ fallback: true, order: null, items: [], customer: null });
-    return;
-  }
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const headers = { Authorization: `Basic ${auth}` };
+    const orders = await sbGet(`ps_pedidos?select=id,id_customer,total_paid,total_products,date_add,payment,current_state,items&id=eq.${encodeURIComponent(id)}`);
+    const order = orders[0] || null;
 
-    const orderFields = '[id,id_customer,total_paid,total_products,date_add,payment,current_state,id_address_delivery,id_address_invoice]';
-    const orderUrl = `${baseUrl}/api/orders/${id}?display=${encodeURIComponent(orderFields)}&output_format=JSON`;
-    const orderResp = await fetch(orderUrl, { headers });
-    const orderData = orderResp.ok ? await orderResp.json() : null;
-    const order = orderData && orderData.order ? orderData.order : null;
-
-    const detailFields = '[product_name,product_reference,product_quantity,unit_price_tax_incl,total_price_tax_incl]';
-    const detailUrl = `${baseUrl}/api/order_details?display=${encodeURIComponent(detailFields)}&filter[id_order]=${id}&limit=0,200&output_format=JSON`;
-    const detailResp = await fetch(detailUrl, { headers });
-    const detailData = detailResp.ok ? await detailResp.json() : null;
-    const rawItems = detailData && Array.isArray(detailData.order_details) ? detailData.order_details : [];
-
-    const items = rawItems.map(it => ({
-      name: it.product_name || 'Producto',
-      sku: it.product_reference || '',
-      qty: parseInt(it.product_quantity || 1, 10),
-      price: parseFloat(it.unit_price_tax_incl || 0),
-      total: parseFloat(it.total_price_tax_incl || 0)
+    const items = (order && Array.isArray(order.items) ? order.items : []).map(it => ({
+      name: it.name || 'Producto',
+      sku: it.sku || '',
+      qty: it.qty || 1,
+      price: it.price || 0,
+      total: (it.price || 0) * (it.qty || 1)
     }));
 
     let customer = null;
     if (order && order.id_customer) {
-      try {
-        const custFields = '[id,firstname,lastname,email,date_add,company]';
-        const custUrl = `${baseUrl}/api/customers/${order.id_customer}?display=${encodeURIComponent(custFields)}&output_format=JSON`;
-        const custResp = await fetch(custUrl, { headers });
-        const custData = custResp.ok ? await custResp.json() : null;
-        customer = custData && custData.customer ? custData.customer : null;
-      } catch (e) { /* customer lookup is best-effort */ }
+      const customers = await sbGet(`ps_clientes?select=id,email,date_add,name&id=eq.${order.id_customer}`);
+      const c = customers[0];
+      if (c) customer = { id: c.id, email: c.email, date_add: c.date_add ? String(c.date_add).slice(0, 10) : null };
     }
 
     res.status(200).json({ order, items, customer });

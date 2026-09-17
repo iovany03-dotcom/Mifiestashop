@@ -1,67 +1,52 @@
-// Vercel serverless function: real stock for ALL products across the
-// warehouses used by the admin Backoffice (Inventario, POS, Traspasos).
-//
-// A single call to /api/stocks?filter[id_product]=X (see stock-sucursal.js)
-// works fine for one product at a time on the public product page, but the
-// admin inventory table needs every product at once — so this paginates
-// through the whole "stocks" resource instead of calling it once per
-// product, the same time-budgeted pattern used by api/clientes.js.
+// Vercel serverless function: lee el stock de TODOS los productos por
+// almacén desde nuestra propia copia en Supabase (ps_stock), sincronizada
+// cada hora por api/cron-sync-prestashop.js — usado por el Backoffice
+// (Inventario, POS, Traspasos). Ya no consulta PrestaShop en cada carga.
 const WAREHOUSE_TO_KEY = {
   '55': 'puebla',
   '53': 'rumania',
   '56': 'queretaro'
 };
 
+const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
+
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-
-  if (!apiKey) {
-    res.status(200).json({ fallback: true, stock: {} });
-    return;
-  }
-
-  const PAGE_SIZE = 1000;
-  const TIME_BUDGET_MS = 8000;
-  const startedAt = Date.now();
-  const fields = '[id_product,id_warehouse,usable_quantity]';
-
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const headers = { Authorization: `Basic ${auth}` };
-
-    // stock[id_product] = { puebla, rumania, queretaro }
-    const stock = {};
-    let page = 0;
-    let truncated = false;
-
+    // ps_stock tiene decenas de miles de filas (producto x almacén) —
+    // el límite por defecto de PostgREST (1000) se evita paginando con
+    // el header Range, igual que en api/clientes.js.
+    const PAGE_SIZE = 1000;
+    let rows = [];
+    let from = 0;
     while (true) {
-      if (Date.now() - startedAt > TIME_BUDGET_MS) { truncated = true; break; }
-      const url = `${baseUrl}/api/stocks?display=${encodeURIComponent(fields)}&limit=${page * PAGE_SIZE},${PAGE_SIZE}&output_format=JSON`;
-      const r = await fetch(url, { headers });
-      if (!r.ok) {
-        const detail = await r.text().catch(() => '');
-        throw new Error(`PrestaShop API error ${r.status}: ${detail.slice(0, 300)}`);
-      }
-      const data = await r.json();
-      const batch = Array.isArray(data.stocks) ? data.stocks : [];
-
-      batch.forEach(s => {
-        const whKey = WAREHOUSE_TO_KEY[String(s.id_warehouse)];
-        if (!whKey) return; // bodega no usada en el Backoffice (ej. Atizapán, CDMX Popocatépetl)
-        const pid = String(s.id_product);
-        if (!stock[pid]) stock[pid] = { puebla: 0, rumania: 0, queretaro: 0 };
-        stock[pid][whKey] += Math.round(parseFloat(s.usable_quantity || 0));
+      const url = `${SUPABASE_URL}/rest/v1/ps_stock?select=id_product,id_warehouse,quantity`;
+      const r = await fetch(url, {
+        headers: {
+          apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          Range: `${from}-${from + PAGE_SIZE - 1}`
+        }
       });
-
+      if (!r.ok) throw new Error(`Supabase error ${r.status}`);
+      const batch = await r.json();
+      rows = rows.concat(batch);
       if (batch.length < PAGE_SIZE) break;
-      page++;
+      from += PAGE_SIZE;
     }
 
-    res.status(200).json({ stock, truncated });
+    const stock = {};
+    rows.forEach(s => {
+      const whKey = WAREHOUSE_TO_KEY[String(s.id_warehouse)];
+      if (!whKey) return; // bodega no usada en el Backoffice (ej. Atizapán, CDMX Popocatépetl)
+      const pid = String(s.id_product);
+      if (!stock[pid]) stock[pid] = { puebla: 0, rumania: 0, queretaro: 0 };
+      stock[pid][whKey] += s.quantity || 0;
+    });
+
+    res.status(200).json({ stock, source: 'supabase' });
   } catch (err) {
     res.status(200).json({ error: err.message, stock: {}, fallback: true });
   }
