@@ -28,8 +28,9 @@
       if(!response.ok) throw new Error('catalog');
       const data=await response.json();
       // Never fill a themed page with unrelated products when there are no matches.
-      const selected=(data.products || []).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}))
-        .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
+      const productIds=JSON.parse(grid?.dataset.productIds || '[]');
+      const selected=productIds.length ? productIds.map(id=>({product:(data.products||[]).find(p=>p.id===id)})).filter(item=>item.product) : (data.products || []).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}))
+        .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,30);
       const promos=(data.products||[]).filter(p=>/promo|paquete/.test(norm(p.name)) && terms.some(t=>norm(p.name).includes(t)));
       if(promoGrid){promoGrid.replaceChildren(...promos.map(productCard).filter(Boolean));promoGrid.hidden=!promos.length;}
       if(!grid)return;

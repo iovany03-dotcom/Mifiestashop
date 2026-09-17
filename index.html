@@ -913,6 +913,18 @@
   }
   .store-header-nav a:hover { color: var(--mf-pink); border-color: var(--mf-pink); }
 
+  .store-mobile-nav {
+    display: none; flex-direction: column; background: #fff;
+    border-top: 1px solid #f0e6ef; padding: 4px 14px 8px;
+  }
+  .store-mobile-nav.open { display: flex; }
+  .store-mobile-nav a {
+    color: #2e1065; text-decoration: none; font-weight: 800; font-size: 1rem;
+    text-transform: uppercase; letter-spacing: 0.02em; cursor: pointer;
+    padding: 14px 4px; border-bottom: 1px solid #f5eef7;
+  }
+  .store-mobile-nav a:last-child { border-bottom: none; }
+
   .store-header-icons { display: flex; align-items: center; gap: 18px; }
   .store-currency { font-weight: 700; font-size: 1.1rem; color: #2e1065; }
   .store-icon-btn {
@@ -922,6 +934,7 @@
   }
   .store-icon-btn:hover { transform: translateY(-2px) scale(1.1); color: var(--mf-pink); }
   .store-icon-btn svg { width: 31px; height: 31px; }
+  .store-mobile-menu-btn { display: none; }
   .store-cart-badge {
     position: absolute; top: -6px; right: -8px; background: var(--mf-pink); color: #fff;
     font-size: 0.83rem; font-weight: 800; min-width: 21px; height: 21px; border-radius: 999px;
@@ -947,6 +960,7 @@
     .store-brand-logo-wrap, .store-brand-logo { width: 48px; height: 48px; }
     .store-brand-tagline { display: none; }
     .store-header-nav { display: none; }
+    .store-mobile-menu-btn { display: flex; }
     .store-search-box {
       order: 3;
       flex: 1 1 100%;
@@ -969,6 +983,18 @@
     #storefrontOrderConfirmPage [style*="grid-template-columns"],
     #view-cliente-portal [style*="grid-template-columns"],
     #view-cms-page [style*="grid-template-columns"] {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  /* La ficha de producto (imagen + info a los lados) ya se ve apretada
+     bastante antes del punto de quiebre general de 768px de arriba —
+     con foto e info lado a lado no hay suficiente espacio para el precio,
+     la descripción y el botón, y se veían encimados/cortados en ventanas
+     angostas de escritorio (no solo en celular). Se apila antes, a partir
+     de 960px. */
+  @media (max-width: 960px) {
+    #storefrontProductPage [style*="grid-template-columns"] {
       grid-template-columns: 1fr !important;
     }
   }
@@ -1296,8 +1322,9 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="openStorefrontCatalog('all')">Productos</a>
-        <a onclick="openClientePortal()">Mis Pedidos</a>
+        <a href="/mayoristas">Mayoristas</a>
         <a onclick="openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
@@ -1311,6 +1338,9 @@
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('storeMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -1324,6 +1354,12 @@
       </button>
     </div>
   </header>
+  <nav id="storeMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openStorefrontCatalog('all');">Productos</a>
+    <a href="/mayoristas">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('storeMobileNav'); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
 
   <!-- Hero Section -->
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
@@ -2430,8 +2466,9 @@
       </a>
       <nav class="store-header-nav">
         <a onclick="closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
-        <a onclick="closeBodaPage(); openClientePortal();">Mis Pedidos</a>
+        <a href="/mayoristas">Mayoristas</a>
         <a onclick="closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+        <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
       </nav>
     </div>
 
@@ -2442,6 +2479,9 @@
     </div>
 
     <div class="store-header-icons">
+      <button class="store-icon-btn store-mobile-menu-btn" onclick="toggleStoreMobileNav('bodaMobileNav')" aria-label="Menú" title="Menú">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+      </button>
       <span class="store-currency">MXN</span>
       <button class="store-icon-btn" onclick="closeBodaPage(); openClientePortal(); switchClienteTab('perfil');" aria-label="Mi perfil" title="Mi perfil">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
@@ -2455,6 +2495,12 @@
       </button>
     </div>
   </header>
+  <nav id="bodaMobileNav" class="store-mobile-nav">
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openStorefrontCatalog('all');">Productos</a>
+    <a href="/mayoristas">Mayoristas</a>
+    <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
+    <a href="https://wa.me/525612622146" target="_blank" rel="noopener">Contacto</a>
+  </nav>
   <div id="bodaPageBody"></div>
 </div>
 
@@ -2572,7 +2618,6 @@
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
         <a class="submenu-link" data-view="plantillas-correo">Plantillas de Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
-        <a class="submenu-link" data-view="param-avanzados-equipo">Equipo</a>
         <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
         <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
         <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
@@ -2728,18 +2773,11 @@
           <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Punto de Venta
             <select id="ivPuntoVenta" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
               <option value="all">Todos</option>
-              <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
-              <option value="CDMX Rumania">CDMX Rumania</option>
-              <option value="Querétaro">Querétaro</option>
-              <option value="Atizapán">Atizapán</option>
             </select>
           </label>
           <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Método de pago
             <select id="ivMetodo" style="width:100%; margin-top:4px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
               <option value="all">Todos</option>
-              <option value="cash">Efectivo</option>
-              <option value="card">Tarjeta (Débito/Crédito)</option>
-              <option value="transfer">Transferencia</option>
             </select>
           </label>
           <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Empleado
@@ -2764,7 +2802,20 @@
       </div>
 
       <div class="card" style="margin-top:16px;">
-        <div id="ivSummary" style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:var(--text-secondary);"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div id="ivSummary" style="display:flex; gap:24px; flex-wrap:wrap; font-size:13px; color:var(--text-secondary);"></div>
+          <button class="btn small primary" onclick="downloadInformeVentasCSV()">Exportar a Excel</button>
+        </div>
+        <div class="table-wrap" style="margin-top:14px;">
+          <table>
+            <thead>
+              <tr><th>Id Orden</th><th>Referencia</th><th>Fecha</th><th>Tienda/Empresa</th><th>Cliente</th><th>Empleado</th><th>Punto de Venta</th><th>Valor Venta</th><th>Método de Pago</th><th>Monto Pago</th><th>Monto Total</th></tr>
+            </thead>
+            <tbody id="ivResultsTableBody">
+              <tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -4784,10 +4835,6 @@
       <input type="search" id="ticketHistorialSearch" placeholder="Buscar por folio o cliente…" oninput="filterTicketHistorial()" style="flex:1; min-width:200px; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
       <select id="ticketHistorialAlmacen" onchange="filterTicketHistorial()" style="padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
         <option value="">Todas las sucursales</option>
-        <option value="Bodega Principal (Puebla)">Bodega Principal (Puebla)</option>
-        <option value="CDMX Rumania">CDMX Rumania</option>
-        <option value="Querétaro">Querétaro</option>
-        <option value="Atizapán">Atizapán</option>
       </select>
       <button class="btn small primary" onclick="downloadTicketHistorialCSV()">Descargar CSV</button>
     </div>
@@ -6457,7 +6504,8 @@ function setPayMethod(method) {
 function payMethodTicketLabel(method) {
   if (method === 'card') return 'Pago con Tarjeta';
   if (method === 'transfer') return 'Pago por Transferencia';
-  return 'Pago En Efectivo';
+  if (method === 'cash' || !method) return 'Pago En Efectivo';
+  return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
 }
 
 function setPresetCash(amount) {
@@ -6635,21 +6683,62 @@ function closeTicketHistorialModal() {
 async function loadTicketHistorial() {
   const tbody = document.getElementById('ticketHistorialTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
+  // El Historial de Tickets combina dos fuentes:
+  // 1) pos_tickets (tabla propia, vía rpc_pos_ticket_list) — el checkout
+  //    interno de este sitio, sin uso real todavía.
+  // 2) Las ventas reales del Sistema POS, que en esta tienda son pedidos
+  //    genuinos de PrestaShop (payment==='POS', creados por las cajas
+  //    físicas Caja Puebla/Caja Queretaro/Caja CDMX) — ver api/pedidos.js.
+  // Antes solo se leía de (1), que está vacía, así que nunca aparecía nada.
+  let sessionInvalid = false;
+  let posTickets = [];
   try {
     const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
-    ticketHistorialCache = Array.isArray(rows) ? rows : [];
-    renderTicketHistorialTable(ticketHistorialCache);
+    posTickets = (Array.isArray(rows) ? rows : []).map(t => ({
+      id: `pt-${t.id}`, folio: t.folio, created_at: t.created_at, cliente: t.cliente || 'Cliente POS',
+      almacen: t.almacen || '', items: Array.isArray(t.items) ? t.items : [],
+      subtotal: t.subtotal, iva: t.iva, total: t.total, pago_recibido: t.pago_recibido, cambio: t.cambio,
+      metodo: t.metodo, registrado_por: t.registrado_por
+    }));
   } catch (e) {
-    // "unauthorized" = la contraseña de admin o el PIN guardados en este
-    // navegador ya no coinciden con los actuales (se cambiaron en otro
-    // lugar) — se dice explícitamente en vez de un error genérico, porque
-    // se resuelve solo cerrando sesión y volviendo a entrar.
-    tbody.innerHTML = e && e.message === 'unauthorized'
-      ? '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>'
-      : '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudo cargar el historial de tickets.</td></tr>';
+    if (e && e.message === 'unauthorized') sessionInvalid = true;
   }
+
+  let realOrders = [];
+  try {
+    const r = await fetch('/api/pedidos?limit=3000');
+    const data = await r.json();
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    realOrders = orders.filter(o => o.paymentMethod === 'POS').map(o => ({
+      id: `ps-${o.rawId}`, folio: o.reference || String(o.id), created_at: o.date, cliente: o.customer || 'Cliente POS',
+      almacen: o.sucursal || '', items: Array.isArray(o.items) ? o.items : [],
+      subtotal: o.total, iva: 0, total: o.total, pago_recibido: o.total, cambio: 0,
+      metodo: o.paymentMethodDetail, registrado_por: o.createdBy
+    }));
+  } catch (e) { /* si falla, se sigue mostrando al menos pos_tickets */ }
+
+  ticketHistorialCache = [...realOrders, ...posTickets].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (ticketHistorialCache.length === 0 && sessionInvalid) {
+    // Solo se avisa del problema de sesión si de verdad no quedó nada que
+    // mostrar (si los pedidos reales sí cargaron, no vale la pena
+    // interrumpir con un error sobre pos_tickets, que ni se usa).
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
+    return;
+  }
+
+  const sucursales = [...new Set(ticketHistorialCache.map(t => t.almacen).filter(Boolean))].sort();
+  const almacenSelect = document.getElementById('ticketHistorialAlmacen');
+  if (almacenSelect) {
+    const prevVal = almacenSelect.value;
+    almacenSelect.innerHTML = '<option value="">Todas las sucursales</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+    if (sucursales.includes(prevVal)) almacenSelect.value = prevVal;
+  }
+
+  renderTicketHistorialTable(ticketHistorialCache);
 }
 
 // Lista actualmente visible en la tabla (respeta el filtro de búsqueda
@@ -6678,7 +6767,7 @@ function renderTicketHistorialTable(tickets) {
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
-      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial(${t.id})">Ver / Reimprimir</button></td>
+      <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
   }).join('');
 }
@@ -7089,17 +7178,42 @@ function viewPosTicketFromHistorial(id) {
 // Se construye 100% a partir de los tickets reales del POS (rpc_pos_ticket_list),
 // sin datos inventados: si un ticket viejo no tiene "metodo" guardado (antes de
 // agregar esa columna), se agrupa como "Sin definir" en vez de asumir Efectivo.
-let informeTicketsCache = [];
+// Ventas reales del Sistema POS: son pedidos reales de PrestaShop
+// (payment === 'POS', creados por las cuentas de caja "Caja Puebla"/"Caja
+// Queretaro"/"Caja CDMX") sincronizados en ps_pedidos — no pos_tickets,
+// que es una tabla propia sin uso real todavía. Ver api/pedidos.js, donde
+// se deriva sucursal/tienda/puntoVenta/paymentMethodDetail de cada pedido.
+let informePedidosCache = [];
+let informeVentasVisible = [];
 
 async function loadInformeVentas() {
   try {
-    const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
-    informeTicketsCache = Array.isArray(rows) ? rows : [];
+    const r = await fetch('/api/pedidos?limit=3000');
+    const data = await r.json();
+    const orders = Array.isArray(data.orders) ? data.orders : [];
+    informePedidosCache = orders.filter(o => o.paymentMethod === 'POS');
   } catch (e) {
-    informeTicketsCache = [];
+    informePedidosCache = [];
   }
 
-  const empleados = [...new Set(informeTicketsCache.map(t => t.registrado_por).filter(Boolean))].sort();
+  const sucursales = [...new Set(informePedidosCache.map(o => o.sucursal).filter(Boolean))].sort();
+  const tiendaSelect = document.getElementById('ivTienda');
+  if (tiendaSelect) {
+    tiendaSelect.innerHTML = '<option value="all">Mi Fiestashop (Todos)</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">Mi Fiesta Shop ${escapeHtml(s)}</option>`).join('');
+  }
+  const puntoSelect = document.getElementById('ivPuntoVenta');
+  if (puntoSelect) {
+    puntoSelect.innerHTML = '<option value="all">Todos</option>' +
+      sucursales.map(s => `<option value="${escapeHtml(s)}">Terminal ${escapeHtml(s)}</option>`).join('');
+  }
+  const metodos = [...new Set(informePedidosCache.map(o => o.paymentMethodDetail).filter(Boolean))].sort();
+  const metodoSelect = document.getElementById('ivMetodo');
+  if (metodoSelect) {
+    metodoSelect.innerHTML = '<option value="all">Todos</option>' +
+      metodos.map(m => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('');
+  }
+  const empleados = [...new Set(informePedidosCache.map(o => o.createdBy).filter(Boolean))].sort();
   const empSelect = document.getElementById('ivEmpleado');
   if (empSelect) {
     empSelect.innerHTML = '<option value="all">Todos</option>' + empleados.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('');
@@ -7116,54 +7230,97 @@ async function loadInformeVentas() {
   renderInformeVentas();
 }
 
-function payMethodShortLabel(m) {
-  if (m === 'card') return 'Débito/Crédito';
-  if (m === 'transfer') return 'Transferencia bancaria';
-  if (m === 'cash') return 'Pago En Efectivo';
-  return 'Sin definir';
-}
-
 function renderInformeVentas() {
   const fi = document.getElementById('ivFechaInicio')?.value || '';
   const ff = document.getElementById('ivFechaFin')?.value || '';
+  const tienda = document.getElementById('ivTienda')?.value || 'all';
   const puntoVenta = document.getElementById('ivPuntoVenta')?.value || 'all';
   const metodo = document.getElementById('ivMetodo')?.value || 'all';
   const empleado = document.getElementById('ivEmpleado')?.value || 'all';
 
-  const filtered = informeTicketsCache.filter(t => {
-    const day = String(t.created_at || '').slice(0, 10);
+  const filtered = informePedidosCache.filter(o => {
+    const day = String(o.date || '').slice(0, 10);
     if (fi && day < fi) return false;
     if (ff && day > ff) return false;
-    if (puntoVenta !== 'all' && t.almacen !== puntoVenta) return false;
-    if (metodo !== 'all' && t.metodo !== metodo) return false;
-    if (empleado !== 'all' && t.registrado_por !== empleado) return false;
+    if (tienda !== 'all' && o.sucursal !== tienda) return false;
+    if (puntoVenta !== 'all' && o.sucursal !== puntoVenta) return false;
+    if (metodo !== 'all' && o.paymentMethodDetail !== metodo) return false;
+    if (empleado !== 'all' && o.createdBy !== empleado) return false;
     return true;
   });
+  informeVentasVisible = filtered;
 
   const byDay = {};
-  filtered.forEach(t => {
-    const day = String(t.created_at || '').slice(0, 10);
-    byDay[day] = (byDay[day] || 0) + (parseFloat(t.total) || 0);
+  filtered.forEach(o => {
+    const day = String(o.date || '').slice(0, 10);
+    byDay[day] = (byDay[day] || 0) + (o.total || 0);
   });
   const trendRows = Object.keys(byDay).sort().map(d => ({ label: d, revenue: byDay[d] }));
   drawInformeLineChart(trendRows);
 
-  const byMethod = { cash: 0, card: 0, transfer: 0, unknown: 0 };
-  filtered.forEach(t => {
-    const m = (t.metodo && byMethod.hasOwnProperty(t.metodo)) ? t.metodo : 'unknown';
-    byMethod[m] += parseFloat(t.total) || 0;
+  const byMethod = {};
+  filtered.forEach(o => {
+    const key = o.paymentMethodDetail || 'Sin definir';
+    byMethod[key] = (byMethod[key] || 0) + (o.total || 0);
   });
   drawInformeDonutChart(byMethod);
 
-  const totalRevenue = filtered.reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+  const totalRevenue = filtered.reduce((s, o) => s + (o.total || 0), 0);
   const summary = document.getElementById('ivSummary');
   if (summary) {
-    summary.innerHTML = `
-      <div><b>${filtered.length}</b> tickets</div>
-      <div><b>${fmtMoney(totalRevenue)}</b> ingresos</div>
-      <div><b>${fmtMoney(filtered.length ? totalRevenue / filtered.length : 0)}</b> ticket promedio</div>
-    `;
+    summary.innerHTML = `<div>Resultados: total (<b>${filtered.length}</b>) - <b>${fmtMoney(totalRevenue)}</b> MXN</div>`;
   }
+
+  renderInformeVentasTable(filtered);
+}
+
+function renderInformeVentasTable(orders) {
+  const tbody = document.getElementById('ivResultsTableBody');
+  if (!tbody) return;
+  if (orders.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">Sin ventas POS en este período/filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td>${escapeHtml(o.id)}</td>
+      <td>${escapeHtml(o.reference || '—')}</td>
+      <td style="font-size:12px;">${escapeHtml(String(o.date || '').replace('T', ' ').slice(0, 16))}</td>
+      <td>${escapeHtml(o.tienda || '—')}</td>
+      <td>${escapeHtml(o.customer || '—')}</td>
+      <td>${escapeHtml(o.createdBy || '—')}</td>
+      <td>${escapeHtml(o.puntoVenta || '—')}</td>
+      <td style="text-align:right;">${fmtMoney(o.total)}</td>
+      <td>${escapeHtml(o.paymentMethodDetail || 'Sin definir')}</td>
+      <td style="text-align:right;">${fmtMoney(o.total)}</td>
+      <td style="text-align:right; font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
+    </tr>
+  `).join('');
+}
+
+function downloadInformeVentasCSV() {
+  if (informeVentasVisible.length === 0) {
+    alert('No hay resultados para exportar.');
+    return;
+  }
+  const headers = ['Id Orden', 'Referencia', 'Fecha', 'Tienda/Empresa', 'Cliente', 'Empleado', 'Punto de Venta', 'Valor Venta', 'Método de Pago', 'Monto Pago', 'Monto Total'];
+  const rows = informeVentasVisible.map(o => [
+    o.id, o.reference || '', String(o.date || '').replace('T', ' ').slice(0, 16), o.tienda || '',
+    o.customer || '', o.createdBy || '', o.puntoVenta || '',
+    Number(o.total || 0).toFixed(2), o.paymentMethodDetail || 'Sin definir',
+    Number(o.total || 0).toFixed(2), Number(o.total || 0).toFixed(2)
+  ]);
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `informe-ventas-pos-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 function drawInformeLineChart(rows) {
@@ -7247,12 +7404,13 @@ function drawInformeDonutChart(byMethod) {
   svg.innerHTML = '';
   if (legend) legend.innerHTML = '';
 
-  const segments = [
-    { key: 'card', label: 'Débito/Crédito', color: '#8e7cf0', value: byMethod.card },
-    { key: 'cash', label: 'Pago En Efectivo', color: '#d3007b', value: byMethod.cash },
-    { key: 'transfer', label: 'Transferencia bancaria', color: '#22c55e', value: byMethod.transfer },
-    { key: 'unknown', label: 'Sin definir', color: '#f9e05c', value: byMethod.unknown }
-  ].filter(s => s.value > 0);
+  // byMethod es un mapa dinámico { "Debito / Credito": 1234.5, ... } — los
+  // métodos reales vienen tal cual los guarda PrestaShop (order_payments),
+  // así que se colorean por posición en vez de por una clave fija.
+  const PALETTE = ['#8e7cf0', '#d3007b', '#22c55e', '#f9e05c', '#37b6b9', '#f97316'];
+  const segments = Object.keys(byMethod)
+    .map((label, i) => ({ label, color: PALETTE[i % PALETTE.length], value: byMethod[label] }))
+    .filter(s => s.value > 0);
 
   const total = segments.reduce((s, x) => s + x.value, 0);
   if (total <= 0) {
@@ -11490,8 +11648,8 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
 
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
-      <div>
-        <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:cover; aspect-ratio:1/1; background:var(--mf-cream);" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <div style="min-width:0;">
+        <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
@@ -12217,6 +12375,11 @@ function updateSearchSuggestions(q) {
     </div>
   `).join('');
   box.classList.remove('hidden');
+}
+
+function toggleStoreMobileNav(navId) {
+  const nav = document.getElementById(navId);
+  if (nav) nav.classList.toggle('open');
 }
 
 function hideSearchSuggestions() {
@@ -13014,12 +13177,7 @@ loadRealStockData().then(() => {
 });
 
 loadCartFromStorage();
-if(window.location.pathname==='/'){
- const vista=new URLSearchParams(window.location.search).get('vista');
- if(vista==='carrito')openStorefrontCart();
- else if(vista==='admin')goToAdmin();
- else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
-}
+
 updateStoreCartBadge();
 if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
@@ -13074,6 +13232,12 @@ function routeApp() {
     return;
   }
   showPublicStorefront();
+if(window.location.pathname==='/'){
+ const vista=new URLSearchParams(window.location.search).get('vista');
+ if(vista==='carrito')openStorefrontCart();
+ else if(vista==='admin')goToAdmin();
+ else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
+}
 }
 routeApp();
 if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('cuenta')) openClientePortal();

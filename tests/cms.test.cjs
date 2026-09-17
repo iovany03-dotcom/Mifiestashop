@@ -13,7 +13,7 @@ test('every source page has its exact title, slug, original path and static meta
     assert.equal(m.path,`/content/${page.id}-${page.slug}`);
     const route=config.rewrites.find(r=>r.source===m.path);assert.ok(route,m.path);
     const $=cheerio.load(fs.readFileSync(path.join(root,route.destination),'utf8'));
-    assert.equal($('h1').length,1,m.path);assert.equal($('h1').text(),page.title);
+    assert.equal($('h1').length,1,m.path);assert.equal($('h1').text(),page.id===410?page.title.replace(/_+$/,''):page.title);
     assert.equal($('link[rel=canonical]').attr('href'),'https://mifiestashop.vercel.app'+m.path);
     assert.equal($('title').text(),page.title+' | Mi Fiestashop');
     assert.equal($('meta[name=description]').length,1);
@@ -44,10 +44,15 @@ test('subjects follow the source title, including narrow topics',()=>{
   for(const [id,theme]of Object.entries(expected))assert.equal(modelFor(source.find(p=>p.id===Number(id)),source).theme,theme);
   assert.doesNotMatch(fs.readFileSync(path.join(root,'cms-pages/281.html'),'utf8'),/fiesta de XV años/i);
 });
-test('copied Puebla marketing copy no longer promotes CDMX and product links use current IDs',()=>{
+test('copied Puebla marketing copy no longer promotes CDMX; legacy builder content is not rendered',()=>{
   const html=fs.readFileSync(path.join(root,'cms-pages/395.html'),'utf8');
-  const $=cheerio.load(html);assert.doesNotMatch($('.source-content').text(),/CDMX|Ciudad de M[eé]xico|Quer[eé]taro/i);
-  assert.ok($('.source-content a[href="/83553-promo-batucada-estandar-.html"]').length);
+  // Excludes "Más ideas para tu fiesta": those are legitimate cross-links to
+  // other cities' pages, not copied marketing copy for this one.
+  const $=cheerio.load(html);$('.related-pages').remove();assert.doesNotMatch($('main').text(),/CDMX|Ciudad de M[eé]xico|Quer[eé]taro/i);
+  // Non-informational pages no longer render the imported builder content
+  // (old banners, stock photos, promo package copy) at all — only the
+  // shared modern sections (hero, benefits, catalog, reviews, FAQ) show.
+  assert.equal($('.source-content').length, 0);
 });
 test('all retained CMS images are local and exist; unavailable originals are omitted',()=>{
   for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,`cms-pages/${p.id}.html`),'utf8'));$('.hero img,.source-content img').each((_,e)=>{const src=$(e).attr('src');assert.ok(src.startsWith('/img/'),`${p.id}: ${src}`);assert.ok(fs.existsSync(path.join(root,src)),src)});}
@@ -90,6 +95,28 @@ test('storefront and CMS JavaScript compile',()=>{
   $('script:not([src])').each((_,el)=>{if(!$(el).attr('type')||$(el).attr('type')==='text/javascript')new vm.Script($(el).html());});
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms.js'),'utf8'));
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms-vip.js'),'utf8'));
+  new vm.Script(fs.readFileSync(path.join(root,'assets/cms-promo-pricing.js'),'utf8'));
+});
+
+test('promo pricing packages always price live from PrestaShop, never hardcoded',()=>{
+  const productos=fs.readFileSync(path.join(root,'api/productos.js'),'utf8');
+  assert.doesNotMatch(productos,/649|999|2,?799/);
+  const promo=fs.readFileSync(path.join(root,'api/promo-paquetes.js'),'utf8');
+  assert.match(promo,/PS_API_KEY/);assert.doesNotMatch(promo,/649|999|2,?799/);
+  for(const id of [269,281,274,411]){
+    const page=source.find(p=>p.id===id);const model=modelFor(page,source);
+    const html=fs.readFileSync(path.join(root,`cms-pages/${page.id}.html`),'utf8');
+    const $=cheerio.load(html);
+    if(model.config.promoPackages){
+      assert.equal($('#cms-promo-pricing').length,1,page.slug);
+      const packages=JSON.parse($('#cms-promo-pricing').attr('data-packages'));
+      assert.deepEqual(packages,model.config.promoPackages);
+      assert.equal($('script[src^="/assets/cms-promo-pricing.js"]').length,1,page.slug);
+    } else {
+      assert.equal($('#cms-promo-pricing').length,0,page.slug);
+      assert.equal($('#cms-promo-products').length,1,page.slug);
+    }
+  }
 });
 
 test('migrated pages and admin inventory work without PrestaShop network access',async()=>{
@@ -98,4 +125,10 @@ test('migrated pages and admin inventory work without PrestaShop network access'
  for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+p.id+'.html'),'utf8'));$('img').each((_,el)=>{const src=$(el).attr('src');assert.ok(src.startsWith('/img/'),src);assert.ok(fs.existsSync(path.join(root,src)));});}
  const catalog=require('../data/cms-products.json');assert.ok(catalog.products.length>0);for(const p of catalog.products){assert.ok(fs.existsSync(path.join(root,p.img)));assert.equal(p.price,undefined);}
  const js=fs.readFileSync(path.join(root,'assets/cms.js'),'utf8');assert.doesNotMatch(js,/mifiestashop\.com|api\/productos/);assert.match(js,/data\/cms-products\.json/);
+});
+
+test('neon redesign is isolated and imported icon/location banners cannot reappear',()=>{
+ const removed=['b7b3e512c4029e40','69f29cc0e2aaaeb0','6eeaeb9d458892c4'];
+ for(const page of source){const html=fs.readFileSync(path.join(root,'cms-pages/'+page.id+'.html'),'utf8');const $=cheerio.load(html);assert.equal($('body').hasClass('neon-page'),page.id===410);for(const id of removed)assert.ok(!$('.source-content').html()?.includes(id),page.slug);$('script[src],link[rel=stylesheet]').each((_,e)=>{const u=$(e).attr('src')||$(e).attr('href');if(u.startsWith('/assets/'))assert.match(u,/\?v=[a-f0-9]{12}$/);});}
+ const html=fs.readFileSync(path.join(root,'cms-pages/410.html'),'utf8');assert.ok(html.includes('Rumania 613'));assert.ok(!html.includes('Puebla'));new vm.Script(fs.readFileSync(path.join(root,'assets/neon-cdmx.js'),'utf8'));
 });

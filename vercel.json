@@ -1758,6 +1758,10 @@
       "destination": "/cms-pages/421.html"
     },
     {
+      "source": "/mayoristas",
+      "destination": "/mayoristas.html"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
     },

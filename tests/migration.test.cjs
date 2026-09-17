@@ -27,11 +27,13 @@ test('multiple addresses retain both fiscal fields, mobile phone and inactive hi
 test('address import resumes only after a durable page and reconciles at end',async t=>{
   const saved=[],states=[],deleted=[];let calls=0;
   t.mock.method(global,'fetch',async(url,opts={})=>{
+    if(url.includes('/ps_clientes?')) return json([{id:5}]);
     if(url.includes('/api/addresses')) {
       calls++;
       const filter=new URL(url).searchParams.get('filter[id]');
-      if(calls===1){assert.equal(filter,'[251,999999999]');return json({addresses:[{id:251,id_customer:5,address1:'A',active:1}]});}
-      assert.equal(filter,'[252,999999999]');return json({addresses:[]});
+      assert.equal(new URL(url).searchParams.get('filter[id_customer]'),'[5,5]');
+      if(calls===1){assert.equal(filter,'[251,999999999]');return json({addresses:[{id:251,id_customer:5,address1:'A',active:1},{id:252,id_customer:999,address1:'Other shop'}]});}
+      assert.equal(filter,'[253,999999999]');return json({addresses:[]});
     }
     if(url.includes('ps_sync_estado')&&!opts.method)return json([{last_synced_id:250,ultimo_resultado:'cycle:previous-cycle'}]);
     if(url.includes('ps_sync_estado')){states.push(JSON.parse(opts.body));return new Response(null,{status:204});}
@@ -40,6 +42,7 @@ test('address import resumes only after a durable page and reconciles at end',as
   });
   const result=await runFullSync({...ctx,domains:['direcciones']});
   assert.equal(result.direcciones.complete,true);assert.equal(saved[0].id,251);
+  assert.equal(saved.length,1);
   assert.equal(saved[0].generation,'previous-cycle');assert.equal(deleted.length,1);
   assert.equal(states.at(-1).last_synced_id,0);
 });
@@ -48,6 +51,7 @@ test('denied source permission and failed upsert never mark a migration complete
   for(const failAt of ['source','write']) {
     const writes=[];
     t.mock.method(global,'fetch',async(url,opts={})=>{
+      if(url.includes('/ps_clientes?')) return json([{id:2}]);
       if(url.includes('/api/addresses'))return failAt==='source'?json({},403):json({addresses:[{id:1,id_customer:2,active:1}]});
       if(url.includes('ps_sync_estado')&&!opts.method)return json([]);
       if(opts.method==='DELETE')throw new Error('Unexpected deletion');
@@ -93,6 +97,8 @@ test('private customer endpoint rejects anonymous requests before reading person
 test('wholesale discount follows explicit price and excludes expired or customer-specific rules',()=>{
   const rule={id:1,id_product:10,id_group:60,from_quantity:3,price:'80',reduction:'0.1',reduction_type:'percentage'};
   assert.deepEqual(wholesale(100,[rule],10),{price:72,fromQty:3});
+  assert.deepEqual(wholesale(100,[{...rule,id_shop:50}],10),{price:72,fromQty:3});
+  assert.equal(wholesale(100,[{...rule,id_shop:1}],10),null);
   assert.equal(wholesale(100,[{...rule,id_customer:7}],10),null);
   assert.equal(wholesale(100,[{...rule,to:'2020-01-01 00:00:00'}],10),null);
   assert.equal(wholesale(100,[{...rule,reduction_type:'amount',reduction_tax:1}],10),null);
@@ -101,7 +107,7 @@ test('wholesale discount follows explicit price and excludes expired or customer
 test('checkout uses local authoritative prices and combines duplicated lines for stock validation',async t=>{
   t.mock.method(store,'all',async table=>table==='ps_productos_comercio'
     ?[{id:1,data:{id:1,active:1,price:'25.55',name:'Artículo'}}]
-    :[{data:{id_product:1,id_product_attribute:0,id_shop:1,quantity:3}}]);
+    :[{data:{id_product:1,id_product_attribute:0,id_shop:50,quantity:3}},{data:{id_product:1,id_product_attribute:0,id_shop:1,quantity:999}}]);
   const {resolveItems}=require('../lib/native-checkout');
   const valid=await resolveItems([{id:1,qty:1},{id:1,qty:2}]);
   assert.equal(valid.length,1);assert.equal(valid[0].qty,3);assert.equal(valid[0].price,25.55);
