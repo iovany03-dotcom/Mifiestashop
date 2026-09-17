@@ -97,11 +97,21 @@ function sanitize(html, page, pages, location) {
     } else a.attr('href', resolved);
     a.attr('rel', 'noopener noreferrer');
   });
+  // Bare social-icon links (Facebook/Instagram/WhatsApp buttons pasted into the
+  // old page builder) are removed wholesale: the shared footer already carries
+  // these same links at a sane icon size, so keeping them in the imported
+  // content only duplicates them at whatever oversized dimensions the
+  // original builder image happened to be.
+  $('a[href]').each((_, el) => {
+    const a = $(el);
+    const onlyImg = a.contents().length > 0 && a.contents().toArray().every(n => n.type !== 'text' || !n.data.trim());
+    if (onlyImg && a.find('img').length && /facebook\.com|instagram\.com|(api\.)?whatsapp\.com|wa\.me/i.test(a.attr('href') || '')) a.remove();
+  });
   $('img').each((_, el) => {
     const img = $(el), src = assetUrl(img.attr('src'), page);
     // Legacy builder icons, reviewer portraits, coupons and location banners are
     // replaced by the shared benefits, testimonials, promotions and location blocks.
-    const obsolete = new Set(['1cc4e44c2fbafaaf','4c6a381b678520a6','b7b3e512c4029e40','3cd28f5d4156483d','2bb12300ecbb36d0','88e86b9e82d71af4','13371b35e833529e','f317265bd2e5bda3','69f29cc0e2aaaeb0','6eeaeb9d458892c4','e7d011b55f8424d9']);
+    const obsolete = new Set(['1cc4e44c2fbafaaf','4c6a381b678520a6','b7b3e512c4029e40','3cd28f5d4156483d','2bb12300ecbb36d0','88e86b9e82d71af4','13371b35e833529e','f317265bd2e5bda3','69f29cc0e2aaaeb0','6eeaeb9d458892c4','e7d011b55f8424d9','58362c782794d88a','ce4562eafb723b5c','b16fdd3dc15a12d9','0b07a30299ba3333','448e9d8ec2fcf9c8']);
     if(src && [...obsolete].some(id=>src.includes(id))){img.remove();return;}
     if (!src) { img.remove(); return; }
     img.attr('src', src).attr('loading','lazy').attr('decoding','async');
@@ -111,7 +121,7 @@ function sanitize(html, page, pages, location) {
   $('h1').each((_, el) => { el.tagName = 'h2'; el.name = 'h2'; });
   $('p,h2,h3,h4,a').each((_, el) => {
     const value = text($, el);
-    if (/lorem ipsum|hotspot #|SIGUE BAJANDO/i.test(value)) $(el).remove();
+    if (/lorem ipsum|hotspot #|SIGUE BAJANDO|^¡?HABLEMOS!?$|^D[AÁ]TE DE ALTA$/i.test(value)) $(el).remove();
   });
   if (location && !location.multiple) {
     $('a[href]').each((_, el) => {

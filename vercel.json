@@ -1,6 +1,9 @@
 {
   "crons": [
-    { "path": "/api/cron-sync-prestashop", "schedule": "0 * * * *" }
+    {
+      "path": "/api/cron-sync-prestashop",
+      "schedule": "0 * * * *"
+    }
   ],
   "functions": {
     "api/cron-sync-prestashop.js": {
@@ -62,10 +65,6 @@
     }
   },
   "rewrites": [
-    {
-      "source": "/mayoristas",
-      "destination": "/mayoristas.html"
-    },
     {
       "source": "/content/269-articulos-para-boda-en-mexico",
       "destination": "/cms-pages/269.html"
@@ -1637,6 +1636,10 @@
     {
       "source": "/pagina/globos-cdmx",
       "destination": "/cms-pages/411.html"
+    },
+    {
+      "source": "/mayoristas",
+      "destination": "/mayoristas.html"
     },
     {
       "source": "/sitemap.xml",
