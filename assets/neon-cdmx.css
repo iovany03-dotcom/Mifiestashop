@@ -6,3 +6,5 @@
 @media(prefers-reduced-motion:reduce){.neon-copy,.neon-stage{animation:none}.neon-page *{transition:none!important;scroll-behavior:auto!important}}
 
 @media(max-width:720px){.neon-page #productos .section-heading{display:block}.neon-page #productos .neon-section-note{margin-top:18px}.neon-page .store-section-title{align-items:start}}
+
+.neon-stage figure .neon-after{position:absolute;inset:0;opacity:0;height:100%;transition:opacity .55s ease}.neon-page.neon-on .neon-stage figure .neon-after{opacity:1}.neon-stage figcaption{z-index:2}@media(prefers-reduced-motion:reduce){.neon-stage figure .neon-after{transition:none}}
