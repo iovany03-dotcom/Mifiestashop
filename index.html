@@ -6834,6 +6834,23 @@ function confirmPOSSale() {
     }).catch(() => {});
   }
 
+  // Crea el pedido real en PrestaShop (y descuenta su propio stock) para
+  // que la venta del POS también quede reflejada ahí, no solo en el ledger
+  // de Supabase. Best-effort y no bloqueante: el ticket ya se imprimió y el
+  // inventario de este sistema ya se descontó arriba pase lo que pase aquí;
+  // si falla, queda marcado en pos_tickets.ps_sync_status para revisarlo
+  // (ver api/pos-sync-prestashop.js).
+  fetch('/api/pos-sync-prestashop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...getSessionCredsParams(),
+      folio, almacen: almacenKey,
+      items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+      subtotal, iva, total, paymentMethod: selectedPayMethod
+    })
+  }).catch(() => {});
+
   clearCart();
 }
 
