@@ -9413,6 +9413,22 @@ async function loadOrdersFromAPI(){
     // lo que ya trajo PrestaShop, igual que antes.
   }
 
+  // Los pedidos del checkout público y los creados a mano desde "+ Crear
+  // Pedido" viven en pedidos_online, no en PrestaShop — sin esto, un pedido
+  // real hecho en la tienda pública (o creado manualmente aquí) nunca
+  // aparecía en este listado, aunque sí se hubiera guardado correctamente.
+  try {
+    const r = await fetch('/api/pedidos-online');
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data.orders) && data.orders.length > 0) {
+        list = data.orders.concat(list).sort((a, b) => (b._sortDate || 0) - (a._sortDate || 0));
+      }
+    }
+  } catch (e) {
+    // Igual que arriba: si falla, se sigue mostrando lo demás.
+  }
+
   loadedOrdersList = list;
 
   // Nota: las ventas reales por producto ya NO se sacan de aquí (esta lista de pedidos
@@ -9545,7 +9561,7 @@ function openOrderDetailModal(id){
         renderOdProductRows(null);
       });
   } else {
-    document.getElementById('odClientEmail').textContent = 'No disponible';
+    document.getElementById('odClientEmail').textContent = order.customerEmail || 'No disponible';
   }
 }
 
