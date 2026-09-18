@@ -3749,7 +3749,7 @@
           <h3>Vista Previa del Ticket Impreso</h3>
           <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
             <div class="ticket-brand-bar"></div>
-            <img class="ticket-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+            <img class="ticket-icon" src="img/logo-antifaz.png" alt="Mi Fiestashop">
             <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
             <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
             <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
@@ -5292,7 +5292,10 @@ async function sbRpc(fnName, params){
     const text = await r.text().catch(() => '');
     throw new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
   }
-  return r.json();
+  // Functions that RETURN void (every rpc_*_delete) send back an empty body —
+  // r.json() throws on that, which made a successful delete look like a failure.
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 // Contraseña de administrador / de edición de la sesión actual, guardadas
