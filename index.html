@@ -6470,12 +6470,29 @@ function renderProducts(category = 'all', query = '') {
   });
 }
 
+// El precio de mayoreo real de PrestaShop (priceMayoreo/priceMayoreoDesdeUnidades,
+// ver api/productos.js) viaja en cada producto pero nadie lo aplicaba al
+// carrito: item.price se quedaba fijo en el precio de menudeo sin importar
+// la cantidad. basePrice guarda el precio de menudeo original para poder
+// volver a él si la cantidad baja otra vez del umbral de mayoreo.
+function applyWholesalePricing(item) {
+  if (!Number.isFinite(item.basePrice)) item.basePrice = item.price;
+  const threshold = item.priceMayoreoDesdeUnidades;
+  const wholesalePrice = item.priceMayoreo;
+  item.price = (threshold > 0 && Number.isFinite(wholesalePrice) && wholesalePrice > 0 && item.qty >= threshold)
+    ? wholesalePrice
+    : item.basePrice;
+}
+
 function addToCart(product) {
   const existing = cart.find(item => item.id === product.id);
   if (existing) {
     existing.qty++;
+    applyWholesalePricing(existing);
   } else {
-    cart.push({ ...product, qty: 1 });
+    const item = { ...product, qty: 1, basePrice: product.price };
+    applyWholesalePricing(item);
+    cart.push(item);
   }
   updateCartUI();
 }
@@ -6485,6 +6502,7 @@ function updateCartQty(id, delta) {
   if (item) {
     item.qty += delta;
     if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    else applyWholesalePricing(item);
   }
   updateCartUI();
 }
@@ -11943,6 +11961,7 @@ function updateStorefrontCartQty(id, delta){
   if (item) {
     item.qty += delta;
     if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    else applyWholesalePricing(item);
   }
   updateStoreCartBadge();
   renderStorefrontCartBody();
