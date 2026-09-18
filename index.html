@@ -2676,10 +2676,10 @@
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
           <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-            <button class="btn small primary" id="btnToggleCaja" onclick="onToggleCajaClick()">Abrir Caja</button>
-            <button class="btn small" onclick="openSalidasCajaModal()">Salidas de Caja</button>
-            <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
-            <button class="btn small" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
+            <button class="btn small primary" id="btnToggleCaja" data-view="caja-cerrar" onclick="onToggleCajaClick()">Abrir Caja</button>
+            <button class="btn small" data-view="caja-salidas" onclick="openSalidasCajaModal()">Salidas de Caja</button>
+            <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+            <button class="btn small" data-view="caja-historial-cierres" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
           </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
@@ -2710,7 +2710,7 @@
           <div class="cart-header">
             <h3>Orden de Venta</h3>
             <div style="display:flex; gap:6px;">
-              <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+              <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
               <button class="btn small" onclick="clearCart()">Vaciar</button>
             </div>
           </div>
@@ -5367,6 +5367,17 @@ const PERMISSION_GROUPS = [
     { key: 'costos', label: 'Costos y Gastos' },
     { key: 'carritos', label: 'Carritos de Compra' }
   ]},
+  { group: 'Caja (dentro de Sistema POS)', items: [
+    { key: 'caja-puebla', label: 'Acceso a caja: Puebla' },
+    { key: 'caja-rumania', label: 'Acceso a caja: CDMX Rumania' },
+    { key: 'caja-queretaro', label: 'Acceso a caja: Querétaro' },
+    { key: 'caja-atizapan', label: 'Acceso a caja: Atizapán' },
+    { key: 'caja-cancelar-ventas', label: 'Cancelar ventas' },
+    { key: 'caja-salidas', label: 'Ingresar salidas de caja' },
+    { key: 'caja-cerrar', label: 'Abrir / cerrar caja' },
+    { key: 'caja-historial-tickets', label: 'Ver historial de caja (tickets)' },
+    { key: 'caja-historial-cierres', label: 'Ver historial de cierres' }
+  ]},
   { group: 'Catálogo & Stock', items: [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
@@ -5431,6 +5442,26 @@ function applyStaffPermissionsUI() {
     const allowed = !restricted || hasPermission(view);
     el.classList.toggle('perm-hidden', !allowed);
   });
+
+  // Which cash registers (bodegas) this person can operate in the POS. Only
+  // restrict once at least one caja-* permission is explicitly set for them —
+  // staff configured before this existed have none of these keys, and should
+  // keep seeing every branch instead of suddenly losing access to all of them.
+  const BRANCH_PERMS = { puebla: 'caja-puebla', rumania: 'caja-rumania', queretaro: 'caja-queretaro', atizapan: 'caja-atizapan' };
+  const warehouseSelect = document.getElementById('posWarehouseSelect');
+  if (warehouseSelect) {
+    const perms = (restricted && currentStaffSession.permisos) || [];
+    const hasAnyBranchPerm = Object.values(BRANCH_PERMS).some(k => perms.includes(k));
+    Array.from(warehouseSelect.options).forEach(opt => {
+      const allowed = !restricted || !hasAnyBranchPerm || perms.includes(BRANCH_PERMS[opt.value]);
+      opt.hidden = !allowed;
+      opt.disabled = !allowed;
+    });
+    if (warehouseSelect.selectedOptions[0]?.disabled) {
+      const firstAllowed = Array.from(warehouseSelect.options).find(o => !o.disabled);
+      if (firstAllowed) warehouseSelect.value = firstAllowed.value;
+    }
+  }
 
   document.querySelectorAll('.menu-item .submenu').forEach(sub => {
     const links = Array.from(sub.querySelectorAll('.submenu-link'));
