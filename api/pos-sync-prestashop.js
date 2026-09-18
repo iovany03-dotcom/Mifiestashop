@@ -210,6 +210,23 @@ module.exports = async function handler(req, res) {
           results.push({ variant: label, ok: false, detail: e.message.slice(0, 300) });
         }
       }
+      // También prueba si el problema es específico de /api/orders o si
+      // cualquier escritura fuera de carts está bloqueada (p.ej. permisos
+      // de la llave webservice por recurso en el admin de PrestaShop).
+      try {
+        const stockData = await psGet(`/api/stock_availables?filter[id_product]=84646&filter[id_product_attribute]=0&filter[id_shop]=${SHOP_ID}&display=[id,quantity]`);
+        const rows = Array.isArray(stockData.stock_availables) ? stockData.stock_availables : [stockData.stock_availables].filter(Boolean);
+        const row = rows[0];
+        if (row) {
+          const putXml = `<?xml version="1.0" encoding="UTF-8"?>\n<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">\n  <stock_available>\n    <id>${row.id}</id>\n    <id_product>84646</id_product>\n    <id_product_attribute>0</id_product_attribute>\n    <id_shop>${SHOP_ID}</id_shop>\n    <quantity>${row.quantity}</quantity>\n  </stock_available>\n</prestashop>`;
+          try {
+            await psWrite('PUT', `/api/stock_availables/${row.id}`, putXml);
+            results.push({ step: 'stock_put_test', ok: true, note: 'quantity reescrita al mismo valor, sin cambio real' });
+          } catch (e) { results.push({ step: 'stock_put_test', ok: false, detail: e.message.slice(0, 300) }); }
+        } else {
+          results.push({ step: 'stock_put_test', ok: false, detail: 'no se encontró la fila de stock' });
+        }
+      } catch (e) { results.push({ step: 'stock_put_test', ok: false, detail: e.message.slice(0, 300) }); }
     } catch (e) {
       results.push({ step: 'fatal', detail: e.message });
     }
