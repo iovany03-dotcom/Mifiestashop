@@ -4299,17 +4299,7 @@
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">PIN de acceso:</label>
         <input type="password" id="staffLoginPin" inputmode="numeric" maxlength="6" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; margin-bottom:12px;">
         <button type="button" class="btn primary" style="width:100%; justify-content:center;" onclick="handleStaffLogin()">Entrar como Personal</button>
-
-        <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border);">
-          <a href="#" onclick="event.preventDefault(); toggleStaffPasswordLoginForm();" style="font-size:12px; color:var(--series-2); text-decoration:none; font-weight:600;">O entra con tu correo y contraseña</a>
-          <div id="staffPasswordLoginArea" class="hidden" style="margin-top:10px;">
-            <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Correo electrónico:</label>
-            <input type="email" id="staffLoginEmail" autocomplete="username" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; margin-bottom:10px;">
-            <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Contraseña:</label>
-            <input type="password" id="staffLoginPassword" autocomplete="current-password" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; margin-bottom:12px;">
-            <button type="button" class="btn primary" style="width:100%; justify-content:center;" onclick="handleStaffLoginPassword()">Entrar con correo y contraseña</button>
-          </div>
-        </div>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:10px; margin-bottom:0;">¿Tienes correo y contraseña configurados? Úsalos directamente arriba, en el formulario principal.</p>
       </div>
     </div>
   </div>
@@ -5614,48 +5604,6 @@ async function handleStaffLogin() {
     rol: person.rol, permisos: Array.isArray(person.permisos) ? person.permisos : []
   };
   setStaffCreds(person.email, pin);
-  localStorage.setItem('mf_admin_logged_in', 'true');
-  localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
-  closeLoginModal();
-  showAdminDashboard();
-}
-
-function toggleStaffPasswordLoginForm() {
-  const area = document.getElementById('staffPasswordLoginArea');
-  if (area) area.classList.toggle('hidden');
-}
-
-async function handleStaffLoginPassword() {
-  const emailInput = document.getElementById('staffLoginEmail');
-  const passwordInput = document.getElementById('staffLoginPassword');
-  const err = document.getElementById('loginErrorMsg');
-  const email = (emailInput?.value || '').trim();
-  const password = passwordInput?.value || '';
-
-  if (!email || !password) {
-    if (err) { err.textContent = 'Escribe tu correo y contraseña.'; err.classList.remove('hidden'); }
-    return;
-  }
-
-  let rows = [];
-  try {
-    rows = await sbRpc('rpc_staff_login_password', { p_email: email, p_password: password });
-  } catch (e) { rows = []; }
-
-  // The person's real PIN comes back on success so the client can reuse the
-  // same PIN-based session every other staff-authorized RPC already expects
-  // (see getSessionCredsParams) — the password is just an alternate unlock.
-  const person = Array.isArray(rows) ? rows[0] : rows;
-  if (!person) {
-    if (err) { err.textContent = 'Correo o contraseña incorrectos.'; err.classList.remove('hidden'); }
-    return;
-  }
-
-  currentStaffSession = {
-    id: person.id, nombre: person.nombre, email: person.email,
-    rol: person.rol, permisos: Array.isArray(person.permisos) ? person.permisos : []
-  };
-  setStaffCreds(person.email, person.pin);
   localStorage.setItem('mf_admin_logged_in', 'true');
   localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
   closeLoginModal();
@@ -9870,20 +9818,40 @@ async function handleAdminLogin() {
   // La contraseña ya no se compara en el navegador contra un valor fijo en
   // el JS (cualquiera podía leerla en el código fuente): se verifica en el
   // servidor de base de datos, que nunca revela la contraseña real.
-  let ok = false;
-  try {
-    ok = email === 'i.ovany.03@gmail.com' && await sbRpc('rpc_check_admin', { p_password: pass });
-  } catch (e) { ok = false; }
+  if (email === 'i.ovany.03@gmail.com') {
+    let ok = false;
+    try { ok = await sbRpc('rpc_check_admin', { p_password: pass }); } catch (e) { ok = false; }
+    if (ok) {
+      setAdminPassword(pass);
+      localStorage.setItem('mf_admin_logged_in', 'true');
+      localStorage.removeItem('mf_staff_session');
+      setStaffCreds(null, null);
+      currentStaffSession = null;
+      closeLoginModal();
+      showAdminDashboard();
+      return;
+    }
+  } else {
+    // No es el correo del admin: puede ser personal con correo+contraseña
+    // configurados (ver rpc_staff_set_password en "Editar Personal").
+    let rows = [];
+    try { rows = await sbRpc('rpc_staff_login_password', { p_email: email, p_password: pass }); } catch (e) { rows = []; }
+    const person = Array.isArray(rows) ? rows[0] : rows;
+    if (person) {
+      currentStaffSession = {
+        id: person.id, nombre: person.nombre, email: person.email,
+        rol: person.rol, permisos: Array.isArray(person.permisos) ? person.permisos : []
+      };
+      setStaffCreds(person.email, person.pin);
+      localStorage.setItem('mf_admin_logged_in', 'true');
+      localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
+      closeLoginModal();
+      showAdminDashboard();
+      return;
+    }
+  }
 
-  if (ok) {
-    setAdminPassword(pass);
-    localStorage.setItem('mf_admin_logged_in', 'true');
-    localStorage.removeItem('mf_staff_session');
-    setStaffCreds(null, null);
-    currentStaffSession = null;
-    closeLoginModal();
-    showAdminDashboard();
-  } else if (err) {
+  if (err) {
     err.textContent = 'Credenciales incorrectas. Verifique el usuario o contraseña.';
     err.classList.remove('hidden');
   }
