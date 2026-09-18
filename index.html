@@ -5206,10 +5206,19 @@
     <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Histórico de Movimientos de Inventario</h4>
-        <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge">3 movimientos registrados</span>
+        <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
       </div>
       <div id="traspasoHistoryList" style="max-height:160px; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
       </div>
+      <details style="margin-top:18px;" ontoggle="if(this.open) loadImportedInventory()">
+        <summary style="cursor:pointer;font-weight:600;">Documentos de inventario de PrestaShop</summary>
+        <p style="font-size:12px;">Consulta del historial importado, con sus estados y partidas originales.</p>
+        <label>Buscar folio, almacén o responsable
+          <input id="importedInventoryFilter" type="search" oninput="renderImportedInventory()" style="width:100%;padding:8px;margin:8px 0;">
+        </label>
+        <div id="importedInventoryList" style="max-height:280px;overflow:auto;"></div>
+        <div id="importedInventoryDetail" style="margin-top:12px;overflow:auto;"></div>
+      </details>
     </div>
   </div>
 </div>
@@ -8236,6 +8245,91 @@ let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
 // Histórico real de movimientos de inventario (pos_stock_moves en Supabase),
 // cargado por loadTraspasoHistory() cada vez que se abre el modal de Traspasos.
 let traspasosHistory = [];
+let importedInventoryDocuments = null;
+let importedInventoryLoading = false;
+let importedInventoryRequest = 0;
+
+async function inventoryHistoryRequest(query = '') {
+  const response = await fetch('/api/inventory-history' + query, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(getSessionCredsParams())
+  });
+  if (!response.ok) throw new Error('No se pudo consultar el historial. Verifica tu sesión e inténtalo de nuevo.');
+  return response.json();
+}
+
+async function loadImportedInventory() {
+  if (importedInventoryLoading) return;
+  const list = document.getElementById('importedInventoryList');
+  importedInventoryLoading = true;
+  list.textContent = 'Cargando documentos…';
+  try {
+    const documents = [];
+    let offset = 0, page;
+    do {
+      page = await inventoryHistoryRequest('?offset=' + offset);
+      documents.push(...page.documents);
+      offset = page.nextOffset;
+    } while (page.hasMore);
+    importedInventoryDocuments = documents;
+    renderImportedInventory();
+  } catch (error) {
+    importedInventoryDocuments = null;
+    list.textContent = error.message;
+    const retry = document.createElement('button');
+    retry.className = 'btn small'; retry.textContent = 'Reintentar'; retry.onclick = loadImportedInventory;
+    list.append(retry);
+  } finally { importedInventoryLoading = false; }
+}
+
+function renderImportedInventory() {
+  if (!importedInventoryDocuments) return;
+  const list = document.getElementById('importedInventoryList');
+  const search = document.getElementById('importedInventoryFilter').value.trim().toLocaleLowerCase('es');
+  const rows = importedInventoryDocuments.filter(row => [row.document, row.warehouse, row.responsible, row.status].join(' ').toLocaleLowerCase('es').includes(search));
+  list.replaceChildren();
+  const count = document.createElement('p');
+  count.textContent = `${rows.length} de ${importedInventoryDocuments.length} documentos importados`;
+  list.append(count);
+  for (const row of rows) {
+    const button = document.createElement('button');
+    button.className = 'btn secondary';
+    button.style.cssText = 'display:block;width:100%;text-align:left;margin-bottom:6px;white-space:normal;';
+    button.textContent = `${row.document} · ${row.date} · ${row.warehouse} · ${row.status} · ${row.lines} partidas`;
+    button.onclick = () => showImportedInventoryDocument(row.id);
+    list.append(button);
+  }
+}
+
+async function showImportedInventoryDocument(id) {
+  const detail = document.getElementById('importedInventoryDetail');
+  const request = ++importedInventoryRequest;
+  detail.textContent = 'Cargando detalle…';
+  try {
+    const { document: record } = await inventoryHistoryRequest('?id=' + id);
+    if (request !== importedInventoryRequest) return;
+    detail.replaceChildren();
+    const heading = document.createElement('h4');
+    heading.textContent = `${record.document} · ${record.status}`;
+    detail.append(heading);
+    const info = document.createElement('p');
+    info.textContent = `${record.date} · ${record.warehouse} · ${record.responsible}`;
+    detail.append(info);
+    const appendTable = (headers, rows) => {
+      const table = document.createElement('table');
+      table.style.cssText = 'width:100%;font-size:12px;margin-bottom:12px;';
+      const head = table.createTHead().insertRow();
+      for (const label of headers) { const th = document.createElement('th'); th.textContent = label; head.append(th); }
+      const body = table.createTBody();
+      for (const values of rows) { const tr = body.insertRow(); for (const value of values) tr.insertCell().textContent = value ?? ''; }
+      detail.append(table);
+    };
+    appendTable(['Producto', 'Referencia', 'Antes', 'Cantidad', 'Después'], record.lines.map(line => [line.product_name, line.reference, line.stock_before, line.quantity, line.stock_after]));
+    appendTable(['Fecha', 'Responsable', 'Estado anterior', 'Estado nuevo', 'Observaciones'], record.history);
+    if (record.notes?.length) { const notes = document.createElement('p'); notes.textContent = record.notes.join(' · '); detail.append(notes); }
+  } catch (error) { if (request === importedInventoryRequest) detail.textContent = error.message; }
+}
+
 const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro: 'Querétaro' };
 
 function setMovimientoType(tipo) {

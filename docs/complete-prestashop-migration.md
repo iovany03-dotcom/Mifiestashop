@@ -88,3 +88,29 @@ Una primera copia de 5,750 direcciones ajenas quedó en la tabla privada y su
 retirada está pendiente de aprobación explícita; ninguna se vincula con los
 clientes de Mi Fiestashop ni aparece en el sitio. No activar la migración
 hasta completar esta limpieza y conciliar todos los clientes.
+
+## Inventario avanzado — 18 de septiembre de 2026
+
+Se copiaron y conciliaron los 236 documentos visibles del módulo de inventario
+avanzado: 1,352 partidas y 732 eventos de historial. Dos formularios sin productos
+contenían una fila vacía de interfaz, que se excluyó después de verificarla.
+Las cantidades de partidas coinciden con los contadores de los 236 documentos.
+Se preservan folios, almacenes, responsables, estados, observaciones y eventos.
+Las fechas y responsables se toman del listado y del historial, porque los campos
+editables de algunos formularios mostraban valores predeterminados de la sesión.
+
+`docs/prestashop-inventory-history-setup.sql` crea dos tablas privadas con RLS.
+`ps_inventory_documents` contiene los documentos importados; la tabla separada
+`ps_inventory_movements` sigue pendiente de carga. Los movimientos históricos
+no se insertan en `pos_stock_moves`, porque alterarían otra vez el stock actual.
+
+`POST /api/inventory-history` exige la sesión administrativa existente y pagina
+resúmenes de 50 documentos. Con `?id=` devuelve las partidas y eventos originales.
+El modal de movimientos incorpora la consulta y búsqueda del historial importado.
+Esta interfaz está preparada en la rama de migración; todavía no está en producción.
+La importación de documentos no equivale a migrar el registro general de movimientos,
+ni implementa aprobación o aplicación de borradores del módulo original.
+
+La generación correcta de direcciones contiene 5,768 registros de 5,107 clientes.
+Se requiere conciliar los clientes agregados durante la migración y resolver el
+lote ajeno pendiente antes de activar el directorio nativo.

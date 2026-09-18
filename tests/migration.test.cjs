@@ -8,6 +8,40 @@ const json = (value, status=200) => new Response(JSON.stringify(value), {status,
 const response = () => ({ code:0, data:null, headers:{}, setHeader(k,v){this.headers[k]=v},status(n){this.code=n;return this},json(v){this.data=v;return this},send(v){this.data=v;return this} });
 const ctx = {baseUrl:'https://source.test',apiKey:'test',supabaseUrl:'https://db.test',serviceKey:'test',timeBudgetMs:60000};
 
+test('imported inventory history requires authentication before querying documents', async t => {
+  t.mock.method(store, 'request', async () => { throw new Error('Must not read private documents'); });
+  const res = response();
+  await require('../api/inventory-history')({method:'POST',body:{}}, res);
+  assert.equal(res.code,401);
+  assert.equal(res.headers['Cache-Control'],'no-store');
+});
+
+test('inventory history paginates summaries and reads detail without applying stock', async t => {
+  t.mock.method(store, 'requireSession', async () => true);
+  const queries = [];
+  t.mock.method(store, 'request', async (path, options) => {
+    assert.equal(options,undefined);
+    queries.push(path);
+    if (path.includes('id=eq.72')) return [{data:{id:72,lines:[],history:[['original event']]}}];
+    return Array.from({length:51}, (_,i) => ({id:100-i,data:{document:'ENT-'+i,lines:[{}],history:[]}}));
+  });
+  const handler = require('../api/inventory-history');
+  const page = response();
+  await handler({method:'POST',query:{offset:'50'}},page);
+  assert.equal(page.data.documents.length,50);
+  assert.equal(page.data.nextOffset,100);
+  assert.equal(page.data.hasMore,true);
+  assert.ok(queries[0].includes('order=id.desc&offset=50&limit=51'));
+  const detail = response();
+  await handler({method:'POST',query:{id:'72'}},detail);
+  assert.deepEqual(detail.data.document.lines,[]);
+  assert.deepEqual(detail.data.document.history,[['original event']]);
+  const invalid = response();
+  await handler({method:'POST',query:{id:'72&select=*'}},invalid);
+  assert.equal(invalid.code,400);
+  assert.equal(queries.length,2);
+});
+
 test('multiple addresses retain both fiscal fields, mobile phone and inactive history',()=>{
   const rows = [
     {id:1,id_customer:4,address1:'Vieja',phone:'111',dni:'RFC1',vat_number:'VAT1',active:1,date_upd:'2025-01-01'},
