@@ -135,6 +135,88 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // Depuración temporal: prueba varias variantes del XML del pedido contra
+  // el mismo carrito real, para aislar en una sola llamada qué campo causa
+  // el 500 en blanco de /api/orders (ver PR de esta función).
+  if (req.query.debugOrder) {
+    const results = [];
+    try {
+      const [customerData, currenciesData, languagesData] = await Promise.all([
+        psGet(`/api/customers/${POS_CUSTOMER_ID}`),
+        psGet('/api/currencies?filter[active]=1&display=[id,iso_code]&limit=0,20'),
+        psGet('/api/languages?filter[active]=1&display=[id,iso_code]&limit=0,20')
+      ]);
+      const customer = customerData.customer;
+      const secureKey = customer.secure_key;
+      const idLang = (Array.isArray(languagesData.languages) ? languagesData.languages : [languagesData.languages])
+        .filter(Boolean).find(l => l.iso_code === 'es')?.id || customer.id_lang || 1;
+      const idCurrency = (Array.isArray(currenciesData.currencies) ? currenciesData.currencies : [currenciesData.currencies])
+        .filter(Boolean).find(c => c.iso_code === 'MXN')?.id || 1;
+
+      const cartXml = `<?xml version="1.0" encoding="UTF-8"?>
+<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+  <cart>
+    <id_currency>${idCurrency}</id_currency>
+    <id_lang>${idLang}</id_lang>
+    <id_address_delivery>${POS_ADDRESS_ID}</id_address_delivery>
+    <id_address_invoice>${POS_ADDRESS_ID}</id_address_invoice>
+    <id_customer>${POS_CUSTOMER_ID}</id_customer>
+    <id_guest>0</id_guest>
+    <id_shop>${SHOP_ID}</id_shop>
+    <secure_key>${esc(secureKey)}</secure_key>
+    <associations>
+      <cart_rows>
+        <cart_row>
+          <id_product>84646</id_product>
+          <id_product_attribute>0</id_product_attribute>
+          <id_address_delivery>${POS_ADDRESS_ID}</id_address_delivery>
+          <quantity>1</quantity>
+        </cart_row>
+      </cart_rows>
+    </associations>
+  </cart>
+</prestashop>`;
+      let idCart;
+      try {
+        const cartResXml = await psWrite('POST', '/api/carts', cartXml);
+        idCart = xmlTagVal(cartResXml, 'id');
+        results.push({ step: 'cart', ok: true, idCart });
+      } catch (e) {
+        results.push({ step: 'cart', ok: false, detail: e.message });
+        res.status(200).json({ results }); return;
+      }
+
+      const base = {
+        id_address_delivery: POS_ADDRESS_ID, id_address_invoice: POS_ADDRESS_ID, id_cart: idCart,
+        id_currency: idCurrency, id_lang: idLang, id_customer: POS_CUSTOMER_ID, id_carrier: CARRIER_ID,
+        module: PAYMENT_MODULE, payment: 'Venta en sucursal', total_paid: '17.40', total_paid_real: '17.40',
+        total_products: '15.00', total_products_wt: '17.40', conversion_rate: '1.000000'
+      };
+      const variants = {
+        a_minimo_sin_extra: base,
+        b_con_current_state: { ...base, current_state: ORDER_STATE_PAID },
+        c_con_shop_y_secure_key: { ...base, current_state: ORDER_STATE_PAID, id_shop: SHOP_ID, secure_key: secureKey },
+        d_con_id_shop_group: { ...base, current_state: ORDER_STATE_PAID, id_shop: SHOP_ID, secure_key: secureKey, id_shop_group: 1 },
+        e_sin_current_state_con_valid: { ...base, id_shop: SHOP_ID, secure_key: secureKey, valid: 1 }
+      };
+      for (const [label, fields] of Object.entries(variants)) {
+        const body = Object.entries(fields).map(([k, v]) => `    <${k}>${esc(v)}</${k}>`).join('\n');
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">\n  <order>\n${body}\n  </order>\n</prestashop>`;
+        try {
+          const r = await psWrite('POST', '/api/orders', xml);
+          results.push({ variant: label, ok: true, idOrder: xmlTagVal(r, 'id') });
+          break; // ya encontramos una que funciona, no hace falta seguir creando pedidos de prueba
+        } catch (e) {
+          results.push({ variant: label, ok: false, detail: e.message.slice(0, 300) });
+        }
+      }
+    } catch (e) {
+      results.push({ step: 'fatal', detail: e.message });
+    }
+    res.status(200).json({ results });
+    return;
+  }
+
   const step = { name: 'inicio' };
   try {
     const almacenKey = BRANCH_TO_WAREHOUSE.hasOwnProperty(almacen) ? almacen : 'rumania';
