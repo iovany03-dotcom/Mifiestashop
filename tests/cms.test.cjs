@@ -97,6 +97,11 @@ test('storefront and CMS JavaScript compile',()=>{
   new vm.Script(fs.readFileSync(path.join(root,'assets/cms-promo-pricing.js'),'utf8'));
 });
 
+test('promo/paquete bundles never leak into the regular product catalog grid',()=>{
+  const cmsJs=fs.readFileSync(path.join(root,'assets/cms.js'),'utf8');
+  assert.match(cmsJs,/filter\(p=>!\/promo\|paquete\//);
+});
+
 test('promo pricing packages always price live from PrestaShop, never hardcoded',()=>{
   const productos=fs.readFileSync(path.join(root,'api/productos.js'),'utf8');
   assert.doesNotMatch(productos,/649|999|2,?799/);
