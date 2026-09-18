@@ -72,7 +72,15 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { p_admin_password, p_staff_email, p_staff_pin, folio, almacen, items, subtotal, iva, total } = body;
+  // JSON.stringify() omite las claves con valor undefined — si falta una de
+  // las 3 (p.ej. solo se manda p_staff_email/p_staff_pin, sin
+  // p_admin_password), PostgREST deja de encontrar la función RPC porque
+  // rpc_check_session no tiene default para ese parámetro. Normalizarlas a
+  // null asegura que las 3 siempre viajen.
+  const p_admin_password = body.p_admin_password ?? null;
+  const p_staff_email = body.p_staff_email ?? null;
+  const p_staff_pin = body.p_staff_pin ?? null;
+  const { folio, almacen, items, subtotal, iva, total } = body;
 
   if (!folio || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ ok: false, error: 'Faltan folio o items' });
@@ -83,7 +91,7 @@ module.exports = async function handler(req, res) {
   // es un endpoint público para crear pedidos arbitrarios en PrestaShop.
   let session = false;
   try { session = await sbRpcServer('rpc_check_session', { p_admin_password, p_staff_email, p_staff_pin }); }
-  catch (e) { res.status(401).json({ ok: false, error: 'unauthorized' }); return; }
+  catch (e) { res.status(401).json({ ok: false, error: 'unauthorized', detail: e.message }); return; }
   if (!session) { res.status(401).json({ ok: false, error: 'unauthorized' }); return; }
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
