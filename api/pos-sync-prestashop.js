@@ -195,8 +195,17 @@ module.exports = async function handler(req, res) {
     const idCart = xmlTagVal(cartResXml, 'id');
     if (!idCart) throw new Error('No se pudo leer id_cart de la respuesta de PrestaShop: ' + cartResXml.slice(0, 300));
 
-    // 2) Pedido referenciando ese carrito.
+    // 2) Pedido referenciando ese carrito, con sus líneas incluidas como
+    // asociación order_rows — confirmado contra el synopsis real de este
+    // servidor (?schema=synopsis) que esto va DENTRO del propio POST a
+    // /api/orders, no como POSTs separados a /api/order_details.
     step.name = 'crear_pedido';
+    const orderRows = items.map(it => `
+        <order_row>
+          <product_id>${esc(it.id)}</product_id>
+          <product_attribute_id>0</product_attribute_id>
+          <product_quantity>${esc(it.qty)}</product_quantity>
+        </order_row>`).join('');
     const orderXml = `<?xml version="1.0" encoding="UTF-8"?>
 <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
   <order>
@@ -222,39 +231,16 @@ module.exports = async function handler(req, res) {
     <id_employee>${idEmployee || ''}</id_employee>
     <secure_key>${esc(secureKey)}</secure_key>
     <valid>1</valid>
+    <associations>
+      <order_rows>${orderRows}
+      </order_rows>
+    </associations>
   </order>
 </prestashop>`;
     const orderResXml = await psWrite('POST', '/api/orders', orderXml);
     const idOrder = xmlTagVal(orderResXml, 'id');
     if (!idOrder) throw new Error('No se pudo leer id_order de la respuesta de PrestaShop: ' + orderResXml.slice(0, 300));
-
-    // 3) Líneas del pedido — /api/orders no las genera solo a partir del
-    // carrito asociado, así que se crean explícitas por producto.
-    step.name = 'crear_lineas';
     const lineErrors = [];
-    for (const it of items) {
-      const qty = Number(it.qty) || 0;
-      const unitPrice = Number(it.price) || 0;
-      const lineXml = `<?xml version="1.0" encoding="UTF-8"?>
-<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
-  <order_detail>
-    <id_order>${idOrder}</id_order>
-    <product_id>${esc(it.id)}</product_id>
-    <product_attribute_id>0</product_attribute_id>
-    <product_quantity>${qty}</product_quantity>
-    <product_name>${esc(it.name || `Producto #${it.id}`)}</product_name>
-    <product_price>${unitPrice.toFixed(2)}</product_price>
-    <unit_price_tax_incl>${unitPrice.toFixed(2)}</unit_price_tax_incl>
-    <unit_price_tax_excl>${unitPrice.toFixed(2)}</unit_price_tax_excl>
-    <total_price_tax_incl>${(unitPrice * qty).toFixed(2)}</total_price_tax_incl>
-    <total_price_tax_excl>${(unitPrice * qty).toFixed(2)}</total_price_tax_excl>
-    <id_warehouse>${idWarehouse}</id_warehouse>
-    <id_shop>${SHOP_ID}</id_shop>
-  </order_detail>
-</prestashop>`;
-      try { await psWrite('POST', '/api/order_details', lineXml); }
-      catch (e) { lineErrors.push(`producto ${it.id}: ${e.message}`); }
-    }
 
     // 4) Descuenta el stock real de PrestaShop para esa bodega — un pedido
     // creado por webservice no dispara el descuento automático que sí
