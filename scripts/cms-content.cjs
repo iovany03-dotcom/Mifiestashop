@@ -268,6 +268,10 @@ function modelFor(page, pages) {
   if (!heroImage && theme === 'batucada') heroImage = '/img/cms/0dede4bf5e127bbe.jpg';
   if (!heroImage && theme === 'mayoreo') heroImage = '/img/cms/83d47782163fe737.png';
   return {...page, theme, config, location, heroImage, benefits, reviews, content,
-    description, intro: config.intro || description, simple};
+    // The on-page hero paragraph is deliberately longer/richer than the meta
+    // description (config.intro): more body copy helps SEO, but a long meta
+    // description just gets truncated in search results — so they stay two
+    // separate fields instead of reusing the same short text for both.
+    description, intro: config.heroIntro || config.intro || description, simple};
 }
 module.exports = { modelFor, sanitize, esc, cityOf, STORES, locationLinks };
