@@ -123,6 +123,18 @@ module.exports = async function handler(req, res) {
     return m ? m[1] : null;
   }
 
+  // Introspección temporal de solo-lectura para depurar el POST a
+  // /api/orders (ver PR de esta función) — quitar una vez que la creación
+  // de pedidos quede funcionando de forma confiable.
+  if (req.query.introspect) {
+    try {
+      const r = await fetch(`${baseUrl}/api/${req.query.introspect}?schema=synopsis`, { headers });
+      const text = await r.text();
+      res.status(200).json({ status: r.status, xml: text.slice(0, 4000) });
+    } catch (e) { res.status(200).json({ error: e.message }); }
+    return;
+  }
+
   const step = { name: 'inicio' };
   try {
     const almacenKey = BRANCH_TO_WAREHOUSE.hasOwnProperty(almacen) ? almacen : 'rumania';
