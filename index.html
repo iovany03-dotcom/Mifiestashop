@@ -1953,7 +1953,6 @@
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:8px; color:#2e1065;">Método de pago *</label>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayEfectivo" onclick="setCheckoutPayMethod('Efectivo contra entrega')">💵 Efectivo contra entrega</button>
               <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTransferencia" onclick="setCheckoutPayMethod('Transferencia bancaria')">🏦 Transferencia</button>
               <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTarjeta" onclick="setCheckoutPayMethod('Mercado Pago')">💳 Tarjeta (Mercado Pago)</button>
             </div>
@@ -12385,7 +12384,6 @@ function setCheckoutPayStyle(el, active){
 
 function setCheckoutPayMethod(method){
   checkoutPayMethod = method;
-  setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), method === 'Efectivo contra entrega');
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), method === 'Transferencia bancaria');
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Mercado Pago');
 }
@@ -12602,7 +12600,6 @@ function goToStorefrontCheckout(){
   checkoutShippingCarrier = null;
   checkoutShippingOptions = [];
   checkoutSelectedShippingIndex = null;
-  setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), false);
   const errEl = document.getElementById('checkoutErrorMsg');
