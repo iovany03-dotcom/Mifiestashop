@@ -13,6 +13,13 @@ function assetUrl(src, page) {
 }
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[c]));
 const text = ($, node) => $(node).text().replace(/\s+/g, ' ').trim();
+const REVIEWS = [
+  {name:'Alejandro Chávez', quote:'Excelente lugar con todo lo que necesitas para tu fiesta, encontramos todo para nuestra boda. Además super amables, nos explicaron cómo funcionaba todo y nos ayudaron a personalizar nuestros vasos 10/10'},
+  {name:'Brenda Samperio', quote:'Un lugar muy completo para encontrar todo lo que necesites para tu fiesta. Me encantó! 🎉🎈Recomiendo este lugar de productos para fiesta, les doy un 10 de 10.'},
+  {name:'Marina DRZ', quote:'Excelente atención! Encontramos todo lo que buscábamos para nuestra fiesta. 10/10'},
+  {name:'Beto Méndez', quote:'Encontré todo lo que buscaba, y la verdad es que costaba mucho menos de lo que yo pensé. Tienen mucha variedad de artículos. Me agradó bastante.'},
+  {name:'Nereyda Ramírez', quote:'Necesitaba dos faldas hawaianas para mis niñas y en todos lados me querian vender la docena completa y con ellos si puede comprar solo dos piezas y mucho mas baratas. Gran atención y los productos bellísimos.'}
+];
 const cityOf = value => {
   const n = normalize(value);
   return /queretaro|\bqro\b|20\.577|4425967511/.test(n) ? 'queretaro'
@@ -209,14 +216,13 @@ function modelFor(page, pages) {
       benefits.push({ title, content: text($, $(el).next('p')) });
     }
   });
-  const reviews = [];
-  {
-    const sourceText = $.root().text().replace(/\s+/g,' ');
-    for (const pattern of [/(Excelente lugar[\s\S]*?)(Alej[a-zá]+ Ch[aá]vez)/i, /(Un lugar muy completo[\s\S]*?)(Brenda Samperio)/i, /(Excelente atenci[oó]n[\s\S]*?)(Marina DRZ)/i, /(Encontr[eé] todo lo que buscaba[\s\S]*?)(Beto M[eé]ndez)/i, /(Necesitaba dos faldas[\s\S]*?)(Nereyda Ram[ií]rez)/i]) {
-      const match = sourceText.match(pattern);
-      if (match) reviews.push({quote:match[1].trim(),name:match[2]});
-    }
-  }
+  // These 5 reviews are the same real quotes the original site reused across
+  // every page (confirmed: each page's scrape only ever preserved a partial,
+  // inconsistently-accented subset of the identical set) — using the fixed,
+  // correctly-accented set everywhere is more accurate than the per-page
+  // regex scrape, not less, and stops pages from randomly missing reviews
+  // just because their particular scrape happened to cut one off.
+  const reviews = /^(informacion|bicicletas|hogar|herramientas)$/.test(theme) ? [] : REVIEWS;
   let content = sanitize(page.sourceContent, page, pages, location);
   if (!simple && theme !== 'informacion') {
     const rich = cheerio.load(content, {}, false);
