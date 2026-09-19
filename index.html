@@ -4367,7 +4367,7 @@
       <div style="background:var(--plane); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:16px;">
         <h4 style="margin-top:0; margin-bottom:12px; font-size:13px; color:var(--series-2); text-transform:uppercase; letter-spacing:0.05em;">Matriz de Precios Especiales & Costo de Compra</h4>
         
-        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap:10px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; gap:10px;">
           <div>
             <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Precio Menudeo ($):</label>
             <input type="number" id="editProdPrice" step="0.50" min="0" required placeholder="10.00" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; font-weight:700;">
@@ -4375,6 +4375,10 @@
           <div>
             <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mayoreo ($):</label>
             <input type="number" id="editProdPriceMayoreo" step="0.50" min="0" placeholder="8.50" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+          </div>
+          <div>
+            <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mayoreo desde (uds):</label>
+            <input type="number" id="editProdPriceMayoreoUnidades" step="1" min="0" placeholder="3" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
           </div>
           <div>
             <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Volumen ($):</label>
@@ -8228,6 +8232,7 @@ function openEditProductModal(pId) {
   document.getElementById('editProdStatus').value = prod ? (prod.status || 'Activo') : 'Activo';
   document.getElementById('editProdPrice').value = prod ? prod.price : '25.00';
   if (document.getElementById('editProdPriceMayoreo')) document.getElementById('editProdPriceMayoreo').value = prod ? (prod.priceMayoreo || '') : '';
+  if (document.getElementById('editProdPriceMayoreoUnidades')) document.getElementById('editProdPriceMayoreoUnidades').value = prod ? (prod.priceMayoreoDesdeUnidades || '') : '';
   if (document.getElementById('editProdPriceVolumen')) document.getElementById('editProdPriceVolumen').value = prod ? (prod.priceVolumen || '') : '';
   if (document.getElementById('editProdPriceDistribuidor')) document.getElementById('editProdPriceDistribuidor').value = prod ? (prod.priceDistribuidor || '') : '';
   if (document.getElementById('editProdCosto')) document.getElementById('editProdCosto').value = prod ? (prod.costoCompra || '') : '';
@@ -8255,6 +8260,7 @@ function saveProductChanges() {
   const name = (document.getElementById('editProdName').value || '').trim();
   const price = parseFloat(document.getElementById('editProdPrice').value) || 0;
   const priceMayoreo = parseFloat(document.getElementById('editProdPriceMayoreo')?.value || 0);
+  const priceMayoreoDesdeUnidades = parseInt(document.getElementById('editProdPriceMayoreoUnidades')?.value || 0, 10);
   const priceVolumen = parseFloat(document.getElementById('editProdPriceVolumen')?.value || 0);
   const priceDistribuidor = parseFloat(document.getElementById('editProdPriceDistribuidor')?.value || 0);
   const costoCompra = parseFloat(document.getElementById('editProdCosto')?.value || 0);
@@ -8281,6 +8287,7 @@ function saveProductChanges() {
       targetProd.cat = cat.toLowerCase();
       targetProd.price = price;
       targetProd.priceMayoreo = priceMayoreo;
+      targetProd.priceMayoreoDesdeUnidades = priceMayoreoDesdeUnidades;
       targetProd.priceVolumen = priceVolumen;
       targetProd.priceDistribuidor = priceDistribuidor;
       targetProd.costoCompra = costoCompra;
@@ -8300,6 +8307,7 @@ function saveProductChanges() {
       catLabel: cat,
       price: price,
       priceMayoreo: priceMayoreo,
+      priceMayoreoDesdeUnidades: priceMayoreoDesdeUnidades,
       priceVolumen: priceVolumen,
       priceDistribuidor: priceDistribuidor,
       costoCompra: costoCompra,
@@ -8323,6 +8331,7 @@ function saveProductChanges() {
       p_nombre_generico: name,
       p_menudeo_precio: String(price),
       p_mayoreo_precio_2: priceMayoreo ? String(priceMayoreo) : null,
+      p_mayoreo_cantidad_piezas: priceMayoreoDesdeUnidades ? String(priceMayoreoDesdeUnidades) : null,
       p_volumen_precio_3: priceVolumen ? String(priceVolumen) : null,
       p_distribuidor_precio: priceDistribuidor ? String(priceDistribuidor) : null,
       p_precio_compra_actualizado: costoCompra ? String(costoCompra) : null,
