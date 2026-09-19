@@ -66,6 +66,15 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  if (req.query.mode === 'inspectMovements') {
+    try {
+      const synopsis = await fetch(`${baseUrl}/api/stock_movements?schema=synopsis`, { headers });
+      const synText = await synopsis.text();
+      res.status(200).json({ synopsis: synText.slice(0, 3000) });
+    } catch (e) { res.status(200).json({ error: e.message }); }
+    return;
+  }
+
   const results = [];
   for (const pid of PRODUCT_IDS) {
     try {
