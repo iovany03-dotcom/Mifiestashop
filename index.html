@@ -1953,7 +1953,6 @@
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:8px; color:#2e1065;">Método de pago *</label>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayEfectivo" onclick="setCheckoutPayMethod('Efectivo contra entrega')">💵 Efectivo contra entrega</button>
               <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTransferencia" onclick="setCheckoutPayMethod('Transferencia bancaria')">🏦 Transferencia</button>
               <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTarjeta" onclick="setCheckoutPayMethod('Mercado Pago')">💳 Tarjeta (Mercado Pago)</button>
             </div>
@@ -2676,16 +2675,16 @@
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
           <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-            <button class="btn small primary" id="btnToggleCaja" onclick="onToggleCajaClick()">Abrir Caja</button>
-            <button class="btn small" onclick="openSalidasCajaModal()">Salidas de Caja</button>
-            <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
-            <button class="btn small" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
+            <button class="btn small primary" id="btnToggleCaja" data-view="caja-cerrar" onclick="onToggleCajaClick()">Abrir Caja</button>
+            <button class="btn small" data-view="caja-salidas" onclick="openSalidasCajaModal()">Salidas de Caja</button>
+            <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+            <button class="btn small" data-view="caja-historial-cierres" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
           </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
             <select id="posWarehouseSelect">
-              <option value="puebla">Bodega Principal (Puebla)</option>
-              <option value="rumania">CDMX Rumania</option>
+              <option value="rumania">Bodega Principal (Rumania)</option>
+              <option value="puebla">Puebla</option>
               <option value="queretaro">Querétaro</option>
               <option value="atizapan">Atizapán</option>
             </select>
@@ -2710,7 +2709,7 @@
           <div class="cart-header">
             <h3>Orden de Venta</h3>
             <div style="display:flex; gap:6px;">
-              <button class="btn small" onclick="openTicketHistorialModal()">Historial de Tickets</button>
+              <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
               <button class="btn small" onclick="clearCart()">Vaciar</button>
             </div>
           </div>
@@ -2821,6 +2820,16 @@
 
     <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
     <section id="view-dashboard" class="view-panel hidden">
+      <div class="card hidden" id="negativeStockWarningCard" style="border:1px solid #fecaca; background:#fef2f2;">
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <div style="font-size:22px; line-height:1;">⚠️</div>
+          <div style="flex:1; min-width:0;">
+            <h3 style="margin:0 0 6px; color:#991b1b; font-size:15px;">Productos con existencia en negativo</h3>
+            <p style="margin:0 0 8px; font-size:13px; color:#7f1d1d;">Se siguen vendiendo (no se ocultan del POS), pero conviene revisar el conteo real cuanto antes.</p>
+            <div id="negativeStockWarningList" style="font-size:12.5px; color:#7f1d1d; line-height:1.7;"></div>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
@@ -3265,7 +3274,10 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h2>Listado de Pedidos y Ventas POS</h2>
-          <button class="btn primary" onclick="switchView('pos')">+ Nueva Venta POS</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" onclick="openCrearPedidoModal()">+ Crear Pedido</button>
+            <button class="btn primary" onclick="switchView('pos')">+ Nueva Venta POS</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -3284,14 +3296,14 @@
     <section id="view-bodegas" class="view-panel hidden">
       <div class="kpis">
         <div class="kpi-card">
-          <div class="label">Bodega Principal (Puebla)</div>
-          <div class="value">546,866 u.</div>
-          <div class="sub">1,262 SKUs activos (193 agotados)</div>
-        </div>
-        <div class="kpi-card">
-          <div class="label">CDMX Rumania</div>
+          <div class="label">Bodega Principal (Rumania)</div>
           <div class="value">720,999 u.</div>
           <div class="sub">2,050 SKUs activos</div>
+        </div>
+        <div class="kpi-card">
+          <div class="label">Puebla</div>
+          <div class="value">546,866 u.</div>
+          <div class="sub">1,262 SKUs activos (193 agotados)</div>
         </div>
         <div class="kpi-card">
           <div class="label">Querétaro</div>
@@ -3749,7 +3761,7 @@
           <h3>Vista Previa del Ticket Impreso</h3>
           <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
             <div class="ticket-brand-bar"></div>
-            <img class="ticket-logo" src="https://mifiestashop.com/img/cms/5/0/mi-fiesta-shop-venta-de-articulos-para-fiesta-ciudad-de-mexico-01.webp" alt="Mi Fiestashop">
+            <img class="ticket-icon" src="img/logo-antifaz.png" alt="Mi Fiestashop">
             <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
             <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
             <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
@@ -4299,6 +4311,7 @@
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">PIN de acceso:</label>
         <input type="password" id="staffLoginPin" inputmode="numeric" maxlength="6" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; margin-bottom:12px;">
         <button type="button" class="btn primary" style="width:100%; justify-content:center;" onclick="handleStaffLogin()">Entrar como Personal</button>
+        <p style="font-size:12px; color:var(--text-muted); margin-top:10px; margin-bottom:0;">¿Tienes correo y contraseña configurados? Úsalos directamente arriba, en el formulario principal.</p>
       </div>
     </div>
   </div>
@@ -4700,6 +4713,137 @@
   </div>
 </div>
 
+<!-- ================= CREAR PEDIDO MODAL ================= -->
+<div class="modal-overlay hidden" id="crearPedidoModal">
+  <div class="modal" style="max-width: 820px;">
+    <div class="modal-header">
+      <h2>Crear Pedido</h2>
+      <button class="btn small" onclick="closeCrearPedidoModal()">✕</button>
+    </div>
+
+    <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
+      Registra un pedido manual (por teléfono, WhatsApp, etc.). Se guarda en este sistema junto con los pedidos de la tienda en línea y del POS.
+    </p>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Cliente:</label>
+        <input type="text" id="cpCliente" list="cpClienteList" placeholder="Nombre del cliente" oninput="cpAutofillCliente()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <datalist id="cpClienteList"></datalist>
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Correo:</label>
+        <input type="email" id="cpCorreo" placeholder="correo@ejemplo.com" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Teléfono:</label>
+        <input type="text" id="cpTelefono" placeholder="10 dígitos" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Bodega:</label>
+        <select id="cpBodega" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+          <option value="rumania">Bodega Principal (Rumania)</option>
+          <option value="puebla">Puebla</option>
+          <option value="queretaro">Querétaro</option>
+          <option value="atizapan">Atizapán</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Fecha de entrega (opcional):</label>
+        <input type="date" id="cpFechaEntrega" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Añadir producto:</label>
+      <div style="position:relative;">
+        <input type="text" id="cpProductSearch" placeholder="Buscar por nombre o SKU…" autocomplete="off" oninput="cpRenderProductResults()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <div id="cpProductResults" class="hidden" style="position:absolute; z-index:20; top:100%; left:0; right:0; max-height:260px; overflow-y:auto; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; margin-top:4px; box-shadow:0 8px 20px rgba(0,0,0,0.15);"></div>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:14px;">
+      <table>
+        <thead>
+          <tr><th>Producto</th><th style="text-align:center;">Cantidad</th><th style="text-align:right;">Precio/u</th><th style="text-align:right;">Total</th><th></th></tr>
+        </thead>
+        <tbody id="cpItemsTableBody">
+          <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:16px;">Sin productos agregados.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Descuento (monto en $, opcional):</label>
+        <input type="number" id="cpDescuento" min="0" step="0.01" value="0" oninput="cpRenderSummary()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Costo de envío ($):</label>
+        <input type="number" id="cpEnvioCosto" min="0" step="0.01" value="0" oninput="cpRenderSummary()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Transportadora:</label>
+        <select id="cpTransportadora" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+          <option value="Recolección en tienda">Recolección en tienda</option>
+          <option value="Estafeta">Estafeta</option>
+          <option value="FedEx">FedEx</option>
+          <option value="DHL">DHL</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Método de pago:</label>
+        <select id="cpMetodoPago" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+          <option value="Pendiente de pago">Pendiente de pago</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="Transferencia">Transferencia</option>
+          <option value="Tarjeta">Tarjeta</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Dirección de envío (opcional):</label>
+      <textarea id="cpDireccionEnvio" rows="2" placeholder="Calle, número, colonia, ciudad, estado, CP" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; resize:vertical;"></textarea>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-size:13px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" id="cpMismaDireccionFacturacion" checked onchange="document.getElementById('cpDireccionFacturacionWrap').classList.toggle('hidden', this.checked)">
+        Usar la misma dirección para facturación
+      </label>
+      <div id="cpDireccionFacturacionWrap" class="hidden" style="margin-top:8px;">
+        <textarea id="cpDireccionFacturacion" rows="2" placeholder="Dirección de facturación" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; resize:vertical;"></textarea>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Nota de pedido:</label>
+      <textarea id="cpNota" rows="2" placeholder="Observaciones especiales para el despacho o facturación…" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; resize:vertical;"></textarea>
+    </div>
+
+    <div style="background:var(--plane); border-radius:10px; padding:14px; margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span>Subtotal productos:</span><b id="cpSumSubtotal">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span>Descuento:</span><b id="cpSumDescuento" style="color:#dc2626;">-$0.00</b></div>
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;"><span>Envío:</span><b id="cpSumEnvio">$0.00</b></div>
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:10px;">
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="checkbox" id="cpAplicarIva" checked onchange="cpRenderSummary()"> IVA (16%):</label>
+        <b id="cpSumIva">$0.00</b>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:1.1rem; font-weight:800; padding-top:8px; border-top:1px solid var(--border);"><span>Total:</span><span id="cpSumTotal" style="color:var(--series-2);">$0.00</span></div>
+    </div>
+
+    <button type="button" class="btn primary" style="width:100%; padding:12px; font-size:15px; font-weight:700; justify-content:center;" onclick="confirmCrearPedido()">Crear Pedido</button>
+  </div>
+</div>
+
 <!-- ================= CHECKOUT MODAL ================= -->
 <div class="modal-overlay hidden" id="checkoutModal">
   <div class="modal">
@@ -5011,6 +5155,16 @@
       </div>
     </div>
 
+    <div id="personalPasswordBlock" class="hidden" style="margin-bottom:18px; padding:12px; border:1px solid var(--border); border-radius:10px;">
+      <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Contraseña de acceso (opcional, alternativa al PIN):</label>
+      <p style="font-size:11.5px; color:var(--text-secondary); margin:0 0 8px;">Con esta contraseña, la persona también puede entrar con su correo en vez del PIN. Déjalo en blanco si no quieres cambiarla.</p>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <input type="password" id="personalPassword" placeholder="Mínimo 6 caracteres" autocomplete="new-password" style="flex:1; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+        <button type="button" class="btn small primary" onclick="savePersonalPassword()">Guardar contraseña</button>
+      </div>
+      <p id="personalPasswordStatus" style="font-size:12px; margin:8px 0 0;"></p>
+    </div>
+
     <div style="margin-bottom:8px; font-size:13px; font-weight:700; color:var(--text-primary);">Permisos de acceso al Backoffice:</div>
     <p style="font-size:12px; color:var(--text-secondary); margin-top:0; margin-bottom:10px;">Marca únicamente las secciones del panel que esta persona podrá ver y usar.</p>
     <div id="personalPermisosContainer" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:18px;"></div>
@@ -5301,7 +5455,10 @@ async function sbRpc(fnName, params){
     const text = await r.text().catch(() => '');
     throw new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
   }
-  return r.json();
+  // Functions that RETURN void (every rpc_*_delete) send back an empty body —
+  // r.json() throws on that, which made a successful delete look like a failure.
+  const text = await r.text();
+  return text ? JSON.parse(text) : null;
 }
 
 // Contraseña de administrador / de edición de la sesión actual, guardadas
@@ -5351,6 +5508,17 @@ const PERMISSION_GROUPS = [
     { key: 'facturacion', label: 'Facturación' },
     { key: 'costos', label: 'Costos y Gastos' },
     { key: 'carritos', label: 'Carritos de Compra' }
+  ]},
+  { group: 'Caja (dentro de Sistema POS)', items: [
+    { key: 'caja-puebla', label: 'Acceso a caja: Puebla' },
+    { key: 'caja-rumania', label: 'Acceso a caja: CDMX Rumania' },
+    { key: 'caja-queretaro', label: 'Acceso a caja: Querétaro' },
+    { key: 'caja-atizapan', label: 'Acceso a caja: Atizapán' },
+    { key: 'caja-cancelar-ventas', label: 'Cancelar ventas' },
+    { key: 'caja-salidas', label: 'Ingresar salidas de caja' },
+    { key: 'caja-cerrar', label: 'Abrir / cerrar caja' },
+    { key: 'caja-historial-tickets', label: 'Ver historial de caja (tickets)' },
+    { key: 'caja-historial-cierres', label: 'Ver historial de cierres' }
   ]},
   { group: 'Catálogo & Stock', items: [
     { key: 'productos', label: 'Productos' },
@@ -5416,6 +5584,26 @@ function applyStaffPermissionsUI() {
     const allowed = !restricted || hasPermission(view);
     el.classList.toggle('perm-hidden', !allowed);
   });
+
+  // Which cash registers (bodegas) this person can operate in the POS. Only
+  // restrict once at least one caja-* permission is explicitly set for them —
+  // staff configured before this existed have none of these keys, and should
+  // keep seeing every branch instead of suddenly losing access to all of them.
+  const BRANCH_PERMS = { puebla: 'caja-puebla', rumania: 'caja-rumania', queretaro: 'caja-queretaro', atizapan: 'caja-atizapan' };
+  const warehouseSelect = document.getElementById('posWarehouseSelect');
+  if (warehouseSelect) {
+    const perms = (restricted && currentStaffSession.permisos) || [];
+    const hasAnyBranchPerm = Object.values(BRANCH_PERMS).some(k => perms.includes(k));
+    Array.from(warehouseSelect.options).forEach(opt => {
+      const allowed = !restricted || !hasAnyBranchPerm || perms.includes(BRANCH_PERMS[opt.value]);
+      opt.hidden = !allowed;
+      opt.disabled = !allowed;
+    });
+    if (warehouseSelect.selectedOptions[0]?.disabled) {
+      const firstAllowed = Array.from(warehouseSelect.options).find(o => !o.disabled);
+      if (firstAllowed) warehouseSelect.value = firstAllowed.value;
+    }
+  }
 
   document.querySelectorAll('.menu-item .submenu').forEach(sub => {
     const links = Array.from(sub.querySelectorAll('.submenu-link'));
@@ -5686,6 +5874,11 @@ function openPersonalModal(id) {
   document.getElementById('personalEstado').value = person ? person.estado : 'Activo';
   container.innerHTML = buildPermisosCheckboxesHTML(person ? person.permisos : ['dashboard', 'pos']);
 
+  const passwordBlock = document.getElementById('personalPasswordBlock');
+  document.getElementById('personalPassword').value = '';
+  document.getElementById('personalPasswordStatus').textContent = '';
+  if (passwordBlock) passwordBlock.classList.toggle('hidden', !person);
+
   modal.classList.remove('hidden');
 }
 
@@ -5725,6 +5918,26 @@ async function savePersonal() {
     await loadPersonalFromAPI();
   } catch (e) {
     alert('No se pudo guardar el registro. Verifica que el correo no esté ya registrado.');
+  }
+}
+
+async function savePersonalPassword() {
+  const id = document.getElementById('personalEditId').value;
+  const password = document.getElementById('personalPassword').value;
+  const statusEl = document.getElementById('personalPasswordStatus');
+  if (!id) return;
+  if (password.length < 6) {
+    if (statusEl) { statusEl.textContent = 'La contraseña debe tener al menos 6 caracteres.'; statusEl.style.color = '#ef4444'; }
+    return;
+  }
+  const adminPw = getAdminPassword();
+  if (!adminPw) { alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión.'); return; }
+  try {
+    await sbRpc('rpc_staff_set_password', { p_admin_password: adminPw, p_id: parseInt(id, 10), p_password: password });
+    document.getElementById('personalPassword').value = '';
+    if (statusEl) { statusEl.textContent = 'Contraseña guardada. Ya puede entrar con correo y contraseña.'; statusEl.style.color = 'var(--series-2)'; }
+  } catch (e) {
+    if (statusEl) { statusEl.textContent = 'No se pudo guardar la contraseña.'; statusEl.style.color = '#ef4444'; }
   }
 }
 
@@ -6362,6 +6575,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
+  if (viewName === 'dashboard') checkNegativeStockWarning();
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
@@ -6409,12 +6623,29 @@ function renderProducts(category = 'all', query = '') {
   });
 }
 
+// El precio de mayoreo real de PrestaShop (priceMayoreo/priceMayoreoDesdeUnidades,
+// ver api/productos.js) viaja en cada producto pero nadie lo aplicaba al
+// carrito: item.price se quedaba fijo en el precio de menudeo sin importar
+// la cantidad. basePrice guarda el precio de menudeo original para poder
+// volver a él si la cantidad baja otra vez del umbral de mayoreo.
+function applyWholesalePricing(item) {
+  if (!Number.isFinite(item.basePrice)) item.basePrice = item.price;
+  const threshold = item.priceMayoreoDesdeUnidades;
+  const wholesalePrice = item.priceMayoreo;
+  item.price = (threshold > 0 && Number.isFinite(wholesalePrice) && wholesalePrice > 0 && item.qty >= threshold)
+    ? wholesalePrice
+    : item.basePrice;
+}
+
 function addToCart(product) {
   const existing = cart.find(item => item.id === product.id);
   if (existing) {
     existing.qty++;
+    applyWholesalePricing(existing);
   } else {
-    cart.push({ ...product, qty: 1 });
+    const item = { ...product, qty: 1, basePrice: product.price };
+    applyWholesalePricing(item);
+    cart.push(item);
   }
   updateCartUI();
 }
@@ -6424,6 +6655,7 @@ function updateCartQty(id, delta) {
   if (item) {
     item.qty += delta;
     if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    else applyWholesalePricing(item);
   }
   updateCartUI();
 }
@@ -6613,14 +6845,45 @@ function confirmPOSSale() {
       id_product: item.id, almacen: almacenKey, qty: -Math.abs(item.qty),
       motivo: 'venta_pos', folio, registrado_por: nombreSesionActual()
     }));
+    // El carrito ya se vacía (clearCart(), más abajo) antes de que esta
+    // promesa resuelva — se guarda una copia mínima aparte para poder
+    // avisar por nombre qué producto quedó en 0/negativo.
+    const itemsForStockCheck = cart.map(item => ({ id: item.id, name: item.name }));
     sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves }).then(() => {
       moves.forEach(m => {
         const key = `${m.id_product}|${m.almacen}`;
         stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
       });
       renderInventarioTable();
+
+      // Ya no se le oculta al cajero un producto sin existencia (puede
+      // seguir vendiéndolo si físicamente lo tiene en mano), pero si la
+      // venta lo deja en 0 o negativo debe quedar avisado, no en silencio.
+      const negativeItems = itemsForStockCheck.filter(item => getStockFor(item.id, almacenKey) <= 0);
+      if (negativeItems.length > 0) {
+        const names = negativeItems.map(i => `${i.name} (${getStockFor(i.id, almacenKey)})`).slice(0, 3).join(', ');
+        const extra = negativeItems.length > 3 ? ` y ${negativeItems.length - 3} más` : '';
+        notifyEvent('negativeStock', 'Existencia en negativo', `${WAREHOUSE_LABELS[almacenKey] || almacenKey}: ${names}${extra} tras esta venta.`);
+      }
     }).catch(() => {});
   }
+
+  // Crea el pedido real en PrestaShop (y descuenta su propio stock) para
+  // que la venta del POS también quede reflejada ahí, no solo en el ledger
+  // de Supabase. Best-effort y no bloqueante: el ticket ya se imprimió y el
+  // inventario de este sistema ya se descontó arriba pase lo que pase aquí;
+  // si falla, queda marcado en pos_tickets.ps_sync_status para revisarlo
+  // (ver api/pos-sync-prestashop.js).
+  fetch('/api/pos-sync-prestashop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...getSessionCredsParams(),
+      folio, almacen: almacenKey,
+      items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
+      subtotal, iva, total, paymentMethod: selectedPayMethod
+    })
+  }).catch(() => {});
 
   clearCart();
 }
@@ -9122,18 +9385,17 @@ function renderProducts(category = 'all', query = '') {
     return matchCat && matchQ;
   });
 
-  const matched = filterByStock
-    ? matchedByFilters.filter(p => getStockFor(p.id, whKey) > 0)
-    : matchedByFilters;
+  // Ya no se ocultan los productos sin existencia (o en negativo) — el
+  // cajero sigue pudiendo venderlos si físicamente hay pieza en mano; solo
+  // se marca en rojo como advertencia (ver notifyEvent('negativeStock', ...)
+  // en confirmPOSSale, que además avisa cuando esto realmente pasa).
+  const matched = matchedByFilters;
 
   const limit = isBrowsingAll ? POS_BROWSE_LIMIT : POS_SEARCH_LIMIT;
   const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
-    const msg = filterByStock && matchedByFilters.length > 0
-      ? 'No hay productos con existencia en esta sucursal.'
-      : 'No se encontraron productos en esta categoría.';
-    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">${msg}</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>`;
     return;
   }
 
@@ -9141,7 +9403,9 @@ function renderProducts(category = 'all', query = '') {
     const card = document.createElement('div');
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
-    const stockLabel = filterByStock ? `En stock (${getStockFor(p.id, whKey)})` : 'En stock';
+    const stockQty = filterByStock ? getStockFor(p.id, whKey) : null;
+    const stockLabel = stockQty === null ? 'En stock' : (stockQty > 0 ? `En stock (${stockQty})` : `Sin existencia (${stockQty})`);
+    const stockStyle = stockQty !== null && stockQty <= 0 ? ' style="color:#dc2626; font-weight:700;"' : '';
     card.innerHTML = `
       <img src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
@@ -9150,7 +9414,7 @@ function renderProducts(category = 'all', query = '') {
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
-        <div class="p-stock">${stockLabel}</div>
+        <div class="p-stock"${stockStyle}>${stockLabel}</div>
       </div>
     `;
     grid.appendChild(card);
@@ -9432,6 +9696,22 @@ async function loadOrdersFromAPI(){
     // lo que ya trajo PrestaShop, igual que antes.
   }
 
+  // Los pedidos del checkout público y los creados a mano desde "+ Crear
+  // Pedido" viven en pedidos_online, no en PrestaShop — sin esto, un pedido
+  // real hecho en la tienda pública (o creado manualmente aquí) nunca
+  // aparecía en este listado, aunque sí se hubiera guardado correctamente.
+  try {
+    const r = await fetch('/api/pedidos-online');
+    if (r.ok) {
+      const data = await r.json();
+      if (Array.isArray(data.orders) && data.orders.length > 0) {
+        list = data.orders.concat(list).sort((a, b) => (b._sortDate || 0) - (a._sortDate || 0));
+      }
+    }
+  } catch (e) {
+    // Igual que arriba: si falla, se sigue mostrando lo demás.
+  }
+
   loadedOrdersList = list;
 
   // Nota: las ventas reales por producto ya NO se sacan de aquí (esta lista de pedidos
@@ -9564,7 +9844,208 @@ function openOrderDetailModal(id){
         renderOdProductRows(null);
       });
   } else {
-    document.getElementById('odClientEmail').textContent = 'No disponible';
+    document.getElementById('odClientEmail').textContent = order.customerEmail || 'No disponible';
+  }
+}
+
+// ================= CREAR PEDIDO (manual, admin) =================
+let cpItems = [];
+
+async function openCrearPedidoModal(){
+  cpItems = [];
+  document.getElementById('cpCliente').value = '';
+  document.getElementById('cpCorreo').value = '';
+  document.getElementById('cpTelefono').value = '';
+  document.getElementById('cpBodega').value = 'rumania';
+  document.getElementById('cpFechaEntrega').value = '';
+  document.getElementById('cpProductSearch').value = '';
+  document.getElementById('cpDescuento').value = 0;
+  document.getElementById('cpEnvioCosto').value = 0;
+  document.getElementById('cpTransportadora').value = 'Recolección en tienda';
+  document.getElementById('cpMetodoPago').value = 'Pendiente de pago';
+  document.getElementById('cpDireccionEnvio').value = '';
+  document.getElementById('cpDireccionFacturacion').value = '';
+  document.getElementById('cpMismaDireccionFacturacion').checked = true;
+  document.getElementById('cpDireccionFacturacionWrap').classList.add('hidden');
+  document.getElementById('cpNota').value = '';
+  document.getElementById('cpAplicarIva').checked = true;
+  cpRenderItemsTable();
+  cpRenderSummary();
+  document.getElementById('cpProductResults').classList.add('hidden');
+
+  if (customersCache.length === 0) { try { await loadCustomersFromAPI(); } catch (e) {} }
+  const datalist = document.getElementById('cpClienteList');
+  if (datalist) datalist.innerHTML = customersCache.slice(0, 500).map(c => `<option value="${escapeHtml(c.name)}">`).join('');
+
+  document.getElementById('crearPedidoModal').classList.remove('hidden');
+}
+
+function closeCrearPedidoModal(){
+  document.getElementById('crearPedidoModal').classList.add('hidden');
+}
+
+function cpAutofillCliente(){
+  const name = document.getElementById('cpCliente').value.trim();
+  const match = customersCache.find(c => c.name === name);
+  if (match) {
+    document.getElementById('cpCorreo').value = match.email || '';
+    if (match.phone && match.phone !== '—') document.getElementById('cpTelefono').value = match.phone;
+  }
+}
+
+function cpRenderProductResults(){
+  const box = document.getElementById('cpProductResults');
+  const q = document.getElementById('cpProductSearch').value.trim().toLowerCase();
+  if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const matched = dataset.filter(p => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))).slice(0, 15);
+
+  if (matched.length === 0) {
+    box.innerHTML = `<div style="padding:10px 12px; color:var(--text-muted); font-size:13px;">Sin resultados.</div>`;
+    box.classList.remove('hidden');
+    return;
+  }
+
+  box.innerHTML = matched.map(p => `
+    <div style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; gap:10px;" onmouseover="this.style.background='var(--plane)'" onmouseout="this.style.background=''" onclick="cpAddProduct(${p.id})">
+      <span style="font-size:13px;">${escapeHtml(p.name)}</span>
+      <span style="font-size:13px; font-weight:700; white-space:nowrap;">${fmtMoney(p.price)}</span>
+    </div>
+  `).join('');
+  box.classList.remove('hidden');
+}
+
+function cpAddProduct(id){
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const product = dataset.find(p => p.id === id);
+  if (!product) return;
+
+  const existing = cpItems.find(i => i.id === id);
+  if (existing) {
+    existing.qty++;
+    applyWholesalePricing(existing);
+  } else {
+    const item = { ...product, qty: 1, basePrice: product.price };
+    applyWholesalePricing(item);
+    cpItems.push(item);
+  }
+
+  document.getElementById('cpProductSearch').value = '';
+  document.getElementById('cpProductResults').classList.add('hidden');
+  cpRenderItemsTable();
+  cpRenderSummary();
+}
+
+function cpUpdateQty(id, delta){
+  const item = cpItems.find(i => i.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) cpItems = cpItems.filter(i => i.id !== id);
+  else applyWholesalePricing(item);
+  cpRenderItemsTable();
+  cpRenderSummary();
+}
+
+function cpRemoveItem(id){
+  cpItems = cpItems.filter(i => i.id !== id);
+  cpRenderItemsTable();
+  cpRenderSummary();
+}
+
+function cpRenderItemsTable(){
+  const tbody = document.getElementById('cpItemsTableBody');
+  if (cpItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:16px;">Sin productos agregados.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = cpItems.map(item => `
+    <tr>
+      <td>${escapeHtml(item.name)}${item.sku ? `<br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(item.sku)}</span>` : ''}</td>
+      <td style="text-align:center;">
+        <button class="ci-btn" onclick="cpUpdateQty(${item.id}, -1)">-</button>
+        <span style="font-weight:600; margin:0 8px;">${item.qty}</span>
+        <button class="ci-btn" onclick="cpUpdateQty(${item.id}, 1)">+</button>
+      </td>
+      <td style="text-align:right;">${fmtMoney(item.price)}</td>
+      <td style="text-align:right; font-weight:700;">${fmtMoney(item.price * item.qty)}</td>
+      <td style="text-align:center;"><button class="btn small" onclick="cpRemoveItem(${item.id})">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function cpGetSummary(){
+  const subtotal = cpItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const descuento = Math.min(parseFloat(document.getElementById('cpDescuento')?.value || 0) || 0, subtotal);
+  const envio = parseFloat(document.getElementById('cpEnvioCosto')?.value || 0) || 0;
+  const aplicaIva = document.getElementById('cpAplicarIva')?.checked;
+  const iva = aplicaIva ? (subtotal - descuento) * 0.16 : 0;
+  const total = subtotal - descuento + envio + iva;
+  return { subtotal, descuento, envio, iva, total };
+}
+
+function cpRenderSummary(){
+  const { subtotal, descuento, envio, iva, total } = cpGetSummary();
+  document.getElementById('cpSumSubtotal').textContent = fmtMoney(subtotal);
+  document.getElementById('cpSumDescuento').textContent = '-' + fmtMoney(descuento);
+  document.getElementById('cpSumEnvio').textContent = fmtMoney(envio);
+  document.getElementById('cpSumIva').textContent = fmtMoney(iva);
+  document.getElementById('cpSumTotal').textContent = fmtMoney(total);
+}
+
+async function confirmCrearPedido(){
+  const nombre = document.getElementById('cpCliente').value.trim();
+  if (!nombre) return alert('Escribe el nombre del cliente.');
+  if (cpItems.length === 0) return alert('Agrega al menos un producto.');
+
+  const { subtotal, descuento, envio, total } = cpGetSummary();
+  const mismaDireccion = document.getElementById('cpMismaDireccionFacturacion').checked;
+  const direccionEnvio = document.getElementById('cpDireccionEnvio').value.trim();
+
+  const folio = 'MAN-' + Date.now().toString().slice(-6);
+  const payload = {
+    folio,
+    customer_name: nombre,
+    customer_email: document.getElementById('cpCorreo').value.trim() || null,
+    customer_phone: document.getElementById('cpTelefono').value.trim() || null,
+    shipping_address: direccionEnvio || null,
+    billing_address: mismaDireccion ? direccionEnvio || null : (document.getElementById('cpDireccionFacturacion').value.trim() || null),
+    bodega: document.getElementById('cpBodega').value,
+    delivery_date: document.getElementById('cpFechaEntrega').value || null,
+    nota: document.getElementById('cpNota').value.trim() || null,
+    payment_method: document.getElementById('cpMetodoPago').value,
+    shipping_carrier: document.getElementById('cpTransportadora').value,
+    shipping_cost: envio,
+    items: cpItems.map(i => ({ id: i.id, name: i.name, sku: i.sku || '', price: i.price, qty: i.qty })),
+    subtotal,
+    discount_amount: descuento || null,
+    total,
+    status: 'Pendiente',
+    created_by: (currentStaffSession && currentStaffSession.nombre) || 'Admin',
+    source: 'manual'
+  };
+
+  try {
+    // No se usa sbInsert() aquí: esa función pide "return=representation"
+    // (PostgREST intenta devolver la fila insertada), pero pedidos_online no
+    // tiene política de SELECT para la llave anon (solo INSERT) — sin fila
+    // que devolver, Postgres puede fallar el RETURNING de la propia
+    // sentencia de INSERT y perder el pedido completo. api/crear-pedido.js
+    // ya resolvió esto mismo con "return=minimal", que no intenta leer nada.
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json', Prefer: 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error(`POST pedidos_online -> ${r.status}`);
+    closeCrearPedidoModal();
+    alert(`Pedido ${folio} creado correctamente.`);
+    loadOrdersFromAPI();
+  } catch (e) {
+    alert('No se pudo crear el pedido: ' + e.message);
   }
 }
 
@@ -9725,6 +10206,43 @@ function checkLowStockNotifications() {
   notifyEvent('lowStock', 'Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
 }
 
+// Los productos con existencia en 0/negativo ya no se ocultan del POS (el
+// cajero puede seguir vendiéndolos si físicamente los tiene en mano) — esto
+// mantiene la advertencia visible en el Dashboard en su lugar, por
+// sucursal, y avisa una vez por sesión (igual que checkLowStockNotifications).
+function checkNegativeStockWarning() {
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const branches = ['puebla', 'rumania', 'queretaro'];
+  const negativeEntries = [];
+  dataset.forEach((p, index) => {
+    const pId = p.id || index + 1;
+    branches.forEach(wh => {
+      const qty = getStockFor(pId, wh);
+      if (qty < 0) negativeEntries.push({ name: p.name, branch: WAREHOUSE_LABELS[wh] || wh, qty });
+    });
+  });
+
+  const card = document.getElementById('negativeStockWarningCard');
+  const list = document.getElementById('negativeStockWarningList');
+  if (card && list) {
+    if (negativeEntries.length === 0) {
+      card.classList.add('hidden');
+    } else {
+      card.classList.remove('hidden');
+      list.innerHTML = negativeEntries.slice(0, 12).map(e =>
+        `${escapeHtml(e.name)} — ${escapeHtml(e.branch)}: <b>${e.qty}</b>`
+      ).join('<br>') + (negativeEntries.length > 12 ? `<br>y ${negativeEntries.length - 12} más…` : '');
+    }
+  }
+
+  if (negativeEntries.length > 0 && sessionStorage.getItem('mf_negstock_notified') !== 'true') {
+    sessionStorage.setItem('mf_negstock_notified', 'true');
+    const preview = negativeEntries.slice(0, 3).map(e => `${e.name} (${e.branch})`).join(', ');
+    const extra = negativeEntries.length > 3 ? ` y ${negativeEntries.length - 3} más` : '';
+    notifyEvent('negativeStock', 'Existencia en negativo', `${negativeEntries.length} producto(s) en negativo: ${preview}${extra}.`);
+  }
+}
+
 function updateOrderDetailStatus() {
   const sel = document.getElementById('odStatusSelect');
   const status = sel ? sel.value : '';
@@ -9855,20 +10373,40 @@ async function handleAdminLogin() {
   // La contraseña ya no se compara en el navegador contra un valor fijo en
   // el JS (cualquiera podía leerla en el código fuente): se verifica en el
   // servidor de base de datos, que nunca revela la contraseña real.
-  let ok = false;
-  try {
-    ok = email === 'i.ovany.03@gmail.com' && await sbRpc('rpc_check_admin', { p_password: pass });
-  } catch (e) { ok = false; }
+  if (email === 'i.ovany.03@gmail.com') {
+    let ok = false;
+    try { ok = await sbRpc('rpc_check_admin', { p_password: pass }); } catch (e) { ok = false; }
+    if (ok) {
+      setAdminPassword(pass);
+      localStorage.setItem('mf_admin_logged_in', 'true');
+      localStorage.removeItem('mf_staff_session');
+      setStaffCreds(null, null);
+      currentStaffSession = null;
+      closeLoginModal();
+      showAdminDashboard();
+      return;
+    }
+  } else {
+    // No es el correo del admin: puede ser personal con correo+contraseña
+    // configurados (ver rpc_staff_set_password en "Editar Personal").
+    let rows = [];
+    try { rows = await sbRpc('rpc_staff_login_password', { p_email: email, p_password: pass }); } catch (e) { rows = []; }
+    const person = Array.isArray(rows) ? rows[0] : rows;
+    if (person) {
+      currentStaffSession = {
+        id: person.id, nombre: person.nombre, email: person.email,
+        rol: person.rol, permisos: Array.isArray(person.permisos) ? person.permisos : []
+      };
+      setStaffCreds(person.email, person.pin);
+      localStorage.setItem('mf_admin_logged_in', 'true');
+      localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
+      closeLoginModal();
+      showAdminDashboard();
+      return;
+    }
+  }
 
-  if (ok) {
-    setAdminPassword(pass);
-    localStorage.setItem('mf_admin_logged_in', 'true');
-    localStorage.removeItem('mf_staff_session');
-    setStaffCreds(null, null);
-    currentStaffSession = null;
-    closeLoginModal();
-    showAdminDashboard();
-  } else if (err) {
+  if (err) {
     err.textContent = 'Credenciales incorrectas. Verifique el usuario o contraseña.';
     err.classList.remove('hidden');
   }
@@ -11288,7 +11826,7 @@ function renderPromosAdminTable() {
       </td>
       <td style="text-align:center; white-space:nowrap;">
         <button class="btn small" onclick="openPromoAdminModal(${p.id})"> Editar</button>
-        <button class="btn small danger" onclick="deletePromoAdmin(${p.id})"></button>
+        <button class="btn small danger" onclick="deletePromoAdmin(${p.id})">Eliminar</button>
       </td>
     </tr>
   `).join('');
@@ -11594,8 +12132,7 @@ function renderStorefrontLoadMore(shown, total){
 }
 
 function loadMoreStorefrontProducts(){
-  storefrontVisibleCount += STOREFRONT_PAGE_SIZE;
-  renderStorefrontProducts(currentStorefrontCat, currentStorefrontQuery, true);
+  openStorefrontCatalog('all');
 }
 
 // ================= FULL CATALOG BROWSE PANEL (real PrestaShop categories) =================
@@ -11960,6 +12497,7 @@ function updateStorefrontCartQty(id, delta){
   if (item) {
     item.qty += delta;
     if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    else applyWholesalePricing(item);
   }
   updateStoreCartBadge();
   renderStorefrontCartBody();
@@ -12032,7 +12570,6 @@ function setCheckoutPayStyle(el, active){
 
 function setCheckoutPayMethod(method){
   checkoutPayMethod = method;
-  setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), method === 'Efectivo contra entrega');
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), method === 'Transferencia bancaria');
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Mercado Pago');
 }
@@ -12249,7 +12786,6 @@ function goToStorefrontCheckout(){
   checkoutShippingCarrier = null;
   checkoutShippingOptions = [];
   checkoutSelectedShippingIndex = null;
-  setCheckoutPayStyle(document.getElementById('checkoutPayEfectivo'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), false);
   setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), false);
   const errEl = document.getElementById('checkoutErrorMsg');
@@ -13268,8 +13804,14 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
     if (input) input.value = query;
     filterStorefrontProducts(query);
   }
+  // renderStorefrontProducts() de arriba (llamado dentro del propio sync)
+  // ya volvió a mostrar el home y ocultó el panel de catálogo completo que
+  // routeApp() pudo haber abierto por "?vista=catalogo" — se vuelve a abrir
+  // aquí, después de que el sync terminó, para que no se revierta.
+  if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
 }).then(checkLowStockNotifications);
 loadRealStockData().then(() => {
+  checkNegativeStockWarning();
   if (document.getElementById('posProductGrid')) {
     const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
     renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
@@ -13335,6 +13877,7 @@ function routeApp() {
 if(window.location.pathname==='/'){
  const vista=new URLSearchParams(window.location.search).get('vista');
  if(vista==='carrito')openStorefrontCart();
+ else if(vista==='catalogo')openStorefrontCatalog('all');
  else if(vista==='admin')goToAdmin();
  else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
 }

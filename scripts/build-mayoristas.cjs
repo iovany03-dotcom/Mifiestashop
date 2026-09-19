@@ -24,9 +24,9 @@ const footer = fs.readFileSync(path.join(__dirname, 'cms-footer.html'), 'utf8');
 const sourceContent = `<h1>ARTÍCULOS PARA FIESTA AL MAYOREO</h1>
 <p>¿Organizas eventos o planeas abrir una tienda?</p><p>Si estás organizando eventos y deseas adquirir productos a precios preferenciales, ¡ponte en contacto con nosotros! Ofrecemos grandes beneficios para negocios que buscan manejar precios de mayoreo. Si estás planeando abrir una tienda o ya tienes una y quieres el mejor aliado para hacer crecer tu negocio, estamos aquí para ayudarte.</p>
 <h2>POR QUE NOSOTROS</h2>
-<img src="/img/cms/521e8dd609804555.png" alt="" width="512" height="512" /><h3>SOMOS IMPORTADORES</h3><p>Somos importadores directos y fabricantes de todos nuestros productos.</p>
-<img src="/img/cms/fd0d5b8a90bffd15.png" alt="" width="512" height="512" /><h3>LA MARCA 1° EN MEXICO</h3><p>Somos la marca número 1 en Mexico en venta y distribucion de articulos para fiesta </p>
-<img src="/img/cms/4d375d5549d4ecaa.png" alt="" width="512" height="512" /><h3>TE AYUDAMOS</h3><p>Te ayudamos a que tu negocio tenga los beneficios de nuestros programas de afiliados</p>
+<img src="https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-importadores.svg" alt="Somos importadores"><h3>SOMOS IMPORTADORES</h3><p>Somos importadores directos y fabricantes de todos nuestros productos.</p>
+<img src="https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-marca1.svg" alt="La marca 1 en Mexico"><h3>LA MARCA 1° EN MEXICO</h3><p>Somos la marca número 1 en Mexico en venta y distribucion de articulos para fiesta </p>
+<img src="https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-ayuda.svg" alt="Te ayudamos"><h3>TE AYUDAMOS</h3><p>Te ayudamos a que tu negocio tenga los beneficios de nuestros programas de afiliados</p>
 <h2>Es necesario registrarse para ver los precios de mayoreo. Hasta un 50% de descuento</h2>
 <h2>+ DE 400 ARTICULOS</h2>
 <p><a href="/?buscar=fiesta">Ver todos</a></p>`;
@@ -50,6 +50,10 @@ const page = {
 
 const models = pages.map(p => modelFor(p, pages));
 const model = modelFor(page, pages);
+// modelFor() siempre deriva heroImage de la primera <img> encontrada en el
+// contenido (aquí, el ícono genérico de "Somos importadores") — se
+// sobreescribe aparte con el banner real que sí es para esta página.
+model.heroImage = '/img/cms/mayoristas-banner.webp';
 
 function faqHtml(p) {
   const items = [
@@ -88,7 +92,6 @@ ${t.tags.length ? `<ul class="topic-tags">${t.tags.map(tag => `<li>${esc(tag)}</
 ${t.tags.length ? `<section class="cms-categories wrap" aria-label="Categorías"><div class="store-section-title"><h2>Explora ${esc(t.label.toLocaleLowerCase('es'))}</h2></div><div class="store-cats-grid">${t.tags.map((tag, i) => `<a class="store-cat-card" href="/?buscar=${encodeURIComponent(tag)}"><div class="store-cat-icon" style="background:var(--mf-${['teal', 'pink', 'gold'][i % 3]}-ghost)">${categoryIcons[0]}</div><div class="store-cat-name">${esc(tag)}</div></a>`).join('')}</div></section>` : ''}
 <section class="catalog-section" id="productos"><div class="wrap"><div class="section-heading store-section-title"><div><h2>${esc(t.label)} para tu negocio o evento</h2><p>Encuentra las opciones que van con tu estilo.</p></div><a class="text-link" href="${shopLink}">Ver catálogo</a></div><div class="store-prods-grid" id="cms-products" aria-live="polite" data-terms="${esc(JSON.stringify(t.terms))}"><p class="catalog-status">Cargando productos…</p></div><noscript><p><a href="${shopLink}">Consulta los productos en nuestra tienda.</a></p></noscript></div></section>
 ${p.content.trim() ? `<article class="source-content wrap" aria-label="Información para mayoristas">${p.content}</article>` : ''}
-<section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">Promociones de ${esc(t.label.toLocaleLowerCase('es'))}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div><div class="promotion-benefits"><a href="/pagina/politica-de-envio-gratis-mi-fiesta-shop"><span>Envío gratis</span><strong>En compras mayores a $1,500 MXN</strong><small>Consulta condiciones de envío</small></a><a href="/?cuenta=1"><span>Precios de mayoreo</span><strong>Desde 3 piezas</strong><small>Regístrate y consulta los precios del catálogo</small></a><a href="/?vista=promos"><span>Promociones y cupones</span><strong>Consulta las ofertas disponibles</strong><small>Revisa sus condiciones en tu cuenta</small></a></div></section>
 ${faqHtml(p)}
 ${related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu fiesta</h2><div>${related.map(r => `<a href="${esc(r.sourcePath)}">${esc(r.title)}</a>`).join('')}</div></section>` : ''}
 </main>${footer.replace('<!--CMS_LOCATION-->', '')}</body></html>
