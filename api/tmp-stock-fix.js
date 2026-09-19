@@ -73,7 +73,9 @@ module.exports = async function handler(req, res) {
       const rows = Array.isArray(data.stocks) ? data.stocks : [data.stocks].filter(Boolean);
       const row = rows[0];
       if (!row) { results.push({ pid, ok: false, detail: 'no encontrado' }); continue; }
-      const fields = Object.entries(row).filter(([k]) => k !== 'associations').map(([k, v]) => {
+      // real_quantity es read_only según el synopsis real (?schema=synopsis) —
+      // no se manda en el PUT.
+      const fields = Object.entries(row).filter(([k]) => k !== 'associations' && k !== 'real_quantity').map(([k, v]) => {
         if (k === 'physical_quantity' || k === 'usable_quantity') return `    <${k}>0</${k}>`;
         return `    <${k}>${typeof v === 'string' ? v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : v}</${k}>`;
       }).join('\n');
