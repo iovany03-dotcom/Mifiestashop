@@ -38,11 +38,18 @@ module.exports = async function handler(req, res) {
   // poder disparar una sincronización puntual sin esperar los 7; sin
   // parámetro corre los 7 en la misma corrida (uso normal del cron).
   const domain = req.query.domain;
+  const privateDomains = ['direcciones', 'productos', 'precios', 'disponibilidad', 'pedidos_historicos'];
+  if (privateDomains.includes(domain)) {
+    if (!expected) return res.status(503).json({ error: 'Configura CRON_SECRET antes de importar datos privados' });
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return res.status(503).json({ error: 'Falta SUPABASE_SERVICE_ROLE_KEY' });
+  }
   const domains = domain ? [domain] : undefined;
 
   try {
-    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, timeBudgetMs: 50000, domains });
-    res.status(200).json({ ok: true, results, ranAt: new Date().toISOString() });
+    const key = privateDomains.includes(domain) ? process.env.SUPABASE_SERVICE_ROLE_KEY : serviceKey;
+    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey: key, timeBudgetMs: 50000, domains });
+    const ok = Object.values(results).every(result => result.ok);
+    res.status(ok ? 200 : 502).json({ ok, results, ranAt: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

@@ -64,13 +64,14 @@ module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
 
-  if (!apiKey) {
+  const native = process.env.PS_NATIVE_COMMERCE === '1';
+  if (!apiKey && !native) {
     res.status(400).json({ error: 'Falta variable de entorno PS_API_KEY en Vercel', packages: [] });
     return;
   }
 
   const ids = String(req.query.ids || '').split(',').map(s => s.trim()).filter(s => /^\d+$/.test(s));
-  if (!ids.length) {
+  if (!ids.length || ids.length > 50) {
     res.status(400).json({ error: 'Falta el parámetro ids', packages: [] });
     return;
   }
@@ -79,6 +80,17 @@ module.exports = async function handler(req, res) {
   const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[id]=${encodeURIComponent('[' + ids.join('|') + ']')}&limit=0,${ids.length}&output_format=JSON`;
 
   try {
+    let raw;
+    let localImages = new Map();
+    if (native) {
+      const store = require('../lib/migration-store');
+      const [products, local] = await Promise.all([
+        store.all('ps_productos_comercio', `select=*&id=in.(${ids.join(',')})&order=id.asc`),
+        store.all('productos_migrados', `select=id,images&id=in.(${ids.join(',')})&order=id.asc`)
+      ]);
+      raw = products.map(row => row.data);
+      localImages = new Map(local.map(row => [String(row.id), row.images?.[0]]));
+    } else {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
     if (!r.ok) {
@@ -87,15 +99,15 @@ module.exports = async function handler(req, res) {
       return;
     }
     const data = await r.json();
-    const raw = Array.isArray(data.products) ? data.products : (data.products ? [data.products] : []);
+    raw = Array.isArray(data.products) ? data.products : (data.products ? [data.products] : []);
+    }
 
     const packages = raw.filter(p => p.active === '1' || p.active === 1).map(p => {
       const name = firstLangValue(p.name, '');
       const shortDesc = firstLangValue(p.description_short, '');
       const longDesc = firstLangValue(p.description, '');
       const linkRewrite = firstLangValue(p.link_rewrite, '');
-      const imgId = p.id_default_image;
-      const img = imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : '';
+      const img = localImages.get(String(p.id)) || '/img/cms/logo.webp';
       const liveItems = pickItems(shortDesc, longDesc);
       return {
         id: Number(p.id),
@@ -104,7 +116,7 @@ module.exports = async function handler(req, res) {
         items: liveItems.length >= 2 ? liveItems : (FALLBACK_ITEMS[p.id] || liveItems),
         img,
         linkRewrite,
-        url: linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : undefined
+        url: linkRewrite ? `/${p.id}-${linkRewrite}.html` : undefined
       };
     });
 

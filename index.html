@@ -3639,7 +3639,7 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
+              <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Teléfono y dirección</th><th>Fecha Registro</th><th>Estado</th></tr>
             </thead>
             <tbody id="customersTableBody">
               <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
@@ -5364,10 +5364,26 @@
     <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Histórico de Movimientos de Inventario</h4>
-        <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge">3 movimientos registrados</span>
+        <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
       </div>
       <div id="traspasoHistoryList" style="max-height:160px; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
       </div>
+      <details style="margin-top:18px;" ontoggle="if(this.open) loadImportedInventory()">
+        <summary style="cursor:pointer;font-weight:600;">Documentos de inventario de PrestaShop</summary>
+        <p style="font-size:12px;">Consulta del historial importado, con sus estados y partidas originales.</p>
+        <label>Buscar folio, almacén o responsable
+          <input id="importedInventoryFilter" type="search" oninput="renderImportedInventory()" style="width:100%;padding:8px;margin:8px 0;">
+        </label>
+        <div id="importedInventoryList" style="max-height:280px;overflow:auto;"></div>
+        <div id="importedInventoryDetail" style="margin-top:12px;overflow:auto;"></div>
+      </details>
+      <details style="margin-top:18px;" ontoggle="if(this.open) loadImportedMovements(true)">
+        <summary style="cursor:pointer;font-weight:600;">Movimientos históricos de PrestaShop</summary>
+        <p style="font-size:12px;">Importación en curso. Aquí se muestran los movimientos ya guardados; el historial todavía puede estar incompleto.</p>
+        <div id="importedMovementList" style="max-height:320px;overflow:auto;"></div>
+        <button type="button" class="btn small" id="importedMovementMore" onclick="loadImportedMovements(false)" hidden>Cargar más</button>
+        <p id="importedMovementStatus" role="status"></p>
+      </details>
     </div>
   </div>
 </div>
@@ -8508,6 +8524,127 @@ let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
 // Histórico real de movimientos de inventario (pos_stock_moves en Supabase),
 // cargado por loadTraspasoHistory() cada vez que se abre el modal de Traspasos.
 let traspasosHistory = [];
+let importedInventoryDocuments = null;
+let importedInventoryLoading = false;
+let importedInventoryRequest = 0;
+let importedMovementBefore = null;
+let importedMovementLoading = false;
+
+async function loadImportedMovements(reset) {
+  if (importedMovementLoading) return;
+  importedMovementLoading = true;
+  const list = document.getElementById('importedMovementList');
+  const status = document.getElementById('importedMovementStatus');
+  const more = document.getElementById('importedMovementMore');
+  if (reset) { importedMovementBefore = null; list.replaceChildren(); }
+  status.textContent = 'Cargando movimientos…'; more.disabled = true;
+  try {
+    const page = await inventoryHistoryRequest('?kind=movements' + (importedMovementBefore ? '&before=' + importedMovementBefore : ''));
+    const warehouses = {53:'CDMX Rumania',54:'Popocatépetl',55:'Puebla',56:'Querétaro',57:'Guadalajara',58:'Atizapán'};
+    for (const movement of page.movements) {
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;';
+      const name = Array.isArray(movement.product_name) ? movement.product_name.find(item => item.value)?.value : movement.product_name;
+      const quantity = Number(movement.physical_quantity) * Number(movement.sign);
+      const title = document.createElement('strong');
+      title.textContent = `${name || 'Producto ' + movement.id_product} · ${quantity > 0 ? '+' : ''}${quantity} u.`;
+      const info = document.createElement('p');
+      info.textContent = `#${movement.id} · ${movement.date_add} · ${warehouses[movement.id_warehouse] || movement.id_warehouse} · Empleado ${movement.id_employee}`;
+      const reason = document.createElement('p');
+      reason.textContent = `Motivo ${movement.id_stock_mvt_reason}${Number(movement.id_order) ? ' · Pedido #' + movement.id_order : ''} · ${movement.reference || ''}`;
+      card.append(title,info,reason);list.append(card);
+    }
+    importedMovementBefore = page.nextBefore;
+    more.hidden = !page.hasMore;
+    more.textContent = 'Cargar más';
+    status.textContent = list.children.length ? `${list.children.length} movimientos mostrados` : 'Todavía no hay movimientos importados.';
+  } catch (error) {
+    status.textContent = error.message;
+    more.hidden = false; more.textContent = 'Reintentar';
+  } finally { more.disabled = false; importedMovementLoading = false; }
+}
+
+async function inventoryHistoryRequest(query = '') {
+  const response = await fetch('/api/inventory-history' + query, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(getSessionCredsParams())
+  });
+  if (!response.ok) throw new Error('No se pudo consultar el historial. Verifica tu sesión e inténtalo de nuevo.');
+  return response.json();
+}
+
+async function loadImportedInventory() {
+  if (importedInventoryLoading) return;
+  const list = document.getElementById('importedInventoryList');
+  importedInventoryLoading = true;
+  list.textContent = 'Cargando documentos…';
+  try {
+    const documents = [];
+    let offset = 0, page;
+    do {
+      page = await inventoryHistoryRequest('?offset=' + offset);
+      documents.push(...page.documents);
+      offset = page.nextOffset;
+    } while (page.hasMore);
+    importedInventoryDocuments = documents;
+    renderImportedInventory();
+  } catch (error) {
+    importedInventoryDocuments = null;
+    list.textContent = error.message;
+    const retry = document.createElement('button');
+    retry.className = 'btn small'; retry.textContent = 'Reintentar'; retry.onclick = loadImportedInventory;
+    list.append(retry);
+  } finally { importedInventoryLoading = false; }
+}
+
+function renderImportedInventory() {
+  if (!importedInventoryDocuments) return;
+  const list = document.getElementById('importedInventoryList');
+  const search = document.getElementById('importedInventoryFilter').value.trim().toLocaleLowerCase('es');
+  const rows = importedInventoryDocuments.filter(row => [row.document, row.warehouse, row.responsible, row.status].join(' ').toLocaleLowerCase('es').includes(search));
+  list.replaceChildren();
+  const count = document.createElement('p');
+  count.textContent = `${rows.length} de ${importedInventoryDocuments.length} documentos importados`;
+  list.append(count);
+  for (const row of rows) {
+    const button = document.createElement('button');
+    button.className = 'btn secondary';
+    button.style.cssText = 'display:block;width:100%;text-align:left;margin-bottom:6px;white-space:normal;';
+    button.textContent = `${row.document} · ${row.date} · ${row.warehouse} · ${row.status} · ${row.lines} partidas`;
+    button.onclick = () => showImportedInventoryDocument(row.id);
+    list.append(button);
+  }
+}
+
+async function showImportedInventoryDocument(id) {
+  const detail = document.getElementById('importedInventoryDetail');
+  const request = ++importedInventoryRequest;
+  detail.textContent = 'Cargando detalle…';
+  try {
+    const { document: record } = await inventoryHistoryRequest('?id=' + id);
+    if (request !== importedInventoryRequest) return;
+    detail.replaceChildren();
+    const heading = document.createElement('h4');
+    heading.textContent = `${record.document} · ${record.status}`;
+    detail.append(heading);
+    const info = document.createElement('p');
+    info.textContent = `${record.date} · ${record.warehouse} · ${record.responsible}`;
+    detail.append(info);
+    const appendTable = (headers, rows) => {
+      const table = document.createElement('table');
+      table.style.cssText = 'width:100%;font-size:12px;margin-bottom:12px;';
+      const head = table.createTHead().insertRow();
+      for (const label of headers) { const th = document.createElement('th'); th.textContent = label; head.append(th); }
+      const body = table.createTBody();
+      for (const values of rows) { const tr = body.insertRow(); for (const value of values) tr.insertCell().textContent = value ?? ''; }
+      detail.append(table);
+    };
+    appendTable(['Producto', 'Referencia', 'Antes', 'Cantidad', 'Después'], record.lines.map(line => [line.product_name, line.reference, line.stock_before, line.quantity, line.stock_after]));
+    appendTable(['Fecha', 'Responsable', 'Estado anterior', 'Estado nuevo', 'Observaciones'], record.history);
+    if (record.notes?.length) { const notes = document.createElement('p'); notes.textContent = record.notes.join(' · '); detail.append(notes); }
+  } catch (error) { if (request === importedInventoryRequest) detail.textContent = error.message; }
+}
+
 const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro: 'Querétaro' };
 
 function setMovimientoType(tipo) {
@@ -9492,14 +9629,26 @@ async function loadCustomersFromAPI(){
 
   let list = [];
   try {
-    const r = await fetch('/api/clientes');
-    if(r.ok) {
-      const data = await r.json();
-      if(Array.isArray(data.customers) && data.customers.length > 0) list = data.customers;
+    let offset = 0;
+    while (true) {
+    const r = await fetch('/api/clientes?offset=' + offset, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(getSessionCredsParams())
+    });
+    if (!r.ok) throw new Error(r.status === 401 ? 'Inicia sesión para consultar los clientes.' : 'No se pudieron cargar los clientes.');
+    const data = await r.json();
+    if (data.fallback || !Array.isArray(data.customers)) throw new Error('No se pudieron cargar los clientes.');
+    list.push(...data.customers);
+    if (!data.hasMore) break;
+    if (!Number.isSafeInteger(data.nextOffset) || data.nextOffset <= offset) throw new Error('Paginación de clientes inválida.');
+    offset = data.nextOffset;
     }
-  } catch(e) {}
-
-  if(list.length === 0) list = DEFAULT_CUSTOMERS;
+  } catch(e) {
+    customersCache = [];
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7">' + escapeHtml(e.message) + '</td></tr>';
+    if (select) select.innerHTML = '<option value="mostrador">Cliente POS (General)</option>';
+    return;
+  }
   customersCache = list;
   renderCustomersTable(list);
 
@@ -9524,8 +9673,9 @@ function renderCustomersTable(list){
       <td><b>${escapeHtml(c.name)}</b></td>
       <td>${escapeHtml(c.email)}</td>
       <td>${escapeHtml(c.rfc)}</td>
+      <td>${escapeHtml(c.phone || '—')}<br><small>${escapeHtml([c.address, c.city, c.postcode].filter(Boolean).join(', '))}</small></td>
       <td>${escapeHtml(c.date)}</td>
-      <td><span class="pill ok">Activo</span></td>
+      <td><span class="pill ${c.active === false ? '' : 'ok'}">${c.active === false ? 'Inactivo' : 'Activo'}</span></td>
     </tr>
   `).join('');
 
@@ -9545,7 +9695,7 @@ function renderCustomersTable(list){
 function filterCustomersTable(query){
   const q = normalizeEs(query || '');
   const filtered = q
-    ? customersCache.filter(c => normalizeEs(c.name).includes(q) || normalizeEs(c.email).includes(q))
+    ? customersCache.filter(c => [c.name,c.email,c.rfc,c.phone,c.address,c.city,c.postcode].some(value => normalizeEs(value || '').includes(q)))
     : customersCache;
   renderCustomersTable(filtered);
 }
@@ -10842,11 +10992,11 @@ function bodaHeroHtml(city) {
       <li>Sin mínimo · Paga con tarjeta</li>
     </ul>
     <div class="cta-group">
-      <a class="btn-primary" href="https://mifiestashop.com/266-productos">
+      <a class="btn-primary" href="/?buscar=">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
         Comprar para mi boda
       </a>
-      <a class="btn-secondary" href="https://mifiestashop.com/266-productos">Ver Catálogo completo</a>
+      <a class="btn-secondary" href="/?buscar=">Ver Catálogo completo</a>
     </div>
     <p class="trust-note">
       <span class="stars">★★★★★</span>
@@ -11360,7 +11510,7 @@ const BODA_BLOCKS_HTML = `<!-- =================================================
       <li>1 Sombrero novia hule espuma</li>
       <li>1 Sombrero novio hule espuma</li>
     </ul>
-    <a class="pb-cta" href="https://mifiestashop.com/promociones/83589-promo-boda-economico.html">Comprar Paquete Jr</a>
+    <a class="pb-cta" href="/83589-promo-boda-economico.html">Comprar Paquete Jr</a>
   </div>
 
   <div class="pb-card estandar">
@@ -11397,7 +11547,7 @@ const BODA_BLOCKS_HTML = `<!-- =================================================
       <li>1 Anillo luminoso LED (4 pzas)</li>
     </ul>
     <p class="pb-note">*Stock sujeto a bodega</p>
-    <a class="pb-cta" href="https://mifiestashop.com/promociones/83552-promo-boda-estandar-.html">Comprar Paquete Estándar</a>
+    <a class="pb-cta" href="/83552-promo-boda-estandar-.html">Comprar Paquete Estándar</a>
   </div>
 
   <div class="pb-card vip">
@@ -11415,7 +11565,7 @@ const BODA_BLOCKS_HTML = `<!-- =================================================
       <li>Consulta el detalle completo de artículos con nuestro equipo</li>
     </ul>
     <p class="pb-note">*Contenido sujeto a disponibilidad de bodega</p>
-    <a class="pb-cta" href="https://mifiestashop.com/promociones/83591-promo-boda-vip-3245678903456.html">Comprar Paquete VIP</a>
+    <a class="pb-cta" href="/83591-promo-boda-vip-3245678903456.html">Comprar Paquete VIP</a>
   </div>
 
 </div>

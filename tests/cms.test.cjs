@@ -1,13 +1,13 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const cheerio=require('cheerio');
 const root=path.resolve(__dirname,'..');
-const source=require('../data/cms-pages.json'),manifest=require('../data/cms-manifest.json');
+const source=[...require('../data/cms-pages.json'),...require('../data/cms-information.json')],manifest=require('../data/cms-manifest.json');
 const config=require('../vercel.json');
 const {modelFor,sanitize,locationLinks,cityOf}=require('../scripts/cms-content.cjs');
 const handler=require('../api/paginas.js');
 function response(){return {code:0,data:null,headers:{},setHeader(k,v){this.headers[k]=v},status(code){this.code=code;return this},json(data){this.data=data;return this},send(data){this.data=data;return this}};}
 test('every source page has its exact title, slug, original path and static metadata',()=>{
-  assert.equal(source.length,139);assert.equal(manifest.length,source.length);
+  assert.equal(source.length,149);assert.equal(manifest.length,source.length);
   for(const page of source){
     const m=manifest.find(p=>p.id===page.id);assert.equal(m.slug,page.slug);
     assert.equal(m.path,`/content/${page.id}-${page.slug}`);
@@ -22,7 +22,7 @@ test('every source page has its exact title, slug, original path and static meta
 });
 test('aliases preserve duplicate IDs, misspellings and trailing hyphens without collisions',()=>{
   const first=new Map();for(const p of source)if(!first.has(p.slug))first.set(p.slug,p);
-  assert.equal(first.size,127);
+  assert.equal(first.size,137);
   for(const [slug,p]of first)for(const prefix of ['/','/pagina/'])assert.equal(config.rewrites.find(r=>r.source===prefix+slug)?.destination,`/cms-pages/${p.id}.html`);
   for(const slug of ['accesorios-para-batucada-boda-','accesorios-para-fiesta-cdmx-','articulos-pata-batucada-en-cdmx'])assert.ok(first.has(slug));
   const exact=config.rewrites.map(r=>r.source);assert.equal(new Set(exact).size,exact.length);
@@ -61,12 +61,13 @@ test('CMS API serves migrated content by exact ID/slug, without a PrestaShop key
   for(const id of [281,322,328,385]){const res=response();handler({query:{id:String(id)}},res);assert.equal(res.code,200);assert.equal(res.data.page.id,id);assert.equal(res.data.page.migrated,true);assert.ok(res.data.page.content);}
   let res=response();handler({query:{slug:'accesorios-para-batucada-boda-'}},res);assert.equal(res.code,200);assert.equal(res.data.page.slug,'accesorios-para-batucada-boda-');
   res=response();handler({query:{slug:'does-not-exist'}},res);assert.equal(res.code,404);
-  res=response();handler({query:{all:'1'}},res);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);assert.equal(res.data.pages[0].content,undefined);
+  res=response();handler({query:{all:'1'}},res);assert.equal(res.data.pages.filter(p=>p.migrated).length,149);assert.equal(res.data.pages[0].content,undefined);
   res=response();handler({query:{}},res);assert.ok(res.data.pages.every(p=>p.inFooter));
 });
-test('only Facebook and Google pages are migrated; VIP forms keep their original integration',()=>{
+test('marketing and information pages coexist; hidden categories remain excluded',()=>{
   assert.equal(source.filter(p=>p.categoryId===33).length,26);assert.equal(source.filter(p=>p.categoryId===34).length,113);
-  for(const id of [9,11,12,412,413,414,415,416,417,418,419,420,421])assert.equal(fs.existsSync(path.join(root,'cms-pages/'+id+'.html')),false);
+  for(const id of [9,11,12])assert.equal(fs.existsSync(path.join(root,'cms-pages/'+id+'.html')),false);
+  for(let id=412;id<=421;id++)assert.equal(fs.existsSync(path.join(root,'cms-pages/'+id+'.html')),true);
   for(const id of [294,295,296]){const page=source.find(p=>p.id===id);const form=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+id+'.html'),'utf8'));assert.equal(form('#vip-form').attr('data-endpoint'),page.vip.endpoint);assert.equal(form('#vip-form').attr('data-redirect'),page.vip.redirect);assert.equal(form('#vip-form input').length,3);}
 });
 test('sitemap includes all original CMS paths even without a PrestaShop key',async()=>{
@@ -74,15 +75,15 @@ test('sitemap includes all original CMS paths even without a PrestaShop key',asy
   try{const res=response();await require('../api/sitemap.js')({query:{}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://mifiestashop.vercel.app${page.sourcePath}`));}
   finally{if(prev!==undefined)process.env.PS_API_KEY=prev;}
 });
-test('excluded pages keep their original PrestaShop response and coexist with migrated pages',async()=>{
+test('information pages use original content without any PrestaShop request',async()=>{
   const previousFetch=global.fetch,previousKey=process.env.PS_API_KEY;
   process.env.PS_API_KEY='test-only';
   const legal={id:420,meta_title:'Política de Envío Gratis Mi Fiesta Shop',link_rewrite:'politica-de-envio-gratis-mi-fiesta-shop',active:1,content:'<p>Contenido original</p>'};
-  global.fetch=async()=>({ok:true,json:async()=>({content_management_system:[legal]})});
+  global.fetch=async()=>{throw new Error('No se permite consultar PrestaShop')};
   try {
-    let res=response();await handler({query:{id:'420'}},res);assert.equal(res.data.page.content,legal.content);assert.equal(res.data.page.migrated,undefined);
-    res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,149);assert.ok(res.data.pages.every(p=>![9,11,12].includes(Number(p.id))));assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
-    res=response();await handler({query:{}},res);assert.equal(res.data.pages.length,1);assert.equal(res.data.pages[0].id,420);
+    let res=response();await handler({query:{id:'420'}},res);assert.match(res.data.page.content,/1500 MXN/);assert.equal(res.data.page.migrated,true);
+    res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,149);assert.ok(res.data.pages.every(p=>![9,11,12].includes(Number(p.id))));assert.equal(res.data.pages.filter(p=>p.migrated).length,149);
+    res=response();await handler({query:{}},res);assert.ok(res.data.pages.some(p=>p.id===420));assert.ok(res.data.pages.some(p=>p.id===421));
   }finally{global.fetch=previousFetch;if(previousKey===undefined)delete process.env.PS_API_KEY;else process.env.PS_API_KEY=previousKey;}
 });
 test('imported markup cannot execute old builder scripts or change document base',()=>{
@@ -125,7 +126,7 @@ test('promo pricing packages always price live from PrestaShop, never hardcoded'
 
 test('migrated pages and admin inventory work without PrestaShop network access',async()=>{
  const oldFetch=global.fetch;global.fetch=()=>{throw new Error('PrestaShop offline')};
- try{const res=response();await handler({query:{all:'1'}},res);assert.equal(res.code,200);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);}finally{global.fetch=oldFetch;}
+ try{const res=response();await handler({query:{all:'1'}},res);assert.equal(res.code,200);assert.equal(res.data.pages.filter(p=>p.migrated).length,149);}finally{global.fetch=oldFetch;}
  for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+p.id+'.html'),'utf8'));$('img').each((_,el)=>{const src=$(el).attr('src');assert.ok(src.startsWith('/img/'),src);assert.ok(fs.existsSync(path.join(root,src)));});}
  const catalog=require('../data/cms-products.json');assert.ok(catalog.products.length>0);for(const p of catalog.products){assert.ok(fs.existsSync(path.join(root,p.img)));assert.equal(p.price,undefined);}
  const js=fs.readFileSync(path.join(root,'assets/cms.js'),'utf8');assert.doesNotMatch(js,/mifiestashop\.com|api\/productos/);assert.match(js,/data\/cms-products\.json/);

@@ -66,7 +66,7 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'Carrito inválido' });
     return;
   }
-  const cleanItems = items.map(it => ({ id: parseInt(it.id, 10), qty: parseInt(it.qty, 10) }));
+  const cleanItems = items.map(it => ({ id: Number(it?.id), qty: Number(it?.qty) }));
   if (cleanItems.some(it => !Number.isInteger(it.id) || it.id <= 0 || !Number.isInteger(it.qty) || it.qty <= 0 || it.qty > MAX_QTY_PER_LINE)) {
     res.status(400).json({ error: 'Artículo o cantidad inválida en el carrito' });
     return;
@@ -83,7 +83,8 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
-  if (!apiKey) {
+  const native = process.env.PS_NATIVE_COMMERCE === '1';
+  if (!apiKey && !native) {
     res.status(200).json({ fallback: true, error: 'PS_API_KEY no configurado en Vercel' });
     return;
   }
@@ -94,7 +95,7 @@ module.exports = async function handler(req, res) {
 
     // Vuelve a consultar el precio y nombre REALES de cada producto en
     // PrestaShop — el precio que haya mandado el navegador se descarta.
-    const resolved = await Promise.all(cleanItems.map(async (it) => {
+    const resolved = native ? await require('../lib/native-checkout').resolveItems(cleanItems) : await Promise.all(cleanItems.map(async (it) => {
       const fields = '[id,name,reference,price,active]';
       const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON`;
       const r = await fetch(url, { headers });
@@ -123,9 +124,9 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    const subtotal = resolved.reduce((s, it) => s + it.price * it.qty, 0);
-    const total = subtotal + shippingCostNum;
-    const folio = 'WEB-' + Date.now().toString().slice(-6);
+    const subtotal = Math.round(resolved.reduce((s, it) => s + it.price * it.qty, 0) * 100) / 100;
+    const total = Math.round((subtotal + shippingCostNum) * 100) / 100;
+    const folio = 'WEB-' + require('node:crypto').randomUUID();
     const fullAddress = `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
 
     const orderPayload = {
@@ -145,7 +146,7 @@ module.exports = async function handler(req, res) {
     };
 
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online`, {
+      const saved = await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online`, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
@@ -153,9 +154,10 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify(orderPayload)
       });
+      if (!saved.ok) throw new Error('No se pudo guardar el pedido');
     } catch (e) {
-      // Si Supabase falla seguimos respondiendo con el pedido calculado: el
-      // checkout no debe romperse por esto, igual que el resto del sitio.
+      res.status(503).json({ error: 'No se pudo guardar el pedido. Intenta de nuevo.' });
+      return;
     }
 
     res.status(200).json({ folio, subtotal, total, items: orderPayload.items });
