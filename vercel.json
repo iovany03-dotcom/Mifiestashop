@@ -1676,6 +1676,10 @@
     {
       "source": "/266-productos",
       "destination": "/index.html"
+    },
+    {
+      "source": "/contacto",
+      "destination": "/index.html"
     }
   ]
 }
