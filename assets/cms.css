@@ -26,3 +26,4 @@
 
 /* Imported builder media must never dictate the column dimensions. */
 .source-content .story-section{overflow:hidden;display:flow-root}.source-content .story-section img{display:block;width:auto;max-width:100%;height:auto;max-height:280px;object-fit:contain;margin:0 auto 20px}.source-content .story-section>a:has(img){display:block;margin:0}.source-content .story-section p{max-width:75ch}.source-content .story-section svg{width:48px;height:48px}.source-content .story-section:empty{display:none}
+body[data-cms-id="mayoristas"] .hero-image img{object-fit:contain;padding:20px}
