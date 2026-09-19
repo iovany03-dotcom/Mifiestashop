@@ -76,6 +76,15 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // El recurso "stocks" no acepta PUT (405 confirmado) — el stock de bodega
+  // se corrige creando un stock_movement con signo +1 por la magnitud
+  // exacta que le falta para llegar a 0. id_stock_mvt_reason=5
+  // ("Reglamento posterior a un inventario de existencias") es la razón
+  // estándar de PrestaShop para este tipo de corrección.
+  const REASON_ID = 5;
+  const EMPLOYEE_ID = 226; // empleado de Querétaro en PrestaShop
+  const nowIso = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
   const results = [];
   for (const pid of PRODUCT_IDS) {
     try {
@@ -83,15 +92,26 @@ module.exports = async function handler(req, res) {
       const rows = Array.isArray(data.stocks) ? data.stocks : [data.stocks].filter(Boolean);
       const row = rows[0];
       if (!row) { results.push({ pid, ok: false, detail: 'no encontrado' }); continue; }
-      // real_quantity es read_only según el synopsis real (?schema=synopsis) —
-      // no se manda en el PUT.
-      const fields = Object.entries(row).filter(([k]) => k !== 'associations' && k !== 'real_quantity').map(([k, v]) => {
-        if (k === 'physical_quantity' || k === 'usable_quantity') return `    <${k}>0</${k}>`;
-        return `    <${k}>${typeof v === 'string' ? v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : v}</${k}>`;
-      }).join('\n');
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">\n  <stock>\n${fields}\n  </stock>\n</prestashop>`;
-      await psWrite('PUT', `/api/stocks/${row.id}`, xml);
-      results.push({ pid, ok: true, stockId: row.id });
+      const current = Number(row.physical_quantity);
+      if (current >= 0) { results.push({ pid, ok: true, skipped: true, detail: 'ya no está negativo', current }); continue; }
+      const delta = Math.abs(current);
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
+  <stock_mvt>
+    <id_product>${pid}</id_product>
+    <id_product_attribute>0</id_product_attribute>
+    <id_warehouse>${WAREHOUSE_ID}</id_warehouse>
+    <id_employee>${EMPLOYEE_ID}</id_employee>
+    <id_stock>${row.id}</id_stock>
+    <id_stock_mvt_reason>${REASON_ID}</id_stock_mvt_reason>
+    <physical_quantity>${delta}</physical_quantity>
+    <sign>1</sign>
+    <price_te>${row.price_te}</price_te>
+    <date_add>${nowIso}</date_add>
+  </stock_mvt>
+</prestashop>`;
+      const r = await psWrite('POST', '/api/stock_movements', xml);
+      results.push({ pid, ok: true, stockId: row.id, before: current, delta, movementResponse: r.slice(0, 200) });
     } catch (e) { results.push({ pid, ok: false, detail: e.message.slice(0, 400) }); }
   }
   res.status(200).json({ results });
