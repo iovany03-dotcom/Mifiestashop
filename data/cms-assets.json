@@ -1,4 +1,16 @@
 {
+  "https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-importadores.svg": {
+    "status": 200,
+    "path": "/img/cms/icon-importadores.svg"
+  },
+  "https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-marca1.svg": {
+    "status": 200,
+    "path": "/img/cms/icon-marca1.svg"
+  },
+  "https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-ayuda.svg": {
+    "status": 200,
+    "path": "/img/cms/icon-ayuda.svg"
+  },
   "https://cdn1.daiscom.com.co/img/cms/Daiscom/paginas-categorias/bicicletas/banner-2.jpg": {
     "status": 200,
     "path": "/img/cms/a803f95902f1b77d.jpg"
