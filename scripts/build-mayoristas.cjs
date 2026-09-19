@@ -31,6 +31,12 @@ const sourceContent = `<h1>ARTÍCULOS PARA FIESTA AL MAYOREO</h1>
 <h2>+ DE 400 ARTICULOS</h2>
 <p><a href="/?buscar=fiesta">Ver todos</a></p>`;
 
+// Curada a mano a partir del ranking automático por términos (mismo orden
+// que produciría el matching de assets/cms.js para el tema "mayoreo"), pero
+// sin el duplicado de "Pulsera luminosa cyalume 45 pzas" junto a la de 90
+// pzas — se cambió por una diadema luminosa (84535) para variar el producto.
+const CURATED_PRODUCT_IDS = [83397, 83404, 83407, 83408, 83409, 83415, 83418, 83441, 84523, 84519, 83423, 83424, 83451, 83452, 83431, 83587, 83103, 83107, 83633, 83706, 84210, 84224, 83297, 83300, 83368, 84516, 84517, 84518, 83384, 84535];
+
 const page = {
   id: 'mayoristas',
   title: 'Mayoristas: artículos para fiesta al mayoreo',
@@ -90,7 +96,7 @@ ${t.tags.length ? `<ul class="topic-tags">${t.tags.map(tag => `<li>${esc(tag)}</
 </div>${p.heroImage ? `<figure class="hero-image"><img src="${esc(p.heroImage)}" alt="${esc(p.title)}" fetchpriority="high" width="720" height="560"><figcaption>${esc(t.label)}</figcaption></figure>` : ''}</div></section>
 <section class="wrap" aria-label="Beneficios de compra">${benefits}</section>
 ${t.tags.length ? `<section class="cms-categories wrap" aria-label="Categorías"><div class="store-section-title"><h2>Explora ${esc(t.label.toLocaleLowerCase('es'))}</h2></div><div class="store-cats-grid">${t.tags.map((tag, i) => `<a class="store-cat-card" href="/?buscar=${encodeURIComponent(tag)}"><div class="store-cat-icon" style="background:var(--mf-${['teal', 'pink', 'gold'][i % 3]}-ghost)">${categoryIcons[0]}</div><div class="store-cat-name">${esc(tag)}</div></a>`).join('')}</div></section>` : ''}
-<section class="catalog-section" id="productos"><div class="wrap"><div class="section-heading store-section-title"><div><h2>${esc(t.label)} para tu negocio o evento</h2><p>Encuentra las opciones que van con tu estilo.</p></div><a class="text-link" href="${shopLink}">Ver catálogo</a></div><div class="store-prods-grid" id="cms-products" aria-live="polite" data-terms="${esc(JSON.stringify(t.terms))}"><p class="catalog-status">Cargando productos…</p></div><noscript><p><a href="${shopLink}">Consulta los productos en nuestra tienda.</a></p></noscript></div></section>
+<section class="catalog-section" id="productos"><div class="wrap"><div class="section-heading store-section-title"><div><h2>${esc(t.label)} para tu negocio o evento</h2><p>Encuentra las opciones que van con tu estilo.</p></div><a class="text-link" href="${shopLink}">Ver catálogo</a></div><div class="store-prods-grid" id="cms-products" aria-live="polite" data-terms="${esc(JSON.stringify(t.terms))}" data-product-ids="${esc(JSON.stringify(CURATED_PRODUCT_IDS))}"><p class="catalog-status">Cargando productos…</p></div><noscript><p><a href="${shopLink}">Consulta los productos en nuestra tienda.</a></p></noscript></div></section>
 ${p.content.trim() ? `<article class="source-content wrap" aria-label="Información para mayoristas">${p.content}</article>` : ''}
 ${faqHtml(p)}
 ${related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu fiesta</h2><div>${related.map(r => `<a href="${esc(r.sourcePath)}">${esc(r.title)}</a>`).join('')}</div></section>` : ''}

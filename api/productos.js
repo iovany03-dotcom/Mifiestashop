@@ -79,6 +79,25 @@ function computeWholesalePrice(basePrice, rule) {
   return { price: Math.max(0, basePrice - rule.reduction), fromQty: rule.fromQty };
 }
 
+// Nombre real de categoría por id_category_default, para todos los
+// productos — no solo los migrados. ps_categorias se sincroniza cada hora
+// desde PrestaShop (ver lib/sync-prestashop.js / api/cron-sync-prestashop.js),
+// así que aquí solo se lee la copia en Supabase, sin tocar PrestaShop.
+async function fetchCategoryNames() {
+  const map = {};
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/ps_categorias?select=id,name`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    if (!r.ok) return map;
+    const rows = await r.json();
+    (Array.isArray(rows) ? rows : []).forEach(row => { map[String(row.id)] = row.name; });
+  } catch (e) {
+    // se queda con lo que ya haya juntado hasta el momento del error
+  }
+  return map;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -123,7 +142,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const r = await fetch(productsUrl, { headers: { Authorization: `Basic ${auth}` } });
+    const authHeaders = { Authorization: `Basic ${auth}` };
+    const r = await fetch(productsUrl, { headers: authHeaders });
     if (!r.ok) {
       const text = await r.text();
       res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
@@ -132,9 +152,30 @@ module.exports = async function handler(req, res) {
 
     const data = await r.json();
     const rawProducts = Array.isArray(data.products) ? data.products : [];
-    const [migrated, wholesaleRules] = await Promise.all([
+    // Total real para paginar: la MISMA condición que "filters" arriba
+    // (id_category_default exacto, no recursivo), pidiendo solo el id para
+    // que sea liviano. Nunca se calcula sumando los conteos por categoría
+    // del sidebar (esos son recursivos — incluyen subcategorías y un
+    // producto puede aparecer en varias — y no coinciden con este filtro
+    // exacto, lo que rompía la paginación: páginas "de más" que siempre
+    // regresaban vacías).
+    async function fetchTotalCount() {
+      try {
+        const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
+        const cr = await fetch(countUrl, { headers: authHeaders });
+        if (!cr.ok) return rawProducts.length;
+        const cdata = await cr.json();
+        return Array.isArray(cdata.products) ? cdata.products.length : rawProducts.length;
+      } catch (e) {
+        return rawProducts.length;
+      }
+    }
+
+    const [migrated, wholesaleRules, categoryNames, total] = await Promise.all([
       fetchMigratedProducts(),
-      fetchWholesalePrices(baseUrl, { Authorization: `Basic ${auth}` })
+      fetchWholesalePrices(baseUrl, authHeaders),
+      fetchCategoryNames(),
+      fetchTotalCount()
     ]);
 
     const products = rawProducts.map(p => {
@@ -187,7 +228,7 @@ module.exports = async function handler(req, res) {
         priceMayoreoDesdeUnidades: wholesale ? wholesale.fromQty : undefined,
         costoCompra,
         categoryId: p.id_category_default || '1',
-        categoryLabel: m ? m.category_label : undefined,
+        categoryLabel: (m && m.category_label) || categoryNames[String(p.id_category_default)] || undefined,
         categoryIds: m && Array.isArray(m.category_ids) && m.category_ids.length > 0 ? m.category_ids : undefined,
         weight, width, height, depth,
         metaTitle: metaTitle || undefined,
@@ -204,6 +245,7 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({
       count: products.length,
+      total,
       products
     });
   } catch (err) {
