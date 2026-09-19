@@ -12106,21 +12106,24 @@ async function loadCatalogPage(){
   if (catalogState.sort !== 'relevance') params.set('sort', catalogState.sort);
 
   let products = [];
+  let total = 0;
   try {
     const r = await fetch('/api/productos?' + params.toString());
     const data = await r.json();
     products = Array.isArray(data.products) ? data.products.map(p => ({
       id: p.id, name: p.name, sku: p.sku, price: p.price, img: p.img, url: p.url, desc: p.description, cat: 'general'
     })) : [];
+    // El total real de PrestaShop para este mismo filtro (id_category_default
+    // exacto o "todos los activos") — NUNCA la suma de los conteos del
+    // sidebar, que son recursivos (incluyen subcategorías, un producto puede
+    // contar en varias) y no coinciden con lo que esta consulta realmente
+    // regresa: eso hacía que páginas "de más" siempre salieran vacías.
+    total = Number.isFinite(data.total) ? data.total : products.length;
   } catch (e) {
     products = [];
   }
 
   currentStorefrontList = products;
-
-  const total = catalogState.catId === 'all'
-    ? catalogCategories.reduce((s, c) => s + (c.count || 0), 0)
-    : (catalogCategories.find(c => String(c.id) === String(catalogState.catId))?.count || products.length);
   catalogState.total = total;
 
   if (products.length === 0) {

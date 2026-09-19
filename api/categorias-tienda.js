@@ -55,15 +55,20 @@ module.exports = async function handler(req, res) {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const headers = { Authorization: `Basic ${auth}` };
 
+    // El conteo se calcula con el MISMO filtro que usa /api/productos para
+    // navegar por categoría (id_category_default exacto), no con
+    // nb_products_recursive: ese es recursivo (incluye subcategorías y un
+    // producto puede contar en varias a la vez), así que el número que se
+    // ve aquí no coincidía con lo que en realidad se podía hojear —
+    // páginas "de más" que siempre regresaban vacías.
     const results = await Promise.all(categories.map(async (c) => {
       try {
-        const fields = '[id,nb_products_recursive]';
-        const url = `${baseUrl}/api/categories/${c.id}?display=${encodeURIComponent(fields)}&output_format=JSON`;
+        const filters = `filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + c.id + ']')}`;
+        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
         const r = await fetch(url, { headers });
         if (!r.ok) return { ...c, count: 0 };
         const data = await r.json();
-        const cat = Array.isArray(data.categories) ? data.categories[0] : data.category;
-        const count = parseInt(cat?.nb_products_recursive || 0, 10);
+        const count = Array.isArray(data.products) ? data.products.length : 0;
         return { ...c, count };
       } catch (e) {
         return { ...c, count: 0 };
