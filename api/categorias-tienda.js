@@ -35,6 +35,32 @@ function normalizeCategoryName(name) {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
+// Mismo listado completo de categorías por producto que usa /api/productos
+// para no dejar fuera productos cuya categoría por defecto en PrestaShop es
+// otra distinta — si no se suma aquí también, el conteo del sidebar vuelve
+// a no coincidir con lo que la navegación por categoría en realidad regresa.
+async function fetchMigratedCategoryIds() {
+  const PAGE_SIZE = 1000;
+  const list = [];
+  try {
+    let from = 0;
+    while (true) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?select=id,category_ids`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Range: `${from}-${from + PAGE_SIZE - 1}` }
+      });
+      if (!r.ok) break;
+      const rows = await r.json();
+      const batch = Array.isArray(rows) ? rows : [];
+      list.push(...batch);
+      if (batch.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+  } catch (e) {
+    // se queda con lo que ya haya juntado hasta el momento del error
+  }
+  return list;
+}
+
 async function loadCategoriesFromSupabase() {
   const url = `${SUPABASE_URL}/rest/v1/ps_categorias?select=id,name&id_parent=eq.${PRODUCTS_ROOT_CATEGORY_ID}&active=eq.true&order=name.asc`;
   const r = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
@@ -66,21 +92,25 @@ module.exports = async function handler(req, res) {
   try {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const headers = { Authorization: `Basic ${auth}` };
+    const migratedRows = await fetchMigratedCategoryIds();
 
-    // El conteo se calcula con el MISMO filtro que usa /api/productos para
-    // navegar por categoría (id_category_default exacto), no con
-    // nb_products_recursive: ese es recursivo (incluye subcategorías y un
-    // producto puede contar en varias a la vez), así que el número que se
-    // ve aquí no coincidía con lo que en realidad se podía hojear —
-    // páginas "de más" que siempre regresaban vacías.
+    // El conteo se calcula con el MISMO criterio que usa /api/productos para
+    // navegar por categoría: el filtro exacto de id_category_default en
+    // PrestaShop (no nb_products_recursive, que es recursivo e incluye
+    // subcategorías) UNIDO con las categorías reales de los productos
+    // migrados (category_ids) — un producto puede vivir en varias a la
+    // vez, y su categoría por defecto no siempre es la única.
     const results = await Promise.all(categories.map(async (c) => {
       try {
         const filters = `filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + c.id + ']')}`;
         const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
         const r = await fetch(url, { headers });
-        if (!r.ok) return { ...c, count: 0 };
-        const data = await r.json();
-        const count = Array.isArray(data.products) ? data.products.length : 0;
+        const data = r.ok ? await r.json() : null;
+        const defaultIds = data && Array.isArray(data.products) ? data.products.map(p => Number(p.id)) : [];
+        const migratedIds = migratedRows
+          .filter(row => Array.isArray(row.category_ids) && row.category_ids.map(String).includes(String(c.id)))
+          .map(row => Number(row.id));
+        const count = new Set([...defaultIds, ...migratedIds]).size;
         return { ...c, count };
       } catch (e) {
         return { ...c, count: 0 };

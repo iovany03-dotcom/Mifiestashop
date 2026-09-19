@@ -130,7 +130,8 @@ module.exports = async function handler(req, res) {
   const offset = parseInt(req.query.offset, 10) || 0;
   const category = req.query.category;
   const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
-  const sort = SORT_MAP[req.query.sort];
+  const sortKey = req.query.sort;
+  const sort = SORT_MAP[sortKey];
   const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,wholesale_price,ean13,weight,width,height,depth,meta_title,meta_description,meta_keywords,low_stock_threshold]';
   let filters = 'filter[active]=1';
   if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
@@ -155,40 +156,85 @@ module.exports = async function handler(req, res) {
   try {
     const auth = Buffer.from(`${apiKey}:`).toString('base64');
     const authHeaders = { Authorization: `Basic ${auth}` };
-    const r = await fetch(productsUrl, { headers: authHeaders });
-    if (!r.ok) {
-      const text = await r.text();
-      res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
-      return;
-    }
 
-    const data = await r.json();
-    const rawProducts = Array.isArray(data.products) ? data.products : [];
-    // Total real para paginar: la MISMA condición que "filters" arriba
-    // (id_category_default exacto, no recursivo), pidiendo solo el id para
-    // que sea liviano. Nunca se calcula sumando los conteos por categoría
-    // del sidebar (esos son recursivos — incluyen subcategorías y un
-    // producto puede aparecer en varias — y no coinciden con este filtro
-    // exacto, lo que rompía la paginación: páginas "de más" que siempre
-    // regresaban vacías).
-    async function fetchTotalCount() {
+    // Un producto puede vivir en varias categorías a la vez, pero
+    // PrestaShop solo expone UNA por producto vía id_category_default —
+    // filtrar por eso, como se hacía antes, deja fuera cualquier producto
+    // cuya categoría por defecto sea otra aunque también esté asignado a
+    // esta. Para los ~1067 productos migrados sí tenemos el listado real
+    // completo de categorías (productos_migrados.category_ids, capturado
+    // del sitio real) — se usa como fuente adicional, unida con el filtro
+    // por defecto de PrestaShop (que sigue cubriendo todo lo no migrado).
+    async function fetchDefaultCategoryIds(catId) {
       try {
-        const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
-        const cr = await fetch(countUrl, { headers: authHeaders });
-        if (!cr.ok) return rawProducts.length;
-        const cdata = await cr.json();
-        return Array.isArray(cdata.products) ? cdata.products.length : rawProducts.length;
+        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + catId + ']')}&limit=0,5000&output_format=JSON`;
+        const r = await fetch(url, { headers: authHeaders });
+        if (!r.ok) return [];
+        const data = await r.json();
+        return Array.isArray(data.products) ? data.products.map(p => Number(p.id)) : [];
       } catch (e) {
-        return rawProducts.length;
+        return [];
       }
     }
 
-    const [migrated, wholesaleRules, categoryNames, total] = await Promise.all([
+    async function fetchByIds(ids) {
+      const CHUNK = 200;
+      const out = [];
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const chunk = ids.slice(i, i + CHUNK);
+        const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&filter[id]=${encodeURIComponent('[' + chunk.join('|') + ']')}&limit=0,${chunk.length}&output_format=JSON`;
+        const r = await fetch(url, { headers: authHeaders });
+        if (!r.ok) continue;
+        const data = await r.json();
+        if (Array.isArray(data.products)) out.push(...data.products);
+      }
+      return out;
+    }
+
+    const [migrated, wholesaleRules, categoryNames, defaultCatIds] = await Promise.all([
       fetchMigratedProducts(),
       fetchWholesalePrices(baseUrl, authHeaders),
       fetchCategoryNames(),
-      fetchTotalCount()
+      category ? fetchDefaultCategoryIds(category) : Promise.resolve(null)
     ]);
+
+    let rawProducts, total;
+    if (category) {
+      const migratedCatIds = Object.values(migrated)
+        .filter(m => Array.isArray(m.category_ids) && m.category_ids.map(String).includes(String(category)))
+        .map(m => Number(m.id));
+      // Tope defensivo: una categoría con miles de productos no debería
+      // pasar por aquí (limit=0,5000 arriba ya lo acota), pero por las
+      // dudas se corta antes de pedir el detalle completo de todos.
+      const allIds = [...new Set([...defaultCatIds, ...migratedCatIds])].slice(0, 5000);
+      // Se trae el detalle completo del set (no solo la página pedida):
+      // el nombre real que se usa para ordenar (name_asc/desc) viene del
+      // campo multi-idioma crudo de PrestaShop o del nombre migrado, y
+      // eso solo se resuelve más abajo al mapear — ordenar antes, con el
+      // dato crudo, no funcionaría. El recorte de página se hace después
+      // de mapear y ordenar.
+      rawProducts = allIds.length ? await fetchByIds(allIds) : [];
+    } else {
+      const r = await fetch(productsUrl, { headers: authHeaders });
+      if (!r.ok) {
+        const text = await r.text();
+        res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
+        return;
+      }
+      const data = await r.json();
+      rawProducts = Array.isArray(data.products) ? data.products : [];
+      // Total real para "todos los productos" — id-only, liviano — nunca se
+      // calcula sumando los conteos por categoría del sidebar (recursivos,
+      // un producto puede aparecer en varias), eso rompía la paginación.
+      try {
+        const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
+        const cr = await fetch(countUrl, { headers: authHeaders });
+        const cdata = cr.ok ? await cr.json() : null;
+        total = cdata && Array.isArray(cdata.products) ? cdata.products.length : rawProducts.length;
+      } catch (e) {
+        total = rawProducts.length;
+      }
+    }
 
     const products = rawProducts.map(p => {
       const nameStr = firstLangValue(p.name, 'Producto PrestaShop');
@@ -255,10 +301,31 @@ module.exports = async function handler(req, res) {
       };
     });
 
+    // El resultado por categoría junta dos fuentes (ver arriba) y se pidió
+    // completo, sin paginar — el orden y el recorte de página se aplican
+    // aquí, ya con nombre/precio resueltos (antes de mapear todavía son
+    // campos multi-idioma crudos de PrestaShop, no texto comparable).
+    let pageProducts = products;
+    if (category) {
+      // total real: el set completo pedido por id ya viene filtrado por
+      // filter[active]=1 (fetchByIds), así que puede ser menor que
+      // allIds.length si algún producto migrado quedó inactivo desde que
+      // se capturó category_ids — se usa el conteo posterior a ese filtro.
+      total = products.length;
+      const SORT_COMPARATORS = {
+        price_asc: (a, b) => a.price - b.price,
+        price_desc: (a, b) => b.price - a.price,
+        name_asc: (a, b) => a.name.localeCompare(b.name),
+        name_desc: (a, b) => b.name.localeCompare(a.name)
+      };
+      if (SORT_COMPARATORS[sortKey]) products.sort(SORT_COMPARATORS[sortKey]);
+      pageProducts = products.slice(offset, offset + limit);
+    }
+
     res.status(200).json({
-      count: products.length,
+      count: pageProducts.length,
       total,
-      products
+      products: pageProducts
     });
   } catch (err) {
     res.status(500).json({ error: 'Fallo al consultar API de Productos PrestaShop', detail: String(err) });
