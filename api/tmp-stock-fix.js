@@ -70,7 +70,8 @@ module.exports = async function handler(req, res) {
     try {
       const synopsis = await fetch(`${baseUrl}/api/stock_movements?schema=synopsis`, { headers });
       const synText = await synopsis.text();
-      res.status(200).json({ synopsis: synText.slice(0, 3000) });
+      const reasons = await psGet('/api/stock_mvt_reasons?display=full&limit=0,30');
+      res.status(200).json({ synopsis: synText.slice(0, 3000), reasons });
     } catch (e) { res.status(200).json({ error: e.message }); }
     return;
   }
