@@ -24,9 +24,9 @@ const footer = fs.readFileSync(path.join(__dirname, 'cms-footer.html'), 'utf8');
 const sourceContent = `<h1>ARTÍCULOS PARA FIESTA AL MAYOREO</h1>
 <p>¿Organizas eventos o planeas abrir una tienda?</p><p>Si estás organizando eventos y deseas adquirir productos a precios preferenciales, ¡ponte en contacto con nosotros! Ofrecemos grandes beneficios para negocios que buscan manejar precios de mayoreo. Si estás planeando abrir una tienda o ya tienes una y quieres el mejor aliado para hacer crecer tu negocio, estamos aquí para ayudarte.</p>
 <h2>POR QUE NOSOTROS</h2>
-<img src="/img/cms/521e8dd609804555.png" alt="" width="512" height="512" /><h3>SOMOS IMPORTADORES</h3><p>Somos importadores directos y fabricantes de todos nuestros productos.</p>
-<img src="/img/cms/fd0d5b8a90bffd15.png" alt="" width="512" height="512" /><h3>LA MARCA 1° EN MEXICO</h3><p>Somos la marca número 1 en Mexico en venta y distribucion de articulos para fiesta </p>
-<img src="/img/cms/4d375d5549d4ecaa.png" alt="" width="512" height="512" /><h3>TE AYUDAMOS</h3><p>Te ayudamos a que tu negocio tenga los beneficios de nuestros programas de afiliados</p>
+<img src="https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-importadores.svg" alt="Somos importadores"><h3>SOMOS IMPORTADORES</h3><p>Somos importadores directos y fabricantes de todos nuestros productos.</p>
+<img src="https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-marca1.svg" alt="La marca 1 en Mexico"><h3>LA MARCA 1° EN MEXICO</h3><p>Somos la marca número 1 en Mexico en venta y distribucion de articulos para fiesta </p>
+<img src="https://mifiestashop.vercel.app/assets/mayoristas-icons/icon-ayuda.svg" alt="Te ayudamos"><h3>TE AYUDAMOS</h3><p>Te ayudamos a que tu negocio tenga los beneficios de nuestros programas de afiliados</p>
 <h2>Es necesario registrarse para ver los precios de mayoreo. Hasta un 50% de descuento</h2>
 <h2>+ DE 400 ARTICULOS</h2>
 <p><a href="/?buscar=fiesta">Ver todos</a></p>`;
