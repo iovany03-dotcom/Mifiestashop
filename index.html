@@ -12025,8 +12025,7 @@ function renderStorefrontLoadMore(shown, total){
 }
 
 function loadMoreStorefrontProducts(){
-  storefrontVisibleCount += STOREFRONT_PAGE_SIZE;
-  renderStorefrontProducts(currentStorefrontCat, currentStorefrontQuery, true);
+  openStorefrontCatalog('all');
 }
 
 // ================= FULL CATALOG BROWSE PANEL (real PrestaShop categories) =================
@@ -13698,6 +13697,11 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
     if (input) input.value = query;
     filterStorefrontProducts(query);
   }
+  // renderStorefrontProducts() de arriba (llamado dentro del propio sync)
+  // ya volvió a mostrar el home y ocultó el panel de catálogo completo que
+  // routeApp() pudo haber abierto por "?vista=catalogo" — se vuelve a abrir
+  // aquí, después de que el sync terminó, para que no se revierta.
+  if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
 }).then(checkLowStockNotifications);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
@@ -13766,6 +13770,7 @@ function routeApp() {
 if(window.location.pathname==='/'){
  const vista=new URLSearchParams(window.location.search).get('vista');
  if(vista==='carrito')openStorefrontCart();
+ else if(vista==='catalogo')openStorefrontCatalog('all');
  else if(vista==='admin')goToAdmin();
  else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
 }
