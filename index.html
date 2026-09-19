@@ -2820,6 +2820,16 @@
 
     <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
     <section id="view-dashboard" class="view-panel hidden">
+      <div class="card hidden" id="negativeStockWarningCard" style="border:1px solid #fecaca; background:#fef2f2;">
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <div style="font-size:22px; line-height:1;">⚠️</div>
+          <div style="flex:1; min-width:0;">
+            <h3 style="margin:0 0 6px; color:#991b1b; font-size:15px;">Productos con existencia en negativo</h3>
+            <p style="margin:0 0 8px; font-size:13px; color:#7f1d1d;">Se siguen vendiendo (no se ocultan del POS), pero conviene revisar el conteo real cuanto antes.</p>
+            <div id="negativeStockWarningList" style="font-size:12.5px; color:#7f1d1d; line-height:1.7;"></div>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
@@ -6556,6 +6566,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
+  if (viewName === 'dashboard') checkNegativeStockWarning();
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
@@ -6825,12 +6836,26 @@ function confirmPOSSale() {
       id_product: item.id, almacen: almacenKey, qty: -Math.abs(item.qty),
       motivo: 'venta_pos', folio, registrado_por: nombreSesionActual()
     }));
+    // El carrito ya se vacía (clearCart(), más abajo) antes de que esta
+    // promesa resuelva — se guarda una copia mínima aparte para poder
+    // avisar por nombre qué producto quedó en 0/negativo.
+    const itemsForStockCheck = cart.map(item => ({ id: item.id, name: item.name }));
     sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves }).then(() => {
       moves.forEach(m => {
         const key = `${m.id_product}|${m.almacen}`;
         stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
       });
       renderInventarioTable();
+
+      // Ya no se le oculta al cajero un producto sin existencia (puede
+      // seguir vendiéndolo si físicamente lo tiene en mano), pero si la
+      // venta lo deja en 0 o negativo debe quedar avisado, no en silencio.
+      const negativeItems = itemsForStockCheck.filter(item => getStockFor(item.id, almacenKey) <= 0);
+      if (negativeItems.length > 0) {
+        const names = negativeItems.map(i => `${i.name} (${getStockFor(i.id, almacenKey)})`).slice(0, 3).join(', ');
+        const extra = negativeItems.length > 3 ? ` y ${negativeItems.length - 3} más` : '';
+        notifyEvent('negativeStock', 'Existencia en negativo', `${WAREHOUSE_LABELS[almacenKey] || almacenKey}: ${names}${extra} tras esta venta.`);
+      }
     }).catch(() => {});
   }
 
@@ -9266,18 +9291,17 @@ function renderProducts(category = 'all', query = '') {
     return matchCat && matchQ;
   });
 
-  const matched = filterByStock
-    ? matchedByFilters.filter(p => getStockFor(p.id, whKey) > 0)
-    : matchedByFilters;
+  // Ya no se ocultan los productos sin existencia (o en negativo) — el
+  // cajero sigue pudiendo venderlos si físicamente hay pieza en mano; solo
+  // se marca en rojo como advertencia (ver notifyEvent('negativeStock', ...)
+  // en confirmPOSSale, que además avisa cuando esto realmente pasa).
+  const matched = matchedByFilters;
 
   const limit = isBrowsingAll ? POS_BROWSE_LIMIT : POS_SEARCH_LIMIT;
   const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
-    const msg = filterByStock && matchedByFilters.length > 0
-      ? 'No hay productos con existencia en esta sucursal.'
-      : 'No se encontraron productos en esta categoría.';
-    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">${msg}</div>`;
+    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>`;
     return;
   }
 
@@ -9285,7 +9309,9 @@ function renderProducts(category = 'all', query = '') {
     const card = document.createElement('div');
     card.className = 'pos-card';
     card.onclick = () => addToCart(p);
-    const stockLabel = filterByStock ? `En stock (${getStockFor(p.id, whKey)})` : 'En stock';
+    const stockQty = filterByStock ? getStockFor(p.id, whKey) : null;
+    const stockLabel = stockQty === null ? 'En stock' : (stockQty > 0 ? `En stock (${stockQty})` : `Sin existencia (${stockQty})`);
+    const stockStyle = stockQty !== null && stockQty <= 0 ? ' style="color:#dc2626; font-weight:700;"' : '';
     card.innerHTML = `
       <img src="${p.img}" alt="${escapeHtml(p.name)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div>
@@ -9294,7 +9320,7 @@ function renderProducts(category = 'all', query = '') {
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
-        <div class="p-stock">${stockLabel}</div>
+        <div class="p-stock"${stockStyle}>${stockLabel}</div>
       </div>
     `;
     grid.appendChild(card);
@@ -10071,6 +10097,43 @@ function checkLowStockNotifications() {
   const preview = lowItems.slice(0, 3).join(', ');
   const extra = lowItems.length > 3 ? ` y ${lowItems.length - 3} más` : '';
   notifyEvent('lowStock', 'Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
+}
+
+// Los productos con existencia en 0/negativo ya no se ocultan del POS (el
+// cajero puede seguir vendiéndolos si físicamente los tiene en mano) — esto
+// mantiene la advertencia visible en el Dashboard en su lugar, por
+// sucursal, y avisa una vez por sesión (igual que checkLowStockNotifications).
+function checkNegativeStockWarning() {
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const branches = ['puebla', 'rumania', 'queretaro'];
+  const negativeEntries = [];
+  dataset.forEach((p, index) => {
+    const pId = p.id || index + 1;
+    branches.forEach(wh => {
+      const qty = getStockFor(pId, wh);
+      if (qty < 0) negativeEntries.push({ name: p.name, branch: WAREHOUSE_LABELS[wh] || wh, qty });
+    });
+  });
+
+  const card = document.getElementById('negativeStockWarningCard');
+  const list = document.getElementById('negativeStockWarningList');
+  if (card && list) {
+    if (negativeEntries.length === 0) {
+      card.classList.add('hidden');
+    } else {
+      card.classList.remove('hidden');
+      list.innerHTML = negativeEntries.slice(0, 12).map(e =>
+        `${escapeHtml(e.name)} — ${escapeHtml(e.branch)}: <b>${e.qty}</b>`
+      ).join('<br>') + (negativeEntries.length > 12 ? `<br>y ${negativeEntries.length - 12} más…` : '');
+    }
+  }
+
+  if (negativeEntries.length > 0 && sessionStorage.getItem('mf_negstock_notified') !== 'true') {
+    sessionStorage.setItem('mf_negstock_notified', 'true');
+    const preview = negativeEntries.slice(0, 3).map(e => `${e.name} (${e.branch})`).join(', ');
+    const extra = negativeEntries.length > 3 ? ` y ${negativeEntries.length - 3} más` : '';
+    notifyEvent('negativeStock', 'Existencia en negativo', `${negativeEntries.length} producto(s) en negativo: ${preview}${extra}.`);
+  }
 }
 
 function updateOrderDetailStatus() {
@@ -13637,6 +13700,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   }
 }).then(checkLowStockNotifications);
 loadRealStockData().then(() => {
+  checkNegativeStockWarning();
   if (document.getElementById('posProductGrid')) {
     const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
     renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
