@@ -57,20 +57,10 @@ async function sbRpcServer(fnName, params) {
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
+  if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'Método no permitido' }); return; }
   let body = {};
-  if (req.method === 'POST') {
-    try { body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); }
-    catch (e) { res.status(400).json({ ok: false, error: 'JSON inválido' }); return; }
-  } else if (req.method === 'GET' && req.query.payload) {
-    // Solo para pruebas manuales desde una herramienta que no puede mandar
-    // POST (ver PR de esta función) — el flujo real del POS siempre usa
-    // POST. Quitar este bloque antes de dar por cerrada la función.
-    try { body = JSON.parse(req.query.payload); }
-    catch (e) { res.status(400).json({ ok: false, error: 'payload inválido' }); return; }
-  } else {
-    res.status(405).json({ ok: false, error: 'Método no permitido' });
-    return;
-  }
+  try { body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); }
+  catch (e) { res.status(400).json({ ok: false, error: 'JSON inválido' }); return; }
 
   // JSON.stringify() omite las claves con valor undefined — si falta una de
   // las 3 (p.ej. solo se manda p_staff_email/p_staff_pin, sin
@@ -121,117 +111,6 @@ module.exports = async function handler(req, res) {
   function xmlTagVal(xml, tag) {
     const m = xml.match(new RegExp(`<${tag}>(?:<!\\[CDATA\\[)?([^<\\]]*)`));
     return m ? m[1] : null;
-  }
-
-  // Introspección temporal de solo-lectura para depurar el POST a
-  // /api/orders (ver PR de esta función) — quitar una vez que la creación
-  // de pedidos quede funcionando de forma confiable.
-  if (req.query.introspect) {
-    try {
-      const r = await fetch(`${baseUrl}/api/${req.query.introspect}?schema=synopsis`, { headers });
-      const text = await r.text();
-      res.status(200).json({ status: r.status, xml: text.slice(0, 4000) });
-    } catch (e) { res.status(200).json({ error: e.message }); }
-    return;
-  }
-
-  // Depuración temporal: prueba varias variantes del XML del pedido contra
-  // el mismo carrito real, para aislar en una sola llamada qué campo causa
-  // el 500 en blanco de /api/orders (ver PR de esta función).
-  if (req.query.debugOrder) {
-    const results = [];
-    try {
-      const [customerData, currenciesData, languagesData] = await Promise.all([
-        psGet(`/api/customers/${POS_CUSTOMER_ID}`),
-        psGet('/api/currencies?filter[active]=1&display=[id,iso_code]&limit=0,20'),
-        psGet('/api/languages?filter[active]=1&display=[id,iso_code]&limit=0,20')
-      ]);
-      const customer = customerData.customer;
-      const secureKey = customer.secure_key;
-      const idLang = (Array.isArray(languagesData.languages) ? languagesData.languages : [languagesData.languages])
-        .filter(Boolean).find(l => l.iso_code === 'es')?.id || customer.id_lang || 1;
-      const idCurrency = (Array.isArray(currenciesData.currencies) ? currenciesData.currencies : [currenciesData.currencies])
-        .filter(Boolean).find(c => c.iso_code === 'MXN')?.id || 1;
-
-      const cartXml = `<?xml version="1.0" encoding="UTF-8"?>
-<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
-  <cart>
-    <id_currency>${idCurrency}</id_currency>
-    <id_lang>${idLang}</id_lang>
-    <id_address_delivery>${POS_ADDRESS_ID}</id_address_delivery>
-    <id_address_invoice>${POS_ADDRESS_ID}</id_address_invoice>
-    <id_customer>${POS_CUSTOMER_ID}</id_customer>
-    <id_guest>0</id_guest>
-    <id_shop>${SHOP_ID}</id_shop>
-    <secure_key>${esc(secureKey)}</secure_key>
-    <associations>
-      <cart_rows>
-        <cart_row>
-          <id_product>84646</id_product>
-          <id_product_attribute>0</id_product_attribute>
-          <id_address_delivery>${POS_ADDRESS_ID}</id_address_delivery>
-          <quantity>1</quantity>
-        </cart_row>
-      </cart_rows>
-    </associations>
-  </cart>
-</prestashop>`;
-      let idCart;
-      try {
-        const cartResXml = await psWrite('POST', '/api/carts', cartXml);
-        idCart = xmlTagVal(cartResXml, 'id');
-        results.push({ step: 'cart', ok: true, idCart });
-      } catch (e) {
-        results.push({ step: 'cart', ok: false, detail: e.message });
-        res.status(200).json({ results }); return;
-      }
-
-      const base = {
-        id_address_delivery: POS_ADDRESS_ID, id_address_invoice: POS_ADDRESS_ID, id_cart: idCart,
-        id_currency: idCurrency, id_lang: idLang, id_customer: POS_CUSTOMER_ID, id_carrier: CARRIER_ID,
-        module: PAYMENT_MODULE, payment: 'Venta en sucursal', total_paid: '17.40', total_paid_real: '17.40',
-        total_products: '15.00', total_products_wt: '17.40', conversion_rate: '1.000000'
-      };
-      const variants = {
-        a_minimo_sin_extra: base,
-        b_con_current_state: { ...base, current_state: ORDER_STATE_PAID },
-        c_con_shop_y_secure_key: { ...base, current_state: ORDER_STATE_PAID, id_shop: SHOP_ID, secure_key: secureKey },
-        d_con_id_shop_group: { ...base, current_state: ORDER_STATE_PAID, id_shop: SHOP_ID, secure_key: secureKey, id_shop_group: 1 },
-        e_sin_current_state_con_valid: { ...base, id_shop: SHOP_ID, secure_key: secureKey, valid: 1 }
-      };
-      for (const [label, fields] of Object.entries(variants)) {
-        const body = Object.entries(fields).map(([k, v]) => `    <${k}>${esc(v)}</${k}>`).join('\n');
-        const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">\n  <order>\n${body}\n  </order>\n</prestashop>`;
-        try {
-          const r = await psWrite('POST', '/api/orders', xml);
-          results.push({ variant: label, ok: true, idOrder: xmlTagVal(r, 'id') });
-          break; // ya encontramos una que funciona, no hace falta seguir creando pedidos de prueba
-        } catch (e) {
-          results.push({ variant: label, ok: false, detail: e.message.slice(0, 300) });
-        }
-      }
-      // También prueba si el problema es específico de /api/orders o si
-      // cualquier escritura fuera de carts está bloqueada (p.ej. permisos
-      // de la llave webservice por recurso en el admin de PrestaShop).
-      try {
-        const stockData = await psGet(`/api/stock_availables?filter[id_product]=84646&filter[id_product_attribute]=0&filter[id_shop]=${SHOP_ID}&display=[id,quantity]`);
-        const rows = Array.isArray(stockData.stock_availables) ? stockData.stock_availables : [stockData.stock_availables].filter(Boolean);
-        const row = rows[0];
-        if (row) {
-          const putXml = `<?xml version="1.0" encoding="UTF-8"?>\n<prestashop xmlns:xlink="http://www.w3.org/1999/xlink">\n  <stock_available>\n    <id>${row.id}</id>\n    <id_product>84646</id_product>\n    <id_product_attribute>0</id_product_attribute>\n    <id_shop>${SHOP_ID}</id_shop>\n    <quantity>${row.quantity}</quantity>\n  </stock_available>\n</prestashop>`;
-          try {
-            await psWrite('PUT', `/api/stock_availables/${row.id}`, putXml);
-            results.push({ step: 'stock_put_test', ok: true, note: 'quantity reescrita al mismo valor, sin cambio real' });
-          } catch (e) { results.push({ step: 'stock_put_test', ok: false, detail: e.message.slice(0, 300) }); }
-        } else {
-          results.push({ step: 'stock_put_test', ok: false, detail: 'no se encontró la fila de stock' });
-        }
-      } catch (e) { results.push({ step: 'stock_put_test', ok: false, detail: e.message.slice(0, 300) }); }
-    } catch (e) {
-      results.push({ step: 'fatal', detail: e.message });
-    }
-    res.status(200).json({ results });
-    return;
   }
 
   const step = { name: 'inicio' };
@@ -339,20 +218,21 @@ module.exports = async function handler(req, res) {
     const orderResXml = await psWrite('POST', '/api/orders', orderXml);
     const idOrder = xmlTagVal(orderResXml, 'id');
     if (!idOrder) throw new Error('No se pudo leer id_order de la respuesta de PrestaShop: ' + orderResXml.slice(0, 300));
-    const lineErrors = [];
 
-    // 4) Descuenta el stock real de PrestaShop para esa bodega — un pedido
+    // 3) Descuenta el stock real de PrestaShop para esa bodega — un pedido
     // creado por webservice no dispara el descuento automático que sí
     // ocurre en un checkout normal.
     step.name = 'descontar_stock';
     const stockErrors = [];
     for (const it of items) {
       try {
-        const stockData = await psGet(`/api/stock_availables?filter[id_product]=${it.id}&filter[id_product_attribute]=0&filter[id_shop]=${SHOP_ID}&display=[id,quantity]`);
+        const stockData = await psGet(`/api/stock_availables?filter[id_product]=${it.id}&filter[id_product_attribute]=0&filter[id_shop]=${SHOP_ID}&display=[id,quantity,depends_on_stock]`);
         const rows = Array.isArray(stockData.stock_availables) ? stockData.stock_availables : [stockData.stock_availables].filter(Boolean);
         const row = rows[0];
         if (!row) { stockErrors.push(`producto ${it.id}: no se encontró stock_available`); continue; }
         const newQty = Math.max(0, Number(row.quantity) - Number(it.qty));
+        // depends_on_stock es obligatorio en el PUT aunque no se esté
+        // cambiando — se reenvía el valor real ya existente, no uno fijo.
         const putXml = `<?xml version="1.0" encoding="UTF-8"?>
 <prestashop xmlns:xlink="http://www.w3.org/1999/xlink">
   <stock_available>
@@ -360,6 +240,7 @@ module.exports = async function handler(req, res) {
     <id_product>${esc(it.id)}</id_product>
     <id_product_attribute>0</id_product_attribute>
     <id_shop>${SHOP_ID}</id_shop>
+    <depends_on_stock>${row.depends_on_stock}</depends_on_stock>
     <quantity>${newQty}</quantity>
   </stock_available>
 </prestashop>`;
@@ -367,14 +248,13 @@ module.exports = async function handler(req, res) {
       } catch (e) { stockErrors.push(`producto ${it.id}: ${e.message}`); }
     }
 
-    const warnings = [...lineErrors, ...stockErrors];
     await sbRpcServer('rpc_pos_ticket_mark_sync', {
       p_admin_password, p_staff_email, p_staff_pin,
-      p_folio: folio, p_status: warnings.length ? 'error' : 'sincronizado',
-      p_ps_order_id: parseInt(idOrder, 10), p_error: warnings.length ? warnings.join(' | ').slice(0, 500) : null
+      p_folio: folio, p_status: stockErrors.length ? 'error' : 'sincronizado',
+      p_ps_order_id: parseInt(idOrder, 10), p_error: stockErrors.length ? stockErrors.join(' | ').slice(0, 500) : null
     });
 
-    res.status(200).json({ ok: warnings.length === 0, ps_order_id: parseInt(idOrder, 10), warnings });
+    res.status(200).json({ ok: stockErrors.length === 0, ps_order_id: parseInt(idOrder, 10), warnings: stockErrors });
   } catch (err) {
     try {
       await sbRpcServer('rpc_pos_ticket_mark_sync', {
