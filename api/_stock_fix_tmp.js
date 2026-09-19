@@ -18,9 +18,14 @@ async function sbRpcServer(fnName, params) {
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method !== 'POST') { res.status(405).json({ error: 'Método no permitido' }); return; }
   let body = {};
-  try { body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); } catch (e) {}
+  if (req.method === 'POST') {
+    try { body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); } catch (e) {}
+  } else if (req.method === 'GET' && req.query.payload) {
+    try { body = JSON.parse(req.query.payload); } catch (e) {}
+  } else {
+    res.status(405).json({ error: 'Método no permitido' }); return;
+  }
 
   const p_admin_password = body.p_admin_password ?? null;
   const p_staff_email = body.p_staff_email ?? null;
