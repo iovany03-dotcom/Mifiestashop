@@ -4,6 +4,18 @@
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
+// Algunas categorías vienen capturadas en PrestaShop TODO EN MAYÚSCULAS
+// (p.ej. "ARTÍCULOS DE XV AÑOS"), distinto del resto ("Globos", "Despedida
+// de soltera"...) — se re-castean aquí, en lectura, para que se vean
+// consistentes sin tener que escribir de vuelta a PrestaShop ni pelear con
+// que el sync horario (ps_categorias) las vuelva a sobreescribir.
+function normalizeCategoryName(name) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed || trimmed !== trimmed.toUpperCase() || trimmed === trimmed.toLowerCase()) return trimmed;
+  const lower = trimmed.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -17,7 +29,7 @@ module.exports = async function handler(req, res) {
 
     const rawCats = await r.json();
     const categories = rawCats
-      .map(c => ({ id: c.id, name: c.name || `Categoría ${c.id}` }))
+      .map(c => ({ id: c.id, name: normalizeCategoryName(c.name) || `Categoría ${c.id}` }))
       .filter(c => c.name.toLowerCase() !== 'inicio' && c.name.toLowerCase() !== 'home');
 
     res.status(200).json({ categories, source: 'supabase' });

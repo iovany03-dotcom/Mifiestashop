@@ -79,6 +79,18 @@ function computeWholesalePrice(basePrice, rule) {
   return { price: Math.max(0, basePrice - rule.reduction), fromQty: rule.fromQty };
 }
 
+// Algunas categorías vienen capturadas en PrestaShop TODO EN MAYÚSCULAS
+// (p.ej. "ARTÍCULOS DE XV AÑOS"), distinto del resto ("Globos", "Despedida
+// de soltera"...) — se re-castean aquí, en lectura, para que se vean
+// consistentes sin tener que escribir de vuelta a PrestaShop ni pelear con
+// que el sync horario (ps_categorias) las vuelva a sobreescribir.
+function normalizeCategoryName(name) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed || trimmed !== trimmed.toUpperCase() || trimmed === trimmed.toLowerCase()) return trimmed;
+  const lower = trimmed.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 // Nombre real de categoría por id_category_default, para todos los
 // productos — no solo los migrados. ps_categorias se sincroniza cada hora
 // desde PrestaShop (ver lib/sync-prestashop.js / api/cron-sync-prestashop.js),
@@ -91,7 +103,7 @@ async function fetchCategoryNames() {
     });
     if (!r.ok) return map;
     const rows = await r.json();
-    (Array.isArray(rows) ? rows : []).forEach(row => { map[String(row.id)] = row.name; });
+    (Array.isArray(rows) ? rows : []).forEach(row => { map[String(row.id)] = normalizeCategoryName(row.name); });
   } catch (e) {
     // se queda con lo que ya haya juntado hasta el momento del error
   }
