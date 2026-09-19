@@ -50,6 +50,10 @@ const page = {
 
 const models = pages.map(p => modelFor(p, pages));
 const model = modelFor(page, pages);
+// modelFor() siempre deriva heroImage de la primera <img> encontrada en el
+// contenido (aquí, el ícono genérico de "Somos importadores") — se
+// sobreescribe aparte con el banner real que sí es para esta página.
+model.heroImage = '/img/cms/mayoristas-banner.webp';
 
 function faqHtml(p) {
   const items = [
