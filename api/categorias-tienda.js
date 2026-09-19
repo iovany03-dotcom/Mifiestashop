@@ -23,13 +23,25 @@ const FALLBACK_CATEGORIES = [
   { id: 286, name: 'Año Nuevo' }, { id: 305, name: 'Sombreros' }, { id: 272, name: 'Poolparty' }
 ];
 
+// Algunas categorías vienen capturadas en PrestaShop TODO EN MAYÚSCULAS
+// (p.ej. "ARTÍCULOS DE XV AÑOS"), distinto del resto ("Globos", "Despedida
+// de soltera"...) — se re-castean aquí, en lectura, para que se vean
+// consistentes sin tener que escribir de vuelta a PrestaShop ni pelear con
+// que el sync horario (ps_categorias) las vuelva a sobreescribir.
+function normalizeCategoryName(name) {
+  const trimmed = String(name || '').trim();
+  if (!trimmed || trimmed !== trimmed.toUpperCase() || trimmed === trimmed.toLowerCase()) return trimmed;
+  const lower = trimmed.toLowerCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 async function loadCategoriesFromSupabase() {
   const url = `${SUPABASE_URL}/rest/v1/ps_categorias?select=id,name&id_parent=eq.${PRODUCTS_ROOT_CATEGORY_ID}&active=eq.true&order=name.asc`;
   const r = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
   if (!r.ok) throw new Error(`Supabase error ${r.status}`);
   const rows = await r.json();
   if (!Array.isArray(rows) || rows.length === 0) throw new Error('sin categorías en Supabase');
-  return rows.map(c => ({ id: c.id, name: c.name }));
+  return rows.map(c => ({ id: c.id, name: normalizeCategoryName(c.name) }));
 }
 
 module.exports = async function handler(req, res) {
