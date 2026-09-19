@@ -6,6 +6,15 @@ module.exports = async function inventoryHistory(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
     if (!await store.requireSession(req)) return res.status(401).json({ error: 'Sesión requerida' });
+    if (req.query?.kind === 'movements') {
+      const before = req.query.before;
+      if (before !== undefined && (!/^\d+$/.test(String(before)) || !Number.isSafeInteger(Number(before)) || Number(before) < 1)) {
+        return res.status(400).json({ error: 'Cursor inválido' });
+      }
+      const rows = await store.request('ps_inventory_movements?select=id,data&order=id.desc&limit=51' + (before ? `&id=lt.${Number(before)}` : ''));
+      const movements = rows.slice(0, 50).map(row => ({ ...row.data, id: row.id }));
+      return res.status(200).json({ movements, hasMore: rows.length > 50, nextBefore: movements.at(-1)?.id || null });
+    }
     const id = req.query?.id;
     if (id !== undefined) {
       if (!/^\d+$/.test(String(id)) || !Number.isSafeInteger(Number(id)) || Number(id) < 1) {

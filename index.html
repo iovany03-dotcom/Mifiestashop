@@ -5373,6 +5373,13 @@
         <div id="importedInventoryList" style="max-height:280px;overflow:auto;"></div>
         <div id="importedInventoryDetail" style="margin-top:12px;overflow:auto;"></div>
       </details>
+      <details style="margin-top:18px;" ontoggle="if(this.open) loadImportedMovements(true)">
+        <summary style="cursor:pointer;font-weight:600;">Movimientos históricos de PrestaShop</summary>
+        <p style="font-size:12px;">Importación en curso. Aquí se muestran los movimientos ya guardados; el historial todavía puede estar incompleto.</p>
+        <div id="importedMovementList" style="max-height:320px;overflow:auto;"></div>
+        <button type="button" class="btn small" id="importedMovementMore" onclick="loadImportedMovements(false)" hidden>Cargar más</button>
+        <p id="importedMovementStatus" role="status"></p>
+      </details>
     </div>
   </div>
 </div>
@@ -8511,6 +8518,42 @@ let traspasosHistory = [];
 let importedInventoryDocuments = null;
 let importedInventoryLoading = false;
 let importedInventoryRequest = 0;
+let importedMovementBefore = null;
+let importedMovementLoading = false;
+
+async function loadImportedMovements(reset) {
+  if (importedMovementLoading) return;
+  importedMovementLoading = true;
+  const list = document.getElementById('importedMovementList');
+  const status = document.getElementById('importedMovementStatus');
+  const more = document.getElementById('importedMovementMore');
+  if (reset) { importedMovementBefore = null; list.replaceChildren(); }
+  status.textContent = 'Cargando movimientos…'; more.disabled = true;
+  try {
+    const page = await inventoryHistoryRequest('?kind=movements' + (importedMovementBefore ? '&before=' + importedMovementBefore : ''));
+    const warehouses = {53:'CDMX Rumania',54:'Popocatépetl',55:'Puebla',56:'Querétaro',57:'Guadalajara',58:'Atizapán'};
+    for (const movement of page.movements) {
+      const card = document.createElement('div');
+      card.style.cssText = 'padding:10px 0;border-bottom:1px solid var(--border);font-size:12px;';
+      const name = Array.isArray(movement.product_name) ? movement.product_name.find(item => item.value)?.value : movement.product_name;
+      const quantity = Number(movement.physical_quantity) * Number(movement.sign);
+      const title = document.createElement('strong');
+      title.textContent = `${name || 'Producto ' + movement.id_product} · ${quantity > 0 ? '+' : ''}${quantity} u.`;
+      const info = document.createElement('p');
+      info.textContent = `#${movement.id} · ${movement.date_add} · ${warehouses[movement.id_warehouse] || movement.id_warehouse} · Empleado ${movement.id_employee}`;
+      const reason = document.createElement('p');
+      reason.textContent = `Motivo ${movement.id_stock_mvt_reason}${Number(movement.id_order) ? ' · Pedido #' + movement.id_order : ''} · ${movement.reference || ''}`;
+      card.append(title,info,reason);list.append(card);
+    }
+    importedMovementBefore = page.nextBefore;
+    more.hidden = !page.hasMore;
+    more.textContent = 'Cargar más';
+    status.textContent = list.children.length ? `${list.children.length} movimientos mostrados` : 'Todavía no hay movimientos importados.';
+  } catch (error) {
+    status.textContent = error.message;
+    more.hidden = false; more.textContent = 'Reintentar';
+  } finally { more.disabled = false; importedMovementLoading = false; }
+}
 
 async function inventoryHistoryRequest(query = '') {
   const response = await fetch('/api/inventory-history' + query, {

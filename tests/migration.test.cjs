@@ -16,6 +16,23 @@ test('imported inventory history requires authentication before querying documen
   assert.equal(res.headers['Cache-Control'],'no-store');
 });
 
+test('historical movements use an exclusive cursor and never write stock', async t => {
+  t.mock.method(store,'requireSession',async()=>true);
+  const queries=[];
+  t.mock.method(store,'request',async(path,options)=>{
+    assert.equal(options,undefined);queries.push(path);
+    return Array.from({length:51},(_,i)=>({id:299-i,data:{id_stock:86719,sign:-1,physical_quantity:2}}));
+  });
+  const res=response();
+  await require('../api/inventory-history')({query:{kind:'movements',before:'300'}},res);
+  assert.equal(res.data.movements.length,50);
+  assert.equal(res.data.nextBefore,250);assert.equal(res.data.hasMore,true);
+  assert.ok(queries[0].endsWith('&id=lt.300'));
+  const invalid=response();
+  await require('../api/inventory-history')({query:{kind:'movements',before:'300&select=*'}},invalid);
+  assert.equal(invalid.code,400);assert.equal(queries.length,1);
+});
+
 test('inventory history paginates summaries and reads detail without applying stock', async t => {
   t.mock.method(store, 'requireSession', async () => true);
   const queries = [];
