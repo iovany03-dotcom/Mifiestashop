@@ -12065,7 +12065,7 @@ function renderCatalogSidebar(){
   const list = document.getElementById('catalogCatList');
   if (!list) return;
   list.innerHTML = `
-    <li><a class="${catalogState.catId === 'all' ? 'active' : ''}" onclick="selectCatalogCategory('all')">Todos los productos</a></li>
+    <li><a class="${catalogState.catId === 'all' ? 'active' : ''}" href="/266-productos" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); selectCatalogCategory('all');">Todos los productos</a></li>
     ` + catalogCategories.map(c => `
     <li><a class="${String(catalogState.catId) === String(c.id) ? 'active' : ''}" onclick="selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
   `).join('');
@@ -13711,6 +13711,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   // routeApp() pudo haber abierto por "?vista=catalogo" — se vuelve a abrir
   // aquí, después de que el sync terminó, para que no se revierta.
   if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
+  if (window.location.pathname === '/266-productos') openStorefrontCatalog('all');
 }).then(checkLowStockNotifications);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
@@ -13773,6 +13774,14 @@ function routeApp() {
       showPublicStorefront();
       openLoginModal();
     }
+    return;
+  }
+  // /266-productos: mismo id/slug que usa la categoría "Productos" (raíz de
+  // todo el catálogo) en la tienda real de PrestaShop — abre aquí el mismo
+  // panel de "ver catálogo completo" en vez de navegar a mifiestashop.com.
+  if (window.location.pathname === '/266-productos') {
+    showPublicStorefront();
+    openStorefrontCatalog('all');
     return;
   }
   showPublicStorefront();

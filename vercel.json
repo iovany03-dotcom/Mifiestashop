@@ -1672,6 +1672,10 @@
     {
       "source": "/accesorios-para-batucada-boda-queretaro",
       "destination": "/index.html"
+    },
+    {
+      "source": "/266-productos",
+      "destination": "/index.html"
     }
   ]
 }

@@ -79,6 +79,25 @@ function computeWholesalePrice(basePrice, rule) {
   return { price: Math.max(0, basePrice - rule.reduction), fromQty: rule.fromQty };
 }
 
+// Nombre real de categoría por id_category_default, para todos los
+// productos — no solo los migrados. ps_categorias se sincroniza cada hora
+// desde PrestaShop (ver lib/sync-prestashop.js / api/cron-sync-prestashop.js),
+// así que aquí solo se lee la copia en Supabase, sin tocar PrestaShop.
+async function fetchCategoryNames() {
+  const map = {};
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/ps_categorias?select=id,name`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+    });
+    if (!r.ok) return map;
+    const rows = await r.json();
+    (Array.isArray(rows) ? rows : []).forEach(row => { map[String(row.id)] = row.name; });
+  } catch (e) {
+    // se queda con lo que ya haya juntado hasta el momento del error
+  }
+  return map;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -132,9 +151,10 @@ module.exports = async function handler(req, res) {
 
     const data = await r.json();
     const rawProducts = Array.isArray(data.products) ? data.products : [];
-    const [migrated, wholesaleRules] = await Promise.all([
+    const [migrated, wholesaleRules, categoryNames] = await Promise.all([
       fetchMigratedProducts(),
-      fetchWholesalePrices(baseUrl, { Authorization: `Basic ${auth}` })
+      fetchWholesalePrices(baseUrl, { Authorization: `Basic ${auth}` }),
+      fetchCategoryNames()
     ]);
 
     const products = rawProducts.map(p => {
@@ -187,7 +207,7 @@ module.exports = async function handler(req, res) {
         priceMayoreoDesdeUnidades: wholesale ? wholesale.fromQty : undefined,
         costoCompra,
         categoryId: p.id_category_default || '1',
-        categoryLabel: m ? m.category_label : undefined,
+        categoryLabel: (m && m.category_label) || categoryNames[String(p.id_category_default)] || undefined,
         categoryIds: m && Array.isArray(m.category_ids) && m.category_ids.length > 0 ? m.category_ids : undefined,
         weight, width, height, depth,
         metaTitle: metaTitle || undefined,
