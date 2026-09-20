@@ -1,0 +1,13 @@
+<!-- ============ CLAVE TEMPORAL DEL SITIO (quitar este bloque completo cuando el sitio ya pueda verse sin clave) ============ -->
+<div id="siteGateOverlay" style="position:fixed; inset:0; z-index:999999; background:#2e1065; color:#fff; display:flex; align-items:center; justify-content:center; padding:20px; font-family:system-ui,-apple-system,sans-serif;">
+  <form id="siteGateForm" style="background:#fff; color:#2e1065; border-radius:16px; padding:32px 28px; max-width:340px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.35);">
+    <div style="font-size:32px; margin-bottom:8px;">🔒</div>
+    <h2 style="margin:0 0 8px; font-size:18px;">Sitio en mantenimiento</h2>
+    <p style="margin:0 0 16px; font-size:13px; color:#5b4a68;">Ingresa la clave de acceso para continuar.</p>
+    <input type="password" id="siteGateInput" placeholder="Clave de acceso" autocomplete="off" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; margin-bottom:10px; box-sizing:border-box; font-size:14px;">
+    <div id="siteGateError" style="display:none; color:#dc2626; font-size:12px; margin-bottom:10px;">Clave incorrecta.</div>
+    <button type="submit" style="width:100%; padding:11px; border-radius:24px; border:none; background:#d3007b; color:#fff; font-weight:700; cursor:pointer; font-size:14px;">Entrar</button>
+  </form>
+</div>
+<script src="/assets/site-gate.js"></script>
+<!-- ============ FIN CLAVE TEMPORAL DEL SITIO ============ -->

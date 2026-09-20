@@ -14,6 +14,9 @@ const header = fs.readFileSync(path.join(__dirname,'cms-header.html'),'utf8');
 const benefits = fs.readFileSync(path.join(__dirname,'cms-benefits.html'),'utf8');
 const categoryIcons = require('../data/cms-category-icons.json');
 const footer = fs.readFileSync(path.join(__dirname,'cms-footer.html'),'utf8');
+// TEMPORAL: clave de acceso al sitio mientras está en mantenimiento — quitar
+// este include cuando ya pueda verse sin clave (ver scripts/site-gate.html).
+const siteGate = fs.readFileSync(path.join(__dirname,'site-gate.html'),'utf8');
 function vipHtml(p) {
   if(!p.vip)return '';
   return `<section class="vip-section wrap"><form id="vip-form" data-endpoint="${esc(p.vip.endpoint)}" data-redirect="${esc(p.vip.redirect)}" data-threshold="${p.vip.threshold}"><h2>Beneficio VIP</h2><p>Registra tu compra para recibir tu beneficio.</p><label for="vip-phone">Teléfono (10 dígitos)</label><input id="vip-phone" name="phone" type="tel" autocomplete="tel" required><label for="vip-amount">Monto de compra</label><input id="vip-amount" name="amount" type="number" min="1" step="1" required><div id="vip-email-wrap" hidden><label for="vip-email">Correo electrónico</label><input id="vip-email" name="email" type="email" autocomplete="email"><p class="vip-hint">Si tu compra es menor a $400, te enviamos un cupón del 10% por correo.</p></div><button class="button primary" type="submit">Enviar</button><p id="vip-message" role="status" aria-live="polite"></p></form></section>`;
@@ -51,7 +54,7 @@ function render(page) {
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><link rel="stylesheet" href="/assets/cms-footer.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
 <script defer src="/assets/cms-cart.js"></script><script defer src="/assets/cms.js"></script><script defer src="/assets/cms-gallery.js"></script>${t.promoPackages ? '<script defer src="/assets/cms-promo-pricing.js"></script>' : ''}${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
-<body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
+<body data-cms-id="${p.id}" data-theme="${p.theme}">${siteGate}<a class="skip-link" href="#contenido">Ir al contenido</a>
 ${header}
 <main id="contenido">
 <section class="hero ${p.heroImage ? '' : 'hero-text-only'}"><div class="hero-inner wrap"><div class="hero-copy">
