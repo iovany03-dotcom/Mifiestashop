@@ -127,7 +127,7 @@ test('migrated pages and admin inventory work without PrestaShop network access'
  const oldFetch=global.fetch;global.fetch=()=>{throw new Error('PrestaShop offline')};
  try{const res=response();await handler({query:{all:'1'}},res);assert.equal(res.code,200);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);}finally{global.fetch=oldFetch;}
  for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+p.id+'.html'),'utf8'));$('img').each((_,el)=>{const src=$(el).attr('src');assert.ok(src.startsWith('/img/'),src);assert.ok(fs.existsSync(path.join(root,src)));});}
- const catalog=require('../data/cms-products.json');assert.ok(catalog.products.length>0);for(const p of catalog.products){assert.ok(fs.existsSync(path.join(root,p.img)));assert.equal(p.price,undefined);}
+ const catalog=require('../data/cms-products.json');assert.ok(catalog.products.length>0);const SUPABASE_STORAGE_RE=/^https:\/\/iuoirslxjcyarvmrqyjd\.supabase\.co\/storage\/v1\/object\/public\//;for(const p of catalog.products){assert.ok(SUPABASE_STORAGE_RE.test(p.img)||fs.existsSync(path.join(root,p.img)),p.img);assert.equal(p.price,undefined);}
  const js=fs.readFileSync(path.join(root,'assets/cms.js'),'utf8');assert.doesNotMatch(js,/mifiestashop\.com|api\/productos/);assert.match(js,/data\/cms-products\.json/);
 });
 
