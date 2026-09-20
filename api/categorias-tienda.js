@@ -12,6 +12,13 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 // categorías visibles de la tienda (ver /266-productos).
 const PRODUCTS_ROOT_CATEGORY_ID = 266;
 
+// Categorías que existen en PrestaShop pero se ocultan a propósito del
+// listado navegable de la tienda (casi sin productos — a petición del
+// negocio) — solo deja de mostrarse aquí, no se toca ni se borra nada en
+// PrestaShop. Los productos que estaban solo en estas siguen siendo
+// navegables por sus otras categorías (verificado antes de ocultarlas).
+const HIDDEN_CATEGORY_IDS = new Set([291, 314]); // Marcos, Parejas
+
 // Fallback si Supabase no responde: mismo listado curado que existía antes
 // de que las categorías completas se sincronizaran desde PrestaShop.
 const FALLBACK_CATEGORIES = [
@@ -67,7 +74,9 @@ async function loadCategoriesFromSupabase() {
   if (!r.ok) throw new Error(`Supabase error ${r.status}`);
   const rows = await r.json();
   if (!Array.isArray(rows) || rows.length === 0) throw new Error('sin categorías en Supabase');
-  return rows.map(c => ({ id: c.id, name: normalizeCategoryName(c.name) }));
+  return rows
+    .filter(c => !HIDDEN_CATEGORY_IDS.has(c.id))
+    .map(c => ({ id: c.id, name: normalizeCategoryName(c.name) }));
 }
 
 module.exports = async function handler(req, res) {
