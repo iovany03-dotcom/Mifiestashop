@@ -1,8 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron-sync-prestashop",
+      "path": "/api/cron-sync-prestashop?domains=stock,categorias,almacenes,empleados",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron-sync-prestashop?domains=clientes,pedidos,carritos",
+      "schedule": "30 * * * *"
     }
   ],
   "functions": {
