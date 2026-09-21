@@ -33,12 +33,17 @@
       const response=await fetch('/data/cms-products.json',{signal:AbortSignal.timeout(20000)});
       if(!response.ok) throw new Error('catalog');
       const data=await response.json();
-      // Never fill a themed page with unrelated products when there are no matches.
       const productIds=JSON.parse(grid?.dataset.productIds || '[]');
       // Promo/paquete bundles belong only in the dedicated promotions section,
       // never mixed into the regular product catalog grid.
-      const selected=productIds.length ? productIds.map(id=>({product:(data.products||[]).find(p=>p.id===id)})).filter(item=>item.product) : (data.products || []).filter(p=>!/promo|paquete/.test(norm(p.name))).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}))
-        .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,30);
+      const pool=(data.products || []).filter(p=>!/promo|paquete/.test(norm(p.name))).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}));
+      const matched=pool.filter(item=>item.score>0).sort((a,b)=>b.score-a.score);
+      // Every page should be able to fill 5 rows (20 products). Themes with
+      // few real matches (e.g. boda, xv) top up with the next best-ranked
+      // general products instead of leaving the page with only 1-2 rows.
+      const MIN_PRODUCTS=20;
+      const topped=matched.length>=MIN_PRODUCTS ? matched : matched.concat(pool.filter(item=>item.score===0).slice(0,MIN_PRODUCTS-matched.length));
+      const selected=productIds.length ? productIds.map(id=>({product:(data.products||[]).find(p=>p.id===id)})).filter(item=>item.product) : topped.slice(0,30);
       const promos=(data.products||[]).filter(p=>/promo|paquete/.test(norm(p.name)) && terms.some(t=>norm(p.name).includes(t)));
       if(promoGrid){
         const promoCards=promos.map(productCard).filter(Boolean);
