@@ -6647,13 +6647,20 @@ if (document.getElementById('toggleSidebar')) {
   document.getElementById('toggleSidebar').addEventListener('click', (e) => {
     e.stopPropagation();
     const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('toggleSidebar');
-    if (sidebar) {
-      sidebar.classList.toggle('collapsed');
-      const isCollapsed = sidebar.classList.contains('collapsed');
-      if (toggleBtn) toggleBtn.title = isCollapsed ? "Expandir panel" : "Contraer panel";
-      localStorage.setItem('mf_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+    if (!sidebar) return;
+    // En mobile el sidebar es un cajón a pantalla completa (.mobile-open),
+    // no la barra angosta de solo íconos que colapsa en escritorio — el
+    // modo "collapsed" no tiene ningún efecto visual ahí (ver el media
+    // query que lo anula), así que este mismo botón cierra el cajón.
+    if (window.innerWidth <= 900 && sidebar.classList.contains('mobile-open')) {
+      closeMobileSidebar();
+      return;
     }
+    const toggleBtn = document.getElementById('toggleSidebar');
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    if (toggleBtn) toggleBtn.title = isCollapsed ? "Expandir panel" : "Contraer panel";
+    localStorage.setItem('mf_sidebar_collapsed', isCollapsed ? 'true' : 'false');
   });
 
   // Restore saved state
