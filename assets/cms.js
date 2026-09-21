@@ -5,6 +5,12 @@
   if (!grid && !promoGrid) return;
   const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   const terms = JSON.parse((grid || promoGrid).dataset.terms || '[]');
+  // La mayor\u00eda de estas im\u00e1genes viven localmente en el repo (sin depender
+  // de ning\u00fan host externo), pero unas cuantas ya est\u00e1n re-hospedadas de
+  // forma permanente en nuestro propio bucket de Supabase Storage \u2014 el
+  // mismo dominio de confianza que usa el resto del sitio para im\u00e1genes de
+  // productos migrados, as\u00ed que tambi\u00e9n se acepta aqu\u00ed.
+  const TRUSTED_IMG_RE = /^(\/img\/cms-products\/[0-9]+\.jpg|https:\/\/iuoirslxjcyarvmrqyjd\.supabase\.co\/storage\/v1\/object\/public\/)/;
   function productCard(product) {
     const card = document.createElement('article');
     const link = document.createElement('a');link.className='cms-product-link';
@@ -12,7 +18,7 @@
     if (!/^\d+$/.test(String(product.id)) || !product.linkRewrite) return null;
     link.href = '/' + product.id + '-' + encodeURIComponent(product.linkRewrite) + '.html';
     const image = document.createElement('img');
-    if (!/^\/img\/cms-products\/[0-9]+\.jpg$/.test(product.img)) return null;
+    if (!TRUSTED_IMG_RE.test(product.img)) return null;
     image.src = product.img; image.className='store-prod-img';
     image.alt=product.name; image.loading='lazy'; image.width=260; image.height=220;
     image.addEventListener('error',()=>image.remove(),{once:true});

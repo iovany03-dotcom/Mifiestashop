@@ -17,6 +17,9 @@ const header = fs.readFileSync(path.join(__dirname, 'cms-header.html'), 'utf8');
 const benefits = fs.readFileSync(path.join(__dirname, 'cms-benefits.html'), 'utf8');
 const categoryIcons = require('../data/cms-category-icons.json');
 const footer = fs.readFileSync(path.join(__dirname, 'cms-footer.html'), 'utf8');
+// TEMPORAL: clave de acceso al sitio mientras está en mantenimiento — quitar
+// este include cuando ya pueda verse sin clave (ver scripts/site-gate.html).
+const siteGate = fs.readFileSync(path.join(__dirname, 'site-gate.html'), 'utf8');
 
 // Contenido basado en las páginas reales de mayoreo de la tienda (id 351,
 // "Artículos para fiesta mayoreo"): mismo mensaje y textos, adaptado a esta
@@ -86,7 +89,7 @@ function render(p) {
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><link rel="stylesheet" href="/assets/cms-footer.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g, '\\u003c')}</script>
 <script defer src="/assets/cms-cart.js"></script><script defer src="/assets/cms.js"></script></head>
-<body data-cms-id="${p.id}" data-theme="${p.theme}"><a class="skip-link" href="#contenido">Ir al contenido</a>
+<body data-cms-id="${p.id}" data-theme="${p.theme}">${siteGate}<a class="skip-link" href="#contenido">Ir al contenido</a>
 ${header}
 <main id="contenido">
 <section class="hero ${p.heroImage ? '' : 'hero-text-only'}"><div class="hero-inner wrap"><div class="hero-copy">

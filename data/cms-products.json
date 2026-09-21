@@ -497,6 +497,30 @@
       "name": "Diadema luminosa cyalume",
       "linkRewrite": "diadema-luminosa-cyalume",
       "img": "/img/cms-products/84535.jpg"
+    },
+    {
+      "id": 83383,
+      "name": "Playera neón",
+      "linkRewrite": "playera-neon",
+      "img": "https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/productos/83383/33765.webp"
+    },
+    {
+      "id": 83398,
+      "name": "Agitadores neón (6 pzas)",
+      "linkRewrite": "agitadores-neon-10-pza",
+      "img": "https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/productos/83398/33805.webp"
+    },
+    {
+      "id": 84547,
+      "name": "Arracada luminosa cyalume",
+      "linkRewrite": "arracada-luminosa-cyalume-",
+      "img": "https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/productos/84547/35388.webp"
+    },
+    {
+      "id": 84551,
+      "name": "Brazalete luminoso cyalume",
+      "linkRewrite": "brazalete-luminoso-cyalume",
+      "img": "https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/productos/84551/35392.webp"
     }
   ]
 }
