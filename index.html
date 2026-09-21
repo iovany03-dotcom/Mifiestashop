@@ -2965,6 +2965,29 @@
           </div>
         </div>
       </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
+          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <option value="all">Todas las sucursales</option>
+            <option value="puebla">Puebla</option>
+            <option value="rumania">CDMX Rumania</option>
+            <option value="queretaro">Querétaro</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
+            </thead>
+            <tbody id="lowStockByStoreTableBody">
+              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
@@ -6852,7 +6875,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
-  if (viewName === 'dashboard') checkNegativeStockWarning();
+  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
@@ -10438,6 +10461,50 @@ function checkNegativeStockWarning() {
     const extra = negativeEntries.length > 3 ? ` y ${negativeEntries.length - 3} más` : '';
     notifyEvent('negativeStock', 'Existencia en negativo', `${negativeEntries.length} producto(s) en negativo: ${preview}${extra}.`);
   }
+}
+
+// Tarjeta del Dashboard: qué productos están en o por debajo de su umbral
+// real de stock bajo (low_stock_threshold de PrestaShop), por sucursal —
+// solo productos con umbral configurado (>0); los que tienen 0 casi nunca
+// fue un valor puesto a propósito, así que no se alertan igual que los que
+// sí tienen un umbral real (mismo criterio ya usado en checkLowStockNotifications).
+function renderLowStockByStoreCard() {
+  const tbody = document.getElementById('lowStockByStoreTableBody');
+  const countEl = document.getElementById('lowStockByStoreCount');
+  if (!tbody) return;
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const branches = ['puebla', 'rumania', 'queretaro'];
+  const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
+
+  const entries = [];
+  dataset.forEach((p, index) => {
+    const pId = p.id || index + 1;
+    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : null;
+    if (!threshold) return;
+    branches.forEach(wh => {
+      if (filterWh !== 'all' && wh !== filterWh) return;
+      const qty = getStockFor(pId, wh);
+      if (qty <= threshold) entries.push({ name: p.name, sku: p.sku, branch: WAREHOUSE_LABELS[wh] || wh, qty, threshold });
+    });
+  });
+  entries.sort((a, b) => a.qty - b.qty);
+
+  if (countEl) countEl.textContent = entries.length;
+
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.slice(0, 150).map(e => `
+    <tr>
+      <td>${escapeHtml(e.name)}</td>
+      <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(e.sku || '—')}</td>
+      <td>${escapeHtml(e.branch)}</td>
+      <td style="text-align:center; font-weight:700; color:${e.qty < 0 ? '#dc2626' : 'var(--series-2)'};">${e.qty}</td>
+      <td style="text-align:center; color:var(--text-muted);">${e.threshold}</td>
+    </tr>
+  `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más…</td></tr>` : '');
 }
 
 function updateOrderDetailStatus() {
@@ -14444,6 +14511,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
 }).then(checkLowStockNotifications);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
+  renderLowStockByStoreCard();
   if (document.getElementById('posProductGrid')) {
     const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
     renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
