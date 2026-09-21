@@ -36,6 +36,30 @@
     "api/productos.js": {
       "maxDuration": 30
     },
+    "api/v1/products/index.js": {
+      "maxDuration": 30
+    },
+    "api/v1/products/[id].js": {
+      "maxDuration": 30
+    },
+    "api/v1/categories/index.js": {
+      "maxDuration": 30
+    },
+    "api/v1/categories/[id].js": {
+      "maxDuration": 30
+    },
+    "api/v1/orders/index.js": {
+      "maxDuration": 30
+    },
+    "api/v1/orders/[id].js": {
+      "maxDuration": 30
+    },
+    "api/v1/customers/index.js": {
+      "maxDuration": 30
+    },
+    "api/v1/customers/[id].js": {
+      "maxDuration": 30
+    },
     "api/paginas.js": {
       "maxDuration": 30
     },
@@ -1640,6 +1664,10 @@
     {
       "source": "/mayoristas",
       "destination": "/mayoristas.html"
+    },
+    {
+      "source": "/desarrolladores",
+      "destination": "/desarrolladores.html"
     },
     {
       "source": "/sitemap.xml",

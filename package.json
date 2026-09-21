@@ -5,7 +5,8 @@
   "main": "sw.js",
   "scripts": {
     "build:cms": "node scripts/build-cms.cjs",
-    "test:cms": "node --test tests/cms.test.cjs"
+    "test:cms": "node --test tests/cms.test.cjs",
+    "test:api": "node --test tests/api-v1.test.cjs"
   },
   "repository": {
     "type": "git",
