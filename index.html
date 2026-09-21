@@ -11690,6 +11690,20 @@ async function loadCmsPagesAdmin() {
       return;
     }
 
+    // Títulos editados manualmente desde este mismo panel (cms_titulos_override
+    // en Supabase) — /api/paginas siempre trae el título original de
+    // PrestaShop/la migración; se sobreescribe aquí para que la tabla (y el
+    // resto de este mismo admin) reflejen el título vigente tras un guardado.
+    try {
+      const ovRes = await fetch(`${SUPABASE_URL}/rest/v1/cms_titulos_override?select=page_id,titulo`, {
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
+      });
+      const overrides = ovRes.ok ? await ovRes.json() : [];
+      const byId = {};
+      (Array.isArray(overrides) ? overrides : []).forEach(o => { byId[String(o.page_id)] = o.titulo; });
+      pages.forEach(p => { if (byId[String(p.id)]) p.title = byId[String(p.id)]; });
+    } catch (e) { /* se queda con el título original si falla */ }
+
     cmsPagesAdminCache = pages;
     renderCmsPagesAdminTable(pages);
   } catch (e) {
@@ -11717,7 +11731,13 @@ function renderCmsPagesAdminTable(pages) {
       return `
     <tr>
       <td><b>#${p.id}</b></td>
-      <td>${p.title} <span class="pill ok" style="margin-left:6px; white-space:nowrap;">EN SISTEMA</span></td>
+      <td>
+        <span class="cmsTitleDisplay" id="cmsTitleDisplay-${p.id}">
+          <span class="cmsTitleText">${escapeHtml(p.title)}</span>
+          <button type="button" class="btn small" style="margin-left:6px; padding:2px 8px;" onclick="startEditCmsPageTitle(${p.id})" title="Editar título">✎</button>
+        </span>
+        <span class="pill ok" style="margin-left:6px; white-space:nowrap;">EN SISTEMA</span>
+      </td>
       <td><code>${p.slug}</code></td>
       <td>${p.inFooter ? '<span class="pill ok"> Sí</span>' : '<span class="pill">—</span>'}</td>
       <td style="text-align:center; white-space:nowrap;">
@@ -11737,6 +11757,61 @@ function renderCmsPagesAdminTable(pages) {
       </td>
     </tr>`;
   }).join('');
+}
+
+// El título de una página migrada ya no vive solo en PrestaShop/el JSON del
+// build — se puede editar aquí y queda guardado en Supabase
+// (cms_titulos_override); cada página estática lo lee al cargar y se
+// actualiza sola (ver assets/cms-title-override.js), sin esperar un nuevo
+// deploy del sitio.
+function startEditCmsPageTitle(pageId) {
+  const wrap = document.getElementById('cmsTitleDisplay-' + pageId);
+  if (!wrap) return;
+  const current = wrap.querySelector('.cmsTitleText')?.textContent || '';
+  wrap.dataset.original = current;
+  wrap.innerHTML = `
+    <input type="text" class="cmsTitleInput" style="padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; min-width:220px;">
+    <button type="button" class="btn small primary" style="margin-left:6px;" onclick="saveCmsPageTitle(${pageId})">Guardar</button>
+    <button type="button" class="btn small" style="margin-left:4px;" onclick="cancelEditCmsPageTitle(${pageId})">Cancelar</button>
+  `;
+  const input = wrap.querySelector('.cmsTitleInput');
+  input.value = current;
+  input.focus();
+  input.select();
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveCmsPageTitle(pageId);
+    if (e.key === 'Escape') cancelEditCmsPageTitle(pageId);
+  });
+}
+
+function renderCmsTitleDisplay(wrap, pageId, title) {
+  wrap.innerHTML = `<span class="cmsTitleText"></span><button type="button" class="btn small" style="margin-left:6px; padding:2px 8px;" onclick="startEditCmsPageTitle(${pageId})" title="Editar título">✎</button>`;
+  wrap.querySelector('.cmsTitleText').textContent = title;
+}
+
+function cancelEditCmsPageTitle(pageId) {
+  const wrap = document.getElementById('cmsTitleDisplay-' + pageId);
+  if (!wrap) return;
+  renderCmsTitleDisplay(wrap, pageId, wrap.dataset.original || '');
+}
+
+async function saveCmsPageTitle(pageId) {
+  const wrap = document.getElementById('cmsTitleDisplay-' + pageId);
+  const input = wrap?.querySelector('.cmsTitleInput');
+  if (!wrap || !input) return;
+  const nuevo = input.value.trim();
+  if (!nuevo) { alert('El título no puede estar vacío.'); return; }
+  const btns = [...wrap.querySelectorAll('button')];
+  btns.forEach(b => b.disabled = true);
+  try {
+    await sbRpc('rpc_cms_titulo_set', { ...getSessionCredsParams(), p_page_id: pageId, p_titulo: nuevo });
+    const p = cmsPagesAdminCache.find(pg => String(pg.id) === String(pageId));
+    if (p) p.title = nuevo;
+    renderCmsTitleDisplay(wrap, pageId, nuevo);
+  } catch (e) {
+    alert('No se pudo guardar el título: ' + e.message);
+    btns.forEach(b => b.disabled = false);
+  }
 }
 
 function filterCmsPagesAdmin(query) {
