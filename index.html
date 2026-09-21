@@ -8254,7 +8254,13 @@ async function syncProductsFromPrestaShopAPI(){
   let loaded = false;
 
   try {
-    const r = await fetch('/api/productos');
+    // Sin filter[category], /api/productos trae como máximo `limit` productos
+    // (500 por default) en el orden que PrestaShop decida — con 1072
+    // productos activos, medio catálogo (los que caen después del 500)
+    // quedaba invisible para el buscador y las categorías del inicio, aunque
+    // sí aparecían en el catálogo completo paginado por categoría. 5000 es
+    // el mismo tope ya usado en el resto de este endpoint para "traer todo".
+    const r = await fetch('/api/productos?limit=5000');
     if (r.ok) {
       const data = await r.json();
       if (data.products && data.products.length > 0) {
@@ -12383,11 +12389,11 @@ function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
   }
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const q = (currentStorefrontQuery || '').toLowerCase();
+  const q = normalizeEs(currentStorefrontQuery);
 
   const filtered = dataset.filter(p => {
     const matchCat = currentStorefrontCat === 'all' || (p.cat || '').toLowerCase().includes(currentStorefrontCat.toLowerCase());
-    const matchQ = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+    const matchQ = !q || normalizeEs(p.name).includes(q) || normalizeEs(p.sku).includes(q);
     return matchCat && matchQ;
   });
 
@@ -13371,12 +13377,12 @@ function filterStorefrontProducts(q) {
 function updateSearchSuggestions(q) {
   const box = document.getElementById('storeSearchSuggest');
   if (!box) return;
-  const query = (q || '').trim().toLowerCase();
+  const query = normalizeEs(q);
   if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const matches = dataset.filter(p =>
-    p.name.toLowerCase().includes(query) || (p.sku || '').toLowerCase().includes(query)
+    normalizeEs(p.name).includes(query) || normalizeEs(p.sku).includes(query)
   ).slice(0, 6);
 
   if (matches.length === 0) {
