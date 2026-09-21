@@ -5,8 +5,8 @@ const legacy = require('../lib/prestashop-pages.js');
 
 // Páginas que se ocultan de nuestro propio sistema (admin, footer y acceso
 // directo) sin tocar ni borrar nada en PrestaShop.
-const HIDDEN_PAGE_IDS = ['9', '11', '12'];
-const HIDDEN_PAGE_SLUGS = ['bicicletas', 'hogar', 'herramientas'];
+const HIDDEN_PAGE_IDS = ['9', '11', '12', '412', '413', '415', '416', '417', '419'];
+const HIDDEN_PAGE_SLUGS = ['bicicletas', 'hogar', 'herramientas', 'entrega', 'aviso-legal', 'sobre-nosotros', 'pago-seguro', 'articulos-para-fiesta-mayoreo-en-mexico', 'productos-con-descuentos'];
 const legacyIndex = legacyIndexRaw.filter(p => !HIDDEN_PAGE_IDS.includes(String(p.id)));
 
 module.exports = async function handler(req, res) {

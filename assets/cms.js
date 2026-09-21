@@ -40,11 +40,20 @@
       const selected=productIds.length ? productIds.map(id=>({product:(data.products||[]).find(p=>p.id===id)})).filter(item=>item.product) : (data.products || []).filter(p=>!/promo|paquete/.test(norm(p.name))).map(product=>({product,score:terms.reduce((score,term)=>score+(norm(product.name).includes(term)?3:0),0)}))
         .filter(item=>item.score>0).sort((a,b)=>b.score-a.score).slice(0,30);
       const promos=(data.products||[]).filter(p=>/promo|paquete/.test(norm(p.name)) && terms.some(t=>norm(p.name).includes(t)));
-      if(promoGrid){promoGrid.replaceChildren(...promos.map(productCard).filter(Boolean));promoGrid.hidden=!promos.length;}
+      if(promoGrid){
+        const promoCards=promos.map(productCard).filter(Boolean);
+        const promoFull=promoCards.length>=4 ? Math.floor(promoCards.length/4)*4 : promoCards.length;
+        promoGrid.replaceChildren(...promoCards.slice(0,promoFull));
+        promoGrid.hidden=!promoCards.length;
+      }
       if(!grid)return;
       const cards=selected.map(item=>productCard(item.product)).filter(Boolean);
       if(!cards.length){grid.innerHTML='<p class="catalog-status">Consulta las opciones disponibles en el catálogo o escríbenos desde la página de contacto.</p>';return;}
-      grid.replaceChildren(...cards);
+      // Rows are always 4 products wide on desktop — never leave a short, orphaned
+      // last row (e.g. 2 leftover items). If there are 4+ matches, drop the remainder
+      // so every visible row is full; with fewer than 4 there's no full row to make.
+      const full=cards.length>=4 ? Math.floor(cards.length/4)*4 : cards.length;
+      grid.replaceChildren(...cards.slice(0,full));
     } catch {
       if(grid)grid.innerHTML='<p class="catalog-status">No pudimos cargar los productos en este momento. Puedes consultar el catálogo de la tienda.</p>';
     }
