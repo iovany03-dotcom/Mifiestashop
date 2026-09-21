@@ -152,12 +152,16 @@
   aside.sidebar.collapsed {
     width: 68px !important;
   }
-  aside.sidebar.collapsed .brand-logo > span {
+  aside.sidebar.collapsed .brand-logo {
+    /* El logo es una sola imagen (sin texto aparte que ocultar) de 42px de
+       alto sin límite de ancho — a los 68px del panel contraído no cabía
+       junto al botón de expandir y se salía del panel. Se oculta y solo
+       queda el botón, centrado. */
     display: none !important;
   }
   aside.sidebar.collapsed .sidebar-header {
     padding: 0 10px;
-    justify-content: space-around;
+    justify-content: center;
   }
   aside.sidebar.collapsed .menu-group-title {
     display: none !important;
@@ -207,6 +211,7 @@
   .brand-logo .logo-icon-img {
     height: 42px;
     width: auto;
+    max-width: 100%;
     object-fit: contain;
   }
   .sidebar-toggle {
@@ -402,7 +407,7 @@
     aside.sidebar.mobile-open { transform: translateX(0); }
     /* On mobile the sidebar is an off-canvas drawer: ignore the desktop icon-only "collapsed" state */
     aside.sidebar.collapsed { width: var(--sidebar-w) !important; }
-    aside.sidebar.collapsed .brand-logo > span,
+    aside.sidebar.collapsed .brand-logo { display: flex !important; }
     aside.sidebar.collapsed .menu-group-title,
     aside.sidebar.collapsed .menu-left > span:not(.menu-icon),
     aside.sidebar.collapsed .chevron-icon { display: revert !important; }
