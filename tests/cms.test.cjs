@@ -81,7 +81,7 @@ test('excluded pages keep their original PrestaShop response and coexist with mi
   global.fetch=async()=>({ok:true,json:async()=>({content_management_system:[legal]})});
   try {
     let res=response();await handler({query:{id:'420'}},res);assert.equal(res.data.page.content,legal.content);assert.equal(res.data.page.migrated,undefined);
-    res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,149);assert.ok(res.data.pages.every(p=>![9,11,12].includes(Number(p.id))));assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
+    res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,143);assert.ok(res.data.pages.every(p=>![9,11,12,412,413,415,416,417,419].includes(Number(p.id))));assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
     res=response();await handler({query:{}},res);assert.equal(res.data.pages.length,1);assert.equal(res.data.pages[0].id,420);
   }finally{global.fetch=previousFetch;if(previousKey===undefined)delete process.env.PS_API_KEY;else process.env.PS_API_KEY=previousKey;}
 });
