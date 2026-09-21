@@ -2732,6 +2732,7 @@
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
         <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
         <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
+        <a class="submenu-link" data-view="api-desarrolladores">API para Desarrolladores</a>
         <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
       </div>
     </div>
@@ -3741,6 +3742,34 @@
       </div>
     </section>
 
+    <!-- ================= VIEW API PARA DESARROLLADORES ================= -->
+    <section id="view-api-desarrolladores" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+          <h2>API para Desarrolladores</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a class="btn small" href="/desarrolladores" target="_blank" rel="noopener">Ver documentación ↗</a>
+            <button class="btn primary" onclick="openApiKeyModal()">+ Generar llave</button>
+          </div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+          Llaves para que socios o desarrolladores externos consulten y actualicen datos de la tienda desde fuera
+          (productos, categorías, pedidos, clientes) — ver <a href="/desarrolladores" target="_blank" rel="noopener">la documentación</a> para el detalle de cada endpoint.
+          La llave completa solo se muestra una vez, al crearla.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Nombre</th><th>Llave</th><th>Permisos</th><th>Activa</th><th>Último uso</th><th style="text-align:center;">Acciones</th></tr>
+            </thead>
+            <tbody id="apiKeysAdminTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= VIEW PROMOCIONES ================= -->
     <section id="view-promociones" class="view-panel hidden">
       <div class="card">
@@ -4494,6 +4523,45 @@
       <div id="resenaModalMsg" class="hidden" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; text-align:center;"></div>
       <button type="submit" id="resenaSubmitBtn" class="btn primary" style="width:100%; padding:12px; font-size:15px; font-weight:700; justify-content:center;">Guardar reseña</button>
     </form>
+  </div>
+</div>
+
+<!-- ================= MODAL GENERAR LLAVE DE API ================= -->
+<div class="modal-overlay hidden" id="apiKeyModal">
+  <div class="modal" style="max-width: 460px;">
+    <div class="modal-header">
+      <h2>Generar llave de API</h2>
+      <button class="btn small" onclick="closeApiKeyModal()">✕</button>
+    </div>
+    <div id="apiKeyFormStep">
+      <form id="apiKeyForm" onsubmit="event.preventDefault(); saveApiKey();">
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Nombre (¿para quién es esta llave?):</label>
+          <input type="text" id="apiKeyNombre" required placeholder="Ej. App de inventario, Socio XYZ…" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">Permisos:</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13px;">
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="products:read" checked> Productos: leer</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="products:write"> Productos: editar</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="categories:read" checked> Categorías: leer</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="orders:read"> Pedidos: leer</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="orders:write"> Pedidos: crear/editar</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="customers:read"> Clientes: leer</label>
+          </div>
+        </div>
+        <div id="apiKeyModalMsg" class="hidden" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; text-align:center;"></div>
+        <button type="submit" id="apiKeySubmitBtn" class="btn primary" style="width:100%; padding:12px; font-size:15px; font-weight:700; justify-content:center;">Generar llave</button>
+      </form>
+    </div>
+    <div id="apiKeyRevealStep" class="hidden">
+      <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Copia esta llave ahora — no se puede volver a mostrar completa. Si la pierdes, genera una nueva.</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
+        <code id="apiKeyRevealValue" style="flex:1; padding:12px 14px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); font-size:12.5px; word-break:break-all;"></code>
+        <button type="button" class="btn small" onclick="copyRevealedApiKey()">Copiar</button>
+      </div>
+      <button type="button" class="btn primary" style="width:100%; padding:12px; font-size:15px; font-weight:700; justify-content:center;" onclick="closeApiKeyModal()">Listo</button>
+    </div>
   </div>
 </div>
 
@@ -5724,7 +5792,8 @@ const PERMISSION_GROUPS = [
     { key: 'param-avanzados-importar', label: 'Importar' },
     { key: 'param-avanzados-equipo', label: 'Equipo' },
     { key: 'param-avanzados-registros', label: 'Registros' },
-    { key: 'param-avanzados-webservice', label: 'Webservice' }
+    { key: 'param-avanzados-webservice', label: 'Webservice' },
+    { key: 'api-desarrolladores', label: 'API para Desarrolladores' }
   ]},
   { group: 'Otros', items: [
     { key: 'dashboard', label: 'Estadísticas' },
@@ -6742,6 +6811,7 @@ function switchView(viewName) {
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
     'param-avanzados-webservice': ['Parámetros Avanzados', 'Conexión con PrestaShop'],
+    'api-desarrolladores': ['API para Desarrolladores', 'Llaves y documentación para integraciones externas'],
     'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
   };
   if (titles[viewName]) {
@@ -6753,6 +6823,7 @@ function switchView(viewName) {
   if (viewName === 'categorias') loadCategoriesFromAPI();
   if (viewName === 'paginas-cms') loadCmsPagesAdmin();
   if (viewName === 'resenas-clientes') loadResenasAdmin();
+  if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
   if (viewName === 'promociones') loadPromosAdmin();
   if (viewName === 'notificaciones') markNotificationsRead();
   if (viewName === 'clientes') loadCustomersFromAPI();
@@ -12094,6 +12165,123 @@ async function deleteResena(id) {
     loadResenasAdmin();
   } catch (e) {
     alert('No se pudo eliminar: ' + e.message);
+  }
+}
+
+// ============== API PARA DESARROLLADORES — SECCIÓN DEL BACKOFFICE ==============
+// Llaves para /api/v1/* (productos, categorías, pedidos, clientes) — la
+// llave completa (mfs_live_...) solo existe una vez, en la respuesta de
+// rpc_api_key_create; de ahí en adelante solo se guarda su hash, así que
+// ni este panel ni la base de datos pueden volver a mostrarla.
+const API_KEY_SCOPE_LABELS = {
+  'products:read': 'Productos: leer', 'products:write': 'Productos: editar',
+  'categories:read': 'Categorías: leer',
+  'orders:read': 'Pedidos: leer', 'orders:write': 'Pedidos: crear/editar',
+  'customers:read': 'Clientes: leer'
+};
+let apiKeysAdminCache = [];
+
+async function loadApiKeysAdmin() {
+  const tbody = document.getElementById('apiKeysAdminTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    apiKeysAdminCache = await sbRpc('rpc_api_key_list', getSessionCredsParams());
+    renderApiKeysAdminTable(apiKeysAdminCache);
+  } catch (e) {
+    apiKeysAdminCache = [];
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No se pudieron cargar las llaves.</td></tr>';
+  }
+}
+
+function renderApiKeysAdminTable(rows) {
+  const tbody = document.getElementById('apiKeysAdminTableBody');
+  if (!tbody) return;
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Aún no hay llaves. Genera la primera.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(k => `
+    <tr>
+      <td><b>${escapeHtml(k.nombre)}</b></td>
+      <td><code style="font-size:12px;">${escapeHtml(k.key_prefix)}…</code></td>
+      <td style="font-size:12px; max-width:260px;">${(Array.isArray(k.scopes) ? k.scopes : []).map(s => escapeHtml(API_KEY_SCOPE_LABELS[s] || s)).join(', ')}</td>
+      <td>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" ${k.activo ? 'checked' : ''} onchange="toggleApiKeyActivo(${k.id}, this.checked)">
+          <span class="pill ${k.activo ? 'ok' : ''}">${k.activo ? 'Sí' : 'No'}</span>
+        </label>
+      </td>
+      <td style="font-size:12px; color:var(--text-muted);">${k.last_used_at ? new Date(k.last_used_at).toLocaleString('es-MX') : 'Nunca'}</td>
+      <td style="text-align:center; white-space:nowrap;">
+        <button class="btn small secondary" onclick="toggleApiKeyActivo(${k.id}, false)" ${k.activo ? '' : 'disabled'}>Revocar</button>
+      </td>
+    </tr>`).join('');
+}
+
+let lastRevealedApiKey = '';
+
+function openApiKeyModal() {
+  document.getElementById('apiKeyForm').reset();
+  const defaultScopes = ['products:read', 'categories:read'];
+  document.querySelectorAll('.apiKeyScope').forEach(cb => { cb.checked = defaultScopes.includes(cb.value); });
+  document.getElementById('apiKeyModalMsg').classList.add('hidden');
+  document.getElementById('apiKeyFormStep').classList.remove('hidden');
+  document.getElementById('apiKeyRevealStep').classList.add('hidden');
+  document.getElementById('apiKeyModal').classList.remove('hidden');
+}
+
+function closeApiKeyModal() {
+  document.getElementById('apiKeyModal').classList.add('hidden');
+  lastRevealedApiKey = '';
+  loadApiKeysAdmin();
+}
+
+async function saveApiKey() {
+  const btn = document.getElementById('apiKeySubmitBtn');
+  const msg = document.getElementById('apiKeyModalMsg');
+  msg.classList.add('hidden');
+  const nombre = document.getElementById('apiKeyNombre').value.trim();
+  const scopes = Array.from(document.querySelectorAll('.apiKeyScope:checked')).map(cb => cb.value);
+  if (!scopes.length) {
+    msg.textContent = 'Elige al menos un permiso.';
+    msg.classList.remove('hidden');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Generando…';
+  try {
+    const rows = await sbRpc('rpc_api_key_create', { ...getSessionCredsParams(), p_nombre: nombre, p_scopes: scopes });
+    const created = Array.isArray(rows) ? rows[0] : rows;
+    lastRevealedApiKey = created.plain_key;
+    document.getElementById('apiKeyRevealValue').textContent = created.plain_key;
+    document.getElementById('apiKeyFormStep').classList.add('hidden');
+    document.getElementById('apiKeyRevealStep').classList.remove('hidden');
+    apiKeysAdminCache.unshift(created);
+    renderApiKeysAdminTable(apiKeysAdminCache);
+  } catch (e) {
+    msg.textContent = 'No se pudo generar la llave: ' + e.message;
+    msg.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Generar llave';
+  }
+}
+
+function copyRevealedApiKey() {
+  if (!lastRevealedApiKey) return;
+  navigator.clipboard?.writeText(lastRevealedApiKey).catch(() => {});
+}
+
+async function toggleApiKeyActivo(id, activo) {
+  try {
+    await sbRpc('rpc_api_key_revoke', { ...getSessionCredsParams(), p_id: id, p_activo: activo });
+    const k = apiKeysAdminCache.find(x => String(x.id) === String(id));
+    if (k) k.activo = activo;
+    renderApiKeysAdminTable(apiKeysAdminCache);
+  } catch (e) {
+    alert('No se pudo actualizar: ' + e.message);
+    loadApiKeysAdmin();
   }
 }
 

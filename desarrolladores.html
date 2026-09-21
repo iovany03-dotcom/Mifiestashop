@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>API para Desarrolladores | Mi Fiestashop</title>
+<meta name="description" content="Documentación de la API pública de Mi Fiestashop: productos, categorías, pedidos y clientes.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/img/icons/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1117; --panel:#161925; --panel-2:#1d2133; --border:#2a2f42;
+  --text:#e7e9f2; --text-muted:#9aa0b4; --accent:#37b6b9; --accent-2:#d3007b;
+  --code-bg:#0b0d14; --ok:#4fa83c; --warn:#f2b90c; --danger:#e85d5d;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Poppins,Arial,sans-serif;line-height:1.7}
+h1,h2,h3{font-family:Fredoka,Poppins,sans-serif;font-weight:600;line-height:1.25;color:#fff}
+a{color:var(--accent)}
+code,pre{font-family:var(--mono)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:0.87em;color:#a9e8e9}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:16px 18px;overflow-x:auto;font-size:13px;line-height:1.6}
+pre code{background:none;border:none;padding:0;color:#d3d9ea}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(15,17,23,0.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:14px}
+.topbar img{width:34px;height:34px;object-fit:contain}
+.topbar strong{font-family:Fredoka,sans-serif;font-size:17px}
+.topbar span{color:var(--text-muted);font-size:13px}
+.topbar .home-link{margin-left:auto;font-size:13px;text-decoration:none;color:var(--text-muted)}
+.layout{display:grid;grid-template-columns:230px 1fr;max-width:1180px;margin:0 auto;gap:0}
+nav.sidenav{position:sticky;top:63px;align-self:start;height:calc(100vh - 63px);overflow-y:auto;padding:28px 16px;border-right:1px solid var(--border)}
+nav.sidenav a{display:block;padding:7px 10px;border-radius:7px;color:var(--text-muted);text-decoration:none;font-size:13.5px;margin-bottom:2px}
+nav.sidenav a:hover{background:var(--panel-2);color:var(--text)}
+nav.sidenav .nav-group{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5b6178;margin:18px 10px 6px;font-weight:700}
+nav.sidenav .nav-group:first-child{margin-top:0}
+main{padding:36px 40px 100px;min-width:0}
+section{max-width:760px;margin-bottom:56px;scroll-margin-top:80px}
+section h2{font-size:26px;margin:0 0 14px;padding-top:6px;border-top:1px solid var(--border);padding-top:24px}
+section:first-of-type h2, .hero h2{border-top:none;padding-top:0}
+p{color:#c3c8d9;margin:0 0 14px}
+.hero p{font-size:16px}
+.badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.03em;padding:3px 9px;border-radius:20px;margin-right:6px}
+.badge.get{background:rgba(79,168,60,0.16);color:#7ed568}
+.badge.post{background:rgba(211,0,123,0.16);color:#ff6fb8}
+.badge.patch{background:rgba(242,185,12,0.16);color:#f2c94c}
+.endpoint{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin:18px 0}
+.endpoint h3{font-size:16px;margin:0 0 4px;font-family:var(--mono);font-weight:500;color:#fff}
+.endpoint .desc{color:var(--text-muted);font-size:13.5px;margin-bottom:14px}
+.endpoint .scope{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-muted);background:var(--panel-2);border-radius:20px;padding:4px 10px;margin-bottom:14px}
+table.params{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+table.params th{text-align:left;color:var(--text-muted);font-weight:600;padding:6px 10px 6px 0;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+table.params td{padding:8px 10px 8px 0;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top}
+table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:nowrap}
+.callout{border-left:3px solid var(--accent);background:rgba(55,182,185,0.08);border-radius:0 8px 8px 0;padding:12px 16px;font-size:13.5px;color:#c3c8d9;margin:16px 0}
+.callout.warn{border-color:var(--warn);background:rgba(242,185,12,0.08)}
+.scope-table td:nth-child(1){color:#a9e8e9}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}nav.sidenav{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}main{padding:28px 20px 80px}.grid-2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="/img/logo-antifaz.png" alt="Mi Fiestashop">
+  <strong>Mi Fiestashop</strong><span>API v1</span>
+  <a class="home-link" href="/">← Volver a la tienda</a>
+</div>
+
+<div class="layout">
+  <nav class="sidenav">
+    <div class="nav-group">Empezar</div>
+    <a href="#introduccion">Introducción</a>
+    <a href="#autenticacion">Autenticación</a>
+    <a href="#errores">Errores</a>
+    <div class="nav-group">Recursos</div>
+    <a href="#productos">Productos</a>
+    <a href="#categorias">Categorías</a>
+    <a href="#pedidos">Pedidos</a>
+    <a href="#clientes">Clientes</a>
+    <div class="nav-group">Referencia</div>
+    <a href="#scopes">Permisos (scopes)</a>
+    <a href="#decisiones">Decisiones de diseño</a>
+  </nav>
+
+  <main>
+    <section class="hero" id="introduccion">
+      <h2>API para Desarrolladores</h2>
+      <p>Una API REST en JSON para leer y actualizar datos de Mi Fiestashop desde fuera del sitio: catálogo, categorías, pedidos y clientes. Pensada para socios e integraciones externas.</p>
+      <p><strong>URL base:</strong> <code>https://www.mifiestashop.com/api/v1</code></p>
+      <p>Todas las respuestas son JSON. Las de lista vienen envueltas como <code>{ "data": [...], "meta": { "total", "limit", "offset" } }</code>; las de un solo recurso como <code>{ "data": {...} }</code>.</p>
+      <div class="callout">
+        <strong>¿Cómo obtengo una llave?</strong> Se generan desde el panel de administración, en <em>Parámetros Avanzados → API para Desarrolladores</em>. Cada llave elige sus propios permisos (scopes) y se puede revocar en cualquier momento sin afectar a las demás.
+      </div>
+    </section>
+
+    <section id="autenticacion">
+      <h2>Autenticación</h2>
+      <p>Cada solicitud necesita un header <code>Authorization</code> con tu llave como Bearer token:</p>
+      <pre><code>Authorization: Bearer mfs_live_xxxxxxxxxxxxxxxxxxxxxxxx</code></pre>
+      <p>Ejemplo completo con <code>curl</code>:</p>
+      <pre><code>curl https://www.mifiestashop.com/api/v1/products \
+  -H "Authorization: Bearer mfs_live_xxxxxxxxxxxxxxxxxxxxxxxx"</code></pre>
+      <div class="callout">
+        A diferencia del webservice de PrestaShop (Basic Auth con la llave como usuario y contraseña vacía), esta API usa <code>Bearer</code> — el estándar que ya esperan la mayoría de los clientes HTTP y SDKs modernos. La llave nunca se guarda en texto plano en nuestra base de datos: solo su hash, así que si la pierdes hay que generar una nueva.
+      </div>
+    </section>
+
+    <section id="errores">
+      <h2>Errores</h2>
+      <p>Los errores siempre tienen esta forma, con un <code>code</code> estable para manejarlos por código (no por el texto de <code>message</code>, que puede cambiar):</p>
+      <pre><code>{
+  "error": {
+    "code": "invalid_status",
+    "message": "\"status\" debe ser uno de: Pendiente, Pagado, ..."
+  }
+}</code></pre>
+      <table class="params">
+        <tr><th>Status</th><th>Cuándo pasa</th></tr>
+        <tr><td>401</td><td>Falta el header Authorization, o la llave no existe / fue revocada.</td></tr>
+        <tr><td>403</td><td>La llave es válida pero no tiene el scope que este endpoint requiere.</td></tr>
+        <tr><td>404</td><td>El recurso no existe (o el producto/categoría está inactivo).</td></tr>
+        <tr><td>422</td><td>La solicitud es válida como JSON pero los datos no pasan alguna validación (falta un campo, un status inválido, etc.).</td></tr>
+        <tr><td>429</td><td>Reservado para límites de tasa futuros — ver el aviso más abajo.</td></tr>
+        <tr><td>502</td><td>PrestaShop o Supabase no respondieron correctamente. Reintenta más tarde.</td></tr>
+      </table>
+      <div class="callout warn">
+        <strong>Límites de tasa:</strong> todavía no hay un límite estricto por llave. No lo trates como ilimitado — un uso abusivo puede llevar a que se revoque la llave manualmente mientras se agrega un límite real. Si tu integración necesita hacer muchas solicitudes seguidas, escríbenos.
+      </div>
+    </section>
+
+    <section id="productos">
+      <h2>Productos</h2>
+      <p>Precio y existencia siempre vienen en vivo desde PrestaShop — nunca están cacheados ni son editables por esta API. El nombre, descripción, categoría e imágenes se pueden mejorar con <code>PATCH</code> sin tocar esos dos campos.</p>
+
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/products</h3>
+        <p class="desc">Lista productos activos.</p>
+        <span class="scope">Requiere <code>products:read</code></span>
+        <table class="params">
+          <tr><th>Parámetro</th><th>Descripción</th></tr>
+          <tr><td>limit</td><td>Máximo 100 por página. Default 50.</td></tr>
+          <tr><td>offset</td><td>Para paginar. Default 0.</td></tr>
+          <tr><td>category</td><td>Filtra por id de categoría (ver <a href="#categorias">Categorías</a>).</td></tr>
+          <tr><td>search</td><td>Busca por nombre o SKU (contiene, sin distinguir mayúsculas/acentos).</td></tr>
+        </table>
+        <pre><code>curl "https://www.mifiestashop.com/api/v1/products?category=270&limit=20" \
+  -H "Authorization: Bearer mfs_live_..."</code></pre>
+        <pre><code>{
+  "data": [
+    {
+      "id": 83101,
+      "sku": "VELA-BENGALA",
+      "name": "Vela de Bengala",
+      "description": "Vela de Bengala para pastel...",
+      "price": 10,
+      "category_id": 270,
+      "category_label": "Velas",
+      "image": "https://.../83101/33604.webp",
+      "url": "https://www.mifiestashop.com/83101-vela-de-bengala.html"
+    }
+  ],
+  "meta": { "total": 1072, "limit": 20, "offset": 0 }
+}</code></pre>
+      </div>
+
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/products/:id</h3>
+        <p class="desc">Detalle de un producto.</p>
+        <span class="scope">Requiere <code>products:read</code></span>
+        <pre><code>curl https://www.mifiestashop.com/api/v1/products/83101 \
+  -H "Authorization: Bearer mfs_live_..."</code></pre>
+      </div>
+
+      <div class="endpoint">
+        <span class="badge patch">PATCH</span><h3>/products/:id</h3>
+        <p class="desc">Actualiza los campos descriptivos de un producto existente en PrestaShop.</p>
+        <span class="scope">Requiere <code>products:write</code></span>
+        <table class="params">
+          <tr><th>Campo</th><th>Descripción</th></tr>
+          <tr><td>name</td><td>Texto.</td></tr>
+          <tr><td>description</td><td>Texto.</td></tr>
+          <tr><td>images</td><td>Arreglo de URLs.</td></tr>
+          <tr><td>category_label</td><td>Texto (etiqueta legible, no cambia la categoría real del producto).</td></tr>
+        </table>
+        <pre><code>curl -X PATCH https://www.mifiestashop.com/api/v1/products/83101 \
+  -H "Authorization: Bearer mfs_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"description": "Nueva descripción mejorada"}'</code></pre>
+        <div class="callout warn">
+          Mandar <code>price</code>, <code>stock</code> o <code>quantity</code> devuelve <code>422 read_only_field</code> a propósito: siempre vienen en vivo de PrestaShop en todo el sitio, editarlos por aquí daría una falsa sensación de control sobre el inventario real. Ver <a href="#decisiones">Decisiones de diseño</a>.
+        </div>
+      </div>
+    </section>
+
+    <section id="categorias">
+      <h2>Categorías</h2>
+      <p>Solo lectura por ahora (ver <a href="#decisiones">Decisiones de diseño</a>).</p>
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/categories</h3>
+        <p class="desc">Lista categorías activas.</p>
+        <span class="scope">Requiere <code>categories:read</code></span>
+        <table class="params">
+          <tr><th>Parámetro</th><th>Descripción</th></tr>
+          <tr><td>limit</td><td>Máximo 200. Default 100.</td></tr>
+          <tr><td>offset</td><td>Para paginar. Default 0.</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/categories/:id</h3>
+        <p class="desc">Detalle de una categoría.</p>
+        <span class="scope">Requiere <code>categories:read</code></span>
+      </div>
+    </section>
+
+    <section id="pedidos">
+      <h2>Pedidos</h2>
+      <p>Los pedidos creados por esta API se validan igual que el checkout público: el precio de cada artículo se vuelve a consultar en vivo en PrestaShop, nunca se confía en el que mande quien llama a la API.</p>
+
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/orders</h3>
+        <p class="desc">Lista pedidos, más recientes primero.</p>
+        <span class="scope">Requiere <code>orders:read</code></span>
+        <table class="params">
+          <tr><th>Parámetro</th><th>Descripción</th></tr>
+          <tr><td>limit</td><td>Máximo 100. Default 20.</td></tr>
+          <tr><td>offset</td><td>Para paginar. Default 0.</td></tr>
+        </table>
+      </div>
+
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/orders/:id</h3>
+        <p class="desc">Detalle de un pedido.</p>
+        <span class="scope">Requiere <code>orders:read</code></span>
+      </div>
+
+      <div class="endpoint">
+        <span class="badge post">POST</span><h3>/orders</h3>
+        <p class="desc">Crea un pedido nuevo.</p>
+        <span class="scope">Requiere <code>orders:write</code></span>
+        <table class="params">
+          <tr><th>Campo</th><th>Descripción</th></tr>
+          <tr><td>items</td><td>Arreglo de <code>{ "id": 83101, "qty": 2 }</code>. Hasta 50 artículos.</td></tr>
+          <tr><td>customer_name</td><td>Texto, requerido.</td></tr>
+          <tr><td>customer_email</td><td>Email válido, requerido.</td></tr>
+          <tr><td>customer_phone</td><td>Texto, requerido.</td></tr>
+          <tr><td>shipping_address</td><td>Texto, requerido.</td></tr>
+          <tr><td>shipping_cost</td><td>Número ≥ 0. Default 0.</td></tr>
+          <tr><td>payment_method</td><td>Texto, opcional.</td></tr>
+        </table>
+        <pre><code>curl -X POST https://www.mifiestashop.com/api/v1/orders \
+  -H "Authorization: Bearer mfs_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [{"id": 83101, "qty": 2}],
+    "customer_name": "Ana Torres",
+    "customer_email": "ana@example.com",
+    "customer_phone": "5512345678",
+    "shipping_address": "Calle 123, Col. Centro, CDMX",
+    "shipping_cost": 99
+  }'</code></pre>
+      </div>
+
+      <div class="endpoint">
+        <span class="badge patch">PATCH</span><h3>/orders/:id</h3>
+        <p class="desc">Actualiza el status de un pedido.</p>
+        <span class="scope">Requiere <code>orders:write</code></span>
+        <table class="params">
+          <tr><th>Campo</th><th>Descripción</th></tr>
+          <tr><td>status</td><td>Uno de: <code>Pendiente</code>, <code>Pagado</code>, <code>Pago Aceptado</code>, <code>Enviado</code>, <code>Entregado</code>, <code>Cancelado</code>.</td></tr>
+        </table>
+        <pre><code>curl -X PATCH https://www.mifiestashop.com/api/v1/orders/412 \
+  -H "Authorization: Bearer mfs_live_..." \
+  -H "Content-Type: application/json" \
+  -d '{"status": "Enviado"}'</code></pre>
+      </div>
+    </section>
+
+    <section id="clientes">
+      <h2>Clientes</h2>
+      <p>Solo lectura por ahora (ver <a href="#decisiones">Decisiones de diseño</a>).</p>
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/customers</h3>
+        <p class="desc">Lista clientes activos.</p>
+        <span class="scope">Requiere <code>customers:read</code></span>
+        <table class="params">
+          <tr><th>Parámetro</th><th>Descripción</th></tr>
+          <tr><td>limit</td><td>Máximo 100. Default 20.</td></tr>
+          <tr><td>offset</td><td>Para paginar. Default 0.</td></tr>
+          <tr><td>search</td><td>Busca por nombre o email.</td></tr>
+        </table>
+      </div>
+      <div class="endpoint">
+        <span class="badge get">GET</span><h3>/customers/:id</h3>
+        <p class="desc">Detalle de un cliente.</p>
+        <span class="scope">Requiere <code>customers:read</code></span>
+      </div>
+    </section>
+
+    <section id="scopes">
+      <h2>Permisos (scopes)</h2>
+      <p>Cada llave elige sus propios permisos al crearse, desde el admin. Una llamada con una llave sin el scope requerido recibe <code>403</code>.</p>
+      <table class="params scope-table">
+        <tr><th>Scope</th><th>Permite</th></tr>
+        <tr><td>products:read</td><td>GET /products, GET /products/:id</td></tr>
+        <tr><td>products:write</td><td>PATCH /products/:id</td></tr>
+        <tr><td>categories:read</td><td>GET /categories, GET /categories/:id</td></tr>
+        <tr><td>orders:read</td><td>GET /orders, GET /orders/:id</td></tr>
+        <tr><td>orders:write</td><td>POST /orders, PATCH /orders/:id</td></tr>
+        <tr><td>customers:read</td><td>GET /customers, GET /customers/:id</td></tr>
+      </table>
+    </section>
+
+    <section id="decisiones">
+      <h2>Decisiones de diseño</h2>
+      <p>Esta API está inspirada en el webservice de PrestaShop, pero no es una copia — donde el original es ambiguo, fue difícil de usar en la práctica, o hubiera prometido algo que este sitio no puede garantizar de verdad, se hizo diferente a propósito:</p>
+      <div class="grid-2">
+        <div class="callout">
+          <strong>Precio y stock nunca son editables.</strong> Todo el sitio (tienda, POS, esta API) lee precio y existencia en vivo directo de PrestaShop, sin caché. Permitir editarlos por aquí rompería esa garantía para el resto del sitio.
+        </div>
+        <div class="callout">
+          <strong>No se pueden crear productos nuevos.</strong> Un producto que no existe todavía en PrestaShop no se puede vender ni aparece en ningún otro lado del sitio — "crearlo" solo en esta API no serviría de nada. Editar productos que ya existen sí es real y aparece de inmediato.
+        </div>
+        <div class="callout">
+          <strong>Categorías, solo lectura.</strong> Su jerarquía y traducciones son de las partes más delicadas de PrestaShop; el sitio ya sincroniza los nombres reales cada hora, así que no había necesidad de duplicar esa responsabilidad aquí todavía.
+        </div>
+        <div class="callout">
+          <strong>Clientes, solo lectura.</strong> Los datos de clientes vienen de PrestaShop hacia nuestra base, no al revés — crear un cliente nuevo aquí requeriría escribirlo directo en el webservice real de PrestaShop, algo que este proyecto no ha probado todavía lo suficiente como para ofrecerlo con confianza.
+        </div>
+      </div>
+      <p style="margin-top:8px;">Cualquiera de estos límites puede cambiar — si tu integración necesita algo que hoy no está disponible, dínoslo.</p>
+    </section>
+  </main>
+</div>
+
+</body>
+</html>
