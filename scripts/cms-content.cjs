@@ -264,6 +264,10 @@ function modelFor(page, pages) {
   const pageCity = cityOf(page.title + ' ' + page.slug);
   if (pageCity && theme !== 'informacion') description = description.replace(/Ciudad de M[eé]xico|CDMX|Quer[eé]taro|\bQRO\b|Puebla|Atizap[aá]n/gi, STORES[pageCity].name);
   let heroImage = image ? assetUrl(image,page) : '';
+  // Fotos reales de una sesión pagada con modelos (no clientes ni fotos
+  // scrapeadas de PrestaShop) — reemplazan cualquier imagen anterior en el
+  // hero de XV años, en vez de solo rellenar cuando falta una.
+  if (theme === 'xv') heroImage = '/img/cms/xv-anos/pista-baile-neon.webp';
   if (!heroImage && theme === 'fiesta') heroImage = '/img/hero-banner.png';
   if (!heroImage && theme === 'batucada') heroImage = '/img/cms/0dede4bf5e127bbe.jpg';
   if (!heroImage && theme === 'mayoreo') heroImage = '/img/cms/83d47782163fe737.png';
