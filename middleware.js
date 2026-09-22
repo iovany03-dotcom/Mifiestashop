@@ -3,23 +3,23 @@
 // que se manda al navegador, ANTES de que se ejecute nada de JavaScript.
 //
 // Por qué: este sitio es un SPA de un solo index.html — el <head> real con
-// los datos del producto (título, descripción, imagen) solo se rellena vía
-// JS después de cargar (applyProductSeoTags() en index.html). Eso funciona
-// bien para Google (sí ejecuta JS), pero CUALQUIER bot que no lo haga —
-// vista previa de enlaces de WhatsApp/Facebook/Twitter, la mayoría de
-// herramientas de auditoría SEO — siempre ve las etiquetas genéricas de la
-// portada, sin importar qué producto sea la URL real.
+// los datos del producto/categoría (título, descripción, imagen) solo se
+// rellena vía JS después de cargar. Eso funciona bien para Google (sí
+// ejecuta JS), pero CUALQUIER bot que no lo haga — vista previa de enlaces
+// de WhatsApp/Facebook/Twitter, la mayoría de herramientas de auditoría
+// SEO — siempre ve las etiquetas genéricas de la portada, sin importar qué
+// producto o categoría sea la URL real.
 //
-// Este middleware intercepta solo las URLs de producto (/{id}-{slug}.html),
-// trae nombre/descripción/imagen reales de Supabase (productos_migrados —
-// ya migrado, sin tocar PrestaShop) y reescribe esas etiquetas con
-// reemplazo de texto sobre el HTML (no HTMLRewriter: este proyecto corre
-// el middleware sobre el runtime de Node de Vercel, no el Edge Runtime, y
-// esa API no existe ahí — confirmado en vivo). Si el producto no está
-// migrado o algo falla, se deja pasar el HTML sin tocar — nunca rompe la
-// carga de la página.
+// Este middleware intercepta las URLs de producto (/{id}-{slug}.html, con
+// datos de Supabase productos_migrados) y de categoría (/{id}-{slug}, sin
+// .html, con datos de Supabase ps_categorias) y reescribe esas etiquetas
+// con reemplazo de texto sobre el HTML (no HTMLRewriter: este proyecto
+// corre el middleware sobre el runtime de Node de Vercel, no el Edge
+// Runtime, y esa API no existe ahí — confirmado en vivo). Si el producto
+// no está migrado, la categoría no existe, o algo falla, se deja pasar el
+// HTML sin tocar — nunca rompe la carga de la página.
 export const config = {
-  matcher: '/:id(\\d+)-:slug*.html',
+  matcher: '/:id(\\d+)-:slug*',
 };
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -53,32 +53,64 @@ function replaceAttr(html, selector, attr, newValue) {
   return html.replace(re, `$1${escapeAttr(newValue)}$2`);
 }
 
+// Trae los datos reales (Supabase) para un producto o categoría por id.
+// Devuelve null si no existe / no está migrado — el llamador entonces deja
+// pasar el HTML genérico tal cual, igual que si nada hubiera pasado.
+async function fetchProduct(id) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,description,images`,
+    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+  );
+  if (!r.ok) return null;
+  const rows = await r.json();
+  const p = Array.isArray(rows) && rows[0];
+  if (!p || !p.name) return null;
+  return {
+    title: `${p.name} | Mi Fiestashop`,
+    desc: (stripHtml(p.description) || `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160),
+    image: Array.isArray(p.images) && p.images[0] ? p.images[0] : null
+  };
+}
+
+async function fetchCategory(id) {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/ps_categorias?id=eq.${id}&active=eq.true&select=name,description,meta_title,meta_description`,
+    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+  );
+  if (!r.ok) return null;
+  const rows = await r.json();
+  const c = Array.isArray(rows) && rows[0];
+  if (!c || !c.name) return null;
+  // meta_title/meta_description casi nunca están capturados a mano para
+  // categorías en PrestaShop (a diferencia de productos) — se cae a un
+  // texto genérico pero real (con el nombre de la categoría), nunca al
+  // título/descripción de la portada.
+  return {
+    title: `${(c.meta_title && c.meta_title.trim()) || c.name} | Mi Fiestashop`,
+    desc: (stripHtml(c.meta_description) || stripHtml(c.description) || `Compra ${c.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160),
+    image: null
+  };
+}
+
 export default async function middleware(request) {
   if (request.headers.get(BYPASS_HEADER)) return; // ya es la re-petición interna: no reprocesar
 
   const url = new URL(request.url);
-  const match = url.pathname.match(/^\/(\d+)-[^/]+\.html$/);
+  const match = url.pathname.match(/^\/(\d+)-[^/]+?(\.html)?$/);
   if (!match) return; // deja que Vercel sirva la ruta normal, sin tocar nada
 
   const id = match[1];
+  const isProduct = !!match[2];
   try {
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,description,images`,
-      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-    );
-    if (!r.ok) return;
-    const rows = await r.json();
-    const p = Array.isArray(rows) && rows[0];
-    if (!p || !p.name) return; // producto no migrado todavía: se deja el HTML genérico tal cual
+    const seo = isProduct ? await fetchProduct(id) : await fetchCategory(id);
+    if (!seo) return; // producto no migrado / categoría inexistente o inactiva: HTML genérico tal cual
 
     const bypassHeaders = new Headers(request.headers);
     bypassHeaders.set(BYPASS_HEADER, '1');
     const origin = await fetch(url.toString(), { headers: bypassHeaders });
     if (!origin.ok) return origin;
 
-    const title = `${p.name} | Mi Fiestashop`;
-    const desc = (stripHtml(p.description) || `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160);
-    const image = Array.isArray(p.images) && p.images[0] ? p.images[0] : null;
+    const { title, desc, image } = seo;
     const pageUrl = url.toString();
 
     let html = await origin.text();
@@ -107,10 +139,10 @@ export default async function middleware(request) {
     // Si eso se manda tal cual con el HTML ya en texto plano, el navegador
     // intenta descomprimir algo que no está comprimido y la carga se cuelga.
     headers.delete('content-encoding');
-    // Todas las URLs de producto se reescriben a /index.html (regla de
-    // vercel.json), así que la key de caché del borde ignora cuál producto
-    // era — sin esto, el borde podría servir las etiquetas de UN producto
-    // para la URL de OTRO. Cada URL de producto siempre se recalcula.
+    // Todas las URLs de producto/categoría se reescriben a /index.html
+    // (reglas de vercel.json), así que la key de caché del borde ignora
+    // cuál era — sin esto, el borde podría servir las etiquetas de UNA
+    // página para la URL de OTRA. Cada URL siempre se recalcula.
     headers.set('Cache-Control', 'no-store, must-revalidate');
     return new Response(html, { status: origin.status, headers });
   } catch (e) {
