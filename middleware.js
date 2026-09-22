@@ -96,6 +96,12 @@ export default async function middleware(request) {
     }
 
     const headers = new Headers(origin.headers);
+    // El Content-Length original ya no aplica: el HTML reescrito tiene un
+    // largo distinto en bytes (título/descripción reales, acentos, etc.).
+    // Dejarlo tal cual hace que el navegador espere bytes que nunca llegan
+    // (respuesta que se queda "cargando" o body vacío). Quitarlo deja que
+    // la plataforma mande Transfer-Encoding: chunked.
+    headers.delete('content-length');
     // Todas las URLs de producto se reescriben a /index.html (regla de
     // vercel.json), así que la key de caché del borde ignora cuál producto
     // era — sin esto, el borde podría servir las etiquetas de UN producto
