@@ -39,8 +39,7 @@ class TextSetter {
 export default async function middleware(request) {
   const url = new URL(request.url);
   const match = url.pathname.match(/^\/(\d+)-[^/]+\.html$/);
-  const origin = await fetch(new URL('/index.html', url.origin));
-  if (!match || !origin.ok) return origin;
+  if (!match) return fetch(request);
 
   const id = match[1];
   try {
@@ -48,7 +47,14 @@ export default async function middleware(request) {
       `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,description,images`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
     );
-    if (!r.ok) return origin;
+    // Se pide el HTML de origen DESPUÉS de resolver los datos, re-mandando
+    // la petición original tal cual (no una URL nueva a /index.html) — así
+    // Vercel la resuelve con su propio ruteo normal (la regla de
+    // vercel.json que ya manda estas URLs a index.html) sin volver a pasar
+    // por este middleware.
+    const origin = await fetch(request);
+    if (!r.ok || !origin.ok) return origin;
+
     const rows = await r.json();
     const p = Array.isArray(rows) && rows[0];
     if (!p || !p.name) return origin; // producto no migrado todavía: se deja el HTML genérico tal cual
@@ -72,6 +78,6 @@ export default async function middleware(request) {
 
     return rewriter.transform(origin);
   } catch (e) {
-    return origin;
+    return fetch(request);
   }
 }
