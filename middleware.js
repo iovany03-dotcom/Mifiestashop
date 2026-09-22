@@ -74,7 +74,6 @@ export default async function middleware(request) {
     const bypassHeaders = new Headers(request.headers);
     bypassHeaders.set(BYPASS_HEADER, '1');
     const origin = await fetch(url.toString(), { headers: bypassHeaders });
-    console.log('[mfs-mw] origin status', origin.status, 'ct', origin.headers.get('content-type'), 'cl', origin.headers.get('content-length'));
     if (!origin.ok) return origin;
 
     const title = `${p.name} | Mi Fiestashop`;
@@ -83,7 +82,6 @@ export default async function middleware(request) {
     const pageUrl = url.toString();
 
     let html = await origin.text();
-    console.log('[mfs-mw] html len', html.length, 'first120', html.slice(0, 120));
     html = replaceTagText(html, 'pageTitleTag', 'title', title);
     html = replaceAttr(html, 'id="metaDescription"', 'content', desc);
     html = replaceAttr(html, 'id="canonicalLink"', 'href', pageUrl);
@@ -104,7 +102,11 @@ export default async function middleware(request) {
     // (respuesta que se queda "cargando" o body vacío). Quitarlo deja que
     // la plataforma mande Transfer-Encoding: chunked.
     headers.delete('content-length');
-    console.log('[mfs-mw] final html len', html.length, 'ct', headers.get('content-type'));
+    // origin.text() ya descomprime el body (fetch lo hace automático según
+    // Content-Encoding), pero origin.headers sigue diciendo "va comprimido".
+    // Si eso se manda tal cual con el HTML ya en texto plano, el navegador
+    // intenta descomprimir algo que no está comprimido y la carga se cuelga.
+    headers.delete('content-encoding');
     // Todas las URLs de producto se reescriben a /index.html (regla de
     // vercel.json), así que la key de caché del borde ignora cuál producto
     // era — sin esto, el borde podría servir las etiquetas de UN producto
