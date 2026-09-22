@@ -10702,9 +10702,9 @@ function resetStorefrontSeoTags() {
   const metaKw = document.getElementById('metaKeywords');
   if (metaKw) metaKw.setAttribute('content', defaultKeywords);
   const canonical = document.getElementById('canonicalLink');
-  if (canonical) canonical.setAttribute('href', 'https://mifiestashop.vercel.app/');
+  if (canonical) canonical.setAttribute('href', window.location.origin + '/');
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', defaultTitle);
-  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', 'https://mifiestashop.vercel.app/');
+  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', window.location.origin + '/');
   const twTitle = document.getElementById('twitterTitle'); if (twTitle) twTitle.setAttribute('content', defaultTitle);
   const productLd = document.getElementById('ldJsonProduct');
   if (productLd) productLd.remove();
@@ -10722,7 +10722,7 @@ function applyProductSeoTags(p) {
     ? p.metaDescription.trim().slice(0, 160)
     : (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
   const path = productPathFor(p) || '/';
-  const url = `https://mifiestashop.vercel.app${path}`;
+  const url = `${window.location.origin}${path}`;
 
   document.title = title;
   const metaDesc = document.getElementById('metaDescription');

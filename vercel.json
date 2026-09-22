@@ -31,6 +31,9 @@
     "api/sitemap.js": {
       "maxDuration": 30
     },
+    "api/robots.js": {
+      "maxDuration": 10
+    },
     "api/categorias-tienda.js": {
       "maxDuration": 30
     },
@@ -1676,6 +1679,10 @@
     {
       "source": "/sitemap.xml",
       "destination": "/api/sitemap"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/robots"
     },
     {
       "source": "/:id(\\d+)-:slug*.html",
