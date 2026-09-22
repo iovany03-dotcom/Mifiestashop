@@ -23,6 +23,13 @@ export const config = {
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
+// fetch(request) desde dentro del middleware SÍ vuelve a pasar por este
+// mismo middleware en este proyecto (confirmado: Vercel lo detectó y lo
+// bloqueó como bucle infinito, error 508). Este header marca la petición
+// interna para reconocerla al instante y no reprocesarla — el mismo truco
+// que se usa en Cloudflare Workers para el mismo problema.
+const BYPASS_HEADER = 'x-mfs-mw-bypass';
+
 function stripHtml(str) {
   return String(str || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
@@ -37,9 +44,11 @@ class TextSetter {
 }
 
 export default async function middleware(request) {
+  if (request.headers.get(BYPASS_HEADER)) return; // ya es la re-petición interna: no reprocesar
+
   const url = new URL(request.url);
   const match = url.pathname.match(/^\/(\d+)-[^/]+\.html$/);
-  if (!match) return fetch(request);
+  if (!match) return; // deja que Vercel sirva la ruta normal, sin tocar nada
 
   const id = match[1];
   try {
@@ -47,17 +56,15 @@ export default async function middleware(request) {
       `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,description,images`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
     );
-    // Se pide el HTML de origen DESPUÉS de resolver los datos, re-mandando
-    // la petición original tal cual (no una URL nueva a /index.html) — así
-    // Vercel la resuelve con su propio ruteo normal (la regla de
-    // vercel.json que ya manda estas URLs a index.html) sin volver a pasar
-    // por este middleware.
-    const origin = await fetch(request);
-    if (!r.ok || !origin.ok) return origin;
-
+    if (!r.ok) return;
     const rows = await r.json();
     const p = Array.isArray(rows) && rows[0];
-    if (!p || !p.name) return origin; // producto no migrado todavía: se deja el HTML genérico tal cual
+    if (!p || !p.name) return; // producto no migrado todavía: se deja el HTML genérico tal cual
+
+    const bypassHeaders = new Headers(request.headers);
+    bypassHeaders.set(BYPASS_HEADER, '1');
+    const origin = await fetch(url.toString(), { headers: bypassHeaders });
+    if (!origin.ok) return origin;
 
     const title = `${p.name} | Mi Fiestashop`;
     const desc = (stripHtml(p.description) || `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160);
@@ -78,6 +85,6 @@ export default async function middleware(request) {
 
     return rewriter.transform(origin);
   } catch (e) {
-    return fetch(request);
+    return;
   }
 }
