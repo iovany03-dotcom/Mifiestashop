@@ -10710,6 +10710,33 @@ function resetStorefrontSeoTags() {
   if (productLd) productLd.remove();
 }
 
+// URL propia de categoría (/{id}-{link_rewrite}, igual que productos pero
+// sin ".html") — linkRewrite viene de /api/categorias-tienda (ps_categorias
+// sincronizada de PrestaShop). Sin linkRewrite (categoría recién agregada,
+// aún sin sincronizar) se devuelve '' y el llamador no cambia la URL.
+function categoryPathFor(c) {
+  if (!c || !c.linkRewrite) return '';
+  return `/${c.id}-${c.linkRewrite}`;
+}
+
+// Mismo propósito que applyProductSeoTags pero para categorías — el
+// middleware de SEO ya reescribe el HTML crudo para bots que no ejecutan
+// JS; esto es para que el título/canonical del navegador también queden
+// correctos al navegar entre categorías dentro de la SPA (sin recargar).
+function applyCategorySeoTags(c) {
+  if (!c) return;
+  const title = `${c.name} | Mi Fiestashop`;
+  const path = categoryPathFor(c) || '/266-productos';
+  const url = `${window.location.origin}${path}`;
+  document.title = title;
+  const canonical = document.getElementById('canonicalLink'); if (canonical) canonical.setAttribute('href', url);
+  const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', title);
+  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', url);
+  const twTitle = document.getElementById('twitterTitle'); if (twTitle) twTitle.setAttribute('content', title);
+  const productLd = document.getElementById('ldJsonProduct');
+  if (productLd) productLd.remove();
+}
+
 function applyProductSeoTags(p) {
   if (!p) return;
   // Si PrestaShop ya tiene meta_title/meta_description redactados para este
@@ -12784,10 +12811,31 @@ let catalogState = { catId: 'all', page: 1, pageSize: 24, sort: 'relevance', vie
 
 async function openStorefrontCatalog(catId){
   showStorefrontPage('storefrontCatalogPage');
-  resetStorefrontSeoTags();
   catalogState.catId = catId || 'all';
   catalogState.page = 1;
   if (catalogCategories.length === 0) await loadCatalogCategories();
+
+  // Categoría real (no "todos los productos"): título/canonical propios y
+  // URL propia (/{id}-{slug}) — mismo patrón que abrir un producto. Si la
+  // categoría no tiene link_rewrite todavía (o el id no se encontró), se
+  // deja la URL como está en vez de navegar a algo roto.
+  const cat = catalogState.catId !== 'all'
+    ? catalogCategories.find(c => String(c.id) === String(catalogState.catId))
+    : null;
+  if (cat) {
+    applyCategorySeoTags(cat);
+    const path = categoryPathFor(cat);
+    if (path && window.location.pathname !== path) history.pushState({}, '', path);
+  } else {
+    resetStorefrontSeoTags();
+    // Solo se navega a /266-productos cuando de verdad se pidió "todos los
+    // productos" — si vino de un id de categoría que no se encontró (link
+    // viejo/roto), se deja la URL tal cual en vez de redirigir en silencio.
+    if (catalogState.catId === 'all' && window.location.pathname !== '/266-productos') {
+      history.pushState({}, '', '/266-productos');
+    }
+  }
+
   renderCatalogSidebar();
   await loadCatalogPage();
 }
@@ -14492,6 +14540,12 @@ function openProductDeepLinkIfPresent() {
   if (p) renderProductFullPage(p);
 }
 
+// ================= DEEP LINK: /{id}-{slug} (sin .html) CATEGORÍA =================
+// Mismo patrón que el de producto arriba, pero sin ".html" — coincide
+// también con URLs de producto, así que en routeApp() SIEMPRE se revisa
+// productDeepLinkMatch primero (ver más abajo).
+const categoryDeepLinkMatch = window.location.pathname.match(/^\/(\d+)-[^\/]+$/);
+
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   const category = new URLSearchParams(window.location.search).get('categoria');
   if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
@@ -14579,6 +14633,14 @@ function routeApp() {
   if (window.location.pathname === '/266-productos') {
     showPublicStorefront();
     openStorefrontCatalog('all');
+    return;
+  }
+  // /{id}-{slug} (sin .html): categoría con URL propia. productDeepLinkMatch
+  // (arriba) ya se queda con las URLs de producto que terminan en .html, así
+  // que si llegamos hasta aquí es una categoría real.
+  if (categoryDeepLinkMatch) {
+    showPublicStorefront();
+    openStorefrontCatalog(categoryDeepLinkMatch[1]);
     return;
   }
   if (window.location.pathname === '/contacto') {

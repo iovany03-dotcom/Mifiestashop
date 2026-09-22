@@ -69,14 +69,14 @@ async function fetchMigratedCategoryIds() {
 }
 
 async function loadCategoriesFromSupabase() {
-  const url = `${SUPABASE_URL}/rest/v1/ps_categorias?select=id,name&id_parent=eq.${PRODUCTS_ROOT_CATEGORY_ID}&active=eq.true&order=name.asc`;
+  const url = `${SUPABASE_URL}/rest/v1/ps_categorias?select=id,name,link_rewrite&id_parent=eq.${PRODUCTS_ROOT_CATEGORY_ID}&active=eq.true&order=name.asc`;
   const r = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
   if (!r.ok) throw new Error(`Supabase error ${r.status}`);
   const rows = await r.json();
   if (!Array.isArray(rows) || rows.length === 0) throw new Error('sin categorías en Supabase');
   return rows
     .filter(c => !HIDDEN_CATEGORY_IDS.has(c.id))
-    .map(c => ({ id: c.id, name: normalizeCategoryName(c.name) }));
+    .map(c => ({ id: c.id, name: normalizeCategoryName(c.name), linkRewrite: c.link_rewrite || null }));
 }
 
 module.exports = async function handler(req, res) {

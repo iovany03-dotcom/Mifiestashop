@@ -1689,6 +1689,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/:id(\\d+)-:slug*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/admin",
       "destination": "/index.html"
     },
