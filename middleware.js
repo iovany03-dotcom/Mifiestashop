@@ -56,14 +56,17 @@ export default async function middleware(request) {
       `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,description,images`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
     );
+    console.log('[mfs-mw] supabase status', r.status, 'id', id);
     if (!r.ok) return;
     const rows = await r.json();
     const p = Array.isArray(rows) && rows[0];
+    console.log('[mfs-mw] rows found', Array.isArray(rows) ? rows.length : typeof rows, 'name', p && p.name);
     if (!p || !p.name) return; // producto no migrado todavía: se deja el HTML genérico tal cual
 
     const bypassHeaders = new Headers(request.headers);
     bypassHeaders.set(BYPASS_HEADER, '1');
     const origin = await fetch(url.toString(), { headers: bypassHeaders });
+    console.log('[mfs-mw] origin status', origin.status);
     if (!origin.ok) return origin;
 
     const title = `${p.name} | Mi Fiestashop`;
@@ -95,6 +98,7 @@ export default async function middleware(request) {
     headers.set('Cache-Control', 'no-store, must-revalidate');
     return new Response(transformed.body, { status: transformed.status, headers });
   } catch (e) {
+    console.log('[mfs-mw] ERROR', e && e.message, e && e.stack);
     return;
   }
 }
