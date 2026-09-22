@@ -1,4 +1,4 @@
-// Vercel Edge Middleware: reescribe las etiquetas <head> (title, meta
+// Vercel Middleware: reescribe las etiquetas <head> (title, meta
 // description, Open Graph, Twitter Card, canonical) directamente en el HTML
 // que se manda al navegador, ANTES de que se ejecute nada de JavaScript.
 //
@@ -12,10 +12,12 @@
 //
 // Este middleware intercepta solo las URLs de producto (/{id}-{slug}.html),
 // trae nombre/descripción/imagen reales de Supabase (productos_migrados —
-// ya migrado, sin tocar PrestaShop) y reescribe esas etiquetas al vuelo con
-// HTMLRewriter (streaming, no carga el HTML completo en memoria). Si el
-// producto no está migrado o algo falla, se deja pasar el HTML sin tocar —
-// nunca rompe la carga de la página.
+// ya migrado, sin tocar PrestaShop) y reescribe esas etiquetas con
+// reemplazo de texto sobre el HTML (no HTMLRewriter: este proyecto corre
+// el middleware sobre el runtime de Node de Vercel, no el Edge Runtime, y
+// esa API no existe ahí — confirmado en vivo). Si el producto no está
+// migrado o algo falla, se deja pasar el HTML sin tocar — nunca rompe la
+// carga de la página.
 export const config = {
   matcher: '/:id(\\d+)-:slug*.html',
 };
@@ -23,24 +25,32 @@ export const config = {
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
-// fetch(request) desde dentro del middleware SÍ vuelve a pasar por este
+// fetch(request) desde dentro del middleware sí vuelve a pasar por este
 // mismo middleware en este proyecto (confirmado: Vercel lo detectó y lo
 // bloqueó como bucle infinito, error 508). Este header marca la petición
-// interna para reconocerla al instante y no reprocesarla — el mismo truco
-// que se usa en Cloudflare Workers para el mismo problema.
+// interna para reconocerla al instante y no reprocesarla.
 const BYPASS_HEADER = 'x-mfs-mw-bypass';
 
 function stripHtml(str) {
   return String(str || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
-class AttrSetter {
-  constructor(attr, value) { this.attr = attr; this.value = value; }
-  element(el) { if (this.value) el.setAttribute(this.attr, this.value); }
+function escapeAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
-class TextSetter {
-  constructor(value) { this.value = value; }
-  element(el) { if (this.value) el.setInnerContent(this.value); }
+
+// Reemplaza el contenido de una etiqueta por id, ej.
+// <title id="pageTitleTag">...</title> -> nuevo texto entre las etiquetas.
+function replaceTagText(html, id, tagName, newText) {
+  const re = new RegExp(`(<${tagName}[^>]*id="${id}"[^>]*>)[^<]*(</${tagName}>)`);
+  return html.replace(re, `$1${escapeAttr(newText)}$2`);
+}
+
+// Reemplaza el valor de un atributo (content/href) dentro de una etiqueta
+// identificada por un selector simple (id="..." o property="..."/name="...").
+function replaceAttr(html, selector, attr, newValue) {
+  const re = new RegExp(`(<[a-z]+[^>]*${selector}[^>]*${attr}=")[^"]*(")`);
+  return html.replace(re, `$1${escapeAttr(newValue)}$2`);
 }
 
 export default async function middleware(request) {
@@ -56,17 +66,14 @@ export default async function middleware(request) {
       `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,description,images`,
       { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
     );
-    console.log('[mfs-mw] supabase status', r.status, 'id', id);
     if (!r.ok) return;
     const rows = await r.json();
     const p = Array.isArray(rows) && rows[0];
-    console.log('[mfs-mw] rows found', Array.isArray(rows) ? rows.length : typeof rows, 'name', p && p.name);
     if (!p || !p.name) return; // producto no migrado todavía: se deja el HTML genérico tal cual
 
     const bypassHeaders = new Headers(request.headers);
     bypassHeaders.set(BYPASS_HEADER, '1');
     const origin = await fetch(url.toString(), { headers: bypassHeaders });
-    console.log('[mfs-mw] origin status', origin.status);
     if (!origin.ok) return origin;
 
     const title = `${p.name} | Mi Fiestashop`;
@@ -74,31 +81,28 @@ export default async function middleware(request) {
     const image = Array.isArray(p.images) && p.images[0] ? p.images[0] : null;
     const pageUrl = url.toString();
 
-    const rewriter = new HTMLRewriter()
-      .on('title#pageTitleTag', new TextSetter(title))
-      .on('meta#metaDescription', new AttrSetter('content', desc))
-      .on('link#canonicalLink', new AttrSetter('href', pageUrl))
-      .on('meta#ogTitle', new AttrSetter('content', title))
-      .on('meta#ogDescription', new AttrSetter('content', desc))
-      .on('meta#ogUrl', new AttrSetter('content', pageUrl))
-      .on('meta#twitterTitle', new AttrSetter('content', title))
-      .on('meta#twitterDescription', new AttrSetter('content', desc))
-      .on('meta[property="og:image"]', new AttrSetter('content', image))
-      .on('meta[name="twitter:image"]', new AttrSetter('content', image));
+    let html = await origin.text();
+    html = replaceTagText(html, 'pageTitleTag', 'title', title);
+    html = replaceAttr(html, 'id="metaDescription"', 'content', desc);
+    html = replaceAttr(html, 'id="canonicalLink"', 'href', pageUrl);
+    html = replaceAttr(html, 'id="ogTitle"', 'content', title);
+    html = replaceAttr(html, 'id="ogDescription"', 'content', desc);
+    html = replaceAttr(html, 'id="ogUrl"', 'content', pageUrl);
+    html = replaceAttr(html, 'id="twitterTitle"', 'content', title);
+    html = replaceAttr(html, 'id="twitterDescription"', 'content', desc);
+    if (image) {
+      html = replaceAttr(html, 'property="og:image"', 'content', image);
+      html = replaceAttr(html, 'name="twitter:image"', 'content', image);
+    }
 
-    const transformed = rewriter.transform(origin);
-    // El Response transformado hereda los headers del HTML original — si
-    // ese HTML se sirve con cache pública, el borde de Vercel puede volver
-    // a servir esa MISMA respuesta (ya con las etiquetas del producto
-    // correcto) para OTRO producto distinto la próxima vez que alguien la
-    // pida, porque el rewrite a /index.html hace que la key de caché
-    // ignore la URL real. Se fuerza no-store para que cada URL de producto
-    // se recalcule siempre.
-    const headers = new Headers(transformed.headers);
+    const headers = new Headers(origin.headers);
+    // Todas las URLs de producto se reescriben a /index.html (regla de
+    // vercel.json), así que la key de caché del borde ignora cuál producto
+    // era — sin esto, el borde podría servir las etiquetas de UN producto
+    // para la URL de OTRO. Cada URL de producto siempre se recalcula.
     headers.set('Cache-Control', 'no-store, must-revalidate');
-    return new Response(transformed.body, { status: transformed.status, headers });
+    return new Response(html, { status: origin.status, headers });
   } catch (e) {
-    console.log('[mfs-mw] ERROR', e && e.message, e && e.stack);
     return;
   }
 }
