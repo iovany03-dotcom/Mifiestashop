@@ -83,7 +83,17 @@ export default async function middleware(request) {
       .on('meta[property="og:image"]', new AttrSetter('content', image))
       .on('meta[name="twitter:image"]', new AttrSetter('content', image));
 
-    return rewriter.transform(origin);
+    const transformed = rewriter.transform(origin);
+    // El Response transformado hereda los headers del HTML original — si
+    // ese HTML se sirve con cache pública, el borde de Vercel puede volver
+    // a servir esa MISMA respuesta (ya con las etiquetas del producto
+    // correcto) para OTRO producto distinto la próxima vez que alguien la
+    // pida, porque el rewrite a /index.html hace que la key de caché
+    // ignore la URL real. Se fuerza no-store para que cada URL de producto
+    // se recalcule siempre.
+    const headers = new Headers(transformed.headers);
+    headers.set('Cache-Control', 'no-store, must-revalidate');
+    return new Response(transformed.body, { status: transformed.status, headers });
   } catch (e) {
     return;
   }
