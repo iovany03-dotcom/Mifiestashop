@@ -68,6 +68,12 @@
 }
 </script>
 
+<!-- Vacío por default: el middleware de SEO lo rellena con el Product real
+     al servir una página de producto (ver middleware.js); si esto se
+     mantiene vacío, applyProductSeoTags() en el cliente lo llena igual al
+     cargar, así que nunca queda JSON inválido dentro de la etiqueta. -->
+<script id="ldJsonProduct" type="application/ld+json"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
