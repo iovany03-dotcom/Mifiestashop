@@ -50,7 +50,12 @@ module.exports = async function handler(req, res) {
     : (domain ? [domain] : undefined);
 
   try {
-    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, timeBudgetMs: 54000, domains });
+    // ps_inventory_movements tiene RLS que solo permite escribir con la
+    // llave de servicio real de Supabase (la de arriba, pese al nombre
+    // "serviceKey", es en realidad la llave anon pública — así se llamó
+    // ya desde antes en este archivo). Solo syncMovimientos la usa.
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, serviceRoleKey, timeBudgetMs: 54000, domains });
     res.status(200).json({ ok: true, results, ranAt: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
