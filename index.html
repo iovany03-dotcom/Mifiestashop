@@ -5956,16 +5956,89 @@ function initMetaPixel() {
 
   fbq('init', metaPixelConfig.id);
   fbq('track', 'PageView');
+  lastPixelPath = window.location.pathname;
+
+  // Eventos que ocurrieron antes de que terminara de cargar la config del
+  // píxel (p.ej. ViewContent al abrir directo una URL de producto, que
+  // puede resolver antes que la consulta a ajustes_marketing) — sin esto
+  // se perdían en silencio porque window.fbq todavía no existía.
+  const queued = pixelPending;
+  pixelPending = [];
+  queued.forEach(ev => fbq('track', ev.name, ev.params));
 }
+
+// La tienda es una SPA: al navegar entre productos/categorías la URL cambia
+// con history.pushState pero la página no recarga, así que el PageView del
+// init solo contaba la primera página de cada visita. Se dispara un PageView
+// por cada URL nueva (sin repetir la misma) y nunca en el Backoffice.
+let pixelPending = [];
+let lastPixelPath = null;
+
+function pixelAllowedHere() {
+  return !window.location.pathname.startsWith('/admin');
+}
+
+function trackVirtualPageView() {
+  if (!window.fbq || !pixelAllowedHere()) return;
+  const path = window.location.pathname;
+  if (path === lastPixelPath) return;
+  lastPixelPath = path;
+  fbq('track', 'PageView');
+}
+
+(function hookPixelNavigation() {
+  const origPushState = history.pushState;
+  history.pushState = function () {
+    const result = origPushState.apply(this, arguments);
+    trackVirtualPageView();
+    return result;
+  };
+  window.addEventListener('popstate', trackVirtualPageView);
+})();
 
 function trackPixelEvent(eventName, params) {
-  if (window.fbq) fbq('track', eventName, params || {});
+  if (!pixelAllowedHere()) return;
+  if (window.fbq) { fbq('track', eventName, params || {}); return; }
+  // Config aún cargando: se guarda (con tope) y se manda al iniciar el píxel.
+  if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {} });
 }
 
-function addToCartTracked(product) {
-  addToCart(product);
-  trackPixelEvent('AddToCart', { content_ids: [String(product.id)], content_name: product.name, content_type: 'product', value: product.price, currency: 'MXN' });
+// Una sola pulsación de "Agregar" con cantidad N es UN evento AddToCart con
+// el valor total (precio × N) — antes el botón de la ficha llamaba esto N
+// veces y Meta contaba N agregados al carrito de 1 pieza cada uno.
+function addToCartTracked(product, qty) {
+  const n = Math.max(1, parseInt(qty, 10) || 1);
+  for (let i = 0; i < n; i++) addToCart(product);
+  trackPixelEvent('AddToCart', {
+    content_ids: [String(product.id)], content_name: product.name, content_type: 'product',
+    contents: [{ id: String(product.id), quantity: n }],
+    value: product.price * n, currency: 'MXN'
+  });
 }
+
+// Buscar: se manda una vez por búsqueda distinta, con un pequeño retraso
+// para no contar cada tecla (esto se llama al escribir y al enviar).
+let pixelSearchTimer = null;
+let pixelLastSearch = '';
+function trackSearchDebounced(q) {
+  const s = String(q || '').trim();
+  clearTimeout(pixelSearchTimer);
+  if (s.length < 2 || s === pixelLastSearch) return;
+  pixelSearchTimer = setTimeout(() => {
+    pixelLastSearch = s;
+    trackPixelEvent('Search', { search_string: s, content_type: 'product' });
+  }, 900);
+}
+
+// Contacto: clic en cualquier enlace de WhatsApp / teléfono / correo (botón
+// flotante, pie de página, promociones, FAQ...). No se manda el número ni
+// el correo, solo el canal.
+document.addEventListener('click', (e) => {
+  const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"]') : null;
+  if (!a) return;
+  const href = a.getAttribute('href') || '';
+  trackPixelEvent('Contact', { content_name: href.indexOf('wa.me/') !== -1 ? 'WhatsApp' : (href.indexOf('tel:') === 0 ? 'Teléfono' : 'Correo') });
+}, true);
 
 async function saveMetaPixelConfig() {
   const idInput = document.getElementById('cfgMetaPixelId');
@@ -9104,6 +9177,7 @@ async function supabaseAuthRequest(path, body) {
 
 async function registerCliente(name, email, phone, password) {
   const data = await supabaseAuthRequest('signup', { email, password, data: { full_name: name, phone } });
+  trackPixelEvent('CompleteRegistration', { content_name: 'Cuenta de cliente', status: true });
   try {
     await sbInsert('clientes_web_perfil', { user_id: data.user?.id || data.id, nombre: name, email, telefono: phone });
   } catch (e) {
@@ -9553,6 +9627,11 @@ function repeatCustomerOrder(folio) {
   });
   updateStoreCartBadge();
   updateClienteCartUI();
+  trackPixelEvent('AddToCart', {
+    content_type: 'product', content_ids: items.map(i => String(i.id)),
+    contents: items.map(i => ({ id: String(i.id), quantity: i.qty || 1 })),
+    value: items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0), currency: 'MXN'
+  });
   switchClienteTab('nuevo');
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
 }
@@ -13050,7 +13129,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
           <input type="number" id="${qtyId}" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
-          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
+          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}, qN); updateStoreCartBadge(); ${onAddToCart || ''}">
             🛒 Agregar al Carrito
           </button>
         </div>
@@ -13527,6 +13606,8 @@ function goToStorefrontCheckout(){
   if (cart.length === 0) return;
   trackPixelEvent('InitiateCheckout', {
     content_ids: cart.map(i => String(i.id)),
+    content_type: 'product',
+    contents: cart.map(i => ({ id: String(i.id), quantity: i.qty })),
     num_items: cart.reduce((s, i) => s + i.qty, 0),
     value: cart.reduce((s, i) => s + i.price * i.qty, 0),
     currency: 'MXN'
@@ -13659,6 +13740,8 @@ async function submitStorefrontOrder(){
 
   trackPixelEvent('Purchase', {
     content_ids: cart.map(i => String(i.id)),
+    content_type: 'product',
+    contents: cart.map(i => ({ id: String(i.id), quantity: i.qty })),
     num_items: cart.reduce((s, i) => s + i.qty, 0),
     value: total,
     currency: 'MXN'
@@ -13682,7 +13765,17 @@ async function handleMercadoPagoReturn() {
     document.getElementById('confirmTotal').textContent = isNaN(mpTotal) ? '' : fmtMoney(mpTotal);
     showStorefrontPage('storefrontOrderConfirmPage');
     if (!isNaN(mpTotal)) {
-      trackPixelEvent('Purchase', { value: mpTotal, currency: 'MXN' });
+      // El carrito guardado (localStorage) sobrevive a la ida y vuelta a
+      // Mercado Pago, así que aún trae los productos de esta compra.
+      const mpItems = Array.isArray(cart) ? cart : [];
+      const purchase = { value: mpTotal, currency: 'MXN' };
+      if (mpItems.length > 0) {
+        purchase.content_ids = mpItems.map(i => String(i.id));
+        purchase.content_type = 'product';
+        purchase.contents = mpItems.map(i => ({ id: String(i.id), quantity: i.qty }));
+        purchase.num_items = mpItems.reduce((s, i) => s + i.qty, 0);
+      }
+      trackPixelEvent('Purchase', purchase);
     }
   } else if (mpStatus === 'pending') {
     showPublicStorefront();
@@ -13732,12 +13825,14 @@ async function submitNewsletterSignup(){
 }
 
 function filterStorefrontProducts(q) {
+  trackSearchDebounced(q);
   renderStorefrontProducts('all', q);
 }
 
 function updateSearchSuggestions(q) {
   const box = document.getElementById('storeSearchSuggest');
   if (!box) return;
+  trackSearchDebounced(q);
   const query = normalizeEs(q);
   if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
