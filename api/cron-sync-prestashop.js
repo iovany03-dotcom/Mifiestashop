@@ -50,8 +50,7 @@ module.exports = async function handler(req, res) {
     : (domain ? [domain] : undefined);
 
   try {
-    const debugFilters = req.query.debugFilters === '1';
-    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, timeBudgetMs: 54000, domains, debugFilters });
+    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, timeBudgetMs: 54000, domains });
     res.status(200).json({ ok: true, results, ranAt: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
