@@ -55,7 +55,9 @@ module.exports = async function handler(req, res) {
     // "serviceKey", es en realidad la llave anon pública — así se llamó
     // ya desde antes en este archivo). Solo syncMovimientos la usa.
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, serviceRoleKey, timeBudgetMs: 54000, domains });
+    // ?recentTarget=10000 solo aplica al dominio movimientos_recientes.
+    const recentTarget = parseInt(req.query.recentTarget, 10) || undefined;
+    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, serviceRoleKey, timeBudgetMs: 54000, domains, recentTarget });
     res.status(200).json({ ok: true, results, ranAt: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
