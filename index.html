@@ -12749,6 +12749,40 @@ let storefrontVisibleCount = STOREFRONT_PAGE_SIZE;
 let currentStorefrontCat = 'all';
 let currentStorefrontQuery = '';
 
+// Vista previa rápida de "Productos Destacados" en el home: en vez de dejar
+// el esqueleto de carga fijo hasta que syncProductsFromPrestaShopAPI() trae
+// el catálogo completo (hasta 5000 productos, varios segundos), se pide en
+// paralelo un lote chico con &fast=1 (sin nombre/imagen migrados ni precio
+// de mayoreo real, sin el conteo total — todo eso llega igual con el sync
+// completo poco después) solo para pintar algo real cuanto antes.
+async function loadStorefrontFeaturedPreview(){
+  const grid = document.getElementById('storefrontProductGrid');
+  if (!grid) return;
+  try {
+    const r = await fetch('/api/productos?limit=12&fast=1');
+    if (!r.ok) return;
+    const data = await r.json();
+    const products = Array.isArray(data.products) ? data.products.map(p => ({
+      id: p.id,
+      name: p.name || 'Producto',
+      sku: p.sku || `PS-${p.id}`,
+      price: parseFloat(p.price || 0),
+      cat: (p.categoryLabel || 'general').toLowerCase().trim(),
+      catLabel: p.categoryLabel || 'General',
+      img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'
+    })) : [];
+    // Si para cuando esto responde el sync completo ya terminó (o ya está
+    // mostrando otra categoría/búsqueda), no se debe pisar esa vista real
+    // con la vista previa incompleta.
+    if (products.length === 0 || liveProducts.length > 0 || productsFirstLoadDone || currentStorefrontCat !== 'all' || currentStorefrontQuery) return;
+    currentStorefrontList = products;
+    grid.innerHTML = products.map((p, idx) => buildStorefrontProductCardHTML(p, idx)).join('');
+    initScrollReveal();
+  } catch (e) {
+    // Silencioso: si falla, el sync completo de abajo sigue su curso normal.
+  }
+}
+
 function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
   const grid = document.getElementById('storefrontProductGrid');
   if (!grid) return;
@@ -14739,6 +14773,10 @@ if(window.location.pathname==='/'){
 }
 routeApp();
 if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('cuenta')) openClientePortal();
+// Solo en el home simple (sin ?vista=catalogo/carrito/admin, que muestran
+// otro panel encima) tiene sentido pintar ya la vista previa de
+// "Productos Destacados" mientras el sync completo del catálogo termina.
+if (window.location.pathname === '/' && !new URLSearchParams(window.location.search).get('vista')) loadStorefrontFeaturedPreview();
 
 // Reseñas de clientes en la página de inicio — capturadas a mano en el
 // admin (Reseñas de Clientes) con foto y texto reales, normalmente tomados
