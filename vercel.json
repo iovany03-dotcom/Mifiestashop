@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/cron-sync-prestashop?domains=productos",
-      "schedule": "15 * * * *"
+      "schedule": "*/10 * * * *"
     },
     {
       "path": "/api/cron-sync-prestashop?domains=fotos",

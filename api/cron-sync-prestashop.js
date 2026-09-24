@@ -59,6 +59,13 @@ module.exports = async function handler(req, res) {
     const recentTarget = parseInt(req.query.recentTarget, 10) || undefined;
     const recentSince = req.query.recentSince ? String(req.query.recentSince) : undefined;
     const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, serviceRoleKey, timeBudgetMs: 54000, domains, recentTarget, recentSince });
+    // runFullSync atrapa el error de cada dominio dentro de results (nunca
+    // lo relanza), así que un fallo aquí no aparece como error en los logs
+    // de Vercel a menos que se loguee explícitamente — antes esto se
+    // perdía en silencio dentro del cuerpo 200 de la respuesta.
+    Object.entries(results).forEach(([name, r]) => {
+      if (r && r.ok === false) console.error(`sync-prestashop domain=${name} failed: ${r.error}`);
+    });
     res.status(200).json({ ok: true, results, ranAt: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
