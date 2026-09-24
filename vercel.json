@@ -7,6 +7,10 @@
     {
       "path": "/api/cron-sync-prestashop?domains=clientes,pedidos,carritos",
       "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/cron-sync-prestashop?domains=productos",
+      "schedule": "15 * * * *"
     }
   ],
   "functions": {
