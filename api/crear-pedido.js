@@ -1,14 +1,17 @@
 // Vercel serverless function: crea un pedido del checkout público, validando
-// los precios contra PrestaShop en el servidor.
+// los precios contra el catálogo real en el servidor.
 //
 // Antes, el checkout calculaba el subtotal/total en el navegador a partir
 // de los precios que ya traía cargados en memoria y los mandaba tal cual a
 // Supabase — cualquiera con la consola del navegador abierta podía cambiar
 // el precio de un artículo en el carrito antes de confirmar la compra y el
 // pedido se guardaba con ese total falso, sin ninguna verificación. Este
-// endpoint vuelve a consultar el precio real de cada producto en PrestaShop
-// y recalcula el subtotal/total con esos valores, ignorando cualquier precio
-// que haya mandado el cliente.
+// endpoint vuelve a consultar el precio real de cada producto en
+// catalogo_productos (Supabase) y recalcula el subtotal/total con esos
+// valores, ignorando cualquier precio que haya mandado el cliente. Antes
+// consultaba PrestaShop en vivo por cada línea; se cambió porque
+// PrestaShop se está dando de baja — ver lib/sync-prestashop.js (dominio
+// "productos") y api/guardar-producto.js.
 //
 // POST /api/crear-pedido
 // body: {
@@ -18,8 +21,6 @@
 //   shipping_cost, shipping_carrier, payment_method
 // }
 // -> { folio, subtotal, total, items: [{id,name,sku,price,qty}] }
-//
-// Requires env vars: PS_BASE_URL, PS_API_KEY (mismos que el resto de /api).
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -27,18 +28,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const MAX_LINES = 50;
 const MAX_QTY_PER_LINE = 999;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function firstLangValue(field, fallback) {
-  let val = field;
-  if (Array.isArray(field)) {
-    val = field[0]?.value;
-    if (val === undefined) val = field[0];
-  } else if (field && typeof field === 'object') {
-    val = field.value !== undefined ? field.value : Object.values(field)[0];
-  }
-  if (typeof val !== 'string' || val === '') return fallback;
-  return val;
-}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -81,44 +70,39 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-  if (!apiKey) {
-    res.status(200).json({ fallback: true, error: 'PS_API_KEY no configurado en Vercel' });
-    return;
-  }
-
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const headers = { Authorization: `Basic ${auth}` };
-
     // Vuelve a consultar el precio y nombre REALES de cada producto en
-    // PrestaShop — el precio que haya mandado el navegador se descarta.
-    const resolved = await Promise.all(cleanItems.map(async (it) => {
-      const fields = '[id,name,reference,price,active]';
-      const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON`;
-      const r = await fetch(url, { headers });
-      if (!r.ok) return null;
-      const data = await r.json();
-      // Con display=[...campos específicos...] PrestaShop responde con la
-      // clave en plural "products" (arreglo), aunque se consulte un solo ID
-      // — no "product" (singular) como con display=full. Sin este fallback,
-      // raw siempre salía undefined y CADA producto se marcaba como "ya no
-      // disponible", bloqueando el checkout por completo.
-      const raw = Array.isArray(data.products) ? data.products[0]
-        : Array.isArray(data.product) ? data.product[0]
-        : data.product;
-      if (!raw || String(raw.active) === '0') return null;
+    // catalogo_productos (Supabase) — el precio que haya mandado el
+    // navegador se descarta. Antes esto consultaba PrestaShop en vivo por
+    // cada línea del carrito; PrestaShop se está dando de baja, así que la
+    // verificación pasa a catalogo_productos (llenada por el sync horario
+    // mientras PrestaShop siga arriba, y editable desde el admin en
+    // adelante — ver api/guardar-producto.js).
+    const ids = cleanItems.map(it => it.id);
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/catalogo_productos?select=id,name,sku,price,active&id=in.(${ids.join(',')})`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!r.ok) {
+      res.status(502).json({ error: 'No se pudo verificar el catálogo' });
+      return;
+    }
+    const rows = await r.json();
+    const byId = new Map((Array.isArray(rows) ? rows : []).map(row => [Number(row.id), row]));
+
+    const resolved = cleanItems.map(it => {
+      const raw = byId.get(it.id);
+      if (!raw || raw.active === false) return null;
       return {
         id: it.id,
         qty: it.qty,
-        name: firstLangValue(raw.name, `Producto #${it.id}`),
-        sku: raw.reference || `PS-${it.id}`,
+        name: raw.name || `Producto #${it.id}`,
+        sku: raw.sku || `PS-${it.id}`,
         price: parseFloat(raw.price || 0)
       };
-    }));
+    });
 
-    if (resolved.some(r => r === null)) {
+    if (resolved.some(it => it === null)) {
       res.status(400).json({ error: 'Uno o más productos ya no están disponibles' });
       return;
     }
