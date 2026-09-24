@@ -7,6 +7,10 @@
     {
       "path": "/api/cron-sync-prestashop?domains=clientes,pedidos,carritos",
       "schedule": "30 * * * *"
+    },
+    {
+      "path": "/api/cron-sync-prestashop?domains=productos",
+      "schedule": "15 * * * *"
     }
   ],
   "functions": {
@@ -41,6 +45,9 @@
       "maxDuration": 30
     },
     "api/productos.js": {
+      "maxDuration": 30
+    },
+    "api/guardar-producto.js": {
       "maxDuration": 30
     },
     "api/v1/products/index.js": {

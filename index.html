@@ -2995,6 +2995,28 @@
       </div>
 
       <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
+          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <option value="all">Todas las sucursales</option>
+            <option value="puebla">Puebla</option>
+            <option value="rumania">CDMX Rumania</option>
+            <option value="queretaro">Querétaro</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
+            </thead>
+            <tbody id="lowStockByStoreTableBody">
+              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
           <div class="seg" id="periodSeg" style="display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
@@ -8719,7 +8741,10 @@ function saveProductChanges() {
     else PRODUCTS_DATA.unshift(targetProd);
   }
 
-  // Sync back to Supabase DB if function exists
+  // Respaldo legado (costos_productos_publico) — solo lo lee el propio
+  // navegador cuando PrestaShop no responde, no el resto del sitio. Se deja
+  // por compatibilidad, pero el guardado real ahora es catalogo_productos
+  // (abajo), que sí es lo que /api/productos.js sirve al público.
   if (targetProd && targetProd.id) {
     sbRpc('rpc_catalog_update_producto', {
       ...getSessionCredsParams(),
@@ -8736,8 +8761,30 @@ function saveProductChanges() {
       p_precio_compra_actualizado: costoCompra ? String(costoCompra) : null,
       p_link_imagen: img,
       p_descripcion: desc
-    }).catch(e => console.log('Sincronización Supabase en segundo plano:', e.message));
+    }).catch(e => console.log('Sincronización Supabase (legado) en segundo plano:', e.message));
   }
+
+  const wasNew = !pIdVal;
+  fetch('/api/guardar-producto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...getSessionCredsParams(),
+      producto: {
+        id: wasNew ? null : targetProd.id,
+        sku, barcode, name, description: desc,
+        price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
+        categoryLabel: cat, active: status !== 'Inactivo', img,
+        lowStockThreshold: targetProd.lowStockThreshold
+      }
+    })
+  }).then(r => r.json()).then(r => {
+    if (!r.ok) { console.log('No se pudo guardar en catalogo_productos:', r.error); return; }
+    // Si era un producto nuevo, el id real es el que asignó el servidor
+    // (fuera del rango de PrestaShop) — se corrige aquí para que quede
+    // consistente en liveProducts/PRODUCTS_DATA con lo guardado.
+    if (wasNew && targetProd) targetProd.id = r.id;
+  }).catch(e => console.log('No se pudo guardar en catalogo_productos:', e.message));
 
   renderCatalogTable('all');
   renderProducts('all');
@@ -10491,32 +10538,10 @@ function sendTestNotification() {
   notifyEvent('test', 'Notificación de prueba', 'Así se verán tus notificaciones de Mi Fiestashop.');
 }
 
-function checkLowStockNotifications() {
-  if (sessionStorage.getItem('mf_lowstock_notified') === 'true') return;
-  sessionStorage.setItem('mf_lowstock_notified', 'true');
-
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const lowItems = [];
-  dataset.forEach((p, index) => {
-    const pId = p.id || index + 1;
-    const stTotal = getStockFor(pId, 'puebla') + getStockFor(pId, 'rumania') + getStockFor(pId, 'queretaro');
-    // Umbral real configurado en PrestaShop por producto (low_stock_threshold)
-    // en vez de un número fijo igual para los ~500 productos — un antifaz de
-    // $2 y una vela de $67 no deberían alertar con el mismo punto de corte.
-    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : 10;
-    if (stTotal < threshold) lowItems.push(p.name);
-  });
-
-  if (lowItems.length === 0) return;
-  const preview = lowItems.slice(0, 3).join(', ');
-  const extra = lowItems.length > 3 ? ` y ${lowItems.length - 3} más` : '';
-  notifyEvent('lowStock', 'Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
-}
-
 // Los productos con existencia en 0/negativo ya no se ocultan del POS (el
 // cajero puede seguir vendiéndolos si físicamente los tiene en mano) — esto
 // mantiene la advertencia visible en el Dashboard en su lugar, por
-// sucursal, y avisa una vez por sesión (igual que checkLowStockNotifications).
+// sucursal, y avisa una vez por sesión (igual que renderLowStockByStoreCard).
 function checkNegativeStockWarning() {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const branches = ['puebla', 'rumania', 'queretaro'];
@@ -12772,6 +12797,40 @@ let storefrontVisibleCount = STOREFRONT_PAGE_SIZE;
 let currentStorefrontCat = 'all';
 let currentStorefrontQuery = '';
 
+// Vista previa rápida de "Productos Destacados" en el home: en vez de dejar
+// el esqueleto de carga fijo hasta que syncProductsFromPrestaShopAPI() trae
+// el catálogo completo (hasta 5000 productos, varios segundos), se pide en
+// paralelo un lote chico con &fast=1 (sin nombre/imagen migrados ni precio
+// de mayoreo real, sin el conteo total — todo eso llega igual con el sync
+// completo poco después) solo para pintar algo real cuanto antes.
+async function loadStorefrontFeaturedPreview(){
+  const grid = document.getElementById('storefrontProductGrid');
+  if (!grid) return;
+  try {
+    const r = await fetch('/api/productos?limit=12&fast=1');
+    if (!r.ok) return;
+    const data = await r.json();
+    const products = Array.isArray(data.products) ? data.products.map(p => ({
+      id: p.id,
+      name: p.name || 'Producto',
+      sku: p.sku || `PS-${p.id}`,
+      price: parseFloat(p.price || 0),
+      cat: (p.categoryLabel || 'general').toLowerCase().trim(),
+      catLabel: p.categoryLabel || 'General',
+      img: p.img || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'
+    })) : [];
+    // Si para cuando esto responde el sync completo ya terminó (o ya está
+    // mostrando otra categoría/búsqueda), no se debe pisar esa vista real
+    // con la vista previa incompleta.
+    if (products.length === 0 || liveProducts.length > 0 || productsFirstLoadDone || currentStorefrontCat !== 'all' || currentStorefrontQuery) return;
+    currentStorefrontList = products;
+    grid.innerHTML = products.map((p, idx) => buildStorefrontProductCardHTML(p, idx)).join('');
+    initScrollReveal();
+  } catch (e) {
+    // Silencioso: si falla, el sync completo de abajo sigue su curso normal.
+  }
+}
+
 function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
   const grid = document.getElementById('storefrontProductGrid');
   if (!grid) return;
@@ -14665,7 +14724,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
   if (window.location.pathname === '/266-productos') openStorefrontCatalog('all');
   if (window.location.pathname === '/contacto') openStorefrontContact();
-}).then(checkLowStockNotifications);
+}).then(renderLowStockByStoreCard);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
   renderLowStockByStoreCard();
@@ -14762,6 +14821,10 @@ if(window.location.pathname==='/'){
 }
 routeApp();
 if (window.location.pathname === '/' && new URLSearchParams(window.location.search).has('cuenta')) openClientePortal();
+// Solo en el home simple (sin ?vista=catalogo/carrito/admin, que muestran
+// otro panel encima) tiene sentido pintar ya la vista previa de
+// "Productos Destacados" mientras el sync completo del catálogo termina.
+if (window.location.pathname === '/' && !new URLSearchParams(window.location.search).get('vista')) loadStorefrontFeaturedPreview();
 
 // Reseñas de clientes en la página de inicio — capturadas a mano en el
 // admin (Reseñas de Clientes) con foto y texto reales, normalmente tomados

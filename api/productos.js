@@ -129,6 +129,13 @@ module.exports = async function handler(req, res) {
   const limit = parseInt(req.query.limit, 10) || 500;
   const offset = parseInt(req.query.offset, 10) || 0;
   const category = req.query.category;
+  // Modo rápido: para una vista previa pequeña (p.ej. "Productos Destacados"
+  // del home) que no necesita precio de mayoreo real, nombre/imagen migrados
+  // ni el total exacto del catálogo — evita las dos consultas más pesadas
+  // (todo productos_migrados, todo specific_prices) y la consulta extra de
+  // conteo, que de otra forma pesan lo mismo sin importar cuántos productos
+  // se pidan con `limit`.
+  const fast = req.query.fast === '1';
   const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
   const sortKey = req.query.sort;
   const sort = SORT_MAP[sortKey];
@@ -192,8 +199,8 @@ module.exports = async function handler(req, res) {
     }
 
     const [migrated, wholesaleRules, categoryNames, defaultCatIds] = await Promise.all([
-      fetchMigratedProducts(),
-      fetchWholesalePrices(baseUrl, authHeaders),
+      fast ? Promise.resolve({}) : fetchMigratedProducts(),
+      fast ? Promise.resolve({}) : fetchWholesalePrices(baseUrl, authHeaders),
       fetchCategoryNames(),
       category ? fetchDefaultCategoryIds(category) : Promise.resolve(null)
     ]);
@@ -215,7 +222,16 @@ module.exports = async function handler(req, res) {
       // de mapear y ordenar.
       rawProducts = allIds.length ? await fetchByIds(allIds) : [];
     } else {
-      const r = await fetch(productsUrl, { headers: authHeaders });
+      // Total real para "todos los productos" — id-only, liviano — nunca se
+      // calcula sumando los conteos por categoría del sidebar (recursivos,
+      // un producto puede aparecer en varias), eso rompía la paginación.
+      // Se pide en paralelo con el listado (antes era una espera aparte,
+      // una tras otra) — son dos consultas independientes a PrestaShop.
+      const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
+      const [r, cr] = await Promise.all([
+        fetch(productsUrl, { headers: authHeaders }),
+        fast ? Promise.resolve(null) : fetch(countUrl, { headers: authHeaders }).catch(() => null)
+      ]);
       if (!r.ok) {
         const text = await r.text();
         res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
@@ -223,13 +239,8 @@ module.exports = async function handler(req, res) {
       }
       const data = await r.json();
       rawProducts = Array.isArray(data.products) ? data.products : [];
-      // Total real para "todos los productos" — id-only, liviano — nunca se
-      // calcula sumando los conteos por categoría del sidebar (recursivos,
-      // un producto puede aparecer en varias), eso rompía la paginación.
       try {
-        const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
-        const cr = await fetch(countUrl, { headers: authHeaders });
-        const cdata = cr.ok ? await cr.json() : null;
+        const cdata = cr && cr.ok ? await cr.json() : null;
         total = cdata && Array.isArray(cdata.products) ? cdata.products.length : rawProducts.length;
       } catch (e) {
         total = rawProducts.length;
