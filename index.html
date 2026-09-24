@@ -2944,6 +2944,16 @@
           </div>
         </div>
       </div>
+      <div class="card hidden" id="lowStockWarningCard" style="border:1px solid #fde68a; background:#fffbeb;">
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <div style="font-size:22px; line-height:1;">📦</div>
+          <div style="flex:1; min-width:0;">
+            <h3 style="margin:0 0 6px; color:#92400e; font-size:15px;">Productos con existencia baja</h3>
+            <p style="margin:0 0 8px; font-size:13px; color:#78350f;">Suma de Puebla + CDMX Rumania + Querétaro por debajo del umbral configurado en PrestaShop (10 piezas si el producto no tiene uno propio). Conviene reabastecer pronto.</p>
+            <div id="lowStockWarningList" style="font-size:12.5px; color:#78350f; line-height:1.7;"></div>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
@@ -6831,7 +6841,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
-  if (viewName === 'dashboard') checkNegativeStockWarning();
+  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockWarning(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
@@ -10353,10 +10363,7 @@ function sendTestNotification() {
   notifyEvent('test', 'Notificación de prueba', 'Así se verán tus notificaciones de Mi Fiestashop.');
 }
 
-function checkLowStockNotifications() {
-  if (sessionStorage.getItem('mf_lowstock_notified') === 'true') return;
-  sessionStorage.setItem('mf_lowstock_notified', 'true');
-
+function computeLowStockItems() {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const lowItems = [];
   dataset.forEach((p, index) => {
@@ -10366,19 +10373,43 @@ function checkLowStockNotifications() {
     // en vez de un número fijo igual para los ~500 productos — un antifaz de
     // $2 y una vela de $67 no deberían alertar con el mismo punto de corte.
     const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : 10;
-    if (stTotal < threshold) lowItems.push(p.name);
+    if (stTotal < threshold) lowItems.push({ name: p.name, qty: stTotal, threshold });
   });
+  // Lo más urgente primero (lo que está más lejos de su propio umbral).
+  return lowItems.sort((a, b) => (a.qty - a.threshold) - (b.qty - b.threshold));
+}
 
-  if (lowItems.length === 0) return;
-  const preview = lowItems.slice(0, 3).join(', ');
-  const extra = lowItems.length > 3 ? ` y ${lowItems.length - 3} más` : '';
-  notifyEvent('lowStock', 'Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
+// Actualiza la tarjeta del Dashboard cada vez que se le llama (al abrir la
+// vista, o cuando ya hay existencia real cargada) — a diferencia de la
+// notificación del sistema operativo, que solo debe avisar una vez por
+// sesión para no ser molesta.
+function renderLowStockWarning() {
+  const lowItems = computeLowStockItems();
+  const card = document.getElementById('lowStockWarningCard');
+  const list = document.getElementById('lowStockWarningList');
+  if (card && list) {
+    if (lowItems.length === 0) {
+      card.classList.add('hidden');
+    } else {
+      card.classList.remove('hidden');
+      list.innerHTML = lowItems.slice(0, 12).map(e =>
+        `${escapeHtml(e.name)}: <b>${e.qty}</b> u. (umbral ${e.threshold})`
+      ).join('<br>') + (lowItems.length > 12 ? `<br>y ${lowItems.length - 12} más…` : '');
+    }
+  }
+
+  if (lowItems.length > 0 && sessionStorage.getItem('mf_lowstock_notified') !== 'true') {
+    sessionStorage.setItem('mf_lowstock_notified', 'true');
+    const preview = lowItems.slice(0, 3).map(e => e.name).join(', ');
+    const extra = lowItems.length > 3 ? ` y ${lowItems.length - 3} más` : '';
+    notifyEvent('lowStock', 'Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
+  }
 }
 
 // Los productos con existencia en 0/negativo ya no se ocultan del POS (el
 // cajero puede seguir vendiéndolos si físicamente los tiene en mano) — esto
 // mantiene la advertencia visible en el Dashboard en su lugar, por
-// sucursal, y avisa una vez por sesión (igual que checkLowStockNotifications).
+// sucursal, y avisa una vez por sesión (igual que renderLowStockWarning).
 function checkNegativeStockWarning() {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const branches = ['puebla', 'rumania', 'queretaro'];
@@ -14389,9 +14420,10 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
   if (window.location.pathname === '/266-productos') openStorefrontCatalog('all');
   if (window.location.pathname === '/contacto') openStorefrontContact();
-}).then(checkLowStockNotifications);
+}).then(renderLowStockWarning);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
+  renderLowStockWarning();
   if (document.getElementById('posProductGrid')) {
     const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
     renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
