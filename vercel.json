@@ -47,6 +47,9 @@
     "api/productos.js": {
       "maxDuration": 30
     },
+    "api/guardar-producto.js": {
+      "maxDuration": 30
+    },
     "api/v1/products/index.js": {
       "maxDuration": 30
     },

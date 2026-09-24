@@ -8718,7 +8718,10 @@ function saveProductChanges() {
     else PRODUCTS_DATA.unshift(targetProd);
   }
 
-  // Sync back to Supabase DB if function exists
+  // Respaldo legado (costos_productos_publico) — solo lo lee el propio
+  // navegador cuando PrestaShop no responde, no el resto del sitio. Se deja
+  // por compatibilidad, pero el guardado real ahora es catalogo_productos
+  // (abajo), que sí es lo que /api/productos.js sirve al público.
   if (targetProd && targetProd.id) {
     sbRpc('rpc_catalog_update_producto', {
       ...getSessionCredsParams(),
@@ -8735,8 +8738,30 @@ function saveProductChanges() {
       p_precio_compra_actualizado: costoCompra ? String(costoCompra) : null,
       p_link_imagen: img,
       p_descripcion: desc
-    }).catch(e => console.log('Sincronización Supabase en segundo plano:', e.message));
+    }).catch(e => console.log('Sincronización Supabase (legado) en segundo plano:', e.message));
   }
+
+  const wasNew = !pIdVal;
+  fetch('/api/guardar-producto', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...getSessionCredsParams(),
+      producto: {
+        id: wasNew ? null : targetProd.id,
+        sku, barcode, name, description: desc,
+        price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
+        categoryLabel: cat, active: status !== 'Inactivo', img,
+        lowStockThreshold: targetProd.lowStockThreshold
+      }
+    })
+  }).then(r => r.json()).then(r => {
+    if (!r.ok) { console.log('No se pudo guardar en catalogo_productos:', r.error); return; }
+    // Si era un producto nuevo, el id real es el que asignó el servidor
+    // (fuera del rango de PrestaShop) — se corrige aquí para que quede
+    // consistente en liveProducts/PRODUCTS_DATA con lo guardado.
+    if (wasNew && targetProd) targetProd.id = r.id;
+  }).catch(e => console.log('No se pudo guardar en catalogo_productos:', e.message));
 
   renderCatalogTable('all');
   renderProducts('all');
