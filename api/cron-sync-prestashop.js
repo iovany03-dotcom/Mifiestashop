@@ -34,14 +34,31 @@ module.exports = async function handler(req, res) {
   const supabaseUrl = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
   const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
-  // Un solo dominio a la vez si se pide por query (?domain=clientes), para
+  // ?domain=clientes (uno solo) o ?domains=stock,categorias (varios), para
   // poder disparar una sincronización puntual sin esperar los 7; sin
-  // parámetro corre los 7 en la misma corrida (uso normal del cron).
+  // parámetro corre los 7 en la misma corrida.
+  //
+  // El cron real (ver vercel.json) está dividido en DOS llamadas separadas,
+  // cada una con su propio límite de tiempo de función serverless: sola,
+  // "stock" (~82,000 filas) ya tarda más de 50s, así que en una sola corrida
+  // de los 7 dominios nunca le quedaba tiempo suficiente a clientes/pedidos/
+  // carritos después de ella — se estaban saltando cada hora sin avisar.
   const domain = req.query.domain;
-  const domains = domain ? [domain] : undefined;
+  const domainsParam = req.query.domains;
+  const domains = domainsParam
+    ? String(domainsParam).split(',').map(d => d.trim()).filter(Boolean)
+    : (domain ? [domain] : undefined);
 
   try {
-    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, timeBudgetMs: 50000, domains });
+    // ps_inventory_movements tiene RLS que solo permite escribir con la
+    // llave de servicio real de Supabase (la de arriba, pese al nombre
+    // "serviceKey", es en realidad la llave anon pública — así se llamó
+    // ya desde antes en este archivo). Solo syncMovimientos la usa.
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // ?recentTarget=10000 solo aplica al dominio movimientos_recientes.
+    const recentTarget = parseInt(req.query.recentTarget, 10) || undefined;
+    const recentSince = req.query.recentSince ? String(req.query.recentSince) : undefined;
+    const results = await runFullSync({ baseUrl, apiKey, supabaseUrl, serviceKey, serviceRoleKey, timeBudgetMs: 54000, domains, recentTarget, recentSince });
     res.status(200).json({ ok: true, results, ranAt: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });

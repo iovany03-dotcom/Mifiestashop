@@ -19,6 +19,8 @@
 //                                servidor para poder marcar un pedido como
 //                                pagado/cancelado. Nunca se expone al cliente.
 
+const { sendMetaEvent } = require('../lib/meta-capi.js');
+
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 
 const STATUS_MAP = {
@@ -58,15 +60,41 @@ module.exports = async function handler(req, res) {
     }
 
     const nuevoStatus = STATUS_MAP[payment.status] || 'Pendiente';
+    const folioParam = encodeURIComponent(payment.external_reference);
+    const sbHeaders = { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` };
 
-    await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online?folio=eq.${encodeURIComponent(payment.external_reference)}`, {
+    // Estado y datos del pedido ANTES de actualizarlo: Mercado Pago manda
+    // varias notificaciones por el mismo pago, y solo la primera que lo
+    // pasa a "Pagado" debe reportar la compra a Meta.
+    let previo = null;
+    try {
+      const pr = await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online?folio=eq.${folioParam}&select=status,total,items,customer_name,customer_email,customer_phone&limit=1`, { headers: sbHeaders });
+      const rows = pr.ok ? await pr.json() : [];
+      previo = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    } catch (e) { /* si falla la lectura, se actualiza igual y no se reporta */ }
+
+    await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online?folio=eq.${folioParam}`, {
       method: 'PATCH',
-      headers: {
-        apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json', Prefer: 'return=minimal',
-      },
+      headers: { ...sbHeaders, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify({ status: nuevoStatus, payment_method: 'Mercado Pago' }),
     });
+
+    // Compra confirmada -> API de Conversiones de Meta desde el servidor,
+    // aunque el cliente cierre la pestaña en Mercado Pago sin regresar al
+    // sitio. event_id = folio, el mismo que manda el navegador al volver,
+    // para que Meta cuente una sola compra. Nunca hace fallar el webhook.
+    if (nuevoStatus === 'Pagado' && previo && previo.status !== 'Pagado') {
+      try {
+        await sendMetaEvent({
+          eventName: 'Purchase',
+          eventId: payment.external_reference,
+          eventSourceUrl: 'https://mifiestashop.vercel.app/',
+          value: Number(previo.total) || Number(payment.transaction_amount) || 0,
+          contents: (Array.isArray(previo.items) ? previo.items : []).map(i => ({ id: i.id, quantity: i.qty })),
+          customer: { name: previo.customer_name, email: previo.customer_email, phone: previo.customer_phone },
+        });
+      } catch (e) { /* el reporte a Meta es secundario */ }
+    }
 
     res.status(200).json({ received: true });
   } catch (e) {

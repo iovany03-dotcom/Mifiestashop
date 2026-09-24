@@ -68,6 +68,12 @@
 }
 </script>
 
+<!-- Vacío por default: el middleware de SEO lo rellena con el Product real
+     al servir una página de producto (ver middleware.js); si esto se
+     mantiene vacío, applyProductSeoTags() en el cliente lo llena igual al
+     cargar, así que nunca queda JSON inválido dentro de la etiqueta. -->
+<script id="ldJsonProduct" type="application/ld+json"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -152,12 +158,16 @@
   aside.sidebar.collapsed {
     width: 68px !important;
   }
-  aside.sidebar.collapsed .brand-logo > span {
+  aside.sidebar.collapsed .brand-logo {
+    /* El logo es una sola imagen (sin texto aparte que ocultar) de 42px de
+       alto sin límite de ancho — a los 68px del panel contraído no cabía
+       junto al botón de expandir y se salía del panel. Se oculta y solo
+       queda el botón, centrado. */
     display: none !important;
   }
   aside.sidebar.collapsed .sidebar-header {
     padding: 0 10px;
-    justify-content: space-around;
+    justify-content: center;
   }
   aside.sidebar.collapsed .menu-group-title {
     display: none !important;
@@ -207,6 +217,7 @@
   .brand-logo .logo-icon-img {
     height: 42px;
     width: auto;
+    max-width: 100%;
     object-fit: contain;
   }
   .sidebar-toggle {
@@ -402,7 +413,7 @@
     aside.sidebar.mobile-open { transform: translateX(0); }
     /* On mobile the sidebar is an off-canvas drawer: ignore the desktop icon-only "collapsed" state */
     aside.sidebar.collapsed { width: var(--sidebar-w) !important; }
-    aside.sidebar.collapsed .brand-logo > span,
+    aside.sidebar.collapsed .brand-logo { display: flex !important; }
     aside.sidebar.collapsed .menu-group-title,
     aside.sidebar.collapsed .menu-left > span:not(.menu-icon),
     aside.sidebar.collapsed .chevron-icon { display: revert !important; }
@@ -1092,6 +1103,22 @@
   }
   .store-prod-card:hover {
     transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.10); border-color: var(--mf-pink);
+  }
+  .store-prod-skeleton:hover { transform:none; box-shadow:none; border-color:#f0e6ef; }
+  .store-prod-skeleton .skel-img { width:100%; height:220px; }
+  .store-prod-skeleton .skel-line { height:12px; border-radius:4px; }
+  .skel-block {
+    background: linear-gradient(90deg, #f0e6ef 25%, #f8f2f6 37%, #f0e6ef 63%);
+    background-size: 400% 100%;
+    animation: skelShimmer 1.4s ease infinite;
+    border-radius: 6px;
+  }
+  @keyframes skelShimmer {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .skel-block { animation: none; background: #f0e6ef; }
   }
   .store-prod-img {
     width: 100%; height: 220px; object-fit: contain; background: #fff; padding: 10px; box-sizing: border-box;
@@ -2944,16 +2971,28 @@
           </div>
         </div>
       </div>
-      <div class="card hidden" id="lowStockWarningCard" style="border:1px solid #fde68a; background:#fffbeb;">
-        <div style="display:flex; align-items:flex-start; gap:12px;">
-          <div style="font-size:22px; line-height:1;">📦</div>
-          <div style="flex:1; min-width:0;">
-            <h3 style="margin:0 0 6px; color:#92400e; font-size:15px;">Productos con existencia baja</h3>
-            <p style="margin:0 0 8px; font-size:13px; color:#78350f;">Suma de Puebla + CDMX Rumania + Querétaro por debajo del umbral configurado en PrestaShop (10 piezas si el producto no tiene uno propio). Conviene reabastecer pronto.</p>
-            <div id="lowStockWarningList" style="font-size:12.5px; color:#78350f; line-height:1.7;"></div>
-          </div>
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
+          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <option value="all">Todas las sucursales</option>
+            <option value="puebla">Puebla</option>
+            <option value="rumania">CDMX Rumania</option>
+            <option value="queretaro">Querétaro</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
+            </thead>
+            <tbody id="lowStockByStoreTableBody">
+              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
+
       <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
@@ -5916,16 +5955,91 @@ function initMetaPixel() {
 
   fbq('init', metaPixelConfig.id);
   fbq('track', 'PageView');
+  lastPixelPath = window.location.pathname;
+
+  // Eventos que ocurrieron antes de que terminara de cargar la config del
+  // píxel (p.ej. ViewContent al abrir directo una URL de producto, que
+  // puede resolver antes que la consulta a ajustes_marketing) — sin esto
+  // se perdían en silencio porque window.fbq todavía no existía.
+  const queued = pixelPending;
+  pixelPending = [];
+  queued.forEach(ev => ev.eventId ? fbq('track', ev.name, ev.params, { eventID: ev.eventId }) : fbq('track', ev.name, ev.params));
 }
 
-function trackPixelEvent(eventName, params) {
-  if (window.fbq) fbq('track', eventName, params || {});
+// La tienda es una SPA: al navegar entre productos/categorías la URL cambia
+// con history.pushState pero la página no recarga, así que el PageView del
+// init solo contaba la primera página de cada visita. Se dispara un PageView
+// por cada URL nueva (sin repetir la misma) y nunca en el Backoffice.
+let pixelPending = [];
+let lastPixelPath = null;
+
+function pixelAllowedHere() {
+  return !window.location.pathname.startsWith('/admin');
 }
 
-function addToCartTracked(product) {
-  addToCart(product);
-  trackPixelEvent('AddToCart', { content_ids: [String(product.id)], content_name: product.name, content_type: 'product', value: product.price, currency: 'MXN' });
+function trackVirtualPageView() {
+  if (!window.fbq || !pixelAllowedHere()) return;
+  const path = window.location.pathname;
+  if (path === lastPixelPath) return;
+  lastPixelPath = path;
+  fbq('track', 'PageView');
 }
+
+(function hookPixelNavigation() {
+  const origPushState = history.pushState;
+  history.pushState = function () {
+    const result = origPushState.apply(this, arguments);
+    trackVirtualPageView();
+    return result;
+  };
+  window.addEventListener('popstate', trackVirtualPageView);
+})();
+
+// eventId (opcional): el mismo id que manda el servidor por la API de
+// Conversiones, para que Meta cuente UN solo evento y no dos.
+function trackPixelEvent(eventName, params, eventId) {
+  if (!pixelAllowedHere()) return;
+  if (window.fbq) { eventId ? fbq('track', eventName, params || {}, { eventID: eventId }) : fbq('track', eventName, params || {}); return; }
+  // Config aún cargando: se guarda (con tope) y se manda al iniciar el píxel.
+  if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {}, eventId });
+}
+
+// Una sola pulsación de "Agregar" con cantidad N es UN evento AddToCart con
+// el valor total (precio × N) — antes el botón de la ficha llamaba esto N
+// veces y Meta contaba N agregados al carrito de 1 pieza cada uno.
+function addToCartTracked(product, qty) {
+  const n = Math.max(1, parseInt(qty, 10) || 1);
+  for (let i = 0; i < n; i++) addToCart(product);
+  trackPixelEvent('AddToCart', {
+    content_ids: [String(product.id)], content_name: product.name, content_type: 'product',
+    contents: [{ id: String(product.id), quantity: n }],
+    value: product.price * n, currency: 'MXN'
+  });
+}
+
+// Buscar: se manda una vez por búsqueda distinta, con un pequeño retraso
+// para no contar cada tecla (esto se llama al escribir y al enviar).
+let pixelSearchTimer = null;
+let pixelLastSearch = '';
+function trackSearchDebounced(q) {
+  const s = String(q || '').trim();
+  clearTimeout(pixelSearchTimer);
+  if (s.length < 2 || s === pixelLastSearch) return;
+  pixelSearchTimer = setTimeout(() => {
+    pixelLastSearch = s;
+    trackPixelEvent('Search', { search_string: s, content_type: 'product' });
+  }, 900);
+}
+
+// Contacto: clic en cualquier enlace de WhatsApp / teléfono / correo (botón
+// flotante, pie de página, promociones, FAQ...). No se manda el número ni
+// el correo, solo el canal.
+document.addEventListener('click', (e) => {
+  const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"]') : null;
+  if (!a) return;
+  const href = a.getAttribute('href') || '';
+  trackPixelEvent('Contact', { content_name: href.indexOf('wa.me/') !== -1 ? 'WhatsApp' : (href.indexOf('tel:') === 0 ? 'Teléfono' : 'Correo') });
+}, true);
 
 async function saveMetaPixelConfig() {
   const idInput = document.getElementById('cfgMetaPixelId');
@@ -6841,7 +6955,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
-  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockWarning(); }
+  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
@@ -8330,6 +8444,12 @@ function renderStockTable(){
 
 // DYNAMIC PRODUCTS SYNC FROM PRESTASHOP & SUPABASE API
 let liveProducts = [];
+// Mientras esto sigue en false, la tienda pública muestra un esqueleto de
+// carga en vez de PRODUCTS_DATA (datos de ejemplo pensados para el POS
+// interno) — antes se veían fotos de stock genéricas ("balloons", "concert",
+// una lavadora...) con nombres/precios reales durante el segundo o dos que
+// tarda /api/productos, lo cual confundía a los clientes.
+let productsFirstLoadDone = false;
 
 async function syncProductsFromPrestaShopAPI(){
   let loaded = false;
@@ -8424,6 +8544,7 @@ async function syncProductsFromPrestaShopAPI(){
     ];
   }
 
+  productsFirstLoadDone = true;
   renderDynamicCatPills();
   renderProducts('all');
   renderCatalogTable('all');
@@ -9057,6 +9178,7 @@ async function supabaseAuthRequest(path, body) {
 
 async function registerCliente(name, email, phone, password) {
   const data = await supabaseAuthRequest('signup', { email, password, data: { full_name: name, phone } });
+  trackPixelEvent('CompleteRegistration', { content_name: 'Cuenta de cliente', status: true });
   try {
     await sbInsert('clientes_web_perfil', { user_id: data.user?.id || data.id, nombre: name, email, telefono: phone });
   } catch (e) {
@@ -9506,6 +9628,11 @@ function repeatCustomerOrder(folio) {
   });
   updateStoreCartBadge();
   updateClienteCartUI();
+  trackPixelEvent('AddToCart', {
+    content_type: 'product', content_ids: items.map(i => String(i.id)),
+    contents: items.map(i => ({ id: String(i.id), quantity: i.qty || 1 })),
+    value: items.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0), currency: 'MXN'
+  });
   switchClienteTab('nuevo');
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
 }
@@ -10363,53 +10490,10 @@ function sendTestNotification() {
   notifyEvent('test', 'Notificación de prueba', 'Así se verán tus notificaciones de Mi Fiestashop.');
 }
 
-function computeLowStockItems() {
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const lowItems = [];
-  dataset.forEach((p, index) => {
-    const pId = p.id || index + 1;
-    const stTotal = getStockFor(pId, 'puebla') + getStockFor(pId, 'rumania') + getStockFor(pId, 'queretaro');
-    // Umbral real configurado en PrestaShop por producto (low_stock_threshold)
-    // en vez de un número fijo igual para los ~500 productos — un antifaz de
-    // $2 y una vela de $67 no deberían alertar con el mismo punto de corte.
-    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : 10;
-    if (stTotal < threshold) lowItems.push({ name: p.name, qty: stTotal, threshold });
-  });
-  // Lo más urgente primero (lo que está más lejos de su propio umbral).
-  return lowItems.sort((a, b) => (a.qty - a.threshold) - (b.qty - b.threshold));
-}
-
-// Actualiza la tarjeta del Dashboard cada vez que se le llama (al abrir la
-// vista, o cuando ya hay existencia real cargada) — a diferencia de la
-// notificación del sistema operativo, que solo debe avisar una vez por
-// sesión para no ser molesta.
-function renderLowStockWarning() {
-  const lowItems = computeLowStockItems();
-  const card = document.getElementById('lowStockWarningCard');
-  const list = document.getElementById('lowStockWarningList');
-  if (card && list) {
-    if (lowItems.length === 0) {
-      card.classList.add('hidden');
-    } else {
-      card.classList.remove('hidden');
-      list.innerHTML = lowItems.slice(0, 12).map(e =>
-        `${escapeHtml(e.name)}: <b>${e.qty}</b> u. (umbral ${e.threshold})`
-      ).join('<br>') + (lowItems.length > 12 ? `<br>y ${lowItems.length - 12} más…` : '');
-    }
-  }
-
-  if (lowItems.length > 0 && sessionStorage.getItem('mf_lowstock_notified') !== 'true') {
-    sessionStorage.setItem('mf_lowstock_notified', 'true');
-    const preview = lowItems.slice(0, 3).map(e => e.name).join(', ');
-    const extra = lowItems.length > 3 ? ` y ${lowItems.length - 3} más` : '';
-    notifyEvent('lowStock', 'Stock bajo de producto', `${lowItems.length} producto(s) con existencia baja: ${preview}${extra}.`);
-  }
-}
-
 // Los productos con existencia en 0/negativo ya no se ocultan del POS (el
 // cajero puede seguir vendiéndolos si físicamente los tiene en mano) — esto
 // mantiene la advertencia visible en el Dashboard en su lugar, por
-// sucursal, y avisa una vez por sesión (igual que renderLowStockWarning).
+// sucursal, y avisa una vez por sesión (igual que renderLowStockByStoreCard).
 function checkNegativeStockWarning() {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const branches = ['puebla', 'rumania', 'queretaro'];
@@ -10441,6 +10525,50 @@ function checkNegativeStockWarning() {
     const extra = negativeEntries.length > 3 ? ` y ${negativeEntries.length - 3} más` : '';
     notifyEvent('negativeStock', 'Existencia en negativo', `${negativeEntries.length} producto(s) en negativo: ${preview}${extra}.`);
   }
+}
+
+// Tarjeta del Dashboard: qué productos están en o por debajo de su umbral
+// real de stock bajo (low_stock_threshold de PrestaShop), por sucursal —
+// solo productos con umbral configurado (>0); los que tienen 0 casi nunca
+// fue un valor puesto a propósito, así que no se alertan igual que los que
+// sí tienen un umbral real (mismo criterio ya usado en checkLowStockNotifications).
+function renderLowStockByStoreCard() {
+  const tbody = document.getElementById('lowStockByStoreTableBody');
+  const countEl = document.getElementById('lowStockByStoreCount');
+  if (!tbody) return;
+
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const branches = ['puebla', 'rumania', 'queretaro'];
+  const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
+
+  const entries = [];
+  dataset.forEach((p, index) => {
+    const pId = p.id || index + 1;
+    const threshold = p.lowStockThreshold > 0 ? p.lowStockThreshold : null;
+    if (!threshold) return;
+    branches.forEach(wh => {
+      if (filterWh !== 'all' && wh !== filterWh) return;
+      const qty = getStockFor(pId, wh);
+      if (qty <= threshold) entries.push({ name: p.name, sku: p.sku, branch: WAREHOUSE_LABELS[wh] || wh, qty, threshold });
+    });
+  });
+  entries.sort((a, b) => a.qty - b.qty);
+
+  if (countEl) countEl.textContent = entries.length;
+
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.slice(0, 150).map(e => `
+    <tr>
+      <td>${escapeHtml(e.name)}</td>
+      <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(e.sku || '—')}</td>
+      <td>${escapeHtml(e.branch)}</td>
+      <td style="text-align:center; font-weight:700; color:${e.qty < 0 ? '#dc2626' : 'var(--series-2)'};">${e.qty}</td>
+      <td style="text-align:center; color:var(--text-muted);">${e.threshold}</td>
+    </tr>
+  `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más…</td></tr>` : '');
 }
 
 function updateOrderDetailStatus() {
@@ -10638,10 +10766,37 @@ function resetStorefrontSeoTags() {
   const metaKw = document.getElementById('metaKeywords');
   if (metaKw) metaKw.setAttribute('content', defaultKeywords);
   const canonical = document.getElementById('canonicalLink');
-  if (canonical) canonical.setAttribute('href', 'https://mifiestashop.vercel.app/');
+  if (canonical) canonical.setAttribute('href', window.location.origin + '/');
   const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', defaultTitle);
-  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', 'https://mifiestashop.vercel.app/');
+  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', window.location.origin + '/');
   const twTitle = document.getElementById('twitterTitle'); if (twTitle) twTitle.setAttribute('content', defaultTitle);
+  const productLd = document.getElementById('ldJsonProduct');
+  if (productLd) productLd.remove();
+}
+
+// URL propia de categoría (/{id}-{link_rewrite}, igual que productos pero
+// sin ".html") — linkRewrite viene de /api/categorias-tienda (ps_categorias
+// sincronizada de PrestaShop). Sin linkRewrite (categoría recién agregada,
+// aún sin sincronizar) se devuelve '' y el llamador no cambia la URL.
+function categoryPathFor(c) {
+  if (!c || !c.linkRewrite) return '';
+  return `/${c.id}-${c.linkRewrite}`;
+}
+
+// Mismo propósito que applyProductSeoTags pero para categorías — el
+// middleware de SEO ya reescribe el HTML crudo para bots que no ejecutan
+// JS; esto es para que el título/canonical del navegador también queden
+// correctos al navegar entre categorías dentro de la SPA (sin recargar).
+function applyCategorySeoTags(c) {
+  if (!c) return;
+  const title = `${c.name} | Mi Fiestashop`;
+  const path = categoryPathFor(c) || '/266-productos';
+  const url = `${window.location.origin}${path}`;
+  document.title = title;
+  const canonical = document.getElementById('canonicalLink'); if (canonical) canonical.setAttribute('href', url);
+  const ogTitle = document.getElementById('ogTitle'); if (ogTitle) ogTitle.setAttribute('content', title);
+  const ogUrl = document.getElementById('ogUrl'); if (ogUrl) ogUrl.setAttribute('content', url);
+  const twTitle = document.getElementById('twitterTitle'); if (twTitle) twTitle.setAttribute('content', title);
   const productLd = document.getElementById('ldJsonProduct');
   if (productLd) productLd.remove();
 }
@@ -10658,7 +10813,7 @@ function applyProductSeoTags(p) {
     ? p.metaDescription.trim().slice(0, 160)
     : (p.desc && p.desc.trim()) ? p.desc.trim().slice(0, 155) : `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`;
   const path = productPathFor(p) || '/';
-  const url = `https://mifiestashop.vercel.app${path}`;
+  const url = `${window.location.origin}${path}`;
 
   document.title = title;
   const metaDesc = document.getElementById('metaDescription');
@@ -12607,6 +12762,12 @@ function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
     storefrontVisibleCount = STOREFRONT_PAGE_SIZE;
   }
 
+  if (liveProducts.length === 0 && !productsFirstLoadDone) {
+    grid.innerHTML = buildStorefrontSkeletonHTML();
+    renderStorefrontLoadMore(0, 0);
+    return;
+  }
+
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const q = normalizeEs(currentStorefrontQuery);
 
@@ -12649,6 +12810,24 @@ function trimTrailingPartialRow(grid){
     return cards.length - lastRow.length;
   }
   return cards.length;
+}
+
+function buildStorefrontSkeletonHTML(count = 10){
+  return Array.from({ length: count }).map(() => `
+    <div class="store-prod-card store-prod-skeleton" aria-hidden="true">
+      <div class="skel-block skel-img"></div>
+      <div class="store-prod-body">
+        <div>
+          <div class="skel-block skel-line" style="width:40%;"></div>
+          <div class="skel-block skel-line" style="width:80%; height:16px; margin-top:8px;"></div>
+        </div>
+        <div>
+          <div class="skel-block skel-line" style="width:35%; height:20px;"></div>
+          <div class="skel-block skel-line" style="width:100%; height:38px; margin-top:8px; border-radius:8px;"></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
 }
 
 function buildStorefrontProductCardHTML(p, idx){
@@ -12696,10 +12875,31 @@ let catalogState = { catId: 'all', page: 1, pageSize: 24, sort: 'relevance', vie
 
 async function openStorefrontCatalog(catId){
   showStorefrontPage('storefrontCatalogPage');
-  resetStorefrontSeoTags();
   catalogState.catId = catId || 'all';
   catalogState.page = 1;
   if (catalogCategories.length === 0) await loadCatalogCategories();
+
+  // Categoría real (no "todos los productos"): título/canonical propios y
+  // URL propia (/{id}-{slug}) — mismo patrón que abrir un producto. Si la
+  // categoría no tiene link_rewrite todavía (o el id no se encontró), se
+  // deja la URL como está en vez de navegar a algo roto.
+  const cat = catalogState.catId !== 'all'
+    ? catalogCategories.find(c => String(c.id) === String(catalogState.catId))
+    : null;
+  if (cat) {
+    applyCategorySeoTags(cat);
+    const path = categoryPathFor(cat);
+    if (path && window.location.pathname !== path) history.pushState({}, '', path);
+  } else {
+    resetStorefrontSeoTags();
+    // Solo se navega a /266-productos cuando de verdad se pidió "todos los
+    // productos" — si vino de un id de categoría que no se encontró (link
+    // viejo/roto), se deja la URL tal cual en vez de redirigir en silencio.
+    if (catalogState.catId === 'all' && window.location.pathname !== '/266-productos') {
+      history.pushState({}, '', '/266-productos');
+    }
+  }
+
   renderCatalogSidebar();
   await loadCatalogPage();
 }
@@ -12908,7 +13108,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         </div>
         <div style="display:flex; align-items:center; gap:10px; margin-top:22px;">
           <input type="number" id="${qtyId}" value="1" min="1" style="width:70px; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
-          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; for(let i=0;i<qN;i++){ addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}); } updateStoreCartBadge(); ${onAddToCart || ''}">
+          <button class="store-prod-btn btn-pop" style="flex:1;" onclick="fireConfettiBurst(event.clientX, event.clientY); const qN=parseInt(document.getElementById('${qtyId}').value)||1; addToCartTracked({id:${p.id || 1}, name:'${p.name.replace(/'/g,"\\'")}', sku:'${p.sku}', price:${p.price}, cat:'${p.cat || 'general'}', img:'${p.img}'}, qN); updateStoreCartBadge(); ${onAddToCart || ''}">
             🛒 Agregar al Carrito
           </button>
         </div>
@@ -13385,6 +13585,8 @@ function goToStorefrontCheckout(){
   if (cart.length === 0) return;
   trackPixelEvent('InitiateCheckout', {
     content_ids: cart.map(i => String(i.id)),
+    content_type: 'product',
+    contents: cart.map(i => ({ id: String(i.id), quantity: i.qty })),
     num_items: cart.reduce((s, i) => s + i.qty, 0),
     value: cart.reduce((s, i) => s + i.price * i.qty, 0),
     currency: 'MXN'
@@ -13517,10 +13719,12 @@ async function submitStorefrontOrder(){
 
   trackPixelEvent('Purchase', {
     content_ids: cart.map(i => String(i.id)),
+    content_type: 'product',
+    contents: cart.map(i => ({ id: String(i.id), quantity: i.qty })),
     num_items: cart.reduce((s, i) => s + i.qty, 0),
     value: total,
     currency: 'MXN'
-  });
+  }, folio);
 
   cart = [];
   updateStoreCartBadge();
@@ -13540,7 +13744,17 @@ async function handleMercadoPagoReturn() {
     document.getElementById('confirmTotal').textContent = isNaN(mpTotal) ? '' : fmtMoney(mpTotal);
     showStorefrontPage('storefrontOrderConfirmPage');
     if (!isNaN(mpTotal)) {
-      trackPixelEvent('Purchase', { value: mpTotal, currency: 'MXN' });
+      // El carrito guardado (localStorage) sobrevive a la ida y vuelta a
+      // Mercado Pago, así que aún trae los productos de esta compra.
+      const mpItems = Array.isArray(cart) ? cart : [];
+      const purchase = { value: mpTotal, currency: 'MXN' };
+      if (mpItems.length > 0) {
+        purchase.content_ids = mpItems.map(i => String(i.id));
+        purchase.content_type = 'product';
+        purchase.contents = mpItems.map(i => ({ id: String(i.id), quantity: i.qty }));
+        purchase.num_items = mpItems.reduce((s, i) => s + i.qty, 0);
+      }
+      trackPixelEvent('Purchase', purchase, mpFolio);
     }
   } else if (mpStatus === 'pending') {
     showPublicStorefront();
@@ -13590,12 +13804,14 @@ async function submitNewsletterSignup(){
 }
 
 function filterStorefrontProducts(q) {
+  trackSearchDebounced(q);
   renderStorefrontProducts('all', q);
 }
 
 function updateSearchSuggestions(q) {
   const box = document.getElementById('storeSearchSuggest');
   if (!box) return;
+  trackSearchDebounced(q);
   const query = normalizeEs(q);
   if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
@@ -14404,6 +14620,12 @@ function openProductDeepLinkIfPresent() {
   if (p) renderProductFullPage(p);
 }
 
+// ================= DEEP LINK: /{id}-{slug} (sin .html) CATEGORÍA =================
+// Mismo patrón que el de producto arriba, pero sin ".html" — coincide
+// también con URLs de producto, así que en routeApp() SIEMPRE se revisa
+// productDeepLinkMatch primero (ver más abajo).
+const categoryDeepLinkMatch = window.location.pathname.match(/^\/(\d+)-[^\/]+$/);
+
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   const category = new URLSearchParams(window.location.search).get('categoria');
   if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
@@ -14420,10 +14642,10 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
   if (window.location.pathname === '/266-productos') openStorefrontCatalog('all');
   if (window.location.pathname === '/contacto') openStorefrontContact();
-}).then(renderLowStockWarning);
+}).then(renderLowStockByStoreCard);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
-  renderLowStockWarning();
+  renderLowStockByStoreCard();
   if (document.getElementById('posProductGrid')) {
     const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
     renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
@@ -14491,6 +14713,14 @@ function routeApp() {
   if (window.location.pathname === '/266-productos') {
     showPublicStorefront();
     openStorefrontCatalog('all');
+    return;
+  }
+  // /{id}-{slug} (sin .html): categoría con URL propia. productDeepLinkMatch
+  // (arriba) ya se queda con las URLs de producto que terminan en .html, así
+  // que si llegamos hasta aquí es una categoría real.
+  if (categoryDeepLinkMatch) {
+    showPublicStorefront();
+    openStorefrontCatalog(categoryDeepLinkMatch[1]);
     return;
   }
   if (window.location.pathname === '/contacto') {

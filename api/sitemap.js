@@ -1,9 +1,12 @@
 // Vercel serverless function: generates sitemap.xml with the homepage and
-// every real product URL (mirrored to the mifiestashop.vercel.app domain).
+// every real product URL.
 module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
-  const siteOrigin = 'https://mifiestashop.vercel.app';
+  // Dinámico según el host real de la petición en vez de quedar fijo a
+  // mifiestashop.vercel.app: así, el día que mifiestashop.com apunte aquí,
+  // el sitemap ya lista las URLs bajo el dominio correcto sin tocar código.
+  const siteOrigin = `https://${req.headers.host}`;
 
   const urls = [{ loc: `${siteOrigin}/`, priority: '1.0' }];
   const cmsPages = require('../data/cms-manifest.json');

@@ -1,8 +1,12 @@
 {
   "crons": [
     {
-      "path": "/api/cron-sync-prestashop",
+      "path": "/api/cron-sync-prestashop?domains=stock,categorias,almacenes,empleados",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron-sync-prestashop?domains=clientes,pedidos,carritos",
+      "schedule": "30 * * * *"
     }
   ],
   "functions": {
@@ -26,6 +30,9 @@
     },
     "api/sitemap.js": {
       "maxDuration": 30
+    },
+    "api/robots.js": {
+      "maxDuration": 10
     },
     "api/categorias-tienda.js": {
       "maxDuration": 30
@@ -1674,7 +1681,15 @@
       "destination": "/api/sitemap"
     },
     {
+      "source": "/robots.txt",
+      "destination": "/api/robots"
+    },
+    {
       "source": "/:id(\\d+)-:slug*.html",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/:id(\\d+)-:slug*",
       "destination": "/index.html"
     },
     {
