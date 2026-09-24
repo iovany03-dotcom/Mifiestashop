@@ -5964,7 +5964,7 @@ function initMetaPixel() {
   // se perdían en silencio porque window.fbq todavía no existía.
   const queued = pixelPending;
   pixelPending = [];
-  queued.forEach(ev => fbq('track', ev.name, ev.params));
+  queued.forEach(ev => ev.eventId ? fbq('track', ev.name, ev.params, { eventID: ev.eventId }) : fbq('track', ev.name, ev.params));
 }
 
 // La tienda es una SPA: al navegar entre productos/categorías la URL cambia
@@ -5996,11 +5996,13 @@ function trackVirtualPageView() {
   window.addEventListener('popstate', trackVirtualPageView);
 })();
 
-function trackPixelEvent(eventName, params) {
+// eventId (opcional): el mismo id que manda el servidor por la API de
+// Conversiones, para que Meta cuente UN solo evento y no dos.
+function trackPixelEvent(eventName, params, eventId) {
   if (!pixelAllowedHere()) return;
-  if (window.fbq) { fbq('track', eventName, params || {}); return; }
+  if (window.fbq) { eventId ? fbq('track', eventName, params || {}, { eventID: eventId }) : fbq('track', eventName, params || {}); return; }
   // Config aún cargando: se guarda (con tope) y se manda al iniciar el píxel.
-  if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {} });
+  if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {}, eventId });
 }
 
 // Una sola pulsación de "Agregar" con cantidad N es UN evento AddToCart con
@@ -13745,7 +13747,7 @@ async function submitStorefrontOrder(){
     num_items: cart.reduce((s, i) => s + i.qty, 0),
     value: total,
     currency: 'MXN'
-  });
+  }, folio);
 
   cart = [];
   updateStoreCartBadge();
@@ -13775,7 +13777,7 @@ async function handleMercadoPagoReturn() {
         purchase.contents = mpItems.map(i => ({ id: String(i.id), quantity: i.qty }));
         purchase.num_items = mpItems.reduce((s, i) => s + i.qty, 0);
       }
-      trackPixelEvent('Purchase', purchase);
+      trackPixelEvent('Purchase', purchase, mpFolio);
     }
   } else if (mpStatus === 'pending') {
     showPublicStorefront();
