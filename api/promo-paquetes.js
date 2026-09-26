@@ -57,6 +57,12 @@ const FALLBACK_ITEMS = {
   83591: ['8 Antifaz cartón metálico', '6 Peluca metálica', '1 Globo salchicha (200 pzas)', '5 Micrófono inflable chico', '5 Guitarra metálica inflable', '2 Peluca afro negra', '5 Mandil con frases divertidos', '4 Bombín con peluca metálica', '6 Lente batucada', '1 Corona Princesa', '5 Collar perla', '6 Diadema con pelitos', '2 Bombín con pelo', '3 Peluca corta', '4 Sombrero de palma', '2 Lente antifaz gigante', '6 Corbata neón', '6 Bombín neón', '4 Gorra neón', '5 Lente gigante neón', '10 Collar hawaiano', '6 Antifaz neón de PVC', '6 Corneta neón', '8 Sombrero Divertido de hule espuma', '1 Sombrero de hule espuma Novio', '1 Sombrero de hule espuma Novia', '8 Diadema con mechudo', '1 Espanta suegras (100 pzas)', '5 Antifaz Carnaval', '5 Letrero selfie boda', '1 Pulsera cyalume (90 pzas)', '5 Lente luminoso cyalume', '2 Coronas de flores luminosa LED', '2 Diadema conejo luminoso LED', '1 Anillo luminosa LED (4 pzas)', '4 Lente luminoso LED', '6 Anillo de goma luminoso LED', '5 Diadema luminosa cyalume']
 };
 
+const { fetchCatalogoByIds } = require('../lib/catalogo-productos.js');
+
+// Los ids de PrestaShop caben en 32 bits; los productos propios (catalogo_productos)
+// usan ids mucho más grandes y no deben mandarse a PrestaShop.
+const MAX_PS_ID = 4294967295;
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -76,18 +82,22 @@ module.exports = async function handler(req, res) {
   }
 
   const fields = '[id,name,price,id_default_image,description,description_short,link_rewrite,active]';
-  const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[id]=${encodeURIComponent('[' + ids.join('|') + ']')}&limit=0,${ids.length}&output_format=JSON`;
+  const psIds = ids.filter(id => Number(id) <= MAX_PS_ID);
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
-    if (!r.ok) {
-      const text = await r.text();
-      res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500), packages: [] });
-      return;
+    let raw = [];
+    let psFailure = null;
+    if (psIds.length) {
+      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[id]=${encodeURIComponent('[' + psIds.join('|') + ']')}&limit=0,${psIds.length}&output_format=JSON`;
+      const auth = Buffer.from(`${apiKey}:`).toString('base64');
+      const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+      if (!r.ok) {
+        psFailure = { status: r.status, detail: (await r.text()).slice(0, 500) };
+      } else {
+        const data = await r.json();
+        raw = Array.isArray(data.products) ? data.products : (data.products ? [data.products] : []);
+      }
     }
-    const data = await r.json();
-    const raw = Array.isArray(data.products) ? data.products : (data.products ? [data.products] : []);
 
     const packages = raw.filter(p => p.active === '1' || p.active === 1).map(p => {
       const name = firstLangValue(p.name, '');
@@ -107,6 +117,25 @@ module.exports = async function handler(req, res) {
         url: linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : undefined
       };
     });
+
+    // Paquetes propios (catalogo_productos): los ids que PrestaShop no devolvió.
+    const found = new Set(packages.map(p => p.id));
+    (await fetchCatalogoByIds(ids.filter(id => !found.has(Number(id))))).forEach(row => {
+      packages.push({
+        id: Number(row.id),
+        name: row.name,
+        price: Number(row.price) || 0,
+        items: pickItems(row.description_short || '', row.description || ''),
+        img: (row.images && row.images[0]) || row.legacy_image_url || '',
+        linkRewrite: row.link_rewrite || '',
+        url: undefined
+      });
+    });
+
+    if (!packages.length && psFailure) {
+      res.status(502).json({ error: `PrestaShop API error ${psFailure.status}`, detail: psFailure.detail, packages: [] });
+      return;
+    }
 
     res.status(200).json({ packages });
   } catch (err) {

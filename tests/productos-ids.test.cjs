@@ -53,3 +53,25 @@ test('productos?ids= sin ids validos responde vacio sin consultar productos', as
     for (const [k, v] of [['PS_API_KEY', prev.key], ['PS_BASE_URL', prev.base]]) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
   }
 });
+
+test('productos?ids= completa con catalogo_productos los ids que PrestaShop no tiene y no le manda ids grandes', async () => {
+  const prev = { fetch: global.fetch, key: process.env.PS_API_KEY, base: process.env.PS_BASE_URL };
+  process.env.PS_API_KEY = 'k'; process.env.PS_BASE_URL = 'https://ps.test';
+  const psUrls = [];
+  global.fetch = async url => {
+    const u = String(url);
+    if (u.startsWith('https://ps.test/api/products?')) { psUrls.push(decodeURIComponent(u)); return { ok: true, json: async () => ({ products: [{ id: '83553', name: 'Promo', price: '599.000000', reference: 'promo, batucada', link_rewrite: 'promo' }] }) }; }
+    if (u.includes('/rest/v1/catalogo_productos')) return { ok: true, json: async () => ([{ id: 10790464092173, name: 'Promo Batucada VIP', sku: 'promo, vip', price: '1700' }]) };
+    if (u.includes('specific_prices')) return { ok: true, json: async () => ({ specific_prices: [] }) };
+    return { ok: true, json: async () => [] };
+  };
+  try {
+    const r = await call({ ids: '83553,10790464092173' });
+    assert.equal(r.code, 200);
+    assert.deepEqual(r.data.products, [{ id: 83553, price: 599, sku: 'promo, batucada' }, { id: 10790464092173, price: 1700, sku: 'promo, vip' }]);
+    assert.ok(psUrls.length > 0 && psUrls.every(u => !u.includes('10790464092173')), 'el id grande no debe ir a PrestaShop');
+  } finally {
+    global.fetch = prev.fetch;
+    for (const [k, v] of [['PS_API_KEY', prev.key], ['PS_BASE_URL', prev.base]]) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+  }
+});

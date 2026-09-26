@@ -10,6 +10,8 @@
 // Supabase Storage — se usan esos datos en vez de los de PrestaShop.
 // Precio y stock siguen viniendo siempre en vivo de PrestaShop (decisión
 // explícita: solo se migró lo descriptivo, no el inventario).
+const { fetchCatalogoByIds } = require('../lib/catalogo-productos.js');
+
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
@@ -212,7 +214,10 @@ module.exports = async function handler(req, res) {
 
     let rawProducts, total;
     if (idsMode) {
-      rawProducts = requestedIds.length ? await fetchByIds(requestedIds) : [];
+      // Solo ids de PrestaShop (32 bits); los productos propios, con ids
+      // mucho más grandes, se buscan después en catalogo_productos.
+      const psIds = requestedIds.filter(id => Number(id) <= 4294967295);
+      rawProducts = psIds.length ? await fetchByIds(psIds) : [];
       total = rawProducts.length;
     } else if (category) {
       const migratedCatIds = Object.values(migrated)
@@ -342,11 +347,16 @@ module.exports = async function handler(req, res) {
     }
 
     if (idsMode) {
-      res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
-      res.status(200).json({
-        count: products.length,
-        products: products.map(p => ({ id: Number(p.id), price: p.price, sku: p.sku }))
+      const slim = products.map(p => ({ id: Number(p.id), price: p.price, sku: p.sku }));
+      // Los ids que PrestaShop no devuelve pueden ser productos propios
+      // (catalogo_productos), como los paquetes creados sin PrestaShop.
+      const found = new Set(slim.map(p => p.id));
+      const missing = requestedIds.filter(id => !found.has(Number(id)));
+      (await fetchCatalogoByIds(missing)).forEach(row => {
+        slim.push({ id: Number(row.id), price: Number(row.price) || 0, sku: row.sku || `PS-${row.id}` });
       });
+      res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
+      res.status(200).json({ count: slim.length, products: slim });
       return;
     }
 

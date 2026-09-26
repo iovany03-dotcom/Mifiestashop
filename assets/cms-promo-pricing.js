@@ -15,6 +15,14 @@
     const badge = document.createElement('span'); badge.className = 'promo-pricing-badge'; badge.textContent = BADGES[pkg.tier] || pkg.tier;
     const title = document.createElement('h3'); title.className = 'promo-pricing-title'; title.textContent = live.name || ('Paquete ' + pkg.tier);
     const price = document.createElement('div'); price.className = 'promo-pricing-price'; price.textContent = money(live.price);
+    // Descuento (pkg.discount, en %): el precio del producto ya trae el descuento;
+    // el precio anterior se calcula a partir de él.
+    let compare = null, save = null;
+    const pct = Number(pkg.discount);
+    if (pct > 0 && pct < 100 && Number(live.price) > 0) {
+      compare = document.createElement('div'); compare.className = 'promo-pricing-compare'; compare.textContent = 'Antes ' + money(Math.round(Number(live.price) / (1 - pct / 100)));
+      save = document.createElement('span'); save.className = 'promo-pricing-save'; save.textContent = pct + '% de descuento';
+    }
     const note = document.createElement('p'); note.className = 'promo-pricing-note'; note.textContent = 'Sin IVA';
     const shipping = document.createElement('p'); shipping.className = 'promo-pricing-shipping'; shipping.textContent = '🚚 Envío gratis en compras +$1,500';
     const list = document.createElement('ul'); list.className = 'promo-pricing-items';
@@ -22,7 +30,11 @@
     const action = document.createElement('button'); action.type = 'button'; action.className = 'promo-pricing-btn'; action.textContent = 'Agregar al carrito';
     const status = document.createElement('p'); status.className = 'cms-cart-status'; status.setAttribute('role', 'status');
     action.addEventListener('click', () => window.cmsAddToCart({ id: live.id, name: live.name, img: live.img }, action, status));
-    el.append(badge, title, price, note, shipping, list);
+    el.append(badge, title);
+    if (compare) el.append(compare);
+    el.append(price);
+    if (save) el.append(save);
+    el.append(note, shipping, list);
     if (pkg.tier === 'VIP') { const stock = document.createElement('p'); stock.className = 'promo-pricing-stock'; stock.textContent = '*Stock sujeto a bodega'; el.append(stock); }
     el.append(action, status);
     return el;

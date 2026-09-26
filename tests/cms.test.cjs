@@ -117,10 +117,32 @@ test('promo pricing packages always price live from PrestaShop, never hardcoded'
       assert.deepEqual(packages,model.config.promoPackages);
       assert.equal($('script[src^="/assets/cms-promo-pricing.js"]').length,1,page.slug);
     } else {
-      assert.equal($('#cms-promo-pricing').length,0,page.slug);
-      assert.equal($('#cms-promo-products').length,1,page.slug);
+      assert.equal($('#cms-promo-pricing').length,1,page.slug);
+      assert.deepEqual(JSON.parse($('#cms-promo-pricing').attr('data-packages')),require('../scripts/batucada-packages.cjs').PACKAGES,page.slug);
+      assert.equal($('#cms-promo-products').length,0,page.slug);
+      assert.equal($('script[src^="/assets/cms-promo-pricing.js"]').length,1,page.slug);
     }
   }
+});
+
+test('paquetes de batucada: todas las paginas que no son de boda, XV, neon, informativas ni VIP los muestran, con Estandar y VIP',()=>{
+  const {PACKAGES,HEADING,OWN_PACKAGES_THEMES}=require('../scripts/batucada-packages.cjs');
+  assert.deepEqual(PACKAGES.map(p=>p.tier),['Estándar','VIP']);
+  assert.equal(PACKAGES.find(p=>p.tier==='VIP').discount,15);
+  let con=0,sin=0;
+  for(const m of manifest){
+    const $=cheerio.load(fs.readFileSync(path.join(root,`cms-pages/${m.id}.html`),'utf8'));
+    const own=OWN_PACKAGES_THEMES.includes(m.theme),skip=m.theme==='informacion'||$('#vip-form').length>0;
+    if(own){assert.equal($('#cms-promo-pricing').length,1,m.slug);assert.notDeepEqual(JSON.parse($('#cms-promo-pricing').attr('data-packages')),PACKAGES,m.slug);continue;}
+    if(skip){assert.equal($('#cms-promo-pricing').length,0,m.slug);sin++;continue;}
+    assert.equal($('#cms-promo-pricing').length,1,m.slug);
+    assert.deepEqual(JSON.parse($('#cms-promo-pricing').attr('data-packages')),PACKAGES,m.slug);
+    assert.equal($('#cms-promo-products').length,0,m.slug);
+    assert.equal($('#promotions-title').text(),HEADING,m.slug);
+    assert.equal($('script[src^="/assets/cms-promo-pricing.js"]').length,1,m.slug);
+    con++;
+  }
+  assert.equal(con,94);assert.equal(sin,3);
 });
 
 test('migrated pages and admin inventory work without PrestaShop network access',async()=>{
