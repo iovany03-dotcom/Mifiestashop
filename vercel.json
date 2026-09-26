@@ -1734,6 +1734,10 @@
     {
       "source": "/contacto",
       "destination": "/index.html"
+    },
+    {
+      "source": "/content/:id(\\d+)-:slug",
+      "destination": "/api/cms-redirect?slug=:slug"
     }
   ]
 }

@@ -71,7 +71,7 @@ test('only Facebook and Google pages are migrated; VIP forms keep their original
 });
 test('sitemap includes all original CMS paths even without a PrestaShop key',async()=>{
   const prev=process.env.PS_API_KEY;delete process.env.PS_API_KEY;
-  try{const res=response();await require('../api/sitemap.js')({query:{}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://mifiestashop.vercel.app${page.sourcePath}`));}
+  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'mifiestashop.vercel.app'}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://mifiestashop.vercel.app${page.sourcePath}`));}
   finally{if(prev!==undefined)process.env.PS_API_KEY=prev;}
 });
 test('excluded pages keep their original PrestaShop response and coexist with migrated pages',async()=>{
@@ -135,4 +135,20 @@ test('neon redesign is isolated and imported icon/location banners cannot reappe
  const removed=['b7b3e512c4029e40','69f29cc0e2aaaeb0','6eeaeb9d458892c4'];
  for(const page of source){const html=fs.readFileSync(path.join(root,'cms-pages/'+page.id+'.html'),'utf8');const $=cheerio.load(html);assert.equal($('body').hasClass('neon-page'),page.id===410);for(const id of removed)assert.ok(!$('.source-content').html()?.includes(id),page.slug);$('script[src],link[rel=stylesheet]').each((_,e)=>{const u=$(e).attr('src')||$(e).attr('href');if(u.startsWith('/assets/'))assert.match(u,/\?v=[a-f0-9]{12}$/);});}
  const html=fs.readFileSync(path.join(root,'cms-pages/410.html'),'utf8');assert.ok(html.includes('Rumania 613'));assert.ok(!html.includes('Puebla'));new vm.Script(fs.readFileSync(path.join(root,'assets/neon-cdmx.js'),'utf8'));
+});
+function redirectCall(slug){const r={statusCode:200,headers:{},body:'',setHeader(k,v){this.headers[k]=v},end(b){this.body=b||''}};require('../api/cms-redirect.js')({query:{slug}},r);return r;}
+test('/content/<id>-<slug> con un id que no existe redirige por nombre a la primera pagina con ese slug',()=>{
+  const r=redirectCall('articulos-pata-batucada-en-cdmx');assert.equal(r.statusCode,301);assert.equal(r.headers.Location,'/content/288-articulos-pata-batucada-en-cdmx');
+  const bySlug=new Map();for(const p of manifest){if(!bySlug.has(p.slug))bySlug.set(p.slug,[]);bySlug.get(p.slug).push(p.id);}
+  for(const [slug,ids] of bySlug){const res=redirectCall(slug);assert.equal(res.statusCode,301,slug);assert.equal(res.headers.Location,manifest.find(p=>p.id===Math.min(...ids)).path,slug);}
+  const missing=redirectCall('pagina-que-no-existe');assert.equal(missing.statusCode,404);assert.ok(!missing.headers.Location);
+});
+test('la regla de redireccion va al final y no pisa ninguna ruta exacta de las paginas CMS',()=>{
+  const rewrites=config.rewrites;const fallback=rewrites.findIndex(r=>r.source==='/content/:id(\\d+)-:slug');
+  assert.equal(fallback,rewrites.length-1);assert.equal(rewrites[fallback].destination,'/api/cms-redirect?slug=:slug');
+  for(const p of manifest){const exact=rewrites.findIndex(r=>r.source===p.path);assert.ok(exact>=0&&exact<fallback,p.path);assert.equal(rewrites[exact].destination,'/cms-pages/'+p.id+'.html');}
+});
+test('el titulo de la pagina 288 dice "para" y ya no "pata", sin cambiar su direccion',()=>{
+  const m=manifest.find(p=>p.id===288);assert.equal(m.title,'Articulos para batucada en CDMX');assert.equal(m.slug,'articulos-pata-batucada-en-cdmx');
+  const html=fs.readFileSync(path.join(root,'cms-pages/288.html'),'utf8');assert.ok(html.includes('<h1>Articulos para batucada en CDMX</h1>'));assert.ok(!/Articulos pata/.test(html));
 });

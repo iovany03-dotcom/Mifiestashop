@@ -15,6 +15,9 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 
 ## 2026-09-26
 
+- **Redirección por nombre en páginas CMS:** como hacía PrestaShop, `/content/<id>-<slug>` con un id que no existe redirige (301) a la primera página con ese slug; si el slug tampoco existe, 404. Los ids reales no se tocan (rutas exactas en `vercel.json`; la regla va al final). Función `api/cms-redirect.js`; pruebas en `tests/cms.test.cjs`. Auditoría previa: en la tienda vieja las 139 páginas redirigen por nombre, y 12 (slugs repetidos: 327, 328, 354, 367, 369, 370, 385, 395, 396, 397, 408, 409) mandan a otra página; en Vercel esas 12 abren su propia página.
+- **Página 288:** el título decía "pata" y ahora dice "Articulos para batucada en CDMX" (h1, title, og, JSON-LD, enlaces relacionados y datos). La dirección se dejó `/content/288-articulos-pata-batucada-en-cdmx` porque `articulos-para-batucada-en-cdmx` ya es el slug de la página 308.
+- **Pruebas:** se corrigió la prueba del sitemap (faltaba el encabezado `host` desde el cambio de dominio dinámico); 19 pruebas de CMS y 7 de la API pasan.
 - **POS:** no se puede cobrar sin caja abierta (aviso al abrir el cobro y al confirmar; la caja es por sucursal). Botón propio rojo "Cerrar Caja". (`9d92a72`, `e5011d0`)
 - **Portal de clientes:** se quitó el botón "Acceso POS / Admin" y los iconos de los botones. El botón de notificaciones del admin ya no sale vacío. (`327b98b`, `8564636`)
 - **Skydropx:** se bloquean Estafeta, Ninetynineminutes/99minutos y Paquetexpress "Nacional Sin Recolección". El filtro compara nombres sin acentos ni guiones (`api/skydropx-cotizar.js`). (`c9ff317`, `fc6b4c1`)
@@ -40,7 +43,7 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 ## Pendientes y problemas conocidos
 
 1. **Seguridad:** `/api/promo-paquetes` incluye en la URL de la imagen la llave de PrestaShop (`ws_key=...`); es pública. Regenerar la llave y servir las imágenes sin exponerla.
-2. **Slugs de páginas CMS:** en la tienda vieja `/content/98-articulos-pata-batucada-en-cdmx` redirige (301) a `/content/288-...`; en Vercel esa dirección da 404 (solo existe la id 288). Decidir si se agregan redirecciones por slug.
+2. **Dirección de la página 288** conserva el error "pata" (`/content/288-articulos-pata-batucada-en-cdmx`). Corregirla exige elegir un slug que no choque con la 308 y redirigir el viejo.
 3. **Paquetes de batucada:** solo existe el Estándar; no hay Jr ni VIP en el catálogo.
 4. **Meta:** con transferencia o efectivo, Purchase se reporta al crear el pedido, antes de confirmar el pago. Solo Mercado Pago se reporta desde el servidor.
 5. Fotos de la galería de XV años: miden 736 px de ancho; con originales más grandes se verían mejor en el visor.
