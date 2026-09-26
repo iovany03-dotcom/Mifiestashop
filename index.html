@@ -2887,6 +2887,9 @@
             <button class="btn primary" style="width:100%; margin-top:14px; padding:12px; justify-content:center; font-size:15px;" onclick="openCheckoutModal()">
                Cobrar / Procesar Venta
             </button>
+            <button class="btn secondary" id="btnQuotePdf" style="width:100%; margin-top:8px; padding:12px; justify-content:center; font-size:15px;" onclick="generateQuotePdf()" title="Genera un PDF con los productos del carrito. No cobra, no descuenta inventario y no genera ticket.">
+               Sacar como cotización
+            </button>
           </div>
         </div>
 
@@ -7129,6 +7132,120 @@ function requireCajaAbierta() {
   if (cajaActual) return true;
   alert('Abre la caja antes de realizar ventas. Usa el botón "Abrir Caja".');
   return false;
+}
+
+// ================= COTIZACIÓN EN PDF (no es venta: sin ticket, sin inventario, sin caja) =================
+let jsPdfLoading = null;
+function loadJsPdf() {
+  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  if (!jsPdfLoading) {
+    jsPdfLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = () => (window.jspdf && window.jspdf.jsPDF) ? resolve(window.jspdf.jsPDF) : (jsPdfLoading = null, reject(new Error('El generador de PDF no quedó disponible.')));
+      s.onerror = () => { jsPdfLoading = null; reject(new Error('No se pudo cargar el generador de PDF. Revisa tu conexión a internet.')); };
+      document.head.appendChild(s);
+    });
+  }
+  return jsPdfLoading;
+}
+
+async function generateQuotePdf() {
+  if (cart.length === 0) return alert('Agrega productos al carrito primero.');
+  const btn = document.getElementById('btnQuotePdf');
+  const label = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando PDF...'; }
+  try {
+    const JsPDF = await loadJsPdf();
+    const doc = new JsPDF({ unit: 'mm', format: 'a4' });
+    const L = 15, R = 195, BOTTOM = 275;
+    const purple = [46, 16, 101], pink = [211, 0, 123], grey = [110, 100, 120];
+
+    const now = new Date();
+    const p2 = n => String(n).padStart(2, '0');
+    const folio = `COT-${String(now.getFullYear()).slice(2)}${p2(now.getMonth() + 1)}${p2(now.getDate())}-${p2(now.getHours())}${p2(now.getMinutes())}`;
+    const fecha = now.toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
+    const customerSelect = document.getElementById('posCustomerSelect');
+    const cliente = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
+    const almacenSelect = document.getElementById('posWarehouseSelect');
+    const sucursal = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
+
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const applyIva = isIvaApplied();
+    const iva = applyIva ? subtotal * 0.16 : 0;
+    const total = subtotal + iva;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(...purple);
+    doc.text('MI FIESTA SHOP', L, 20);
+    doc.setFontSize(18); doc.setTextColor(...pink);
+    doc.text('COTIZACIÓN', R, 20, { align: 'right' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...grey);
+    doc.text('www.mifiestashop.com', L, 26);
+    doc.text(`Folio: ${folio}`, R, 26, { align: 'right' });
+    doc.text(fecha, R, 31, { align: 'right' });
+    doc.setDrawColor(...purple); doc.setLineWidth(0.6); doc.line(L, 34, R, 34);
+
+    doc.setFontSize(10); doc.setTextColor(30, 20, 45);
+    doc.setFont('helvetica', 'bold'); doc.text('Cliente:', L, 42);
+    doc.setFont('helvetica', 'normal'); doc.text(doc.splitTextToSize(cliente, 120)[0], L + 17, 42);
+    if (sucursal) {
+      doc.setFont('helvetica', 'bold'); doc.text('Sucursal:', L, 48);
+      doc.setFont('helvetica', 'normal'); doc.text(doc.splitTextToSize(sucursal, 120)[0], L + 17, 48);
+    }
+
+    const COL = { code: L + 2, name: L + 32, unit: 152, qty: 166, amt: R - 2 };
+    let y = 58;
+    function tableHeader() {
+      doc.setFillColor(...purple); doc.rect(L, y - 5, R - L, 8, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+      doc.text('Código', COL.code, y); doc.text('Producto', COL.name, y);
+      doc.text('P. unit.', COL.unit, y, { align: 'right' });
+      doc.text('Cant.', COL.qty, y, { align: 'center' });
+      doc.text('Importe', COL.amt, y, { align: 'right' });
+      y += 8;
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 20, 45);
+    }
+    tableHeader();
+
+    cart.forEach((item, idx) => {
+      const nameLines = doc.splitTextToSize(String(item.name || ''), 88);
+      const codeLines = doc.splitTextToSize(String(item.sku || item.id || ''), 28).slice(0, 2);
+      const rowH = Math.max(nameLines.length, codeLines.length) * 4.4 + 3;
+      if (y + rowH > BOTTOM) { doc.addPage(); y = 20; tableHeader(); }
+      if (idx % 2 === 1) { doc.setFillColor(247, 243, 249); doc.rect(L, y - 4, R - L, rowH, 'F'); }
+      doc.setFontSize(8.5); doc.text(codeLines, COL.code, y);
+      doc.setFontSize(9); doc.text(nameLines, COL.name, y);
+      doc.text(fmtMoney(item.price), COL.unit, y, { align: 'right' });
+      doc.text(String(item.qty), COL.qty, y, { align: 'center' });
+      doc.text(fmtMoney(item.price * item.qty), COL.amt, y, { align: 'right' });
+      y += rowH;
+    });
+
+    if (y + 34 > BOTTOM) { doc.addPage(); y = 20; }
+    doc.setDrawColor(200, 190, 210); doc.setLineWidth(0.3); doc.line(L, y - 1, R, y - 1);
+    y += 6;
+    const totalsX = 150;
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 20, 45);
+    doc.text('Subtotal:', totalsX, y); doc.text(fmtMoney(subtotal), R - 2, y, { align: 'right' });
+    if (applyIva) { y += 6; doc.text('IVA (16%):', totalsX, y); doc.text(fmtMoney(iva), R - 2, y, { align: 'right' }); }
+    y += 8;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...pink);
+    doc.text('TOTAL:', totalsX, y); doc.text(fmtMoney(total), R - 2, y, { align: 'right' });
+
+    const pages = doc.getNumberOfPages();
+    for (let p = 1; p <= pages; p++) {
+      doc.setPage(p);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...grey);
+      doc.text('Esta cotización es informativa y no es un comprobante de venta. Precios y existencias sujetos a cambio.', L, 285);
+      doc.text(`Página ${p} de ${pages}`, R, 285, { align: 'right' });
+    }
+
+    doc.save(`Cotizacion-${folio}.pdf`);
+  } catch (e) {
+    alert('No se pudo generar la cotización: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = label; }
+  }
 }
 
 function openCheckoutModal() {
