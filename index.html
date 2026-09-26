@@ -7124,8 +7124,15 @@ function getCartTotalNum() {
   return applyIva ? subtotal * 1.16 : subtotal;
 }
 
+function requireCajaAbierta() {
+  if (cajaActual) return true;
+  alert('Abre la caja antes de realizar ventas. Usa el botón "Abrir Caja".');
+  return false;
+}
+
 function openCheckoutModal() {
   if (cart.length === 0) return alert('Agrega productos al carrito primero.');
+  if (!requireCajaAbierta()) return;
   const total = getCartTotalNum();
   document.getElementById('checkoutTotalAmount').textContent = fmtMoney(total);
   document.getElementById('cashGivenInput').value = Math.ceil(total);
@@ -7165,6 +7172,7 @@ function calculateChange() {
 }
 
 function confirmPOSSale() {
+  if (!requireCajaAbierta()) { closeCheckoutModal(); return; }
   const total = getCartTotalNum();
   const given = parseFloat(document.getElementById('cashGivenInput').value) || total;
   const change = Math.max(0, given - total);
