@@ -2816,7 +2816,8 @@
         <!-- CATALOG AREA -->
         <div class="pos-catalog">
           <div style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-            <button class="btn small primary" id="btnToggleCaja" data-view="caja-cerrar" onclick="onToggleCajaClick()">Abrir Caja</button>
+            <button class="btn small primary" id="btnToggleCaja" data-view="caja-cerrar" onclick="openAbrirCajaModal()">Abrir Caja</button>
+            <button class="btn small danger" id="btnCerrarCaja" data-view="caja-cerrar" onclick="openCerrarCajaModal()" style="display:none;">Cerrar Caja</button>
             <button class="btn small" data-view="caja-salidas" onclick="openSalidasCajaModal()">Salidas de Caja</button>
             <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
             <button class="btn small" data-view="caja-historial-cierres" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
@@ -7537,12 +7538,9 @@ async function loadCajaActual() {
   } catch (e) {
     cajaActual = null;
   }
-  btn.textContent = cajaActual ? 'Cerrar Caja' : 'Abrir Caja';
-  btn.classList.toggle('primary', !cajaActual);
-}
-
-function onToggleCajaClick() {
-  if (cajaActual) openCerrarCajaModal(); else openAbrirCajaModal();
+  btn.style.display = cajaActual ? 'none' : '';
+  const btnCerrar = document.getElementById('btnCerrarCaja');
+  if (btnCerrar) btnCerrar.style.display = cajaActual ? '' : 'none';
 }
 
 function openAbrirCajaModal() {
