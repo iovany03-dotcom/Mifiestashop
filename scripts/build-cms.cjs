@@ -4,6 +4,7 @@ const crypto = require('node:crypto');
 const {designNeonPage}=require('./neon-page.cjs');
 const { modelFor, esc } = require('./cms-content.cjs');
 const { xvGalleryHtml } = require('./xv-gallery.cjs');
+const { isOrganizerPage, organizerPricingHtml, HEADING } = require('./organizer-packages.cjs');
 const REVIEWS_MORE_URL={cdmx:'https://maps.app.goo.gl/t9gun227wXwa26Ff6',queretaro:'https://maps.app.goo.gl/ZKjUHHA1SSNaemxv8',puebla:'https://maps.app.goo.gl/Bs3YzM5CA2e39Guw9'};
 const root = path.resolve(__dirname, '..');
 const pages = require('../data/cms-pages.json');
@@ -41,6 +42,7 @@ function faqHtml(p) {
 }
 function render(page) {
   const p = page, t = p.config;
+  const organizer = isOrganizerPage(p);
   const shopLink = '/?buscar=' + encodeURIComponent(t.query);
   const informational = p.theme === 'informacion';
   const related = [...new Map(models.filter(q => q.theme === p.theme && q.id !== p.id && q.slug !== p.slug && !q.sourceWasEmpty).map(q=>[q.slug,q])).values()].slice(0,4);
@@ -55,7 +57,7 @@ function render(page) {
 <link rel="icon" href="/img/icons/icon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/cms.css"><link rel="stylesheet" href="/assets/cms-header.css"><link rel="stylesheet" href="/assets/cms-storefront.css"><link rel="stylesheet" href="/assets/cms-footer.css"><script defer src="/assets/cms-header.js"></script><script type="application/ld+json">${JSON.stringify(schema).replace(/</g,'\\u003c')}</script>
-<script defer src="/assets/cms-cart.js"></script><script defer src="/assets/cms.js"></script><script defer src="/assets/cms-gallery.js"></script><script defer src="/assets/cms-title-override.js"></script><script defer src="/assets/cms-reviews.js"></script>${t.promoPackages ? '<script defer src="/assets/cms-promo-pricing.js"></script>' : ''}${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
+<script defer src="/assets/cms-cart.js"></script><script defer src="/assets/cms.js"></script><script defer src="/assets/cms-gallery.js"></script><script defer src="/assets/cms-title-override.js"></script><script defer src="/assets/cms-reviews.js"></script>${t.promoPackages || organizer ? '<script defer src="/assets/cms-promo-pricing.js"></script>' : ''}${p.vip ? '<script defer src="/assets/cms-vip.js"></script>' : ''}</head>
 <body data-cms-id="${p.id}" data-theme="${p.theme}">${siteGate}<a class="skip-link" href="#contenido">Ir al contenido</a>
 ${header}
 <main id="contenido">
@@ -71,7 +73,7 @@ ${!informational ? `<section class="catalog-section" id="productos"><div class="
 ${p.vip ? vipHtml(p) : (informational && p.content.trim()) ? `<article class="source-content wrap information-content" aria-label="Información de ${esc(p.title)}">${p.content}</article>` : ''}
 ${p.reviews.length ? `<section class="reviews wrap"><div class="section-heading"><div><h2>Así celebran nuestros clientes</h2><p>Experiencias compartidas con Mi Fiesta Shop.</p></div>${p.location?.url ? `<a class="text-link" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Ver más reseñas en Google →</a>` : ''}</div>${['boda','batucada'].includes(p.theme) ? galleryHtml() : ''}<div class="review-grid" id="cms-reviews-grid">${p.reviews.map(r=>`<figure class="review-card"><figcaption class="review-author"><span class="review-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.5" fill="currentColor"/><path d="M4.5 20c0-4.2 3.4-7 7.5-7s7.5 2.8 7.5 7" fill="currentColor"/></svg></span><span><strong>${esc(r.name)}</strong><span class="review-source">Opinión compartida con Mi Fiesta Shop</span></span></figcaption><blockquote>${esc(r.quote)}</blockquote></figure>`).join('')}</div><div class="reviews-more" style="display:flex;justify-content:center;margin-top:28px"><a class="button primary" href="${REVIEWS_MORE_URL[p.location?.city] || REVIEWS_MORE_URL.cdmx}" target="_blank" rel="noopener noreferrer">Ver más opiniones</a></div></section>` : ''}
 ${p.location && !p.location.multiple ? `<section class="location-section wrap" id="ubicacion"><div><p class="section-kicker">Te esperamos</p><h2>${p.location.name ? `Visítanos en ${esc(p.location.name)}` : 'Visita nuestra tienda'}</h2>${p.location.address ? `<address>${esc(p.location.address)}</address>` : ''}${p.location.phone ? `<a class="phone" href="tel:${esc(p.location.phone)}">${esc(p.location.phone)}</a>` : ''}</div><a class="button primary" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></section>` : ''}
-<section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">Promociones${!informational ? ' de '+esc(t.label.toLocaleLowerCase('es')) : ''}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div>${t.promoPackages ? `<div id="cms-promo-pricing" class="promo-pricing-grid" data-packages="${esc(JSON.stringify(t.promoPackages))}" aria-live="polite"></div>` : `<div id="cms-promo-products" class="store-prods-grid" data-terms="${esc(JSON.stringify(t.terms))}"></div>`}</section>
+<section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">${organizer ? HEADING : 'Promociones'+(!informational ? ' de '+esc(t.label.toLocaleLowerCase('es')) : '')}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div>${organizer ? organizerPricingHtml() : t.promoPackages ? `<div id="cms-promo-pricing" class="promo-pricing-grid" data-packages="${esc(JSON.stringify(t.promoPackages))}" aria-live="polite"></div>` : `<div id="cms-promo-products" class="store-prods-grid" data-terms="${esc(JSON.stringify(t.terms))}"></div>`}</section>
 ${faqHtml(p)}
 ${p.theme === 'xv' ? xvGalleryHtml() : ''}
 ${!informational && related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu fiesta</h2><div>${related.map(r=>`<a href="${esc(r.sourcePath)}">${esc(r.title)}</a>`).join('')}</div></section>` : ''}
