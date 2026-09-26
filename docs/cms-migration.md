@@ -36,3 +36,5 @@ Las 139 páginas sirven HTML, contenido, logo, imágenes y catálogo temático d
 El inventario del administrador combina las páginas migradas con un índice local de las 13 páginas pendientes, sin consultar PrestaShop. Las migradas muestran EN SISTEMA y Ver en sistema. El contenido de las páginas excluidas sigue utilizando la integración anterior al abrirlas.
 
 Validación: 13 pruebas automatizadas aprobadas y carga de la página de boda de Querétaro en navegador con PrestaShop bloqueado: ocho productos, ninguna imagen rota y ninguna petición a ese dominio. Los mapas y registros VIP conservan sus servicios externos originales; el catálogo general y la compra quedan fuera de esta migración de páginas.
+
+Precio y SKU en las tarjetas: el catálogo local (`data/cms-products.json`) sigue sin precios guardados. Al cargar, `assets/cms.js` pide solo el precio y el SKU de los productos que muestra a `/api/productos?ids=...` (misma información que la tienda). Si esa consulta falla, las tarjetas se muestran igual, sin precio. Las páginas nunca consultan `mifiestashop.com` directamente.
