@@ -270,7 +270,7 @@ function modelFor(page, pages) {
   if (theme === 'xv') heroImage = '/img/cms/xv-anos/pista-baile-neon.webp';
   if (!heroImage && theme === 'fiesta') heroImage = '/img/hero-banner.png';
   if (!heroImage && theme === 'batucada') heroImage = '/img/cms/0dede4bf5e127bbe.jpg';
-  if (!heroImage && theme === 'mayoreo') heroImage = '/img/cms/83d47782163fe737.png';
+  if (!heroImage && theme === 'mayoreo') heroImage = '/img/cms/mayoreo-fiesta.webp';
   return {...page, theme, config, location, heroImage, benefits, reviews, content,
     // The on-page hero paragraph is deliberately longer/richer than the meta
     // description (config.intro): more body copy helps SEO, but a long meta
