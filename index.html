@@ -4719,7 +4719,11 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen (PrestaShop / CDN):</label>
-            <input type="url" id="editProdImg" placeholder="https://..." style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <input type="url" id="editProdImg" placeholder="https://..." oninput="refreshProductPhotoPreview()" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">O sube una foto desde tu equipo:</label>
+            <input type="file" id="editProdImgFile" accept="image/*" onchange="uploadProductPhoto(this)" style="width:100%; font-size:12.5px;">
+            <div id="editProdImgStatus" style="font-size:12px; margin-top:4px; color:var(--text-muted);"></div>
+            <img id="editProdImgPreview" class="hidden" alt="Vista previa" style="margin-top:8px; max-width:110px; max-height:110px; border-radius:8px; border:1px solid var(--border); object-fit:cover;">
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Actual del Producto (Tienda Web):</label>
@@ -8660,6 +8664,11 @@ function openEditProductModal(pId) {
   if (document.getElementById('editProdPriceDistribuidor')) document.getElementById('editProdPriceDistribuidor').value = prod ? (prod.priceDistribuidor || '') : '';
   if (document.getElementById('editProdCosto')) document.getElementById('editProdCosto').value = prod ? (prod.costoCompra || '') : '';
   document.getElementById('editProdImg').value = prod ? prod.img : 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
+  const imgFileInput = document.getElementById('editProdImgFile');
+  if (imgFileInput) imgFileInput.value = '';
+  const imgStatus = document.getElementById('editProdImgStatus');
+  if (imgStatus) imgStatus.textContent = '';
+  refreshProductPhotoPreview();
   if (document.getElementById('editProdUrl')) document.getElementById('editProdUrl').value = prod ? (prod.url || `https://mifiestashop.com/producto/${prod.sku || prod.id}`) : `https://mifiestashop.com/producto/nuevo`;
   if (document.getElementById('editProdDesc')) document.getElementById('editProdDesc').value = prod ? (prod.desc || '') : '';
 
@@ -8675,7 +8684,47 @@ function closeEditProductModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+let productPhotoUploading = false;
+
+function refreshProductPhotoPreview() {
+  const preview = document.getElementById('editProdImgPreview');
+  const url = (document.getElementById('editProdImg')?.value || '').trim();
+  if (!preview) return;
+  if (/^https?:\/\//i.test(url)) { preview.src = url; preview.classList.remove('hidden'); }
+  else preview.classList.add('hidden');
+}
+
+// Sube la foto elegida al almacenamiento de Supabase (bucket público "assets")
+// y deja su URL en el campo de imagen, que es lo que guarda el producto.
+async function uploadProductPhoto(input) {
+  const file = input.files && input.files[0];
+  const status = document.getElementById('editProdImgStatus');
+  if (!file) return;
+  if (!/^image\//.test(file.type)) { status.textContent = 'El archivo debe ser una imagen.'; input.value = ''; return; }
+  if (file.size > 10 * 1024 * 1024) { status.textContent = 'La foto pesa más de 10 MB. Elige una más ligera.'; input.value = ''; return; }
+  productPhotoUploading = true;
+  status.textContent = 'Subiendo foto...';
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `productos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${path}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type || 'image/jpeg' },
+      body: file
+    });
+    if (!r.ok) throw new Error('El servidor rechazó la foto (' + r.status + ')');
+    document.getElementById('editProdImg').value = `${SUPABASE_URL}/storage/v1/object/public/assets/${path}`;
+    refreshProductPhotoPreview();
+    status.textContent = 'Foto subida. Se guardará con el producto.';
+  } catch (e) {
+    status.textContent = 'No se pudo subir la foto: ' + e.message;
+  } finally {
+    productPhotoUploading = false;
+  }
+}
+
 function saveProductChanges() {
+  if (productPhotoUploading) { alert('Espera a que termine de subir la foto.'); return; }
   const pIdVal = document.getElementById('editProdId').value;
   const sku = (document.getElementById('editProdSku').value || '').trim();
   const barcode = (document.getElementById('editProdBarcode')?.value || '').trim();
