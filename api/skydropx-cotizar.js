@@ -206,15 +206,24 @@ module.exports = async function handler(req, res) {
   // pedido explícito del usuario: "Punto_post — Standard" devuelve
   // cotizaciones irrealmente bajas, ej. $1.16 MXN, que no son un envío
   // real utilizable).
+  // Los nombres se comparan sin acentos, mayúsculas, espacios ni guiones
+  // (Skydropx los manda con formatos distintos). service '' = toda la paquetería.
   const BLOCKED_CARRIER_SERVICES = [
     { carrier: 'punto_post', service: 'standard' },
-    { carrier: 'estafeta', service: '' }
+    { carrier: 'estafeta', service: '' },
+    { carrier: 'ninetynineminutes', service: '' },
+    { carrier: '99minutos', service: '' },
+    { carrier: 'paquetexpress', service: 'nacional sin recolección' }
   ];
 
+  function normName(v) {
+    return String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+  }
+
   function isBlockedRate(carrier, service) {
-    const c = String(carrier || '').toLowerCase();
-    const s = String(service || '').toLowerCase();
-    return BLOCKED_CARRIER_SERVICES.some(b => c.includes(b.carrier) && s.includes(b.service));
+    const c = normName(carrier);
+    const s = normName(service);
+    return BLOCKED_CARRIER_SERVICES.some(b => c.includes(normName(b.carrier)) && s.includes(normName(b.service)));
   }
 
   function parseRates(rawRates) {
