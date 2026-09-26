@@ -3285,7 +3285,6 @@
               <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Paquetería Elegida:</label>
               <select id="skSelectCarrier" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
                 <option value="fedex">FedEx Express (Día Siguiente)</option>
-                <option value="estafeta">Estafeta Terrestre (3-5 días)</option>
                 <option value="dhl">DHL Express (Especial)</option>
                 <option value="redpack">Redpack Económico (4-6 días)</option>
                 <option value="99minutos">99minutos (Mismo día CDMX)</option>
@@ -14924,7 +14923,6 @@ async function calcularCotizacionesSkydropx() {
     // cobertura para este destino): se muestra una estimación de referencia.
     rates = [
       { carrier: 'FedEx Express', service: 'Día Siguiente', price: 149, days: 1 },
-      { carrier: 'Estafeta Terrestre', service: '3-5 Días', price: 119, days: 4 },
       { carrier: 'Redpack Económico', service: '4-6 Días', price: 99, days: 5 }
     ];
   }

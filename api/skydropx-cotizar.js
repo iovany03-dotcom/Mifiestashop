@@ -207,7 +207,8 @@ module.exports = async function handler(req, res) {
   // cotizaciones irrealmente bajas, ej. $1.16 MXN, que no son un envío
   // real utilizable).
   const BLOCKED_CARRIER_SERVICES = [
-    { carrier: 'punto_post', service: 'standard' }
+    { carrier: 'punto_post', service: 'standard' },
+    { carrier: 'estafeta', service: '' }
   ];
 
   function isBlockedRate(carrier, service) {
