@@ -3052,6 +3052,11 @@
             <div class="chart-tooltip" id="liveVentasTip" style="position:absolute; pointer-events:none; opacity:0; background:var(--card-bg); border:1px solid var(--border); padding:6px 10px; border-radius:6px; font-size:12px;"></div>
           </div>
         </div>
+
+        <div class="card" style="margin-top:16px; padding:14px;" id="ventasTiendaCard">
+          <h3 style="margin-top:0; font-size:14px;">Ventas por tienda <span style="font-weight:400; color:var(--text-muted); font-size:12.5px;">(período seleccionado)</span></h3>
+          <div id="ventasPorTienda"></div>
+        </div>
       </div>
 
       <div class="card" style="margin-top:20px;">
@@ -8316,6 +8321,26 @@ function periodRange(p){
   }
 }
 
+function renderVentasPorTienda(rows, msg){
+  const box = document.getElementById('ventasPorTienda');
+  if(!box) return;
+  if(!Array.isArray(rows)){
+    box.innerHTML = `<div style="color:var(--text-muted); font-size:12.5px; padding:6px 0;">${escapeHtml(msg || 'Sin datos por tienda.')}</div>`;
+    return;
+  }
+  const max = Math.max(0, ...rows.map(r => r.revenue));
+  box.innerHTML = '<div style="display:grid; gap:14px;">' + rows.map(r => {
+    const w = max > 0 ? Math.max(r.revenue > 0 ? 2 : 0, (r.revenue / max) * 100) : 0;
+    return `<div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:6px 16px; flex-wrap:wrap; font-size:13px; margin-bottom:5px;">
+        <strong>${escapeHtml(r.store)}</strong>
+        <span style="color:var(--text-secondary); font-variant-numeric:tabular-nums;"><b style="color:var(--text-primary);">${fmtMoney(r.revenue)}</b> · ${fmtNum(r.orders)} pedido${r.orders === 1 ? '' : 's'} · ticket ${fmtMoney(r.avgTicket)} · ${Number(r.share).toFixed(1)}%</span>
+      </div>
+      <div style="height:10px; border-radius:6px; background:var(--border); overflow:hidden;"><div style="height:100%; width:${w}%; background:#37b6b9; border-radius:6px;"></div></div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
 async function loadVentas(from, to){
   const loading = document.getElementById('ventasLoading');
   const errBox = document.getElementById('ventasError');
@@ -8329,7 +8354,9 @@ async function loadVentas(from, to){
     document.getElementById('kpiOrd').textContent = fmtNum(data.orders);
     document.getElementById('kpiAvg').textContent = fmtMoney(data.avgTicket);
     drawLiveVentasChart(data.breakdown || [], data.granularity || 'day');
+    renderVentasPorTienda(data.byStore, 'El servidor no devolvió el desglose por tienda.');
   } catch(e){
+    renderVentasPorTienda(null, 'No disponible en modo Snapshot: hace falta la conexión en vivo con los pedidos.');
     if(errBox) { errBox.textContent = 'Modo Snapshot: ' + e.message; errBox.classList.remove('hidden'); }
     document.getElementById('kpiRev').textContent = fmtMoney(HIST.total_revenue_mxn);
     document.getElementById('kpiOrd').textContent = fmtNum(HIST.total_valid_orders_mxn);

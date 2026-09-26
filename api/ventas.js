@@ -5,6 +5,19 @@
 //   PS_BASE_URL   e.g. https://www.mifiestashop.com
 //   PS_API_KEY    the PrestaShop webservice key
 
+// La tienda de cada pedido es el empleado (caja) que lo registró: mismos ids
+// que BRANCH_TO_EMPLOYEE en api/pos-sync-prestashop.js. Sin empleado = tienda
+// en línea; cualquier otro empleado se agrupa en "Otros".
+const STORE_BY_EMPLOYEE = { 225: 'CDMX Rumania', 226: 'Querétaro', 230: 'Puebla', 227: 'Atizapán' };
+const ONLINE_STORE = 'Tienda en línea';
+const OTHER_STORE = 'Otros';
+
+function storeOf(order) {
+  const id = parseInt(order.id_employee, 10) || 0;
+  if (!id) return ONLINE_STORE;
+  return STORE_BY_EMPLOYEE[id] || OTHER_STORE;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -29,7 +42,7 @@ module.exports = async function handler(req, res) {
   const fromDt = `${from} 00:00:00`;
   const toDt = `${to} 23:59:59`;
 
-  const fields = '[id,total_paid,date_add]';
+  const fields = '[id,total_paid,date_add,id_employee]';
   const url =
     `${baseUrl}/api/orders?` +
     `filter[date_add]=[${encodeURIComponent(fromDt)},${encodeURIComponent(toDt)}]&date=1` +
@@ -68,9 +81,29 @@ module.exports = async function handler(req, res) {
       orders: buckets[key].orders,
     }));
 
+    const stores = {};
+    [...Object.values(STORE_BY_EMPLOYEE), ONLINE_STORE].forEach(name => { stores[name] = { revenue: 0, orders: 0 }; });
+    orders.forEach(o => {
+      const name = storeOf(o);
+      if (!stores[name]) stores[name] = { revenue: 0, orders: 0 };
+      stores[name].revenue += parseFloat(o.total_paid || 0);
+      stores[name].orders += 1;
+    });
+    const byStore = Object.entries(stores)
+      .filter(([name, s]) => name !== OTHER_STORE || s.orders > 0)
+      .map(([store, s]) => ({
+        store,
+        revenue: Math.round(s.revenue * 100) / 100,
+        orders: s.orders,
+        avgTicket: s.orders > 0 ? Math.round((s.revenue / s.orders) * 100) / 100 : 0,
+        share: revenue > 0 ? Math.round((s.revenue / revenue) * 1000) / 10 : 0,
+      }))
+      .sort((a, b) => b.revenue - a.revenue);
+
     res.status(200).json({
       from,
       to,
+      byStore,
       revenue: Math.round(revenue * 100) / 100,
       orders: count,
       avgTicket: Math.round(avgTicket * 100) / 100,
