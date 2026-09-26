@@ -129,6 +129,11 @@ module.exports = async function handler(req, res) {
   const limit = parseInt(req.query.limit, 10) || 500;
   const offset = parseInt(req.query.offset, 10) || 0;
   const category = req.query.category;
+  // Modo por ids (?ids=83423,83424): devuelve solo id, precio y SKU de esos
+  // productos, con el mismo cálculo que el catálogo completo. Lo usan las
+  // páginas CMS para mostrar el precio real sin traer todo el catálogo.
+  const idsMode = typeof req.query.ids === 'string' && req.query.ids.length > 0;
+  const requestedIds = idsMode ? [...new Set(req.query.ids.split(',').map(s => s.trim()).filter(s => /^\d+$/.test(s)))].slice(0, 60) : [];
   // Modo rápido: para una vista previa pequeña (p.ej. "Productos Destacados"
   // del home) que no necesita precio de mayoreo real, nombre/imagen migrados
   // ni el total exacto del catálogo — evita las dos consultas más pesadas
@@ -206,7 +211,10 @@ module.exports = async function handler(req, res) {
     ]);
 
     let rawProducts, total;
-    if (category) {
+    if (idsMode) {
+      rawProducts = requestedIds.length ? await fetchByIds(requestedIds) : [];
+      total = rawProducts.length;
+    } else if (category) {
       const migratedCatIds = Object.values(migrated)
         .filter(m => Array.isArray(m.category_ids) && m.category_ids.map(String).includes(String(category)))
         .map(m => Number(m.id));
@@ -331,6 +339,15 @@ module.exports = async function handler(req, res) {
       };
       if (SORT_COMPARATORS[sortKey]) products.sort(SORT_COMPARATORS[sortKey]);
       pageProducts = products.slice(offset, offset + limit);
+    }
+
+    if (idsMode) {
+      res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=600');
+      res.status(200).json({
+        count: products.length,
+        products: products.map(p => ({ id: Number(p.id), price: p.price, sku: p.sku }))
+      });
+      return;
     }
 
     res.status(200).json({
