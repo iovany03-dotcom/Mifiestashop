@@ -17,7 +17,7 @@
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/cron-sync-prestashop?domains=pedidos_historico,movimientos_nuevos",
+      "path": "/api/cron-sync-prestashop?domains=pedidos_historico,movimientos_nuevos,movimientos_2anios",
       "schedule": "5,15,25,35,45,55 * * * *"
     }
   ],

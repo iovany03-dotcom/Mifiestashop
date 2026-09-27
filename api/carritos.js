@@ -14,7 +14,10 @@ module.exports = async function handler(req, res) {
 
   try {
     const select = 'id,customer_name,customer_email,items,order_reference,date_add,date_upd';
-    const url = `${SUPABASE_URL}/rest/v1/ps_carritos?select=${select}&order=id.desc`;
+    // Solo los carritos de Mi Fiestashop (tienda 50): la instalación de
+    // PrestaShop es compartida y antes se colaban carritos vacíos de otras
+    // tiendas (se veían como "Invitado" en $0).
+    const url = `${SUPABASE_URL}/rest/v1/ps_carritos?select=${select}&id_shop=eq.50&order=id.desc`;
     const r = await fetch(url, {
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
     });
