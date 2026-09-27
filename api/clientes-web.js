@@ -81,6 +81,7 @@ module.exports = async function handler(req, res) {
         const confirmed = !!(u.email_confirmed_at || u.confirmed_at);
         return {
           id: 'WEB-' + String(u.id).slice(0, 8).toUpperCase(),
+          uid: u.id,
           name: meta.full_name || meta.name || u.email.split('@')[0],
           email: u.email,
           rfc: meta.rfc || '—',
