@@ -13933,6 +13933,46 @@ function updateStorefrontCartQty(id, delta){
   renderStorefrontCartBody();
 }
 
+// Cantidad escrita a mano en el carrito (además de los botones - / +).
+// 0 o vacío quita el artículo; el máximo por renglón es 999, el mismo tope
+// que valida api/crear-pedido.js.
+function setStorefrontCartQty(id, value){
+  const item = cart.find(i => i.id === id);
+  if (!item) return;
+  const qty = parseInt(value, 10);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    cart = cart.filter(i => i.id !== id);
+  } else {
+    item.qty = Math.min(qty, 999);
+    applyWholesalePricing(item);
+  }
+  updateStoreCartBadge();
+  renderStorefrontCartBody();
+}
+
+// Envío gratis en compras mayores a este monto (mismo criterio que la
+// cotización del checkout: subtotal > 1500).
+const FREE_SHIPPING_MIN = 1500;
+
+function freeShippingProgressHTML(subtotal){
+  const pct = Math.min(100, Math.round((subtotal / FREE_SHIPPING_MIN) * 100));
+  const reached = subtotal > FREE_SHIPPING_MIN;
+  const remaining = FREE_SHIPPING_MIN - subtotal;
+  const text = reached
+    ? '🎉 ¡Tu envío es <b>GRATIS</b>!'
+    : remaining > 0
+      ? `🚚 Te faltan <b>${fmtMoney(remaining)}</b> para tener envío <b>GRATIS</b>`
+      : '🚚 Agrega cualquier artículo más para tener envío <b>GRATIS</b>';
+  return `
+    <div style="flex:1; min-width:240px; max-width:520px;">
+      <div style="font-size:14px; color:#2e1065; margin-bottom:8px;">${text}</div>
+      <div role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Avance para envío gratis" style="height:12px; border-radius:999px; background:#f0e6ef; overflow:hidden;">
+        <div style="height:100%; width:${pct}%; border-radius:999px; background:${reached ? '#15a34a' : 'linear-gradient(90deg, var(--mf-pink), var(--mf-orange))'}; transition:width .35s ease;"></div>
+      </div>
+      <div style="font-size:12px; color:#8b7d97; margin-top:6px;">Envío gratis en compras mayores a ${fmtMoney(FREE_SHIPPING_MIN)} MXN.</div>
+    </div>`;
+}
+
 function removeStorefrontCartItem(id){
   cart = cart.filter(i => i.id !== id);
   updateStoreCartBadge();
@@ -13965,7 +14005,7 @@ function renderStorefrontCartBody(){
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
             <button style="width:28px; height:28px; border-radius:6px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; cursor:pointer;" onclick="updateStorefrontCartQty(${item.id}, -1)">-</button>
-            <span style="min-width:20px; text-align:center; font-weight:700; color:#2e1065;">${item.qty}</span>
+            <input type="number" inputmode="numeric" min="1" max="999" value="${item.qty}" aria-label="Cantidad de ${escapeHtml(item.name)}" onchange="setStorefrontCartQty(${item.id}, this.value)" onkeydown="if(event.key==='Enter'){this.blur();}" style="width:58px; padding:4px 6px; text-align:center; font-weight:700; color:#2e1065; border:1px solid #e5dce6; border-radius:6px; background:#fff; font-size:14px;">
             <button style="width:28px; height:28px; border-radius:6px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; cursor:pointer;" onclick="updateStorefrontCartQty(${item.id}, 1)">+</button>
           </div>
           <div style="width:90px; text-align:right; font-weight:800; color:var(--mf-orange);">${fmtMoney(item.price * item.qty)}</div>
@@ -13973,7 +14013,8 @@ function renderStorefrontCartBody(){
         </div>
       `).join('')}
     </div>
-    <div style="background:#fff; border:1px solid #f0e6ef; padding:16px; border-radius:12px; display:flex; justify-content:flex-end;">
+    <div style="background:#fff; border:1px solid #f0e6ef; padding:16px; border-radius:12px; display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap;">
+      ${freeShippingProgressHTML(subtotal)}
       <div style="width:280px; max-width:100%;">
         <div style="display:flex; justify-content:space-between; font-size:1.2rem; font-weight:800; margin-bottom:16px; color:#2e1065;">
           <span>Total:</span><span style="color:var(--mf-orange);">${fmtMoney(subtotal)}</span>
