@@ -9488,8 +9488,35 @@ async function cuentaClienteRequest(body) {
     body: JSON.stringify(body)
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok || !data.ok) throw new Error(data.error || 'No se pudo completar la solicitud.');
+  if (!r.ok || !data.ok) {
+    const err = new Error(data.error || 'No se pudo completar la solicitud.');
+    err.code = data.code;
+    throw err;
+  }
   return data;
+}
+
+// Registro con un correo que ya tiene cuenta (en la tienda nueva o en la
+// anterior de PrestaShop): en vez de solo marcar error, se ofrece mandar el
+// correo para restablecer la contraseña.
+function showResetPasswordOffer(email, text) {
+  const errEl = document.getElementById('clienteAuthErrorMsg');
+  errEl.innerHTML = `${escapeHtml(text)}<br><button type="button" id="clienteResetOfferBtn" style="margin-top:10px; padding:8px 16px; border:none; border-radius:8px; background:var(--mf-pink, #d3007b); color:#fff; font-weight:700; cursor:pointer;">Enviarme el correo para restablecer mi contraseña</button>`;
+  errEl.style.color = '#b45309';
+  errEl.style.background = 'rgba(245,158,11,0.10)';
+  errEl.classList.remove('hidden');
+  document.getElementById('clienteResetOfferBtn').onclick = async (ev) => {
+    ev.target.disabled = true;
+    try {
+      await cuentaClienteRequest({ accion: 'recuperar', email });
+      clienteAuthMode = 'login';
+      renderClienteAuthMode();
+      showClienteAuthMessage('✅ Te enviamos un correo de Mi Fiestashop para crear tu nueva contraseña (revisa también spam).', false);
+    } catch (e) {
+      ev.target.disabled = false;
+      showClienteAuthMessage(e.message || 'No se pudo enviar el correo.', true);
+    }
+  };
 }
 
 async function registerCliente(name, email, phone, password) {
@@ -9699,6 +9726,7 @@ async function submitClienteAuth() {
     }
     renderClientePortalAuthState();
   } catch (e) {
+    if (e.code === 'cuenta_existente') { showResetPasswordOffer(email, e.message); return; }
     showClienteAuthMessage(e.message, true);
   }
 }
@@ -10317,7 +10345,12 @@ async function loadCustomersFromAPI(){
   }
 }
 
+// Lista que se está mostrando en la tabla (completa o filtrada por el
+// buscador) — openClienteEditor recibe el índice de la fila dentro de ella.
+let customersShownList = [];
+
 function renderCustomersTable(list){
+  customersShownList = list;
   const tbody = document.getElementById('customersTableBody');
   const note = document.getElementById('customersCountNote');
   if (!tbody) return;
@@ -10326,8 +10359,8 @@ function renderCustomersTable(list){
   const limit = isBrowsingAll ? CUSTOMERS_RENDER_LIMIT : CUSTOMERS_SEARCH_LIMIT;
   const shown = list.slice(0, limit);
 
-  tbody.innerHTML = shown.map(c => `
-    <tr>
+  tbody.innerHTML = shown.map((c, i) => `
+    <tr style="cursor:pointer;" title="Ver / editar cliente" onclick="openClienteEditor(${i})">
       <td><b>#${escapeHtml(c.id)}</b></td>
       <td><b>${escapeHtml(c.name)}</b></td>
       <td>${escapeHtml(c.email)}</td>
@@ -10348,6 +10381,135 @@ function renderCustomersTable(list){
       note.textContent = `${list.length} cliente${list.length === 1 ? '' : 's'} en total.`;
     }
   }
+}
+
+// ================= EDITAR / ELIMINAR CLIENTE (Directorio) =================
+// Clientes de PrestaShop (ps_clientes) y cuentas de la tienda nueva
+// (Supabase Auth) se editan con el mismo formulario; ver api/cliente-admin.js.
+async function clienteAdminRequest(body) {
+  const r = await fetch('/api/cliente-admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), ...body })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (data.error || 'No se pudo completar la operación.'));
+  return data;
+}
+
+function closeClienteEditor() {
+  document.getElementById('clienteEditorOverlay')?.remove();
+}
+
+async function openClienteEditor(index) {
+  const c = customersShownList[index];
+  if (!c) return;
+  const origen = c.source === 'web' ? 'web' : 'prestashop';
+  const id = origen === 'web' ? c.uid : c.id;
+  if (!id) return;
+
+  closeClienteEditor();
+  const overlay = document.createElement('div');
+  overlay.id = 'clienteEditorOverlay';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `<div class="modal" style="max-width:640px;"><div class="modal-header"><h2>Cliente #${escapeHtml(c.id)}</h2><button class="btn" onclick="closeClienteEditor()">✕</button></div><div id="clienteEditorBody" style="color:var(--text-muted);">Cargando…</div></div>`;
+  overlay.addEventListener('click', ev => { if (ev.target === overlay) closeClienteEditor(); });
+  document.body.appendChild(overlay);
+
+  let cliente;
+  try {
+    cliente = (await clienteAdminRequest({ accion: 'obtener', origen, id })).cliente;
+  } catch (e) {
+    document.getElementById('clienteEditorBody').textContent = e.message;
+    return;
+  }
+
+  const field = (label, idAttr, value, type = 'text', extra = '') => `
+    <label style="display:block; font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:10px;">${label}
+      <input type="${type}" id="${idAttr}" value="${escapeHtml(value || '')}" ${extra} style="display:block; width:100%; margin-top:4px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px; box-sizing:border-box;">
+    </label>`;
+  const toggle = (label, idAttr, checked, help) => `
+    <label style="display:flex; gap:10px; align-items:flex-start; font-size:13px; color:var(--text-primary); margin-bottom:10px; cursor:pointer;">
+      <input type="checkbox" id="${idAttr}" ${checked ? 'checked' : ''} style="margin-top:3px;">
+      <span><b>${label}</b><br><span style="font-size:12px; color:var(--text-muted);">${help}</span></span>
+    </label>`;
+  const esPs = cliente.origen === 'prestashop';
+  const accesoTxt = esPs
+    ? (cliente.tieneAccesoWeb ? 'Ya tiene acceso a la tienda nueva con este correo.' : 'Todavía no tiene acceso a la tienda nueva. Si le pones contraseña, se le crea.')
+    : (cliente.confirmado ? 'Cuenta de la tienda nueva, correo confirmado.' : 'Cuenta de la tienda nueva, correo SIN confirmar.');
+
+  document.getElementById('clienteEditorBody').innerHTML = `
+    <p style="font-size:12px; margin:0 0 14px; color:var(--text-muted);">${esPs ? 'Cliente de la tienda anterior (PrestaShop)' : 'Cuenta de la tienda en línea'} · registrado ${escapeHtml(cliente.fechaRegistro || '—')} · ${escapeHtml(accesoTxt)}</p>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:0 16px;">
+      <div>
+        ${field('Nombre completo *', 'ceNombre', cliente.nombre)}
+        ${field('Correo electrónico *', 'ceEmail', cliente.email, 'email')}
+        ${field('Teléfono', 'ceTelefono', cliente.telefono, 'tel')}
+        ${field('RFC', 'ceRfc', cliente.rfc)}
+        ${field('Cumpleaños', 'ceCumple', cliente.cumpleanos, 'date')}
+        ${field(esPs ? 'Contraseña para la tienda nueva' : 'Nueva contraseña', 'cePassword', '', 'password', 'autocomplete="new-password" placeholder="Déjalo vacío para no cambiarla"')}
+      </div>
+      <div>
+        ${field('Dirección', 'ceDireccion', cliente.direccion)}
+        ${esPs ? field('Ciudad', 'ceCiudad', cliente.ciudad) + field('Código postal', 'ceCp', cliente.cp) + field('Empresa', 'ceEmpresa', cliente.empresa) + field('Nota', 'ceNota', cliente.nota) : ''}
+        ${toggle('Activado', 'ceActivo', cliente.activo, 'Permitir o denegar el inicio de sesión del cliente.')}
+        ${toggle('Recibe ofertas por correo', 'ceNewsletter', cliente.newsletter, 'Newsletter con promociones y descuentos.')}
+      </div>
+    </div>
+    <p id="ceMsg" style="font-size:13px; margin:6px 0 0; display:none;"></p>
+    <div style="display:flex; justify-content:space-between; gap:10px; margin-top:16px; flex-wrap:wrap;">
+      <button class="btn" id="ceEliminar" style="border-color:var(--bad); color:var(--bad);">Eliminar cliente</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" onclick="closeClienteEditor()">Cancelar</button>
+        <button class="btn primary" id="ceGuardar">Guardar cambios</button>
+      </div>
+    </div>`;
+
+  const msg = (text, isError) => {
+    const el = document.getElementById('ceMsg');
+    el.textContent = text;
+    el.style.display = 'block';
+    el.style.color = isError ? 'var(--bad)' : 'var(--good, #15803d)';
+  };
+  const val = idAttr => document.getElementById(idAttr)?.value ?? '';
+
+  document.getElementById('ceGuardar').onclick = async (ev) => {
+    const datos = {
+      nombre: val('ceNombre'), email: val('ceEmail'), telefono: val('ceTelefono'), rfc: val('ceRfc'),
+      cumpleanos: val('ceCumple'), password: val('cePassword'), direccion: val('ceDireccion'),
+      ciudad: val('ceCiudad'), cp: val('ceCp'), empresa: val('ceEmpresa'), nota: val('ceNota'),
+      activo: document.getElementById('ceActivo').checked, newsletter: document.getElementById('ceNewsletter').checked
+    };
+    ev.target.disabled = true;
+    try {
+      const saved = (await clienteAdminRequest({ accion: 'guardar', origen, id, datos })).cliente;
+      Object.assign(c, { name: saved.nombre, email: saved.email, rfc: saved.rfc || '—', phone: saved.telefono || '—' });
+      if (origen === 'web') c.status = saved.confirmado ? 'Cuenta web' : 'Sin confirmar';
+      renderCustomersTable(customersShownList);
+      msg('✅ Cambios guardados.', false);
+      document.getElementById('cePassword').value = '';
+    } catch (e) {
+      msg(e.message, true);
+    }
+    ev.target.disabled = false;
+  };
+
+  document.getElementById('ceEliminar').onclick = async (ev) => {
+    const aviso = origen === 'web'
+      ? `¿Eliminar la cuenta de ${cliente.email}? El cliente ya no podrá iniciar sesión en la tienda. No se puede deshacer.`
+      : `¿Eliminar a ${cliente.nombre || cliente.email} del directorio? No se puede deshacer.`;
+    if (!confirm(aviso)) return;
+    ev.target.disabled = true;
+    try {
+      await clienteAdminRequest({ accion: 'eliminar', origen, id });
+      customersCache = customersCache.filter(x => x !== c);
+      renderCustomersTable(customersShownList === customersCache ? customersCache : customersShownList.filter(x => x !== c));
+      closeClienteEditor();
+    } catch (e) {
+      msg(e.message, true);
+      ev.target.disabled = false;
+    }
+  };
 }
 
 function filterCustomersTable(query){

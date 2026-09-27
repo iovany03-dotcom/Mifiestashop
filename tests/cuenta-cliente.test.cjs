@@ -79,3 +79,30 @@ test('recuperar: manda el correo si la cuenta existe y responde igual si no exis
   r = await call({ accion: 'recuperar', email: 'nadie@b.mx' });
   assert.equal(r.code, 200); assert.deepEqual(r.data, { ok: true }); assert.equal(sent.length, 0);
 });
+
+test('registro: si ya es cliente de PrestaShop, pide restablecer la contraseña en vez de crear otra cuenta', async () => {
+  sent.length = 0; failSend = false;
+  const calls = mockSupabase([['/rest/v1/ps_clientes', reply(200, [{ id: 94506, name: 'Giovany Aviles', phone: '', email: 'MiFiestaShop@gmail.com' }])]]);
+  const r = await call({ accion: 'registro', nombre: 'MFS', email: 'mifiestashop@gmail.com', password: 'secreta1' });
+  assert.equal(r.code, 409); assert.equal(r.data.code, 'cuenta_existente'); assert.equal(r.data.origen, 'prestashop');
+  assert.ok(!calls.some(c => c.url.includes('generate_link')), 'no crea cuenta nueva');
+  assert.equal(sent.length, 0);
+});
+
+test('recuperar: a un cliente de PrestaShop sin acceso web se le crea el acceso y recibe el correo', async () => {
+  sent.length = 0; failSend = false;
+  let created = false;
+  const calls = mockSupabase([
+    ['/auth/v1/admin/generate_link', () => created
+      ? { ok: true, status: 200, json: async () => ({ id: 'u-9', hashed_token: 'rec9', user_metadata: { full_name: 'Giovany Aviles' } }) }
+      : { ok: false, status: 404, json: async () => ({ msg: 'User not found' }) }],
+    ['/rest/v1/ps_clientes', reply(200, [{ id: 94506, name: 'Giovany Aviles', phone: '555', email: 'mifiestashop@gmail.com' }])],
+    ['/auth/v1/admin/users', () => { created = true; return { ok: true, status: 200, json: async () => ({ id: 'u-9' }) }; }]
+  ]);
+  const r = await call({ accion: 'recuperar', email: 'mifiestashop@gmail.com' });
+  assert.equal(r.code, 200);
+  const createCall = calls.find(c => c.url.endsWith('/auth/v1/admin/users'));
+  assert.equal(createCall.body.email, 'mifiestashop@gmail.com'); assert.equal(createCall.body.email_confirm, true);
+  assert.deepEqual(createCall.body.user_metadata, { full_name: 'Giovany Aviles', phone: '555', ps_customer_id: 94506 });
+  assert.deepEqual(sent, [{ to: 'mifiestashop@gmail.com', tipo: 'recuperacion', datos: { nombre: 'Giovany Aviles', resetUrl: 'https://mifiestashop.vercel.app/?recuperar=rec9' } }]);
+});

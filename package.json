@@ -6,7 +6,7 @@
   "scripts": {
     "build:cms": "node scripts/build-cms.cjs",
     "test:cms": "node --test tests/cms.test.cjs",
-    "test:api": "node --test tests/api-v1.test.cjs tests/ventas.test.cjs tests/productos-ids.test.cjs tests/promo-paquetes.test.cjs tests/desconectado.test.cjs tests/sync-historico.test.cjs tests/cuenta-cliente.test.cjs tests/clientes-web.test.cjs"
+    "test:api": "node --test tests/api-v1.test.cjs tests/ventas.test.cjs tests/productos-ids.test.cjs tests/promo-paquetes.test.cjs tests/desconectado.test.cjs tests/sync-historico.test.cjs tests/cuenta-cliente.test.cjs tests/clientes-web.test.cjs tests/cliente-admin.test.cjs"
   },
   "repository": {
     "type": "git",

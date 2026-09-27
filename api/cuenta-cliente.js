@@ -12,9 +12,14 @@
 //
 // POST { accion: 'registro', nombre, email, telefono, password }
 //   -> { ok: true, userId }
+//   -> 409 { code: 'cuenta_existente', origen: 'web' | 'prestashop' } si el
+//      correo ya tiene cuenta (web o de la tienda anterior en PrestaShop):
+//      el sitio le ofrece restablecer la contraseña.
 // POST { accion: 'recuperar', email }
 //   -> { ok: true } (siempre, exista o no la cuenta, para no revelar qué
-//      correos están registrados)
+//      correos están registrados). Si el correo es de un cliente de
+//      PrestaShop sin acceso web todavía, se le crea el acceso y recibe el
+//      mismo correo para poner su contraseña.
 //
 // Requiere SUPABASE_SERVICE_ROLE_KEY y SMTP_* en Vercel.
 const { sendTemplate, smtpConfigured, ALLOWED_LINK_HOSTS } = require('../lib/correo.js');
@@ -43,6 +48,34 @@ async function generateLink(serviceRoleKey, payload) {
   const hashedToken = data.hashed_token || data.properties?.hashed_token || null;
   const userId = data.id || data.user?.id || null;
   return { ok: r.ok, status: r.status, data, hashedToken, userId };
+}
+
+// Cliente de la tienda anterior (PrestaShop) con este correo, si existe.
+// ilike + comparación exacta en JS: el correo puede venir con mayúsculas en
+// ps_clientes, y "_" es comodín en ilike.
+async function findPrestashopCustomer(serviceRoleKey, email) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/ps_clientes?select=id,name,phone,email&email=ilike.${encodeURIComponent(email)}&limit=5`, {
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
+  });
+  if (!r.ok) return null;
+  const rows = await r.json().catch(() => []);
+  return (Array.isArray(rows) ? rows : []).find(c => String(c.email || '').toLowerCase() === email) || null;
+}
+
+// Crea el acceso a la tienda nueva para un cliente de PrestaShop (con una
+// contraseña aleatoria que nadie conoce): el cliente pone la suya con el
+// enlace de recuperación.
+async function createWebAccessForPrestashopCustomer(serviceRoleKey, email, ps) {
+  const crypto = require('node:crypto');
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email, email_confirm: true, password: crypto.randomBytes(24).toString('base64url'),
+      user_metadata: { full_name: ps.name || '', phone: ps.phone || '', ps_customer_id: ps.id }
+    })
+  });
+  return r.ok;
 }
 
 async function deleteUser(serviceRoleKey, userId) {
@@ -87,6 +120,14 @@ module.exports = async function handler(req, res) {
     if (!nombre) { res.status(400).json({ error: 'Ingresa tu nombre completo.' }); return; }
     if (password.length < 6) { res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' }); return; }
 
+    // Si ya fue cliente de la tienda anterior (PrestaShop), no se crea una
+    // cuenta nueva desde cero: se le pide restablecer la contraseña, que le
+    // crea el acceso con sus mismos datos (ver accion 'recuperar').
+    if (await findPrestashopCustomer(serviceRoleKey, email)) {
+      res.status(409).json({ code: 'cuenta_existente', origen: 'prestashop', error: 'Ya eres cliente de Mi Fiestashop con este correo. Para entrar, restablece tu contraseña.' });
+      return;
+    }
+
     const link = await generateLink(serviceRoleKey, {
       type: 'signup', email, password,
       data: { full_name: nombre, phone: telefono },
@@ -95,7 +136,7 @@ module.exports = async function handler(req, res) {
     if (!link.ok || !link.hashedToken) {
       const msg = String(link.data.msg || link.data.error_description || link.data.message || '');
       if (link.status === 422 || /already|registered|exists/i.test(msg)) {
-        res.status(409).json({ error: 'Ya existe una cuenta con este correo. Inicia sesión o usa "¿Olvidaste tu contraseña?".' });
+        res.status(409).json({ code: 'cuenta_existente', origen: 'web', error: 'Ya existe una cuenta con este correo. Inicia sesión o restablece tu contraseña.' });
       } else {
         res.status(502).json({ error: 'No se pudo crear la cuenta. Intenta de nuevo.', detail: msg.slice(0, 200) });
       }
@@ -116,7 +157,15 @@ module.exports = async function handler(req, res) {
   }
 
   if (body.accion === 'recuperar') {
-    const link = await generateLink(serviceRoleKey, { type: 'recovery', email, redirect_to: origin });
+    let link = await generateLink(serviceRoleKey, { type: 'recovery', email, redirect_to: origin });
+    // Sin cuenta web pero sí cliente de la tienda anterior: se le crea el
+    // acceso y se manda el mismo correo para que ponga su contraseña.
+    if (!(link.ok && link.hashedToken)) {
+      const ps = await findPrestashopCustomer(serviceRoleKey, email);
+      if (ps && await createWebAccessForPrestashopCustomer(serviceRoleKey, email, ps)) {
+        link = await generateLink(serviceRoleKey, { type: 'recovery', email, redirect_to: origin });
+      }
+    }
     if (link.ok && link.hashedToken) {
       const nombre = link.data.user_metadata?.full_name || link.data.user?.user_metadata?.full_name || '';
       try {
