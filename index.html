@@ -9466,27 +9466,42 @@ async function supabaseAuthRequest(path, body) {
     body: JSON.stringify(body)
   });
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error_description || data.msg || data.error || 'No se pudo completar la solicitud.');
+  if (!r.ok) {
+    const raw = data.error_description || data.msg || data.error || '';
+    // Supabase Auth responde en inglés; los casos comunes se traducen.
+    const friendly = /invalid login credentials/i.test(raw) ? 'Correo o contraseña incorrectos.'
+      : /email not confirmed/i.test(raw) ? 'Todavía no confirmas tu correo. Revisa el correo de Mi Fiestashop que te enviamos (también en spam).'
+      : raw || 'No se pudo completar la solicitud.';
+    throw new Error(friendly);
+  }
+  return data;
+}
+
+// Registro y recuperación de contraseña pasan por /api/cuenta-cliente, que
+// manda el correo desde la cuenta de Mi Fiestashop — llamar directo a
+// /auth/v1/signup o /auth/v1/recover hacía que Supabase mandara su propio
+// correo (remitente noreply@mail.app.supabase.io, en inglés).
+async function cuentaClienteRequest(body) {
+  const r = await fetch('/api/cuenta-cliente', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data.ok) throw new Error(data.error || 'No se pudo completar la solicitud.');
   return data;
 }
 
 async function registerCliente(name, email, phone, password) {
-  const data = await supabaseAuthRequest('signup', { email, password, data: { full_name: name, phone } });
+  const data = await cuentaClienteRequest({ accion: 'registro', nombre: name, email, telefono: phone, password });
   trackPixelEvent('CompleteRegistration', { content_name: 'Cuenta de cliente', status: true });
   try {
-    await sbInsert('clientes_web_perfil', { user_id: data.user?.id || data.id, nombre: name, email, telefono: phone });
+    await sbInsert('clientes_web_perfil', { user_id: data.userId, nombre: name, email, telefono: phone });
   } catch (e) {
     // Si la tabla de perfil no existe todavía, la cuenta de autenticación ya quedó creada.
   }
-  fetch('/api/enviar-correo', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ to: email, tipo: 'bienvenida', datos: { nombre: name } }),
-  }).catch(e => console.log('No se pudo enviar el correo de bienvenida:', e.message));
-  if (data.access_token) {
-    saveClienteSession({ access_token: data.access_token, user: data.user });
-    return { confirmed: true };
-  }
+  // La cuenta queda activa hasta que el cliente abre el enlace del correo
+  // de confirmación (ver handleEmailLink).
   return { confirmed: false };
 }
 
@@ -9502,8 +9517,8 @@ async function handleForgotPassword() {
     return;
   }
   try {
-    await supabaseAuthRequest('recover', { email });
-    showClienteAuthMessage('✅ Te enviamos un correo con instrucciones para recuperar tu contraseña.', false);
+    await cuentaClienteRequest({ accion: 'recuperar', email });
+    showClienteAuthMessage('✅ Si hay una cuenta con ese correo, te enviamos un correo de Mi Fiestashop para crear una nueva contraseña (revisa también spam).', false);
   } catch (e) {
     showClienteAuthMessage(e.message || 'No se pudo enviar el correo de recuperación.', true);
   }
@@ -9550,6 +9565,80 @@ async function handleOAuthRedirect() {
   } catch (e) {
     showOAuthLoginError(e.message);
   }
+}
+
+// Enlaces de los correos de Mi Fiestashop (api/cuenta-cliente.js):
+// ?confirmar=<token> activa una cuenta nueva y ?recuperar=<token> permite
+// poner una contraseña nueva. Se canjean con /auth/v1/verify de Supabase,
+// que devuelve la sesión ya iniciada.
+const emailLinkParams = new URLSearchParams(window.location.search);
+const emailLinkPending = emailLinkParams.has('confirmar') || emailLinkParams.has('recuperar');
+
+async function handleEmailLink() {
+  if (!emailLinkPending) return;
+  const isRecovery = emailLinkParams.has('recuperar');
+  const tokenHash = emailLinkParams.get(isRecovery ? 'recuperar' : 'confirmar');
+  history.replaceState({}, '', window.location.pathname);
+  openClientePortal();
+  try {
+    const data = await supabaseAuthRequest('verify', { type: isRecovery ? 'recovery' : 'signup', token_hash: tokenHash });
+    if (!data.access_token) throw new Error('enlace inválido');
+    saveClienteSession({ access_token: data.access_token, user: data.user });
+    renderClientePortalAuthState();
+    if (isRecovery) showNewPasswordDialog();
+  } catch (e) {
+    clienteAuthMode = 'login';
+    renderClienteAuthMode();
+    showClienteAuthMessage(isRecovery
+      ? '❌ El enlace para recuperar tu contraseña ya expiró o ya se usó. Pide uno nuevo con "¿Olvidaste tu contraseña?".'
+      : '❌ El enlace de confirmación ya expiró o ya se usó. Si ya confirmaste tu cuenta, inicia sesión.', true);
+  }
+}
+
+function showNewPasswordDialog() {
+  if (document.getElementById('newPasswordOverlay')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'newPasswordOverlay';
+  overlay.style.cssText = 'position:fixed; inset:0; z-index:9999; background:rgba(46,16,101,0.55); display:flex; align-items:center; justify-content:center; padding:16px;';
+  overlay.innerHTML = `
+    <div role="dialog" aria-modal="true" aria-labelledby="newPasswordTitle" style="background:#fff; border-radius:14px; padding:22px; width:100%; max-width:380px; box-shadow:0 10px 30px rgba(0,0,0,.25); box-sizing:border-box;">
+      <h3 id="newPasswordTitle" style="margin:0 0 6px; color:#2e1065;">Crea tu nueva contraseña</h3>
+      <p style="margin:0 0 14px; font-size:13px; color:#5b4a68;">Escribe la contraseña que usarás a partir de ahora (mínimo 6 caracteres).</p>
+      <input type="password" id="newPasswordInput" autocomplete="new-password" placeholder="Nueva contraseña" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e5dce6; box-sizing:border-box; margin-bottom:10px; font-size:14px;">
+      <p id="newPasswordMsg" style="font-size:13px; margin:0 0 10px; display:none;"></p>
+      <button type="button" id="newPasswordSave" style="width:100%; padding:11px; border:none; border-radius:10px; background:#d3007b; color:#fff; font-weight:700; cursor:pointer;">Guardar contraseña</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  const input = document.getElementById('newPasswordInput');
+  const msg = document.getElementById('newPasswordMsg');
+  const btn = document.getElementById('newPasswordSave');
+  const showMsg = (text, isError) => {
+    msg.textContent = text;
+    msg.style.display = 'block';
+    msg.style.color = isError ? '#dc2626' : '#15803d';
+  };
+  input.focus();
+  btn.onclick = async () => {
+    const password = input.value;
+    if (password.length < 6) { showMsg('La contraseña debe tener al menos 6 caracteres.', true); return; }
+    btn.disabled = true;
+    try {
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: 'PUT',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${clienteSession?.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}));
+        throw new Error(/should be different/i.test(data.msg || '') ? 'La nueva contraseña debe ser distinta a la anterior.' : 'No se pudo guardar la contraseña. Intenta de nuevo.');
+      }
+      showMsg('✅ Listo, tu contraseña se actualizó.', false);
+      setTimeout(() => overlay.remove(), 1200);
+    } catch (e) {
+      showMsg(e.message, true);
+      btn.disabled = false;
+    }
+  };
 }
 
 function logoutCliente() {
@@ -9602,7 +9691,7 @@ async function submitClienteAuth() {
       if (!result.confirmed) {
         clienteAuthMode = 'login';
         renderClienteAuthMode();
-        showClienteAuthMessage('✅ Cuenta creada. Revisa tu correo para confirmarla antes de iniciar sesión.', false);
+        showClienteAuthMessage('✅ Cuenta creada. Te enviamos un correo de Mi Fiestashop para confirmarla (revisa también spam) antes de iniciar sesión.', false);
         return;
       }
     } else {
@@ -15014,6 +15103,7 @@ loadClienteSession();
 // el hash de la URL (history.replaceState) apenas procesa el resultado.
 const oauthRedirectPending = window.location.hash.includes('access_token') || window.location.hash.includes('error');
 handleOAuthRedirect();
+handleEmailLink();
 handleMercadoPagoReturn();
 loadCmsPagesForFooter();
 loadMetaPixelConfig();
@@ -15022,8 +15112,8 @@ populateSkydropxEstadoSelects();
 
 // Initial view check — la tienda pública vive en "/", el back office en "/admin"
 function routeApp() {
-  if (oauthRedirectPending) {
-    return; // handleOAuthRedirect() ya se encarga de mostrar la vista correcta
+  if (oauthRedirectPending || emailLinkPending) {
+    return; // handleOAuthRedirect() / handleEmailLink() ya se encargan de mostrar la vista correcta
   }
   if (productDeepLinkMatch) {
     showPublicStorefront();
