@@ -7,7 +7,18 @@
 //
 // Requiere las mismas env vars que /api/ventas.js: PS_BASE_URL, PS_API_KEY.
 
+const { prestashopConectado, sbGetAll, SUPABASE_URL, SUPABASE_ANON_KEY } = require('../lib/prestashop.js');
+
 const BATCH_SIZE = 300;
+
+// Pedidos válidos en pesos en ps_pedidos (solo el conteo, sin traer filas).
+async function countValidOrders() {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/ps_pedidos?select=id&valid=is.true&or=(id_currency.eq.3,id_currency.is.null)&limit=1`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'count=exact' }
+  });
+  const range = r.headers.get('content-range') || '';
+  return parseInt(range.split('/')[1], 10) || 0;
+}
 
 // La key va en la URL (?ws_key=), no en el header Authorization: Basic —
 // Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese header
@@ -26,6 +37,42 @@ async function psGet(baseUrl, apiKey, path) {
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
   res.setHeader('Access-Control-Allow-Origin', '*');
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): mismas cifras
+  // desde la vista ps_ventas_producto_mes (líneas de ps_pedidos válidos en
+  // pesos, ya agregadas por producto y mes en la base de datos).
+  if (!prestashopConectado()) {
+    try {
+      const [rows, ordersProcessed] = await Promise.all([
+        sbGetAll('ps_ventas_producto_mes?select=product_id,month,product_name,product_reference,units,revenue,lines&order=product_id.asc,month.asc'),
+        countValidOrders()
+      ]);
+      const products = {};
+      let lineItemsProcessed = 0;
+      rows.forEach(r => {
+        const pid = String(r.product_id);
+        if (!products[pid]) {
+          products[pid] = { product_id: pid, product_name: r.product_name || '', product_reference: r.product_reference || '', totalUnits: 0, totalRevenue: 0, byMonth: {} };
+        }
+        const p = products[pid];
+        const units = Number(r.units) || 0, revenue = Number(r.revenue) || 0;
+        p.totalUnits += units;
+        p.totalRevenue += revenue;
+        p.byMonth[r.month || 'sin-fecha'] = { units, revenue };
+        lineItemsProcessed += Number(r.lines) || 0;
+      });
+      res.status(200).json({
+        products: Object.values(products).sort((a, b) => b.totalUnits - a.totalUnits),
+        ordersProcessed,
+        lineItemsProcessed,
+        generatedAt: new Date().toISOString(),
+        source: 'supabase'
+      });
+    } catch (err) {
+      res.status(502).json({ error: 'Fallo al calcular ventas por producto', detail: String(err.message || err) });
+    }
+    return;
+  }
 
   const baseUrl = process.env.PS_BASE_URL;
   const apiKey = process.env.PS_API_KEY;

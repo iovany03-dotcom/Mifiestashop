@@ -8,6 +8,8 @@
 // La tienda de cada pedido es el empleado (caja) que lo registró: mismos ids
 // que BRANCH_TO_EMPLOYEE en api/pos-sync-prestashop.js. Sin empleado = tienda
 // en línea; cualquier otro empleado se agrupa en "Otros".
+const { prestashopConectado, sbGetAll } = require('../lib/prestashop.js');
+
 const STORE_BY_EMPLOYEE = { 225: 'CDMX Rumania', 226: 'Querétaro', 230: 'Puebla', 227: 'Atizapán' };
 const ONLINE_STORE = 'Tienda en línea';
 const OTHER_STORE = 'Otros';
@@ -23,8 +25,9 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.PS_BASE_URL;
   const apiKey = process.env.PS_API_KEY;
+  const conectado = prestashopConectado();
 
-  if (!baseUrl || !apiKey) {
+  if (conectado && (!baseUrl || !apiKey)) {
     res.status(500).json({ error: 'Faltan variables de entorno PS_BASE_URL / PS_API_KEY en Vercel.' });
     return;
   }
@@ -51,18 +54,30 @@ module.exports = async function handler(req, res) {
     `&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
 
   try {
-    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
-    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-    // header antes de llegar al webservice, así que siempre daba 401 aunque
-    // la key fuera válida y estuviera activa.
-    const r = await fetch(url);
-    if (!r.ok) {
-      const text = await r.text();
-      res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
-      return;
+    let orders;
+    if (!conectado) {
+      // PrestaShop desconectado (default, ver lib/prestashop.js): pedidos de
+      // ps_pedidos, la copia que el cron sincroniza desde PrestaShop. Mismo
+      // filtro (válidos, en pesos); date_add se guarda con la hora local de
+      // la tienda, igual que el filtro de fechas de PrestaShop.
+      orders = await sbGetAll(
+        `ps_pedidos?select=id,total_paid,date_add,id_employee&valid=is.true&or=(id_currency.eq.3,id_currency.is.null)` +
+        `&date_add=gte.${encodeURIComponent(fromDt)}&date_add=lte.${encodeURIComponent(toDt)}&order=id.asc`
+      );
+    } else {
+      // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+      // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+      // header antes de llegar al webservice, así que siempre daba 401 aunque
+      // la key fuera válida y estuviera activa.
+      const r = await fetch(url);
+      if (!r.ok) {
+        const text = await r.text();
+        res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
+        return;
+      }
+      const data = await r.json();
+      orders = Array.isArray(data.orders) ? data.orders : [];
     }
-    const data = await r.json();
-    const orders = Array.isArray(data.orders) ? data.orders : [];
     const revenue = orders.reduce((sum, o) => sum + parseFloat(o.total_paid || 0), 0);
     const count = orders.length;
     const avgTicket = count > 0 ? revenue / count : 0;
@@ -115,6 +130,6 @@ module.exports = async function handler(req, res) {
       breakdown,
     });
   } catch (err) {
-    res.status(500).json({ error: 'Fallo al consultar PrestaShop', detail: String(err) });
+    res.status(500).json({ error: conectado ? 'Fallo al consultar PrestaShop' : 'Fallo al consultar ventas en Supabase', detail: String(err) });
   }
 };

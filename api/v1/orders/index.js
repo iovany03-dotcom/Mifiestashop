@@ -4,6 +4,7 @@
 // contra PrestaShop (igual que el checkout público real — nunca se confía
 // en el precio que mande quien llama a la API).
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
+const { prestashopConectado, fetchPreciosActivos } = require('../../../lib/prestashop.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -82,9 +83,13 @@ module.exports = async function handler(req, res) {
 
     const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
     const apiKey = process.env.PS_API_KEY;
-    if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
+    const conectado = prestashopConectado();
+    if (conectado && !apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
 
     try {
+      // PrestaShop desconectado (default, ver lib/prestashop.js): el precio
+      // sale de catalogo_productos (sincronizado desde PrestaShop).
+      const precios = conectado ? null : await fetchPreciosActivos(cleanItems.map(it => it.id));
       // Igual que el checkout público: el precio SIEMPRE se vuelve a
       // consultar en vivo en PrestaShop, nunca se confía en el que mande
       // quien llama a la API. La key va en la URL (?ws_key=), no en el
@@ -92,6 +97,11 @@ module.exports = async function handler(req, res) {
       // Apache/Cloudflare eliminan ese header antes de llegar al
       // webservice, así que siempre daba 401 aunque la key fuera válida.
       const resolved = await Promise.all(cleanItems.map(async (it) => {
+        if (!conectado) {
+          const row = precios[String(it.id)];
+          if (!row) return null;
+          return { id: it.id, qty: it.qty, name: row.name || `Producto #${it.id}`, sku: row.sku || `PS-${it.id}`, price: Number(row.price) || 0 };
+        }
         const fields = '[id,name,reference,price,active]';
         const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`;
         const r = await fetch(url);

@@ -1,5 +1,7 @@
 // Vercel serverless function: real per-warehouse (sucursal) stock for a product,
 // used by the public product page to show "existencia por sucursal".
+const { prestashopConectado, sbGetAll } = require('../lib/prestashop.js');
+
 const WAREHOUSES = {
   '53': 'CDMX Rumania',
   '54': 'CDMX Popocatépetl',
@@ -24,6 +26,29 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'Falta parámetro id' });
     return;
   }
+  // PrestaShop desconectado (default, ver lib/prestashop.js): existencias de
+  // ps_stock, la copia que el cron sincroniza cada hora desde PrestaShop
+  // (mismo dato: usable_quantity por almacén).
+  if (!prestashopConectado()) {
+    if (!/^\d+$/.test(String(id))) {
+      res.status(400).json({ error: 'id inválido' });
+      return;
+    }
+    try {
+      const rows = (await sbGetAll(`ps_stock?select=id_warehouse,quantity&id_product=eq.${id}&order=id_warehouse.asc`))
+        .filter(s => !HIDDEN_WAREHOUSES.includes(String(s.id_warehouse)));
+      const branches = rows.map(s => ({
+        warehouseId: String(s.id_warehouse),
+        name: WAREHOUSES[String(s.id_warehouse)] || `Almacén ${s.id_warehouse}`,
+        qty: Math.round(Number(s.quantity) || 0)
+      }));
+      res.status(200).json({ branches, total: branches.reduce((sum, b) => sum + b.qty, 0) });
+    } catch (err) {
+      res.status(200).json({ error: err.message, branches: [], total: 0 });
+    }
+    return;
+  }
+
   if (!apiKey) {
     res.status(200).json({ fallback: true, branches: [], total: 0 });
     return;

@@ -10,6 +10,7 @@
 // ningún otro lado del sitio, así que no tendría caso "crearlo" solo aquí.
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
 const { fetchCatalogoImages } = require('../../../lib/catalogo-productos.js');
+const { prestashopConectado, fetchCatalogoRows } = require('../../../lib/prestashop.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -31,7 +32,34 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
-  if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
+  const conectado = prestashopConectado();
+  if (conectado && !apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): el producto se
+  // lee de catalogo_productos (sincronizado desde PrestaShop) con la misma
+  // forma que tenía la respuesta en vivo, para que el resto no cambie.
+  async function loadProduct() {
+    if (!conectado) {
+      const row = (await fetchCatalogoRows([id], 'id,sku,name,description,price,category_id,link_rewrite,weight,active,source'))[0];
+      if (!row || !row.active) return { status: 404 };
+      return {
+        product: {
+          id: String(row.id), name: row.name || '', reference: row.sku || '', price: String(row.price ?? 0),
+          id_default_image: '0', id_category_default: row.category_id ? String(row.category_id) : '',
+          active: '1', description: row.description || '', weight: row.weight != null ? String(row.weight) : '',
+          link_rewrite: row.source === 'prestashop' ? (row.link_rewrite || '') : ''
+        }
+      };
+    }
+    const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,weight]';
+    const r = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`);
+    if (r.status === 404) return { status: 404 };
+    if (!r.ok) return { status: 502, upstream: r.status };
+    const data = await r.json();
+    const p = data.product;
+    if (!p || p.active !== '1') return { status: 404 };
+    return { product: p };
+  }
   // La key va en la URL (?ws_key=), no en el header Authorization: Basic —
   // Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
   // header antes de llegar al webservice, así que siempre daba 401 aunque
@@ -42,13 +70,10 @@ module.exports = async function handler(req, res) {
     if (!auth.ok) return sendApiError(res, auth.status, auth.error);
 
     try {
-      const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,weight]';
-      const r = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`);
-      if (r.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
-      if (!r.ok) return sendApiError(res, 502, `PrestaShop respondió ${r.status}.`, 'upstream_error');
-      const data = await r.json();
-      const p = data.product;
-      if (!p || p.active !== '1') return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
+      const loaded = await loadProduct();
+      if (loaded.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
+      if (loaded.status === 502) return sendApiError(res, 502, `PrestaShop respondió ${loaded.upstream}.`, 'upstream_error');
+      const p = loaded.product;
 
       const mr = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=sku,name,description,category_label,images`, {
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
@@ -106,13 +131,10 @@ module.exports = async function handler(req, res) {
     try {
       // Confirma que el producto existe y está activo en PrestaShop antes de
       // guardar la sobreescritura — nunca se acepta un id inventado.
-      const checkFields = '[id,name,reference,active]';
-      const cr = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(checkFields)}&output_format=JSON&ws_key=${apiKey}`);
-      if (cr.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
-      if (!cr.ok) return sendApiError(res, 502, `PrestaShop respondió ${cr.status}.`, 'upstream_error');
-      const cdata = await cr.json();
-      const psProduct = cdata.product;
-      if (!psProduct || psProduct.active !== '1') return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
+      const loaded = await loadProduct();
+      if (loaded.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
+      if (loaded.status === 502) return sendApiError(res, 502, `PrestaShop respondió ${loaded.upstream}.`, 'upstream_error');
+      const psProduct = loaded.product;
 
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!serviceRoleKey) return sendApiError(res, 500, 'SUPABASE_SERVICE_ROLE_KEY no configurado en Vercel.', 'not_configured');

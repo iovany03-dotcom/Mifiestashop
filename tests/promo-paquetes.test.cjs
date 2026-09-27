@@ -1,4 +1,7 @@
 const test = require('node:test'), assert = require('node:assert/strict');
+// Estas pruebas cubren el camino EN VIVO (PRESTASHOP_CONECTADO=1, el respaldo
+// para reconectar); el modo desconectado (default) está en desconectado.test.cjs.
+process.env.PRESTASHOP_CONECTADO = '1';
 const handler = require('../api/promo-paquetes.js');
 
 function call(query) {

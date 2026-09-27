@@ -1,10 +1,33 @@
 // Vercel serverless function: fetches suppliers/proveedores from PrestaShop API
+const { prestashopConectado, sbGetAll } = require('../lib/prestashop.js');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): la lista sale
+  // de ps_proveedores, la copia que el cron sincroniza cada hora. Mismos
+  // campos que el camino en vivo (PrestaShop solo expone nombre y estado).
+  if (!prestashopConectado()) {
+    try {
+      const rows = await sbGetAll('ps_proveedores?select=id,name,active&order=id.asc');
+      const suppliers = rows.map(s => ({
+        id: s.id,
+        name: s.name || `Proveedor #${s.id}`,
+        contact: 'Contacto Registrado',
+        phone: '+52 55 0000 0000',
+        email: `contacto.prov${s.id}@mifiestashop.com`,
+        status: s.active ? 'Activo' : 'Inactivo'
+      }));
+      res.status(200).json({ suppliers, source: 'supabase' });
+    } catch (err) {
+      res.status(200).json({ suppliers: [], error: err.message });
+    }
+    return;
+  }
 
   if (!apiKey) {
     res.status(200).json({

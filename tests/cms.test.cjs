@@ -57,12 +57,15 @@ test('copied Puebla marketing copy no longer promotes CDMX; legacy builder conte
 test('all retained CMS images are local and exist; unavailable originals are omitted',()=>{
   for(const p of source){const $=cheerio.load(fs.readFileSync(path.join(root,`cms-pages/${p.id}.html`),'utf8'));$('.hero img,.source-content img').each((_,e)=>{const src=$(e).attr('src');assert.ok(src.startsWith('/img/'),`${p.id}: ${src}`);assert.ok(fs.existsSync(path.join(root,src)),src)});}
 });
-test('CMS API serves migrated content by exact ID/slug, without a PrestaShop key',()=>{
-  for(const id of [281,322,328,385]){const res=response();handler({query:{id:String(id)}},res);assert.equal(res.code,200);assert.equal(res.data.page.id,id);assert.equal(res.data.page.migrated,true);assert.ok(res.data.page.content);}
-  let res=response();handler({query:{slug:'accesorios-para-batucada-boda-'}},res);assert.equal(res.code,200);assert.equal(res.data.page.slug,'accesorios-para-batucada-boda-');
-  res=response();handler({query:{slug:'does-not-exist'}},res);assert.equal(res.code,404);
-  res=response();handler({query:{all:'1'}},res);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);assert.equal(res.data.pages[0].content,undefined);
-  res=response();handler({query:{}},res);assert.ok(res.data.pages.every(p=>p.inFooter));
+test('CMS API serves migrated content by exact ID/slug, without a PrestaShop key',async()=>{
+  const previousFetch=global.fetch;global.fetch=async()=>({ok:true,json:async()=>[]});
+  try{
+  for(const id of [281,322,328,385]){const res=response();await handler({query:{id:String(id)}},res);assert.equal(res.code,200);assert.equal(res.data.page.id,id);assert.equal(res.data.page.migrated,true);assert.ok(res.data.page.content);}
+  let res=response();await handler({query:{slug:'accesorios-para-batucada-boda-'}},res);assert.equal(res.code,200);assert.equal(res.data.page.slug,'accesorios-para-batucada-boda-');
+  res=response();await handler({query:{slug:'does-not-exist'}},res);assert.equal(res.code,404);
+  res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.filter(p=>p.migrated).length,139);assert.equal(res.data.pages[0].content,undefined);
+  res=response();await handler({query:{}},res);assert.ok(res.data.pages.every(p=>p.inFooter));
+  }finally{global.fetch=previousFetch;}
 });
 test('only Facebook and Google pages are migrated; VIP forms keep their original integration',()=>{
   assert.equal(source.filter(p=>p.categoryId===33).length,26);assert.equal(source.filter(p=>p.categoryId===34).length,113);
@@ -76,14 +79,14 @@ test('sitemap includes all original CMS paths even without a PrestaShop key',asy
 });
 test('excluded pages keep their original PrestaShop response and coexist with migrated pages',async()=>{
   const previousFetch=global.fetch,previousKey=process.env.PS_API_KEY;
-  process.env.PS_API_KEY='test-only';
+  process.env.PS_API_KEY='test-only';process.env.PRESTASHOP_CONECTADO='1';
   const legal={id:420,meta_title:'Política de Envío Gratis Mi Fiesta Shop',link_rewrite:'politica-de-envio-gratis-mi-fiesta-shop',active:1,content:'<p>Contenido original</p>'};
   global.fetch=async()=>({ok:true,json:async()=>({content_management_system:[legal]})});
   try {
     let res=response();await handler({query:{id:'420'}},res);assert.equal(res.data.page.content,legal.content);assert.equal(res.data.page.migrated,undefined);
     res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,143);assert.ok(res.data.pages.every(p=>![9,11,12,412,413,415,416,417,419].includes(Number(p.id))));assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
     res=response();await handler({query:{}},res);assert.equal(res.data.pages.length,1);assert.equal(res.data.pages[0].id,420);
-  }finally{global.fetch=previousFetch;if(previousKey===undefined)delete process.env.PS_API_KEY;else process.env.PS_API_KEY=previousKey;}
+  }finally{global.fetch=previousFetch;delete process.env.PRESTASHOP_CONECTADO;if(previousKey===undefined)delete process.env.PS_API_KEY;else process.env.PS_API_KEY=previousKey;}
 });
 test('imported markup cannot execute old builder scripts or change document base',()=>{
   const p=source[0];const html=sanitize('<base href="https://evil.example"><script>alert(1)</script><p onclick="bad()">Texto</p><img src="javascript:bad()" onerror="bad()"><a href="javascript:bad()">Leer</a><iframe src="https://evil.example"></iframe>',p,source,null);
