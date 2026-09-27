@@ -32,6 +32,6 @@ test('clientes-web: con sesión devuelve las cuentas web con estado de confirmac
   assert.equal(r.code, 200);
   assert.deepEqual(r.data.customers.map(c => [c.id, c.name, c.email, c.phone, c.date, c.status]), [
     ['WEB-ABCDEF12', 'nuevo', 'nuevo@test.mx', '—', '2026-09-28', 'Sin confirmar'],
-    ['WEB-1ADD2E3A', 'MFS', 'mifiestashop@gmail.com', '551315444', '2026-09-27', 'Activo']
+    ['WEB-1ADD2E3A', 'MFS', 'mifiestashop@gmail.com', '551315444', '2026-09-27', 'Cuenta web']
   ]);
 });

@@ -10288,7 +10288,10 @@ async function loadCustomersFromAPI(){
 
   // Cuentas creadas en la tienda en línea (Supabase Auth) — no están en
   // ps_clientes (la copia de PrestaShop), así que se piden aparte con la
-  // sesión del back office y se agregan las que no estén ya por correo.
+  // sesión del back office. Se muestran SIEMPRE, aunque el correo ya exista
+  // como cliente de PrestaShop: son cuentas distintas (una es el cliente
+  // viejo de PrestaShop, la otra el acceso a la tienda nueva) y ocultarla
+  // hacía parecer que el registro no había funcionado.
   try {
     const rw = await fetch('/api/clientes-web', {
       method: 'POST',
@@ -10297,8 +10300,7 @@ async function loadCustomersFromAPI(){
     });
     if (rw.ok) {
       const dataWeb = await rw.json();
-      const known = new Set(list.map(c => String(c.email || '').toLowerCase()));
-      const nuevos = (Array.isArray(dataWeb.customers) ? dataWeb.customers : []).filter(c => !known.has(String(c.email).toLowerCase()));
+      const nuevos = Array.isArray(dataWeb.customers) ? dataWeb.customers : [];
       if (nuevos.length) {
         list = [...nuevos, ...list].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
       }
