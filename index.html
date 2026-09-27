@@ -21,6 +21,18 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Mi Fiestashop">
 <meta name="mobile-web-app-capable" content="yes">
+<script>
+  // En /admin, "Agregar a Inicio" debe crear el acceso al back office, no a
+  // la tienda: iOS/Android toman la URL de inicio del manifest (start_url),
+  // no la página en la que estás — con /manifest.json (start_url "/") el
+  // ícono siempre abría la tienda. Aquí se cambia antes de que el
+  // navegador lea el manifest.
+  if (location.pathname.indexOf('/admin') === 0) {
+    document.querySelector('link[rel="manifest"]').href = '/manifest-admin.json';
+    document.querySelector('link[rel="apple-touch-icon"]').href = '/img/icons/admin-apple-touch-icon.png';
+    document.querySelector('meta[name="apple-mobile-web-app-title"]').content = 'MF Admin';
+  }
+</script>
 
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mi Fiestashop">

@@ -1,0 +1,18 @@
+{
+  "id": "/admin",
+  "name": "Mi Fiestashop Admin",
+  "short_name": "MF Admin",
+  "description": "Back office de Mi Fiestashop: POS, pedidos, inventario y clientes.",
+  "start_url": "/admin",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#2e1065",
+  "lang": "es-MX",
+  "icons": [
+    { "src": "/img/icons/admin-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/img/icons/admin-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/img/icons/admin-icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
