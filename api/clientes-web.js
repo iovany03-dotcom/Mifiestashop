@@ -7,7 +7,8 @@
 // auth.users, que solo se puede leer con la llave de servicio — por eso
 // esto es un endpoint aparte y protegido con la misma sesión de admin /
 // personal que el resto del back office (rpc_check_session), en vez de
-// sumarse a /api/clientes, que es público.
+// sumarse a /api/clientes, que es público. Estado: "Cuenta web" (correo
+// confirmado) o "Sin confirmar".
 //
 // POST { p_admin_password, p_staff_email, p_staff_pin }
 //   -> { customers: [{ id, name, email, rfc, phone, date, active, status, source: 'web' }] }
@@ -86,7 +87,7 @@ module.exports = async function handler(req, res) {
           phone: meta.phone || u.phone || '—',
           date: u.created_at ? String(u.created_at).slice(0, 10) : '—',
           active: confirmed,
-          status: confirmed ? 'Activo' : 'Sin confirmar',
+          status: confirmed ? 'Cuenta web' : 'Sin confirmar',
           source: 'web'
         };
       })
