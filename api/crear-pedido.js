@@ -19,7 +19,10 @@
 // }
 // -> { folio, subtotal, total, items: [{id,name,sku,price,qty}] }
 //
-// Requires env vars: PS_BASE_URL, PS_API_KEY (mismos que el resto de /api).
+// Con PrestaShop desconectado (default) el precio sale de catalogo_productos;
+// con PRESTASHOP_CONECTADO=1 vuelve a consultarse en vivo (PS_BASE_URL, PS_API_KEY).
+
+const { prestashopConectado, fetchPreciosActivos } = require('../lib/prestashop.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -83,12 +86,18 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
-  if (!apiKey) {
+  const conectado = prestashopConectado();
+  if (conectado && !apiKey) {
     res.status(200).json({ fallback: true, error: 'PS_API_KEY no configurado en Vercel' });
     return;
   }
 
   try {
+    // PrestaShop desconectado (default, ver lib/prestashop.js): el precio
+    // real sale de catalogo_productos (sincronizado desde PrestaShop cada
+    // 10 min) — igual de ajeno al navegador que la consulta en vivo.
+    const precios = conectado ? null : await fetchPreciosActivos(cleanItems.map(it => it.id));
+
     // La key va en la URL (?ws_key=), no en el header Authorization: Basic
     // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
     // header antes de llegar al webservice, así que siempre daba 401 aunque
@@ -97,6 +106,11 @@ module.exports = async function handler(req, res) {
     // Vuelve a consultar el precio y nombre REALES de cada producto en
     // PrestaShop — el precio que haya mandado el navegador se descarta.
     const resolved = await Promise.all(cleanItems.map(async (it) => {
+      if (!conectado) {
+        const row = precios[String(it.id)];
+        if (!row) return null;
+        return { id: it.id, qty: it.qty, name: row.name || `Producto #${it.id}`, sku: row.sku || `PS-${it.id}`, price: Number(row.price) || 0 };
+      }
       const fields = '[id,name,reference,price,active]';
       const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`;
       const r = await fetch(url);

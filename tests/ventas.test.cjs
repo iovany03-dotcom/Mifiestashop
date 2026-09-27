@@ -1,4 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
+// Estas pruebas cubren el camino EN VIVO (PRESTASHOP_CONECTADO=1, el respaldo
+// para reconectar); el modo desconectado (default) está en desconectado.test.cjs.
+process.env.PRESTASHOP_CONECTADO = '1';
 const handler=require('../api/ventas.js');
 function call(query){const res={code:0,data:null,headers:{},setHeader(k,v){this.headers[k]=v},status(c){this.code=c;return this},json(d){this.data=d;return this}};return handler({query},res).then(()=>res);}
 test('ventas devuelve el desglose por tienda y cuadra con el total',async()=>{

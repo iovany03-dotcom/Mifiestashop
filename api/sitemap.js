@@ -1,5 +1,7 @@
 // Vercel serverless function: generates sitemap.xml with the homepage and
 // every real product URL.
+const { prestashopConectado, fetchCatalogoActivo } = require('../lib/prestashop.js');
+
 module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
@@ -12,7 +14,17 @@ module.exports = async function handler(req, res) {
   const cmsPages = require('../data/cms-manifest.json');
   cmsPages.forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
 
-  if (apiKey) {
+  if (!prestashopConectado()) {
+    // PrestaShop desconectado (default, ver lib/prestashop.js): mismas URLs
+    // de producto, desde catalogo_productos (solo los que vienen de
+    // PrestaShop, que son los que tienen página /{id}-{link_rewrite}.html).
+    try {
+      const rows = await fetchCatalogoActivo('id,link_rewrite', '&source=eq.prestashop');
+      rows.forEach(p => {
+        if (p.id && p.link_rewrite) urls.push({ loc: `${siteOrigin}/${p.id}-${p.link_rewrite}.html`, priority: '0.8' });
+      });
+    } catch (e) { /* fall back to just the homepage */ }
+  } else if (apiKey) {
     try {
       // La key va en la URL (?ws_key=), no en el header Authorization:
       // Basic — Daiscom (el proveedor) confirmó que Apache/Cloudflare

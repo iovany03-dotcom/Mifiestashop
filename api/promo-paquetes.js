@@ -23,7 +23,7 @@ function firstLangValue(field, fallback) {
 // boilerplate around the real list, not items themselves — the card already renders
 // its own stock note for VIP tiers, so these are dropped to avoid duplicating them.
 function isBoilerplateLine(line) {
-  return /^esta promo incluye\b|^\*?\s*(stock|contenido)\s+sujeto\s+a/i.test(line.trim());
+  return /^esta promo (te )?incluye\b|^\*?\s*(stock|contenido)\s+sujeto\s+a/i.test(line.trim());
 }
 
 // A package's real content list usually comes as <li> bullets in the PrestaShop
@@ -58,6 +58,15 @@ const FALLBACK_ITEMS = {
 };
 
 const { fetchCatalogoByIds, fetchCatalogoImages } = require('../lib/catalogo-productos.js');
+const { prestashopConectado } = require('../lib/prestashop.js');
+
+// catalogo_productos guarda la descripción ya sin HTML (con saltos de
+// línea). Cuando el encabezado "Esta promo incluye 🥳" venía en su propio
+// <p>, al quitar las etiquetas queda pegado al primer artículo ("…🥳5
+// Antifaz…") — se separa para que no se descarte ese artículo junto con él.
+function splitPromoLead(text) {
+  return String(text || '').replace(/^(\s*esta promo (?:te )?incluye[^\d\n]*?)(?=\d)/i, '$1\n');
+}
 
 // Los ids de PrestaShop caben en 32 bits; los productos propios (catalogo_productos)
 // usan ids mucho más grandes y no deben mandarse a PrestaShop.
@@ -70,14 +79,41 @@ module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
 
-  if (!apiKey) {
-    res.status(400).json({ error: 'Falta variable de entorno PS_API_KEY en Vercel', packages: [] });
-    return;
-  }
-
   const ids = String(req.query.ids || '').split(',').map(s => s.trim()).filter(s => /^\d+$/.test(s));
   if (!ids.length) {
     res.status(400).json({ error: 'Falta el parámetro ids', packages: [] });
+    return;
+  }
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): paquetes desde
+  // catalogo_productos (precio y descripción sincronizados desde PrestaShop).
+  if (!prestashopConectado()) {
+    try {
+      const rows = await fetchCatalogoByIds(ids);
+      const byId = new Map(rows.map(r => [String(r.id), r]));
+      const packages = ids.filter(id => byId.has(id)).map(id => {
+        const row = byId.get(id);
+        const liveItems = pickItems(splitPromoLead(row.description_short), splitPromoLead(row.description));
+        const isPs = Number(row.id) <= MAX_PS_ID;
+        return {
+          id: Number(row.id),
+          name: row.name,
+          price: Number(row.price) || 0,
+          items: liveItems.length >= 2 ? liveItems : (FALLBACK_ITEMS[row.id] || liveItems),
+          img: (Array.isArray(row.images) && row.images[0]) || '',
+          linkRewrite: row.link_rewrite || '',
+          url: isPs && row.link_rewrite ? `${baseUrl}/${row.id}-${row.link_rewrite}.html` : undefined
+        };
+      });
+      res.status(200).json({ packages });
+    } catch (err) {
+      res.status(500).json({ error: 'Fallo al consultar los paquetes en Supabase', detail: String(err), packages: [] });
+    }
+    return;
+  }
+
+  if (!apiKey) {
+    res.status(400).json({ error: 'Falta variable de entorno PS_API_KEY en Vercel', packages: [] });
     return;
   }
 

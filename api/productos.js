@@ -1,4 +1,8 @@
-// Vercel serverless function: fetches products directly from PrestaShop API
+// Vercel serverless function: catálogo de productos.
+//
+// Con PrestaShop desconectado (default, ver lib/prestashop.js) se sirve
+// desde Supabase (lib/productos-supabase.js). Lo de abajo describe el
+// camino en vivo, que solo corre con PRESTASHOP_CONECTADO=1:
 //
 // Requires env vars:
 //   PS_BASE_URL   e.g. https://www.mifiestashop.com
@@ -11,6 +15,8 @@
 // Precio y stock siguen viniendo siempre en vivo de PrestaShop (decisión
 // explícita: solo se migró lo descriptivo, no el inventario).
 const { fetchCatalogoByIds, fetchCatalogoImages } = require('../lib/catalogo-productos.js');
+const { prestashopConectado } = require('../lib/prestashop.js');
+const { productosDesdeSupabase } = require('../lib/productos-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -119,15 +125,6 @@ module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
 
-  if (!apiKey) {
-    // If PS_API_KEY is not set in env, return fallback message or status
-    res.status(400).json({ 
-      error: 'Falta variable de entorno PS_API_KEY en Vercel',
-      message: 'Configure PS_API_KEY en Vercel para sincronizar los productos de PrestaShop en vivo.'
-    });
-    return;
-  }
-
   const limit = parseInt(req.query.limit, 10) || 500;
   const offset = parseInt(req.query.offset, 10) || 0;
   const category = req.query.category;
@@ -146,6 +143,24 @@ module.exports = async function handler(req, res) {
   const SORT_MAP = { price_asc: '[price_ASC]', price_desc: '[price_DESC]', name_asc: '[name_ASC]', name_desc: '[name_DESC]' };
   const sortKey = req.query.sort;
   const sort = SORT_MAP[sortKey];
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): todo sale de
+  // Supabase. El código de abajo es el camino en vivo, que solo corre con
+  // PRESTASHOP_CONECTADO=1 — se deja intacto como respaldo para reconectar.
+  if (!prestashopConectado()) {
+    await productosDesdeSupabase(req, res, { limit, offset, category, sortKey, idsMode, requestedIds, baseUrl });
+    return;
+  }
+
+  if (!apiKey) {
+    // If PS_API_KEY is not set in env, return fallback message or status
+    res.status(400).json({ 
+      error: 'Falta variable de entorno PS_API_KEY en Vercel',
+      message: 'Configure PS_API_KEY en Vercel para sincronizar los productos de PrestaShop en vivo.'
+    });
+    return;
+  }
+
   const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,wholesale_price,ean13,weight,width,height,depth,meta_title,meta_description,meta_keywords,low_stock_threshold]';
   let filters = 'filter[active]=1';
   if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;

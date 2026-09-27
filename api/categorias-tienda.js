@@ -5,7 +5,10 @@
 // nuestra copia en Supabase (ps_categorias, sincronizada cada hora por
 // api/cron-sync-prestashop.js — ver lib/sync-prestashop.js), no se
 // consulta PrestaShop para la lista en sí, solo para el conteo por
-// categoría.
+// categoría — y ni eso con PrestaShop desconectado (default, ver
+// lib/prestashop.js), donde el conteo sale de catalogo_productos.
+const { prestashopConectado, fetchCatalogoActivo } = require('../lib/prestashop.js');
+
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 // Id de la categoría "Productos" en PrestaShop — raíz de todas las
@@ -92,6 +95,32 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): el conteo sale
+  // de catalogo_productos (productos activos), con el mismo criterio que
+  // /api/productos usa para navegar por categoría — categoría por defecto
+  // UNIDA con las categorías reales de los productos migrados.
+  if (!prestashopConectado()) {
+    try {
+      const [rows, migratedRows] = await Promise.all([fetchCatalogoActivo('id,category_id'), fetchMigratedCategoryIds()]);
+      const activeIds = new Set(rows.map(r => Number(r.id)));
+      const idsByCat = new Map();
+      const add = (cat, id) => {
+        const key = String(cat);
+        if (!idsByCat.has(key)) idsByCat.set(key, new Set());
+        idsByCat.get(key).add(id);
+      };
+      rows.forEach(r => { if (r.category_id) add(r.category_id, Number(r.id)); });
+      migratedRows.forEach(row => {
+        if (!activeIds.has(Number(row.id)) || !Array.isArray(row.category_ids)) return;
+        row.category_ids.forEach(cat => add(cat, Number(row.id)));
+      });
+      res.status(200).json({ categories: categories.map(c => ({ ...c, count: (idsByCat.get(String(c.id)) || new Set()).size })) });
+    } catch (err) {
+      res.status(200).json({ error: err.message, categories: categories.map(c => ({ ...c, count: 0 })) });
+    }
+    return;
+  }
 
   if (!apiKey) {
     res.status(200).json({ fallback: true, categories: categories.map(c => ({ ...c, count: 0 })) });

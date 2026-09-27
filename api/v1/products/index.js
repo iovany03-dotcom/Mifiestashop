@@ -7,6 +7,7 @@
 // desactualizado, aunque el texto pueda venir de nuestra propia edición.
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
 const { fetchCatalogoImages } = require('../../../lib/catalogo-productos.js');
+const { prestashopConectado, fetchCatalogoActivo } = require('../../../lib/prestashop.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -47,12 +48,42 @@ module.exports = async function handler(req, res) {
 
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
-  if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
 
   const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
   const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
   const category = req.query.category;
   const search = (req.query.search || '').trim().toLowerCase();
+
+  // PrestaShop desconectado (default, ver lib/prestashop.js): mismos campos
+  // desde catalogo_productos (+ productos_migrados), sin consultar PrestaShop.
+  if (!prestashopConectado()) {
+    try {
+      const catFilter = category && /^\d+$/.test(String(category)) ? `&category_id=eq.${category}` : '';
+      const rows = await fetchCatalogoActivo('id,sku,name,description,description_short,price,category_id,link_rewrite,images,source', catFilter);
+      const migrated = await fetchMigratedById(rows.map(r => r.id));
+      let products = rows.map(r => {
+        const m = migrated[String(r.id)];
+        const images = Array.isArray(r.images) && r.images.length ? r.images : (m && Array.isArray(m.images) && m.images.length ? m.images : null);
+        return {
+          id: Number(r.id),
+          sku: m ? m.sku : (r.sku || undefined),
+          name: m ? m.name : (r.name || 'Producto'),
+          description: m && m.description ? m.description : (r.description_short || undefined),
+          price: Number(r.price) || 0,
+          category_id: Number(r.category_id) || undefined,
+          category_label: m ? m.category_label : undefined,
+          image: images ? images[0] : null,
+          url: r.source === 'prestashop' && r.link_rewrite ? `${baseUrl}/${r.id}-${r.link_rewrite}.html` : undefined
+        };
+      });
+      if (search) products = products.filter(p => (p.name || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
+      return res.status(200).json({ data: products.slice(offset, offset + limit), meta: { total: products.length, limit, offset } });
+    } catch (err) {
+      return sendApiError(res, 500, 'Error al consultar productos: ' + err.message, 'internal_error');
+    }
+  }
+
+  if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
 
   try {
     const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
