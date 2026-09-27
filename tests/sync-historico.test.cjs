@@ -70,3 +70,70 @@ test('movimientos_nuevos sube desde el último movimiento guardado, solo bodegas
     assert.equal(last.dominio, 'movimientos_nuevos'); assert.equal(last.last_synced_id, 401160); assert.match(last.ultimo_resultado, /^al día/);
   } finally { global.fetch = prev; }
 });
+
+test('movimientos_2anios: bodegas propias o bodega 0 con producto de la tienda, de hace 2 años para acá', async () => {
+  const upserts = [], estados = [], psUrls = [];
+  const prev = global.fetch;
+  const recent = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10) + ' 10:00:00';
+  const old = new Date(Date.now() - 3 * 365 * 86400000).toISOString().slice(0, 10) + ' 10:00:00';
+  const light = [
+    { id: '10', id_warehouse: '0', id_product: '83392', date_add: old },      // muy viejo: fuera
+    { id: '11', id_warehouse: '0', id_product: '83392', date_add: recent },   // bodega 0, producto propio: dentro
+    { id: '12', id_warehouse: '0', id_product: '999', date_add: recent },     // bodega 0, producto de otra tienda: fuera
+    { id: '13', id_warehouse: '32', id_product: '83392', date_add: recent },  // bodega de otra tienda: fuera
+    { id: '14', id_warehouse: '55', id_product: '84000', date_add: recent }   // bodega propia: dentro
+  ];
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    const json = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.startsWith('https://ps.test')) {
+      psUrls.push(u);
+      if (u.includes('display=full')) return json({ stock_mvts: [{ id: '11', id_warehouse: '0', id_product: '83392' }, { id: '14', id_warehouse: '55', id_product: '84000' }] });
+      return json({ stock_mvts: light });
+    }
+    if (u.includes('/rest/v1/ps_sync_estado')) {
+      if (opts.method === 'POST') { estados.push(JSON.parse(opts.body)); return json(null); }
+      return json([]);
+    }
+    if (u.includes('/rest/v1/ps_inventory_movements') && opts.method === 'POST') { upserts.push(...JSON.parse(opts.body)); return json(null); }
+    if (u.includes('/rest/v1/ps_almacenes')) return json([{ id: 53 }, { id: 55 }, { id: 56 }]);
+    if (u.includes('/rest/v1/catalogo_productos')) return json([{ id: 83392 }, { id: 84000 }]);
+    return json([]);
+  };
+  try {
+    const r = await runFullSync({ baseUrl: 'https://ps.test', apiKey: 'k', supabaseUrl: 'https://sb.test', serviceKey: 's', serviceRoleKey: 'sr', timeBudgetMs: 50000, domains: ['movimientos_2anios'] });
+    assert.equal(r.movimientos_2anios.ok, true, r.movimientos_2anios.error);
+    assert.deepEqual(upserts.map(m => m.id), [11, 14]);
+    assert.ok(psUrls.some(u => u.includes('display=full') && u.includes('filter[id]=[11|14]')));
+    const last = estados[estados.length - 1];
+    assert.equal(last.last_synced_id, 14); assert.match(last.ultimo_resultado, /^completo: desde=\d{4}-\d{2}-\d{2};guardados=2/);
+  } finally { global.fetch = prev; }
+});
+
+test('carritos: solo guarda los de Mi Fiestashop (tienda 50) y sin la llave de PrestaShop en las imágenes', async () => {
+  const upserts = [];
+  const prev = global.fetch;
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    const json = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.startsWith('https://ps.test')) {
+      if (u.includes('/api/carts?')) return json({ carts: [
+        { id: '524838', id_customer: '0', id_shop: '12', date_add: '2026-09-27 14:29:54', date_upd: '2026-09-27 14:29:54' },
+        { id: '524819', id_customer: '0', id_shop: '50', date_add: '2026-09-27 12:48:23', date_upd: '2026-09-27 12:48:23' }
+      ] });
+      if (u.includes('/api/carts/524819')) return json({ cart: { associations: { cart_rows: [{ id_product: '83409', quantity: '20' }] } } });
+      if (u.includes('/api/products?')) return json({ products: [{ id: '83409', name: 'Sombrero Vaquero Neón', reference: 'SVN', price: '10.000000' }] });
+      return json({});
+    }
+    if (u.includes('/rest/v1/catalogo_productos')) return json([{ id: 83409, images: ['https://sb.test/storage/83409.jpg'] }]);
+    if (u.includes('/rest/v1/ps_carritos') && opts.method === 'POST') { upserts.push(...JSON.parse(opts.body)); return json(null); }
+    return json([]);
+  };
+  try {
+    const r = await runFullSync({ baseUrl: 'https://ps.test', apiKey: 'llave-secreta', supabaseUrl: 'https://sb.test', serviceKey: 's', serviceRoleKey: 'sr', timeBudgetMs: 50000, domains: ['carritos'] });
+    assert.equal(r.carritos.ok, true, r.carritos.error);
+    assert.deepEqual(upserts.map(c => [c.id, c.id_shop]), [[524819, 50]]);
+    assert.deepEqual(upserts[0].items, [{ id_product: 83409, qty: 20, name: 'Sombrero Vaquero Neón', sku: 'SVN', price: 10, img: 'https://sb.test/storage/83409.jpg' }]);
+    assert.ok(!JSON.stringify(upserts).includes('llave-secreta'));
+  } finally { global.fetch = prev; }
+});
