@@ -271,6 +271,15 @@ function modelFor(page, pages) {
   if (!heroImage && theme === 'fiesta') heroImage = '/img/hero-banner.png';
   if (!heroImage && theme === 'batucada') heroImage = '/img/cms/0dede4bf5e127bbe.jpg';
   if (!heroImage && theme === 'mayoreo') heroImage = '/img/cms/mayoreo-fiesta.webp';
+  // La foto del estante (0dede4bf5e127bbe.jpg, WhatsApp Image 2024-06-17) se
+  // reemplaza por la del marciano en todos los temas salvo boda, mayoreo,
+  // globos, neón y XV años — a petición del negocio. Va después de todos
+  // los fallbacks de arriba porque a veces esta foto llega como respaldo de
+  // "batucada" (heroImage vacío) y a veces viene ya scrapeada del contenido
+  // original (páginas de Puebla con tema "fiesta"/"cumpleanos"); cualquiera
+  // de los dos casos debe quedar cubierto.
+  const KEEP_OWN_HERO_THEMES = new Set(['boda', 'mayoreo', 'globos', 'neon', 'xv']);
+  if (heroImage === '/img/cms/0dede4bf5e127bbe.jpg' && !KEEP_OWN_HERO_THEMES.has(theme)) heroImage = '/img/cms/mayoreo-fiesta.webp';
   return {...page, theme, config, location, heroImage, benefits, reviews, content,
     // The on-page hero paragraph is deliberately longer/richer than the meta
     // description (config.intro): more body copy helps SEO, but a long meta
