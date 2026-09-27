@@ -195,9 +195,24 @@ function sanitize(html, page, pages, location) {
   });
   return $.html();
 }
+// Páginas nacionales/genéricas (sin ciudad en el título, pensadas para
+// vender en línea) donde el mapa de Google que traía el contenido
+// original apuntaba a una sola sucursal por casualidad — getLocation
+// terminaba mostrándola como si la página fuera de esa ciudad, con botón
+// "Visita nuestra tienda" y su sección de ubicación, aunque la página
+// nunca fue sobre esa sucursal. A petición del negocio, sin ubicación:
+// el hero cambia a "Ver en la tienda" (enlaza a la búsqueda online) y se
+// quita la sección "Visítanos en...".
+const NO_LOCATION_PAGE_IDS = new Set([291]);
+
 function modelFor(page, pages) {
   const theme = themeFor(page), config = THEMES[theme];
   const $ = cheerio.load(page.sourceContent, {}, false);
+  // location se calcula siempre (aunque la página esté en NO_LOCATION_PAGE_IDS):
+  // sanitize() la usa más abajo para limpiar el mapa/teléfono/"Visítanos" que
+  // trae el contenido original scrapeado. Solo se anula al final, para el
+  // hero/sección de ubicación — si no, ese texto se quedaría suelto sin el
+  // diseño de la sección que se está quitando.
   const location = getLocation(page, pages);
   const simple = /PAGA CON TARJETA/i.test($.text()) && /400 ARTICULOS/i.test(normalize($.text()).toUpperCase());
   const firstHeading = $('h1,h2').first();
@@ -280,7 +295,8 @@ function modelFor(page, pages) {
   // de los dos casos debe quedar cubierto.
   const KEEP_OWN_HERO_THEMES = new Set(['boda', 'mayoreo', 'globos', 'neon', 'xv']);
   if (heroImage === '/img/cms/0dede4bf5e127bbe.jpg' && !KEEP_OWN_HERO_THEMES.has(theme)) heroImage = '/img/cms/mayoreo-fiesta.webp';
-  return {...page, theme, config, location, heroImage, benefits, reviews, content,
+  const finalLocation = NO_LOCATION_PAGE_IDS.has(page.id) ? null : location;
+  return {...page, theme, config, location: finalLocation, heroImage, benefits, reviews, content,
     // The on-page hero paragraph is deliberately longer/richer than the meta
     // description (config.intro): more body copy helps SEO, but a long meta
     // description just gets truncated in search results — so they stay two
