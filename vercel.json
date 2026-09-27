@@ -22,6 +22,9 @@
     }
   ],
   "functions": {
+    "api/admin-page.js": {
+      "includeFiles": "index.html"
+    },
     "api/cron-sync-prestashop.js": {
       "maxDuration": 60
     },
@@ -1709,11 +1712,11 @@
     },
     {
       "source": "/admin",
-      "destination": "/index.html"
+      "destination": "/api/admin-page"
     },
     {
       "source": "/admin/:path*",
-      "destination": "/index.html"
+      "destination": "/api/admin-page"
     },
     {
       "source": "/pagina/:slug",

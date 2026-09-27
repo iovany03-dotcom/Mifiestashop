@@ -16109,8 +16109,12 @@ if (window.location.pathname === '/' && !new URLSearchParams(window.location.sea
 window.addEventListener('popstate', routeApp);
 
 function goToAdmin() {
+  // Recarga completa en /admin (no pushState): esa página ya sale del
+  // servidor con el manifest del back office (api/admin-page.js), así
+  // "Agregar a Inicio" crea el acceso al admin y no a la tienda.
   if (window.location.pathname !== '/admin') {
-    window.history.pushState(null, '', '/admin');
+    window.location.href = '/admin';
+    return;
   }
   if (localStorage.getItem('mf_admin_logged_in') === 'true') {
     showAdminDashboard();
