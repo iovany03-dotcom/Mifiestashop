@@ -78,6 +78,28 @@ async function createWebAccessForPrestashopCustomer(serviceRoleKey, email, ps) {
   return r.ok;
 }
 
+// Cuenta web con este correo (Supabase Auth), si existe.
+async function findAuthUserByEmail(serviceRoleKey, email) {
+  for (let page = 1; page <= 50; page++) {
+    const r = await fetch(`${SUPABASE_URL}/auth/v1/admin/users?page=${page}&per_page=1000`, {
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
+    });
+    if (!r.ok) return null;
+    const data = await r.json().catch(() => ({}));
+    const users = Array.isArray(data.users) ? data.users : [];
+    const found = users.find(u => String(u.email || '').toLowerCase() === email);
+    if (found) return found;
+    if (users.length < 1000) return null;
+  }
+  return null;
+}
+
+// Cada enlace de recuperación nuevo invalida el anterior: si se pide dos
+// veces seguidas (doble clic), el primer correo llega con un enlace que ya
+// no sirve ("ya expiró o ya se usó"). Durante este tiempo después de un
+// envío, no se genera otro enlace.
+const RECOVERY_COOLDOWN_MS = 60 * 1000;
+
 async function deleteUser(serviceRoleKey, userId) {
   await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
     method: 'DELETE',
@@ -157,6 +179,12 @@ module.exports = async function handler(req, res) {
   }
 
   if (body.accion === 'recuperar') {
+    const existing = await findAuthUserByEmail(serviceRoleKey, email);
+    const sentAt = existing?.recovery_sent_at ? new Date(existing.recovery_sent_at).getTime() : 0;
+    if (sentAt && Date.now() - sentAt < RECOVERY_COOLDOWN_MS) {
+      res.status(200).json({ ok: true, yaEnviado: true });
+      return;
+    }
     let link = await generateLink(serviceRoleKey, { type: 'recovery', email, redirect_to: origin });
     // Sin cuenta web pero sí cliente de la tienda anterior: se le crea el
     // acceso y se manda el mismo correo para que ponga su contraseña.
