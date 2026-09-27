@@ -8649,6 +8649,60 @@ async function syncProductsFromPrestaShopAPI(){
     console.log('Consultando Supabase DB como respaldo:', e.message);
   }
 
+  // Respaldo principal si PrestaShop no responde: la copia completa del
+  // catálogo en Supabase (catalogo_productos, llenada por el sync) con las
+  // fotos ya migradas (productos_migrados) — no la tabla vieja de costos,
+  // que solo trae 250 productos.
+  if (!loaded) {
+    try {
+      const PAGE = 1000;
+      async function sbGetAll(pathBase) {
+        const out = [];
+        for (let offset = 0; ; offset += PAGE) {
+          const rows = await sbGet(`${pathBase}&limit=${PAGE}&offset=${offset}`);
+          if (!Array.isArray(rows) || rows.length === 0) break;
+          out.push(...rows);
+          if (rows.length < PAGE) break;
+        }
+        return out;
+      }
+      const [catalogo, migrados] = await Promise.all([
+        sbGetAll('catalogo_productos?select=id,sku,barcode,name,description,description_short,price,price_mayoreo,price_mayoreo_desde_unidades,category_id,category_label,low_stock_threshold,link_rewrite,legacy_image_url,images&active=eq.true&order=id.asc'),
+        sbGetAll('productos_migrados?select=id,name,description,category_label,images&order=id.asc').catch(() => [])
+      ]);
+      if (catalogo.length > 0) {
+        const migMap = new Map(migrados.map(m => [String(m.id), m]));
+        liveProducts = catalogo.map(p => {
+          const m = migMap.get(String(p.id));
+          const images = (m && Array.isArray(m.images) && m.images.length) ? m.images
+            : (Array.isArray(p.images) && p.images.length ? p.images : undefined);
+          const catLabel = (m && m.category_label) || p.category_label || 'General';
+          return {
+            id: p.id,
+            name: (m && m.name) || p.name || 'Producto',
+            sku: p.sku || `PS-${p.id}`,
+            barcode: p.barcode || '',
+            price: Number(p.price) || 0,
+            priceMayoreo: p.price_mayoreo != null ? Number(p.price_mayoreo) : 0,
+            priceMayoreoDesdeUnidades: p.price_mayoreo_desde_unidades || 0,
+            costoCompra: 0,
+            cat: catLabel.toLowerCase().trim(),
+            catLabel,
+            lowStockThreshold: p.low_stock_threshold || 0,
+            img: images ? images[0] : (p.legacy_image_url || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'),
+            images,
+            migrated: !!m,
+            desc: (m && m.description) || p.description_short || p.description || p.name,
+            url: p.link_rewrite ? `/${p.id}-${p.link_rewrite}.html` : ''
+          };
+        });
+        loaded = true;
+      }
+    } catch(e) {
+      console.log('No se pudo leer catalogo_productos como respaldo:', e.message);
+    }
+  }
+
   if (!loaded) {
     try {
       // Solo se consulta la vista pública (sin costo de compra, precio a
