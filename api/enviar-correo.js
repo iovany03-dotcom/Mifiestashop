@@ -34,7 +34,7 @@
 //
 // Las plantillas y el envío viven en lib/correo.js.
 
-const { TEMPLATES, sendTemplate, smtpConfigured } = require('../lib/correo.js');
+const { TEMPLATES, sendTemplate, smtpConfigured, loadTransferencia } = require('../lib/correo.js');
 
 // Tipos que este endpoint puede enviar de verdad por POST. "recuperacion" y
 // "confirmacion" se quedan fuera a propósito: solo se sirven como vista
@@ -47,7 +47,7 @@ const PREVIEW_SAMPLE_DATA = {
   bienvenida: { nombre: 'Ana García' },
   recuperacion: { nombre: 'Ana García', resetUrl: 'https://mifiestashop.com/?recuperar=ejemplo' },
   confirmacion: { nombre: 'Ana García', confirmUrl: 'https://mifiestashop.com/?confirmar=ejemplo' },
-  pedido: { nombre: 'Ana García', pedidoId: 'WEB-482913', total: 1850, items: [
+  pedido: { nombre: 'Ana García', pedidoId: 'WEB-482913', total: 1850, transferencia: { leyenda: 'Cuenta para reservaciones', titular: 'SERVICIOS Y ARTÍCULOS PARA EL ENTRETENIMIENTO SAS', banco: 'Bancomer', cuenta: '0119109331', clabe: '012180001191093312', instrucciones: 'Envíanos tu comprobante por WhatsApp.' }, items: [
     { qty: 2, name: 'Globo Metálico 40" Dorado', price: 45 },
     { qty: 1, name: 'Paquete Globos Latex Pastel (50 pzs)', price: 85 }
   ] },
@@ -99,8 +99,17 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // Los datos bancarios de un pedido por transferencia los pone el servidor
+  // (ajustes_pago); lo que venga del navegador en "transferencia" se ignora.
+  let datosEnvio = datos && typeof datos === 'object' ? { ...datos } : {};
+  delete datosEnvio.transferencia;
+  if (tipo === 'pedido' && datosEnvio.pagoTransferencia) {
+    const transferencia = await loadTransferencia();
+    if (transferencia) datosEnvio.transferencia = transferencia;
+  }
+
   try {
-    await sendTemplate(to, tipo, datos);
+    await sendTemplate(to, tipo, datosEnvio);
     res.status(200).json({ sent: true });
   } catch (err) {
     res.status(502).json({ error: 'Fallo al enviar el correo', detail: String(err) });
