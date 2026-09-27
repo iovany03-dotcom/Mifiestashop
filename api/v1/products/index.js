@@ -6,6 +6,7 @@
 // existe (ver productos_migrados) — así un socio nunca ve un precio
 // desactualizado, aunque el texto pueda venir de nuestra propia edición.
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
+const { fetchCatalogoImages } = require('../../../lib/catalogo-productos.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -73,16 +74,18 @@ module.exports = async function handler(req, res) {
     const data = await r.json();
     let rawProducts = Array.isArray(data.products) ? data.products : [];
 
-    const migrated = await fetchMigratedById(rawProducts.map(p => p.id));
+    const ids = rawProducts.map(p => p.id);
+    const [migrated, ownImages] = await Promise.all([fetchMigratedById(ids), fetchCatalogoImages(ids)]);
 
     let products = rawProducts.map(p => {
       const m = migrated[String(p.id)];
       const name = m ? m.name : firstLangValue(p.name, 'Producto');
       const linkRewrite = firstLangValue(p.link_rewrite, '');
       const imgId = p.id_default_image;
-      const image = m && Array.isArray(m.images) && m.images[0]
+      const own = ownImages[String(p.id)];
+      const image = own ? own[0] : (m && Array.isArray(m.images) && m.images[0]
         ? m.images[0]
-        : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : null);
+        : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : null));
       return {
         id: Number(p.id),
         sku: m ? m.sku : (p.reference || undefined),

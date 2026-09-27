@@ -10,7 +10,7 @@
 // Supabase Storage — se usan esos datos en vez de los de PrestaShop.
 // Precio y stock siguen viniendo siempre en vivo de PrestaShop (decisión
 // explícita: solo se migró lo descriptivo, no el inventario).
-const { fetchCatalogoByIds } = require('../lib/catalogo-productos.js');
+const { fetchCatalogoByIds, fetchCatalogoImages } = require('../lib/catalogo-productos.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -207,11 +207,14 @@ module.exports = async function handler(req, res) {
       return out;
     }
 
-    const [migrated, wholesaleRules, categoryNames, defaultCatIds] = await Promise.all([
+    const [migrated, wholesaleRules, categoryNames, defaultCatIds, ownImages] = await Promise.all([
       fast ? Promise.resolve({}) : fetchMigratedProducts(),
       fast ? Promise.resolve({}) : fetchWholesalePrices(baseUrl, apiKey),
       fetchCategoryNames(),
-      category ? fetchDefaultCategoryIds(category) : Promise.resolve(null)
+      category ? fetchDefaultCategoryIds(category) : Promise.resolve(null),
+      // Fotos propias en Supabase Storage: fuente principal (incluso en modo
+      // rápido) — PrestaShop en vivo solo si el producto no tiene foto propia.
+      fetchCatalogoImages()
     ]);
 
     let rawProducts, total;
@@ -281,7 +284,7 @@ module.exports = async function handler(req, res) {
       const publicUrl = linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : `${baseUrl}/index.php?id_product=${p.id}&controller=product`;
 
       const m = migrated[String(p.id)];
-      const images = m && Array.isArray(m.images) && m.images.length > 0 ? m.images : null;
+      const images = ownImages[String(p.id)] || (m && Array.isArray(m.images) && m.images.length > 0 ? m.images : null);
       const basePrice = parseFloat(p.price || 0);
       const wholesale = computeWholesalePrice(basePrice, wholesaleRules[String(p.id)]);
 

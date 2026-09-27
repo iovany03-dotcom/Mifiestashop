@@ -57,7 +57,7 @@ const FALLBACK_ITEMS = {
   83591: ['8 Antifaz cartón metálico', '6 Peluca metálica', '1 Globo salchicha (200 pzas)', '5 Micrófono inflable chico', '5 Guitarra metálica inflable', '2 Peluca afro negra', '5 Mandil con frases divertidos', '4 Bombín con peluca metálica', '6 Lente batucada', '1 Corona Princesa', '5 Collar perla', '6 Diadema con pelitos', '2 Bombín con pelo', '3 Peluca corta', '4 Sombrero de palma', '2 Lente antifaz gigante', '6 Corbata neón', '6 Bombín neón', '4 Gorra neón', '5 Lente gigante neón', '10 Collar hawaiano', '6 Antifaz neón de PVC', '6 Corneta neón', '8 Sombrero Divertido de hule espuma', '1 Sombrero de hule espuma Novio', '1 Sombrero de hule espuma Novia', '8 Diadema con mechudo', '1 Espanta suegras (100 pzas)', '5 Antifaz Carnaval', '5 Letrero selfie boda', '1 Pulsera cyalume (90 pzas)', '5 Lente luminoso cyalume', '2 Coronas de flores luminosa LED', '2 Diadema conejo luminoso LED', '1 Anillo luminosa LED (4 pzas)', '4 Lente luminoso LED', '6 Anillo de goma luminoso LED', '5 Diadema luminosa cyalume']
 };
 
-const { fetchCatalogoByIds } = require('../lib/catalogo-productos.js');
+const { fetchCatalogoByIds, fetchCatalogoImages } = require('../lib/catalogo-productos.js');
 
 // Los ids de PrestaShop caben en 32 bits; los productos propios (catalogo_productos)
 // usan ids mucho más grandes y no deben mandarse a PrestaShop.
@@ -102,13 +102,15 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    const ownImages = await fetchCatalogoImages(raw.map(p => p.id));
     const packages = raw.filter(p => p.active === '1' || p.active === 1).map(p => {
       const name = firstLangValue(p.name, '');
       const shortDesc = firstLangValue(p.description_short, '');
       const longDesc = firstLangValue(p.description, '');
       const linkRewrite = firstLangValue(p.link_rewrite, '');
       const imgId = p.id_default_image;
-      const img = imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : '';
+      const own = ownImages[String(p.id)];
+      const img = own ? own[0] : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : '');
       const liveItems = pickItems(shortDesc, longDesc);
       return {
         id: Number(p.id),
