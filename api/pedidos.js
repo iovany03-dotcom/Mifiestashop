@@ -56,6 +56,7 @@ module.exports = async function handler(req, res) {
       return {
         id: String(o.id),
         rawId: o.id,
+        origen: 'prestashop',
         reference: o.reference || '',
         date: o.date_add || '—',
         deliveryDate: o.delivery_date || null,

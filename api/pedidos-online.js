@@ -37,6 +37,7 @@ module.exports = async function handler(req, res) {
       deliveryDate: o.delivery_date || null,
       customer: o.customer_name || 'Cliente',
       channel: o.source === 'manual' ? 'Pedido Manual' : 'Tienda Online',
+      origen: 'online',
       paymentMethod: o.payment_method || '—',
       total: parseFloat(o.total || 0),
       status: o.status || 'Pendiente',

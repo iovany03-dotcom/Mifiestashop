@@ -4814,15 +4814,21 @@
     <!-- Status Change & Action Toolbar -->
     <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:12px 16px; border-radius:10px; margin-bottom:20px; flex-wrap:wrap; gap:12px; border:1px solid var(--border);">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <select id="odStatusSelect" style="padding:8px 14px; border-radius:6px; border:1px solid #22c55e; background:#22c55e; color:#fff; font-weight:700; font-size:14px; cursor:pointer;">
+        <select id="odStatusSelect" style="padding:8px 14px; border-radius:6px; border:1px solid var(--border); font-weight:700; font-size:14px; cursor:pointer;">
+          <option value="Pendiente">Pendiente</option>
+          <option value="Pendiente de pago">Pendiente de pago</option>
           <option value="Pago aceptado">Pago aceptado</option>
+          <option value="En preparación">En preparación</option>
           <option value="Enviado">Enviado</option>
           <option value="Entregado">Entregado</option>
           <option value="Cancelado">Cancelado</option>
+          <option value="Reembolsado">Reembolsado</option>
         </select>
-        <button class="btn" style="border-radius:6px; font-size:13px;" onclick="updateOrderDetailStatus()">Actualizar el estado</button>
-        <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="window.print()"> Imprimir pedido</button>
-        <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Abriendo ventana de devolución parcial...')">Devolución parcial</button>
+        <button class="btn" id="odUpdateStatusBtn" style="border-radius:6px; font-size:13px;" onclick="updateOrderDetailStatus()">Actualizar el estado</button>
+        <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="printOrderDetail()"> Imprimir pedido</button>
+        <button class="btn secondary" id="odCancelBtn" style="border-radius:6px; font-size:13px; border-color:#f59e0b; color:#b45309;" onclick="cancelOrderDetail()">Cancelar pedido</button>
+        <button class="btn secondary hidden" id="odDeleteBtn" style="border-radius:6px; font-size:13px; border-color:var(--bad); color:var(--bad);" onclick="deleteOrderDetail()">Borrar pedido</button>
+        <span id="odOrigenNote" class="hidden" style="font-size:12px; color:var(--text-muted);"></span>
       </div>
 
       <div style="display:flex; gap:6px;">
@@ -4983,15 +4989,6 @@
               <a href="#" style="font-size:12px; color:var(--series-2); text-decoration:none;" onclick="alert('Email de estado reenviado al cliente ✓'); return false;">Reenviar email</a>
             </div>
 
-            <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px;">
-              <select style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1;">
-                <option value="Pago aceptado">Pago aceptado</option>
-                <option value="En preparación">En preparación</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Entregado">Entregado</option>
-              </select>
-              <button class="btn primary" style="padding:8px 16px; font-size:13px; font-weight:700;" onclick="alert('Estado del pedido actualizado ✓')">Actualizar el estado</button>
-            </div>
 
             <div style="border-top:1px dashed var(--border); padding-top:10px; font-size:13px;">
               <b>Nota del pedido:</b> <span style="color:var(--text-muted); font-size:12px; margin-left:6px; cursor:pointer;">+</span>
@@ -10616,7 +10613,8 @@ async function loadOrdersFromAPI(){
         channel: 'Sistema POS',
         paymentMethod: payMethodTicketLabel(t.metodo),
         total: Number(t.total || 0),
-        status: 'Pago Aceptado',
+        status: t.estado || 'Pago aceptado',
+        origen: 'pos',
         createdBy: t.registrado_por || null,
         shop: 'Mi Fiestashop',
         items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
@@ -10652,9 +10650,31 @@ async function loadOrdersFromAPI(){
   // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
   // que sí agrega datos reales de PrestaShop (ver loadRealProductSales()).
 
-  const POSITIVE_STATES = ['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado'];
+  renderOrdersTableRows();
+
+  const skSelect = document.getElementById('skSelectOrder');
+  if (skSelect && list.length > 0) {
+    skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' +
+      list.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.id)} - ${escapeHtml(o.customer)} (${fmtMoney(o.total)})</option>`).join('');
+  }
+
+  renderTopProductsTable();
+}
+
+// Color del estado: verde = pagado/enviado/entregado, rojo = cancelado o
+// reembolsado, amarillo = cualquier otro (pendiente, en preparación…).
+function orderStatusPillClass(status) {
+  const s = String(status || '').toLowerCase();
+  if (/cancelad|reembols/.test(s)) return 'bad';
+  if (['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado', 'pago realizado'].includes(s)) return 'ok';
+  return 'warn';
+}
+
+function renderOrdersTableRows() {
+  const tbody = document.getElementById('ordersTableBody');
+  if (!tbody) return;
+  const list = loadedOrdersList;
   tbody.innerHTML = list.map(o => {
-    const statusOk = POSITIVE_STATES.includes(String(o.status || '').toLowerCase());
     return `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
       <td><b>${escapeHtml(o.id)}</b></td>
@@ -10662,7 +10682,7 @@ async function loadOrdersFromAPI(){
       <td>${escapeHtml(o.customer)}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(o.total)}</td>
       <td>${escapeHtml(o.paymentMethod || o.channel || '—')}</td>
-      <td><span class="pill ${statusOk ? 'ok' : 'warn'}">${escapeHtml(o.status)}</span></td>
+      <td><span class="pill ${orderStatusPillClass(o.status)}">${escapeHtml(o.status)}</span></td>
       <td>${escapeHtml(o.date)}</td>
       <td>${escapeHtml(o.deliveryDate || '—')}</td>
       <td>${escapeHtml(o.createdBy || '—')}</td>
@@ -10674,14 +10694,6 @@ async function loadOrdersFromAPI(){
     </tr>
   `;
   }).join('');
-
-  const skSelect = document.getElementById('skSelectOrder');
-  if (skSelect && list.length > 0) {
-    skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' +
-      list.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.id)} - ${escapeHtml(o.customer)} (${fmtMoney(o.total)})</option>`).join('');
-  }
-
-  renderTopProductsTable();
 }
 
 let currentOrderObj = null;
@@ -10742,7 +10754,7 @@ function openOrderDetailModal(id){
   document.getElementById('odClientEmail').textContent = 'Cargando…';
   document.getElementById('odClientRegDate').textContent = '—';
   document.getElementById('odClientSpent').textContent = '—';
-  document.getElementById('odStateBadge').textContent = order.status || 'Pendiente';
+  renderOdStatus(order);
   document.getElementById('odStateDate').textContent = order.date || '—';
   document.getElementById('odSubtotalVal').textContent = totalStr;
   document.getElementById('odTotalVal').textContent = totalStr;
@@ -10975,8 +10987,31 @@ async function confirmCrearPedido(){
       body: JSON.stringify(payload)
     });
     if (!r.ok) throw new Error(`POST pedidos_online -> ${r.status}`);
+    // Descuenta el stock de la bodega elegida en el ledger, con el folio del
+    // pedido: al cancelarlo o borrarlo (api/pedido-admin.js) se regresa.
+    let stockMsg = '';
+    const almacenKey = payload.bodega;
+    if (['puebla', 'rumania', 'queretaro'].includes(almacenKey)) {
+      const moves = cpItems.filter(i => Number(i.id) > 0).map(i => ({
+        id_product: Number(i.id), almacen: almacenKey, qty: -Math.abs(Number(i.qty) || 0),
+        motivo: 'pedido_manual', folio, registrado_por: nombreSesionActual()
+      })).filter(m => m.qty < 0);
+      if (moves.length) {
+        try {
+          await sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves });
+          moves.forEach(m => {
+            const key = `${m.id_product}|${m.almacen}`;
+            stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
+          });
+          renderInventarioTable();
+          stockMsg = `\nSe descontó el stock de ${WAREHOUSE_LABELS[almacenKey] || almacenKey}.`;
+        } catch (e) {
+          stockMsg = '\nOjo: el pedido se guardó pero no se pudo descontar el stock.';
+        }
+      }
+    }
     closeCrearPedidoModal();
-    alert(`Pedido ${folio} creado correctamente.`);
+    alert(`Pedido ${folio} creado correctamente.${stockMsg}`);
     loadOrdersFromAPI();
   } catch (e) {
     alert('No se pudo crear el pedido: ' + e.message);
@@ -11199,25 +11234,189 @@ function renderLowStockByStoreCard() {
   `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más…</td></tr>` : '');
 }
 
-function updateOrderDetailStatus() {
+// ================= DETALLE DEL PEDIDO: ESTADO / CANCELAR / BORRAR / IMPRIMIR =================
+// De dónde viene el pedido (ver api/pedido-admin.js): los de las cajas de
+// PrestaShop solo se pueden cambiar en PrestaShop.
+function orderOrigen(o) {
+  if (!o) return 'online';
+  if (o.origen) return o.origen;
+  if (o.rawId) return 'prestashop';
+  return o.channel === 'Sistema POS' ? 'pos' : 'online';
+}
+
+const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
+
+// El selector antes siempre decía "Pago aceptado" (era su primera opción
+// fija); ahora muestra el estado real del pedido.
+function renderOdStatus(order) {
+  const status = order?.status || 'Pendiente';
+  const badge = document.getElementById('odStateBadge');
+  if (badge) { badge.textContent = status; badge.className = 'pill ' + orderStatusPillClass(status); }
+  const box = document.getElementById('odStateBox');
+  if (box) box.textContent = order?.channel || '';
+
+  const sel = document.getElementById('odStatusSelect');
+  if (sel) {
+    sel.querySelectorAll('option[data-extra]').forEach(o => o.remove());
+    const match = OD_STATUS_OPTIONS.find(o => o.toLowerCase() === status.toLowerCase());
+    if (!match) {
+      const opt = document.createElement('option');
+      opt.value = status; opt.textContent = status; opt.dataset.extra = '1';
+      sel.prepend(opt);
+    }
+    sel.value = match || status;
+    const cls = orderStatusPillClass(status);
+    sel.style.background = cls === 'ok' ? '#22c55e' : cls === 'bad' ? '#dc2626' : '#f59e0b';
+    sel.style.color = '#fff';
+  }
+
+  const origen = orderOrigen(order);
+  const esPs = origen === 'prestashop';
+  const cancelado = /cancelad/i.test(status);
+  const isSuperAdmin = !currentStaffSession && !!getAdminPassword();
+  ['odStatusSelect', 'odUpdateStatusBtn', 'odCancelBtn'].forEach(id => { const el = document.getElementById(id); if (el) el.disabled = esPs; });
+  const cancelBtn = document.getElementById('odCancelBtn');
+  if (cancelBtn) cancelBtn.classList.toggle('hidden', cancelado);
+  const delBtn = document.getElementById('odDeleteBtn');
+  if (delBtn) delBtn.classList.toggle('hidden', esPs || !isSuperAdmin);
+  const note = document.getElementById('odOrigenNote');
+  if (note) {
+    note.textContent = esPs ? 'Pedido de las cajas de PrestaShop: su estado se cambia en PrestaShop.' : '';
+    note.classList.toggle('hidden', !esPs);
+  }
+}
+
+async function pedidoAdminRequest(body) {
+  const r = await fetch('/api/pedido-admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), registradoPor: nombreSesionActual(), ...body })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (data.error || 'No se pudo completar la operación.'));
+  return data;
+}
+
+function applyOrderStatusLocally(order, status) {
+  order.status = status;
+  renderOdStatus(order);
+  renderOrdersTableRows();
+}
+
+// Deja el stock en pantalla igual a lo que se regresó en Supabase.
+async function refreshStockAfterOrderChange(piezas) {
+  if (piezas > 0 && typeof loadRealStockData === 'function') {
+    try { await loadRealStockData(); renderInventarioTable(); } catch (e) { /* se ve al recargar */ }
+  }
+}
+
+async function updateOrderDetailStatus() {
+  const order = currentOrderObj;
+  if (!order) return;
   const sel = document.getElementById('odStatusSelect');
   const status = sel ? sel.value : '';
-  const folio = currentOrderObj ? currentOrderObj.id : '#486601';
-  if (status === 'Cancelado') {
-    notifyEvent('cancelled', 'Ticket cancelado', `El pedido ${folio} fue marcado como cancelado.`);
-  }
-  if (status === 'Enviado') {
-    const email = document.getElementById('odClientEmail')?.textContent?.trim();
-    const nombre = currentOrderObj?.customer || '';
-    if (email && email.includes('@')) {
-      fetch('/api/enviar-correo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: email, tipo: 'envio', datos: { nombre, pedidoId: folio } }),
-      }).catch(e => console.log('No se pudo enviar el correo de envío:', e.message));
+  if (!status || status === order.status) return;
+  if (status === 'Cancelado' && !confirm(`¿Cancelar el pedido ${order.id}? Se regresa a la bodega el stock que descontó.`)) return;
+  try {
+    const data = await pedidoAdminRequest({ accion: 'estado', origen: orderOrigen(order), folio: order.id, estado: status });
+    applyOrderStatusLocally(order, data.estado);
+    await refreshStockAfterOrderChange(data.piezasRegresadas);
+    if (status === 'Cancelado') {
+      notifyEvent('cancelled', 'Pedido cancelado', `El pedido ${order.id} fue cancelado${data.piezasRegresadas ? ` y se regresaron ${data.piezasRegresadas} piezas al stock` : ''}.`);
     }
+    if (status === 'Enviado') {
+      const email = document.getElementById('odClientEmail')?.textContent?.trim();
+      if (email && email.includes('@')) {
+        fetch('/api/enviar-correo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ to: email, tipo: 'envio', datos: { nombre: order.customer || '', pedidoId: order.id } }),
+        }).catch(e => console.log('No se pudo enviar el correo de envío:', e.message));
+      }
+    }
+    alert(`Estado del pedido actualizado a "${data.estado}" ✓` + (data.piezasRegresadas ? `\nSe regresaron ${data.piezasRegresadas} piezas al stock.` : ''));
+  } catch (e) {
+    alert(e.message);
+    renderOdStatus(order);
   }
-  alert('Estado del pedido actualizado ✓');
+}
+
+async function cancelOrderDetail() {
+  const order = currentOrderObj;
+  if (!order) return;
+  if (!confirm(`¿Cancelar el pedido ${order.id}? Se regresa a la bodega el stock que descontó.`)) return;
+  try {
+    const data = await pedidoAdminRequest({ accion: 'cancelar', origen: orderOrigen(order), folio: order.id });
+    applyOrderStatusLocally(order, 'Cancelado');
+    await refreshStockAfterOrderChange(data.piezasRegresadas);
+    notifyEvent('cancelled', 'Pedido cancelado', `El pedido ${order.id} fue cancelado${data.piezasRegresadas ? ` y se regresaron ${data.piezasRegresadas} piezas al stock` : ''}.`);
+    alert(`Pedido ${order.id} cancelado.` + (data.piezasRegresadas ? ` Se regresaron ${data.piezasRegresadas} piezas al stock.` : ' Este pedido no había descontado stock.'));
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function deleteOrderDetail() {
+  const order = currentOrderObj;
+  if (!order) return;
+  if (!confirm(`¿BORRAR el pedido ${order.id}? Desaparece del listado y se regresa el stock que descontó. No se puede deshacer.`)) return;
+  try {
+    const data = await pedidoAdminRequest({ accion: 'eliminar', origen: orderOrigen(order), folio: order.id });
+    loadedOrdersList = loadedOrdersList.filter(o => o !== order);
+    renderOrdersTableRows();
+    closeOrderDetailModal();
+    await refreshStockAfterOrderChange(data.piezasRegresadas);
+    alert(`Pedido ${order.id} borrado.` + (data.piezasRegresadas ? ` Se regresaron ${data.piezasRegresadas} piezas al stock.` : ''));
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+// "Imprimir pedido" antes llamaba window.print() sobre toda la página, y la
+// hoja de impresión del sitio oculta todo menos el ticket del POS — salía
+// en blanco. Ahora se arma una hoja propia del pedido en un iframe oculto.
+function printOrderDetail() {
+  const order = currentOrderObj;
+  if (!order) return;
+  const rows = [...document.querySelectorAll('#odProductsTableBody tr')].map(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length < 5) return '';
+    return `<tr><td>${tds[0].innerHTML}</td><td style="text-align:right">${tds[1].textContent}</td><td style="text-align:center">${tds[2].textContent}</td><td style="text-align:right">${tds[4].textContent}</td></tr>`;
+  }).join('');
+  const field = (label, value) => value ? `<div><b>${label}:</b> ${escapeHtml(value)}</div>` : '';
+  const email = document.getElementById('odClientEmail')?.textContent?.trim();
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedido ${escapeHtml(order.id)}</title>
+    <style>
+      body { font-family: Arial, sans-serif; color:#111; margin:24px; font-size:13px; }
+      h1 { font-size:20px; margin:0 0 4px; } .muted { color:#666; }
+      .grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; margin:16px 0; }
+      table { width:100%; border-collapse:collapse; margin-top:12px; }
+      th, td { border-bottom:1px solid #ddd; padding:6px 4px; vertical-align:top; } th { text-align:left; background:#f4f4f4; }
+      .total { text-align:right; font-size:16px; font-weight:bold; margin-top:12px; }
+    </style></head><body>
+    <h1>Mi Fiestashop — Pedido ${escapeHtml(order.id)}</h1>
+    <div class="muted">${escapeHtml(order.date || '')} · Estado: <b>${escapeHtml(order.status || '')}</b></div>
+    <div class="grid">
+      ${field('Cliente', order.customer)}${field('Correo', email && email.includes('@') ? email : order.customerEmail)}
+      ${field('Teléfono', order.customerPhone)}${field('Canal', order.channel)}
+      ${field('Método de pago', order.paymentMethod)}${field('Paquetería', order.shippingCarrier)}
+      ${field('Dirección de envío', order.shippingAddress)}${field('Bodega', order.bodega)}
+      ${field('Fecha de entrega', order.deliveryDate)}${field('Nota', order.nota)}
+    </div>
+    <table><thead><tr><th>Producto</th><th style="text-align:right">Precio</th><th style="text-align:center">Cant.</th><th style="text-align:right">Total</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="4" class="muted">Sin líneas de producto.</td></tr>'}</tbody></table>
+    <div class="total">Total: ${fmtMoney(order.total)} MXN</div>
+    </body></html>`;
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed; right:0; bottom:0; width:0; height:0; border:0;';
+  document.body.appendChild(frame);
+  const doc = frame.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+  setTimeout(() => {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(() => frame.remove(), 1000);
+  }, 250);
 }
 
 function fmtNotifTime(iso) {
