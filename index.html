@@ -9537,17 +9537,27 @@ async function loginCliente(email, password) {
   saveClienteSession({ access_token: data.access_token, user: data.user });
 }
 
+// Cada correo de recuperación trae un enlace nuevo que anula al anterior,
+// así que no se deja pedir otro mientras uno está en camino (un doble clic
+// hacía que el primer correo llegara con un enlace que ya no servía).
+let forgotPasswordBusy = false;
+
 async function handleForgotPassword() {
   const email = document.getElementById('clienteAuthEmail').value.trim();
   if (!email) {
     showClienteAuthMessage('Ingresa tu correo arriba y da clic de nuevo en "¿Olvidaste tu contraseña?".', true);
     return;
   }
+  if (forgotPasswordBusy) return;
+  forgotPasswordBusy = true;
   try {
     await cuentaClienteRequest({ accion: 'recuperar', email });
-    showClienteAuthMessage('✅ Si hay una cuenta con ese correo, te enviamos un correo de Mi Fiestashop para crear una nueva contraseña (revisa también spam).', false);
+    showClienteAuthMessage('✅ Si hay una cuenta con ese correo, te enviamos un correo de Mi Fiestashop para crear una nueva contraseña (revisa también spam). Si te llegan varios, usa el más reciente.', false);
   } catch (e) {
     showClienteAuthMessage(e.message || 'No se pudo enviar el correo de recuperación.', true);
+  } finally {
+    // Un minuto antes de poder pedir otro (el servidor aplica la misma regla).
+    setTimeout(() => { forgotPasswordBusy = false; }, 60000);
   }
 }
 
@@ -9617,7 +9627,7 @@ async function handleEmailLink() {
     clienteAuthMode = 'login';
     renderClienteAuthMode();
     showClienteAuthMessage(isRecovery
-      ? '❌ El enlace para recuperar tu contraseña ya expiró o ya se usó. Pide uno nuevo con "¿Olvidaste tu contraseña?".'
+      ? '❌ Este enlace para recuperar tu contraseña ya no sirve: expiró, ya se usó, o pediste otro después (solo funciona el del correo más reciente). Pide uno nuevo con "¿Olvidaste tu contraseña?".'
       : '❌ El enlace de confirmación ya expiró o ya se usó. Si ya confirmaste tu cuenta, inicia sesión.', true);
   }
 }
@@ -9700,7 +9710,15 @@ function showClienteAuthMessage(text, isError) {
   errEl.classList.remove('hidden');
 }
 
+let clienteAuthBusy = false;
+
 async function submitClienteAuth() {
+  if (clienteAuthBusy) return;
+  clienteAuthBusy = true;
+  try { await submitClienteAuthInner(); } finally { clienteAuthBusy = false; }
+}
+
+async function submitClienteAuthInner() {
   const email = document.getElementById('clienteAuthEmail').value.trim();
   const password = document.getElementById('clienteAuthPassword').value;
 

@@ -97,7 +97,10 @@ test('recuperar: a un cliente de PrestaShop sin acceso web se le crea el acceso 
       ? { ok: true, status: 200, json: async () => ({ id: 'u-9', hashed_token: 'rec9', user_metadata: { full_name: 'Giovany Aviles' } }) }
       : { ok: false, status: 404, json: async () => ({ msg: 'User not found' }) }],
     ['/rest/v1/ps_clientes', reply(200, [{ id: 94506, name: 'Giovany Aviles', phone: '555', email: 'mifiestashop@gmail.com' }])],
-    ['/auth/v1/admin/users', () => { created = true; return { ok: true, status: 200, json: async () => ({ id: 'u-9' }) }; }]
+    ['/auth/v1/admin/users', opts => {
+      if (opts.method !== 'POST') return { ok: true, status: 200, json: async () => ({ users: [] }) };
+      created = true; return { ok: true, status: 200, json: async () => ({ id: 'u-9' }) };
+    }]
   ]);
   const r = await call({ accion: 'recuperar', email: 'mifiestashop@gmail.com' });
   assert.equal(r.code, 200);
@@ -105,4 +108,16 @@ test('recuperar: a un cliente de PrestaShop sin acceso web se le crea el acceso 
   assert.equal(createCall.body.email, 'mifiestashop@gmail.com'); assert.equal(createCall.body.email_confirm, true);
   assert.deepEqual(createCall.body.user_metadata, { full_name: 'Giovany Aviles', phone: '555', ps_customer_id: 94506 });
   assert.deepEqual(sent, [{ to: 'mifiestashop@gmail.com', tipo: 'recuperacion', datos: { nombre: 'Giovany Aviles', resetUrl: 'https://mifiestashop.vercel.app/?recuperar=rec9' } }]);
+});
+
+test('recuperar: si ya se mandó un correo hace menos de un minuto, no genera otro enlace (el primero sigue sirviendo)', async () => {
+  sent.length = 0; failSend = false;
+  const calls = mockSupabase([
+    ['/auth/v1/admin/users', reply(200, { users: [{ id: 'u-1', email: 'a@b.mx', recovery_sent_at: new Date(Date.now() - 5000).toISOString() }] })],
+    ['/auth/v1/admin/generate_link', reply(200, { id: 'u-1', hashed_token: 'nuevo' })]
+  ]);
+  const r = await call({ accion: 'recuperar', email: 'a@b.mx' });
+  assert.equal(r.code, 200); assert.equal(r.data.yaEnviado, true);
+  assert.ok(!calls.some(c => c.url.includes('generate_link')));
+  assert.equal(sent.length, 0);
 });
