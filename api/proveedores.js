@@ -18,11 +18,14 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const url = `${baseUrl}/api/suppliers?display=[id,name,active,date_add]&limit=0,100&output_format=JSON`;
+  const url = `${baseUrl}/api/suppliers?display=[id,name,active,date_add]&limit=0,100&output_format=JSON&ws_key=${apiKey}`;
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+    // header antes de llegar al webservice, así que siempre daba 401 aunque
+    // la key fuera válida y estuviera activa.
+    const r = await fetch(url);
     if (!r.ok) throw new Error(`PrestaShop API error ${r.status}`);
 
     const data = await r.json();

@@ -87,20 +87,23 @@ module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
   if (!apiKey) { res.status(200).json({ ok: false, error: 'PS_API_KEY no configurado en Vercel' }); return; }
-  const auth = Buffer.from(`${apiKey}:`).toString('base64');
-  const headers = { Authorization: `Basic ${auth}` };
-
+  // La key va en la URL (?ws_key=), no en el header Authorization: Basic —
+  // Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+  // header antes de llegar al webservice, así que siempre daba 401 aunque
+  // la key fuera válida y estuviera activa.
   async function psGet(path) {
-    const r = await fetch(`${baseUrl}${path}${path.includes('?') ? '&' : '?'}output_format=JSON`, { headers });
+    const sep = path.includes('?') ? '&' : '?';
+    const r = await fetch(`${baseUrl}${path}${sep}output_format=JSON&ws_key=${apiKey}`);
     const text = await r.text();
     if (!r.ok) throw new Error(`GET ${path} -> ${r.status}: ${text.slice(0, 400)}`);
     return JSON.parse(text);
   }
 
   async function psWrite(method, path, xmlBody) {
-    const r = await fetch(`${baseUrl}${path}`, {
+    const sep = path.includes('?') ? '&' : '?';
+    const r = await fetch(`${baseUrl}${path}${sep}ws_key=${apiKey}`, {
       method,
-      headers: { ...headers, 'Content-Type': 'text/xml' },
+      headers: { 'Content-Type': 'text/xml' },
       body: xmlBody
     });
     const text = await r.text();

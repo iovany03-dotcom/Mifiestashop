@@ -85,14 +85,16 @@ module.exports = async function handler(req, res) {
     if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
 
     try {
-      const headers = { Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}` };
       // Igual que el checkout público: el precio SIEMPRE se vuelve a
       // consultar en vivo en PrestaShop, nunca se confía en el que mande
-      // quien llama a la API.
+      // quien llama a la API. La key va en la URL (?ws_key=), no en el
+      // header Authorization: Basic — Daiscom (el proveedor) confirmó que
+      // Apache/Cloudflare eliminan ese header antes de llegar al
+      // webservice, así que siempre daba 401 aunque la key fuera válida.
       const resolved = await Promise.all(cleanItems.map(async (it) => {
         const fields = '[id,name,reference,price,active]';
-        const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON`;
-        const r = await fetch(url, { headers });
+        const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`;
+        const r = await fetch(url);
         if (!r.ok) return null;
         const data = await r.json();
         const raw = Array.isArray(data.products) ? data.products[0] : Array.isArray(data.product) ? data.product[0] : data.product;

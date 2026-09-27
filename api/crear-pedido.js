@@ -89,15 +89,17 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const headers = { Authorization: `Basic ${auth}` };
+    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+    // header antes de llegar al webservice, así que siempre daba 401 aunque
+    // la key fuera válida y estuviera activa.
 
     // Vuelve a consultar el precio y nombre REALES de cada producto en
     // PrestaShop — el precio que haya mandado el navegador se descarta.
     const resolved = await Promise.all(cleanItems.map(async (it) => {
       const fields = '[id,name,reference,price,active]';
-      const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON`;
-      const r = await fetch(url, { headers });
+      const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`;
+      const r = await fetch(url);
       if (!r.ok) return null;
       const data = await r.json();
       // Con display=[...campos específicos...] PrestaShop responde con la

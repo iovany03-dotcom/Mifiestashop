@@ -88,9 +88,12 @@ module.exports = async function handler(req, res) {
     let raw = [];
     let psFailure = null;
     if (psIds.length) {
-      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[id]=${encodeURIComponent('[' + psIds.join('|') + ']')}&limit=0,${psIds.length}&output_format=JSON`;
-      const auth = Buffer.from(`${apiKey}:`).toString('base64');
-      const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+      // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+      // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+      // header antes de llegar al webservice, así que siempre daba 401
+      // aunque la key fuera válida y estuviera activa.
+      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[id]=${encodeURIComponent('[' + psIds.join('|') + ']')}&limit=0,${psIds.length}&output_format=JSON&ws_key=${apiKey}`;
+      const r = await fetch(url);
       if (!r.ok) {
         psFailure = { status: r.status, detail: (await r.text()).slice(0, 500) };
       } else {

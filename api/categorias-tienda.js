@@ -99,8 +99,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const headers = { Authorization: `Basic ${auth}` };
+    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+    // header antes de llegar al webservice, así que siempre daba 401 aunque
+    // la key fuera válida y estuviera activa.
     const migratedRows = await fetchMigratedCategoryIds();
 
     // El conteo se calcula con el MISMO criterio que usa /api/productos para
@@ -112,8 +114,8 @@ module.exports = async function handler(req, res) {
     const results = await Promise.all(categories.map(async (c) => {
       try {
         const filters = `filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + c.id + ']')}`;
-        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
-        const r = await fetch(url, { headers });
+        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
+        const r = await fetch(url);
         const data = r.ok ? await r.json() : null;
         const defaultIds = data && Array.isArray(data.products) ? data.products.map(p => Number(p.id)) : [];
         const migratedIds = migratedRows

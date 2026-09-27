@@ -57,15 +57,18 @@ module.exports = async function handler(req, res) {
     const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
     let filters = 'filter[active]=1';
     if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
-    const authHeaders = { Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}` };
+    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+    // header antes de llegar al webservice, así que siempre daba 401 aunque
+    // la key fuera válida y estuviera activa.
 
     // Se pide más de lo pedido cuando hay texto de búsqueda: PrestaShop no
     // soporta buscar por nombre vía este filtro, así que se filtra aquí
     // sobre una ventana razonable en vez de sobre todo el catálogo.
     const fetchLimit = search ? 1000 : limit;
     const fetchOffset = search ? 0 : offset;
-    const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${fetchOffset},${fetchLimit}&output_format=JSON`;
-    const r = await fetch(url, { headers: authHeaders });
+    const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${fetchOffset},${fetchLimit}&output_format=JSON&ws_key=${apiKey}`;
+    const r = await fetch(url);
     if (!r.ok) return sendApiError(res, 502, `PrestaShop respondió ${r.status}.`, 'upstream_error');
     const data = await r.json();
     let rawProducts = Array.isArray(data.products) ? data.products : [];
@@ -104,8 +107,8 @@ module.exports = async function handler(req, res) {
     // adivinar cuántas páginas quedan — PrestaShop no lo da directo.
     let total = rawProducts.length;
     try {
-      const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
-      const cr = await fetch(countUrl, { headers: authHeaders });
+      const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
+      const cr = await fetch(countUrl);
       const cdata = cr.ok ? await cr.json() : null;
       if (cdata && Array.isArray(cdata.products)) total = cdata.products.length;
     } catch (e) { /* se queda con el conteo de esta página */ }
