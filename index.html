@@ -14147,9 +14147,22 @@ function updateSearchSuggestions(q) {
   if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const matches = dataset.filter(p =>
-    normalizeEs(p.name).includes(query) || normalizeEs(p.sku).includes(query)
-  ).slice(0, 6);
+  // El SKU en este catálogo es en realidad una lista de palabras clave
+  // relacionadas ("sombrero, bombín, casino, batucada"), no solo el nombre
+  // real del producto — sin priorizar, un producto que de verdad se llama
+  // "Bombin neón" podía quedar fuera del top 6 por culpa de otros que solo
+  // lo mencionan como etiqueta y aparecen antes en el catálogo.
+  const matches = dataset
+    .map(p => {
+      const nameIdx = normalizeEs(p.name).indexOf(query);
+      const skuIdx = normalizeEs(p.sku).indexOf(query);
+      if (nameIdx === -1 && skuIdx === -1) return null;
+      return { p, score: nameIdx !== -1 ? nameIdx : 1000 + skuIdx };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 8)
+    .map(x => x.p);
 
   if (matches.length === 0) {
     box.innerHTML = `<div class="store-search-suggest-empty">Sin resultados para "${query}"</div>`;
