@@ -2699,6 +2699,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
+        <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
         <a class="submenu-link" data-view="categorias">Categorías</a>
       </div>
     </div>
@@ -3460,6 +3461,65 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </section>
+
+    <!-- ================= MOVIMIENTOS DE INVENTARIO (KARDEX) ================= -->
+    <section id="view-movimientos" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+          <div>
+            <h2 style="margin:0 0 4px;">Movimientos de inventario</h2>
+            <div style="font-size:13px; color:var(--text-muted);">Entradas, salidas, ventas, traspasos y ajustes por bodega: los de las cajas de PrestaShop y los de este sistema (POS, pedidos manuales, cancelaciones).</div>
+          </div>
+          <button class="btn secondary" onclick="exportKardexCsv()">Exportar CSV</button>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:14px;">
+          <div style="position:relative; flex:2; min-width:240px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Producto</label>
+            <input type="search" id="kxProductInput" placeholder="Nombre, SKU o ID (vacío = todos)" autocomplete="off" oninput="kardexSuggest()" onkeydown="if(event.key==='Enter'){event.preventDefault(); kardexPickFirst();}" style="width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            <div id="kxSuggest" class="hidden" style="position:absolute; z-index:30; left:0; right:0; top:100%; max-height:280px; overflow:auto; background:var(--card-bg); border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.15);"></div>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Bodega</label>
+            <select id="kxWarehouse" onchange="loadKardex()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="">Todas</option>
+              <option value="53">CDMX Rumania</option>
+              <option value="55">Puebla</option>
+              <option value="56">Querétaro</option>
+              <option value="54">CDMX Popocatépetl</option>
+              <option value="57">Guadalajara</option>
+              <option value="58">Atizapán</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Tipo</label>
+            <select id="kxTipo" onchange="renderKardex()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="">Todos</option>
+              <option value="in">Solo entradas (+)</option>
+              <option value="out">Solo salidas (−)</option>
+              <option value="venta">Solo ventas</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Desde</label>
+            <input type="date" id="kxDesde" onchange="loadKardex()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Hasta</label>
+            <input type="date" id="kxHasta" onchange="loadKardex()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          </div>
+          <button class="btn primary" onclick="loadKardex()">Buscar</button>
+        </div>
+        <div id="kxSelected" style="font-size:13px; margin-bottom:10px;"></div>
+        <div class="kpis" id="kxKpis" style="margin-bottom:14px;"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr id="kxHead"></tr></thead>
+            <tbody id="kxBody"><tr><td style="text-align:center; padding:20px; color:var(--text-muted);">Elige un producto o un rango de fechas.</td></tr></tbody>
+          </table>
+        </div>
+        <div id="kxFoot" style="font-size:12px; color:var(--text-muted); margin-top:8px;"></div>
       </div>
     </section>
 
@@ -5863,6 +5923,7 @@ const PERMISSION_GROUPS = [
   { group: 'Catálogo & Stock', items: [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
+    { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
     { key: 'categorias', label: 'Categorías' },
     { key: 'paginas-cms', label: 'Páginas CMS' },
     { key: 'resenas-clientes', label: 'Reseñas de Clientes' },
@@ -5916,7 +5977,10 @@ loadStaffSessionFromStorage();
 
 function hasPermission(viewName) {
   if (!currentStaffSession) return true;
-  return (currentStaffSession.permisos || []).includes(viewName);
+  const permisos = currentStaffSession.permisos || [];
+  // Quien ya veía Almacenes / Bodegas también ve sus movimientos.
+  if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
+  return permisos.includes(viewName);
 }
 
 function applyStaffPermissionsUI() {
@@ -6959,6 +7023,7 @@ function switchView(viewName) {
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
     productos: ['Catálogo de Productos', 'Gestión del Catálogo'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
+    movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
     categorias: ['Categorías', 'Organización del Catálogo'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop'],
     'resenas-clientes': ['Reseñas de Clientes', 'Testimonios con foto para la tienda'],
@@ -6995,6 +7060,7 @@ function switchView(viewName) {
 
   // Auto-fetch API data when opening specific views
   if (viewName === 'categorias') loadCategoriesFromAPI();
+  if (viewName === 'movimientos') initKardexView();
   if (viewName === 'paginas-cms') loadCmsPagesAdmin();
   if (viewName === 'resenas-clientes') loadResenasAdmin();
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
@@ -9224,6 +9290,7 @@ function renderInventarioTable() {
         <td style="text-align:center;">${statusPill}</td>
         <td style="text-align:center;">
           <button class="btn small" style="padding:4px 8px; font-size:0.75rem;" onclick="openStockAdjustModal(${p.id})"> Ajustar</button>
+          <button class="btn small secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openKardexForProduct(${p.id})">Movimientos</button>
         </td>
       </tr>
     `;
@@ -9233,6 +9300,197 @@ function renderInventarioTable() {
 function syncInventoryData() {
   renderInventarioTable();
   alert('Inventario por almacén sincronizado correctamente.');
+}
+
+// ================= MOVIMIENTOS DE INVENTARIO (KARDEX) =================
+// Datos: rpc_kardex en Supabase (sesión de admin/personal) — junta
+// ps_inventory_movements (cajas de PrestaShop, copiado por el sync) con
+// pos_stock_moves (movimientos de este sistema).
+const KARDEX_LIMIT = 2000;
+const KARDEX_WH_KEYS = { 53: 'rumania', 55: 'puebla', 56: 'queretaro' };
+let kardexProduct = null; // { id, name, sku }
+let kardexRows = [];
+
+function kardexFmtDate(d) { return d.toISOString().slice(0, 10); }
+
+function initKardexView() {
+  const desde = document.getElementById('kxDesde');
+  if (desde && !desde.value && !kardexProduct) {
+    const d = new Date(); d.setDate(d.getDate() - 30);
+    desde.value = kardexFmtDate(d);
+  }
+  if (!realStockLoaded) loadRealStockData().then(() => { if (kardexRows.length) renderKardex(); }).catch(() => {});
+  loadKardex();
+}
+
+function openKardexForProduct(id) {
+  const p = (liveProducts.length ? liveProducts : PRODUCTS_DATA).find(x => String(x.id) === String(id));
+  kardexProduct = { id: Number(id), name: p ? p.name : `Producto ${id}`, sku: p ? p.sku : '' };
+  const input = document.getElementById('kxProductInput');
+  if (input) input.value = kardexProduct.name;
+  const desde = document.getElementById('kxDesde'); if (desde) desde.value = '';
+  const hasta = document.getElementById('kxHasta'); if (hasta) hasta.value = '';
+  switchView('movimientos');
+}
+
+function kardexMatches(q) {
+  q = q.trim().toLowerCase();
+  if (!q) return [];
+  const list = liveProducts.length ? liveProducts : PRODUCTS_DATA;
+  return list.filter(p => String(p.id) === q || (p.sku || '').toLowerCase().includes(q) || (p.name || '').toLowerCase().includes(q)).slice(0, 25);
+}
+
+function kardexSuggest() {
+  const input = document.getElementById('kxProductInput');
+  const box = document.getElementById('kxSuggest');
+  const q = input.value;
+  if (!q.trim()) {
+    box.classList.add('hidden');
+    if (kardexProduct) { kardexProduct = null; loadKardex(); }
+    return;
+  }
+  const items = kardexMatches(q);
+  box.innerHTML = items.length
+    ? items.map(p => `<div onclick="kardexSelect(${Number(p.id)})" style="padding:8px 12px; cursor:pointer; border-bottom:1px solid var(--border); font-size:13px;" onmouseover="this.style.background='var(--plane)'" onmouseout="this.style.background=''"><b>${escapeHtml(p.name)}</b> <span style="color:var(--text-muted);">${escapeHtml(p.sku || '')} · ID ${p.id}</span></div>`).join('')
+    : (/^\d+$/.test(q.trim()) ? `<div onclick="kardexSelect(${Number(q.trim())})" style="padding:8px 12px; cursor:pointer; font-size:13px;">Buscar el producto con ID ${escapeHtml(q.trim())}</div>` : '<div style="padding:8px 12px; font-size:13px; color:var(--text-muted);">Sin coincidencias</div>');
+  box.classList.remove('hidden');
+}
+
+function kardexPickFirst() {
+  const q = document.getElementById('kxProductInput').value.trim();
+  const items = kardexMatches(q);
+  if (items.length) kardexSelect(Number(items[0].id));
+  else if (/^\d+$/.test(q)) kardexSelect(Number(q));
+}
+
+function kardexSelect(id) {
+  const p = (liveProducts.length ? liveProducts : PRODUCTS_DATA).find(x => String(x.id) === String(id));
+  kardexProduct = { id, name: p ? p.name : `Producto ${id}`, sku: p ? p.sku : '' };
+  document.getElementById('kxProductInput').value = kardexProduct.name;
+  document.getElementById('kxSuggest').classList.add('hidden');
+  loadKardex();
+}
+
+document.addEventListener('click', e => {
+  const box = document.getElementById('kxSuggest');
+  if (box && !box.contains(e.target) && e.target.id !== 'kxProductInput') box.classList.add('hidden');
+});
+
+async function loadKardex() {
+  const body = document.getElementById('kxBody');
+  if (!body) return;
+  const wh = document.getElementById('kxWarehouse').value;
+  const desde = document.getElementById('kxDesde').value || null;
+  const hasta = document.getElementById('kxHasta').value || null;
+  if (!kardexProduct && !desde) {
+    kardexRows = [];
+    body.innerHTML = '<tr><td style="text-align:center; padding:20px; color:var(--text-muted);">Elige un producto, o pon una fecha "Desde" para ver los movimientos de todos los productos.</td></tr>';
+    document.getElementById('kxKpis').innerHTML = ''; document.getElementById('kxFoot').textContent = ''; document.getElementById('kxHead').innerHTML = '';
+    return;
+  }
+  body.innerHTML = '<tr><td style="text-align:center; padding:20px; color:var(--text-muted);">Cargando movimientos…</td></tr>';
+  try {
+    const rows = await sbRpc('rpc_kardex', {
+      ...getSessionCredsParams(),
+      p_id_product: kardexProduct ? kardexProduct.id : null,
+      p_id_warehouse: wh ? Number(wh) : null,
+      p_desde: desde, p_hasta: hasta, p_limit: KARDEX_LIMIT
+    });
+    kardexRows = Array.isArray(rows) ? rows : [];
+    renderKardex();
+  } catch (e) {
+    kardexRows = [];
+    body.innerHTML = `<tr><td style="text-align:center; padding:20px; color:var(--bad);">${e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudieron cargar los movimientos: ' + escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function kardexFilteredRows() {
+  const tipo = document.getElementById('kxTipo').value;
+  return kardexRows.filter(r => {
+    const q = Number(r.cantidad);
+    if (tipo === 'in') return q > 0;
+    if (tipo === 'out') return q < 0;
+    if (tipo === 'venta') return /^venta/i.test(r.tipo || '');
+    return true;
+  });
+}
+
+// Existencia después de cada movimiento: se parte de la existencia actual
+// de la bodega y se va restando hacia atrás. Solo con un producto y una
+// bodega elegidos (y sin filtrar por tipo, para no saltarse movimientos).
+function kardexBalances(rows) {
+  const wh = document.getElementById('kxWarehouse').value;
+  const whKey = KARDEX_WH_KEYS[wh];
+  if (!kardexProduct || !whKey || document.getElementById('kxTipo').value || document.getElementById('kxHasta').value) return null;
+  if (!realStockData[kardexProduct.id]) return null;
+  let saldo = getStockFor(kardexProduct.id, whKey);
+  return rows.map(r => { const after = saldo; saldo -= Number(r.cantidad) || 0; return after; });
+}
+
+function renderKardex() {
+  const rows = kardexFilteredRows();
+  const showProduct = !kardexProduct;
+  const balances = kardexBalances(rows);
+  const fmtQty = n => { const v = Number(n) || 0; return (v > 0 ? '+' : '') + v.toLocaleString('es-MX', { maximumFractionDigits: 2 }); };
+
+  const sel = document.getElementById('kxSelected');
+  sel.innerHTML = kardexProduct
+    ? `Producto: <b>${escapeHtml(kardexProduct.name)}</b> <span style="color:var(--text-muted);">${escapeHtml(kardexProduct.sku || '')} · ID ${kardexProduct.id}</span>
+       · Existencia actual: Puebla <b>${getStockFor(kardexProduct.id, 'puebla')}</b>, CDMX Rumania <b>${getStockFor(kardexProduct.id, 'rumania')}</b>, Querétaro <b>${getStockFor(kardexProduct.id, 'queretaro')}</b>
+       <a href="#" onclick="event.preventDefault(); kardexProduct=null; document.getElementById('kxProductInput').value=''; initKardexView();" style="margin-left:8px;">Ver todos los productos</a>`
+    : 'Todos los productos';
+
+  const entradas = rows.reduce((s, r) => s + Math.max(0, Number(r.cantidad) || 0), 0);
+  const salidas = rows.reduce((s, r) => s + Math.min(0, Number(r.cantidad) || 0), 0);
+  const ventas = rows.filter(r => /^venta/i.test(r.tipo || '')).reduce((s, r) => s - (Number(r.cantidad) || 0), 0);
+  document.getElementById('kxKpis').innerHTML = [
+    ['Movimientos', rows.length.toLocaleString('es-MX')],
+    ['Entradas', '+' + entradas.toLocaleString('es-MX') + ' u.'],
+    ['Salidas', salidas.toLocaleString('es-MX') + ' u.'],
+    ['Vendidas', ventas.toLocaleString('es-MX') + ' u.'],
+    ['Neto', fmtQty(entradas + salidas) + ' u.']
+  ].map(([l, v]) => `<div class="kpi-card"><div class="label">${l}</div><div class="value">${v}</div></div>`).join('');
+
+  const cols = ['Fecha', ...(showProduct ? ['Producto'] : []), 'Bodega', 'Tipo', 'Cantidad', ...(balances ? ['Existencia'] : []), 'Empleado', 'Referencia', 'Origen'];
+  document.getElementById('kxHead').innerHTML = cols.map(c => `<th${['Cantidad', 'Existencia'].includes(c) ? ' style="text-align:right;"' : ''}>${c}</th>`).join('');
+
+  const body = document.getElementById('kxBody');
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center; padding:20px; color:var(--text-muted);">Sin movimientos con estos filtros.</td></tr>`;
+  } else {
+    body.innerHTML = rows.map((r, i) => {
+      const q = Number(r.cantidad) || 0;
+      return `<tr>
+        <td style="white-space:nowrap;">${escapeHtml(String(r.fecha || '').slice(0, 16))}</td>
+        ${showProduct ? `<td><a href="#" onclick="event.preventDefault(); kardexSelect(${Number(r.id_product)})">${escapeHtml(r.producto || 'Producto ' + r.id_product)}</a></td>` : ''}
+        <td>${escapeHtml(r.almacen || '—')}</td>
+        <td>${escapeHtml(r.tipo || '')}</td>
+        <td style="text-align:right; font-weight:700; color:${q < 0 ? 'var(--bad)' : 'var(--good, #16a34a)'};">${fmtQty(q)}</td>
+        ${balances ? `<td style="text-align:right;">${Math.round(balances[i]).toLocaleString('es-MX')}</td>` : ''}
+        <td>${escapeHtml(r.empleado || '—')}</td>
+        <td>${escapeHtml(r.referencia || '—')}</td>
+        <td><span class="pill ${r.origen === 'PrestaShop' ? 'warn' : 'ok'}" style="font-size:11px;">${escapeHtml(r.origen || '')}</span></td>
+      </tr>`;
+    }).join('');
+  }
+  document.getElementById('kxFoot').textContent =
+    (kardexRows.length >= KARDEX_LIMIT ? `Se muestran los ${KARDEX_LIMIT} movimientos más recientes; acota con fechas o bodega para ver más atrás. ` : '') +
+    'Los movimientos de las cajas de PrestaShop se copian cada 10 minutos (desde abril de 2026).' +
+    (balances ? ' La existencia se calcula hacia atrás desde la existencia actual.' : '');
+}
+
+function exportKardexCsv() {
+  const rows = kardexFilteredRows();
+  if (!rows.length) return alert('No hay movimientos para exportar.');
+  const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [['Fecha', 'ID producto', 'Producto', 'Bodega', 'Tipo', 'Cantidad', 'Empleado', 'Referencia', 'Origen'].map(esc).join(',')]
+    .concat(rows.map(r => [r.fecha, r.id_product, r.producto, r.almacen, r.tipo, r.cantidad, r.empleado, r.referencia, r.origen].map(esc).join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `movimientos${kardexProduct ? '-' + kardexProduct.id : ''}-${kardexFmtDate(new Date())}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 // ================= MODULO DE MOVIMIENTOS E HISTORIAL DE INVENTARIO =================
