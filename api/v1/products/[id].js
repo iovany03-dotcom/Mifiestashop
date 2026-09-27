@@ -9,6 +9,7 @@
 // tampoco está soportado (ver la página de documentación): no aparecería en
 // ningún otro lado del sitio, así que no tendría caso "crearlo" solo aquí.
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
+const { fetchCatalogoImages } = require('../../../lib/catalogo-productos.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -54,12 +55,13 @@ module.exports = async function handler(req, res) {
       });
       const mRows = mr.ok ? await mr.json() : [];
       const m = Array.isArray(mRows) && mRows[0];
+      const own = (await fetchCatalogoImages([id]))[String(id)];
 
       const linkRewrite = firstLangValue(p.link_rewrite, '');
       const imgId = p.id_default_image;
-      const image = m && Array.isArray(m.images) && m.images[0]
+      const image = own ? own[0] : (m && Array.isArray(m.images) && m.images[0]
         ? m.images[0]
-        : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : null);
+        : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : null));
 
       res.status(200).json({
         data: {
