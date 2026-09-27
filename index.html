@@ -10286,6 +10286,25 @@ async function loadCustomersFromAPI(){
     }
   } catch(e) {}
 
+  // Cuentas creadas en la tienda en línea (Supabase Auth) — no están en
+  // ps_clientes (la copia de PrestaShop), así que se piden aparte con la
+  // sesión del back office y se agregan las que no estén ya por correo.
+  try {
+    const rw = await fetch('/api/clientes-web', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(getSessionCredsParams())
+    });
+    if (rw.ok) {
+      const dataWeb = await rw.json();
+      const known = new Set(list.map(c => String(c.email || '').toLowerCase()));
+      const nuevos = (Array.isArray(dataWeb.customers) ? dataWeb.customers : []).filter(c => !known.has(String(c.email).toLowerCase()));
+      if (nuevos.length) {
+        list = [...nuevos, ...list].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+      }
+    }
+  } catch(e) {}
+
   if(list.length === 0) list = DEFAULT_CUSTOMERS;
   customersCache = list;
   renderCustomersTable(list);
@@ -10312,7 +10331,7 @@ function renderCustomersTable(list){
       <td>${escapeHtml(c.email)}</td>
       <td>${escapeHtml(c.rfc)}</td>
       <td>${escapeHtml(c.date)}</td>
-      <td><span class="pill ok">Activo</span></td>
+      <td><span class="pill ${c.status === 'Sin confirmar' ? 'warn' : 'ok'}">${escapeHtml(c.status || 'Activo')}</span></td>
     </tr>
   `).join('');
 
