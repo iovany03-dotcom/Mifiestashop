@@ -14214,8 +14214,57 @@ function goToStorefrontCheckout(){
   if (coloniaInput) coloniaInput.value = '';
   const quoteBox = document.getElementById('checkoutShippingQuoteBox');
   if (quoteBox) quoteBox.classList.add('hidden');
+  prefillCheckoutFromCliente();
   renderCheckoutSummary();
   showStorefrontPage('storefrontCheckoutPage');
+}
+
+// Con sesión iniciada, el checkout se llena con los datos de la cuenta
+// (nombre, correo, teléfono) y con la dirección de envío del último pedido
+// (user_metadata.envio, ver rememberClienteShipping) — antes los pedía de
+// nuevo aunque el cliente ya los tuviera guardados. No pisa lo que el
+// cliente ya haya escrito en esta visita.
+function prefillCheckoutFromCliente() {
+  const user = clienteSession?.user;
+  if (!user) return;
+  const meta = user.user_metadata || {};
+  const envio = meta.envio || {};
+  const fill = (id, value) => {
+    const el = document.getElementById(id);
+    if (el && value && !el.value) el.value = value;
+  };
+  fill('checkoutName', meta.full_name);
+  fill('checkoutEmail', user.email);
+  fill('checkoutPhone', meta.phone);
+  fill('checkoutAddress', envio.address || meta.address);
+  fill('checkoutCP', envio.cp);
+  fill('checkoutEstado', envio.estado);
+  fill('checkoutMunicipio', envio.municipio);
+  fill('checkoutColonia', envio.colonia);
+  // Con la dirección completa, ya se cotiza el envío sin que tenga que
+  // volver a escribir nada.
+  if (envio.cp) onCheckoutShippingFieldsInput();
+}
+
+// Guarda en la cuenta la dirección de envío y el teléfono usados en el
+// pedido, para llenarlos solos la próxima vez. keepalive: con Mercado Pago
+// la página se va a otro sitio justo después.
+function rememberClienteShipping({ name, phone, address, cp, estado, municipio, colonia }) {
+  if (!clienteSession?.access_token) return;
+  const meta = clienteSession.user?.user_metadata || {};
+  fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    method: 'PUT',
+    keepalive: true,
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${clienteSession.access_token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: {
+      full_name: meta.full_name || name,
+      phone: meta.phone || phone,
+      envio: { address, cp, estado, municipio, colonia }
+    } })
+  })
+    .then(r => (r.ok ? r.json() : null))
+    .then(user => { if (user && user.id) saveClienteSession({ ...clienteSession, user }); })
+    .catch(() => {});
 }
 
 async function submitStorefrontOrder(){
@@ -14273,6 +14322,7 @@ async function submitStorefrontOrder(){
       return;
     }
     order = data;
+    rememberClienteShipping({ name, phone, address, cp, estado, municipio, colonia });
   } catch (e) {
     errEl.textContent = 'No se pudo procesar tu pedido. Verifica tu conexión e intenta de nuevo.';
     errEl.classList.remove('hidden');
