@@ -2046,6 +2046,7 @@
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-pink);" id="confirmFolio">WEB-000000</div>
         <div style="font-size:13px; color:#5b4a68; margin-top:8px;">Total: <b id="confirmTotal">$0.00</b></div>
       </div>
+      <div id="confirmTransferBox" class="hidden" style="text-align:left; border:2px solid var(--mf-pink); border-radius:12px; padding:16px 18px; margin-bottom:24px; background:#fff5fa; color:#2e1065;"></div>
       <button style="border-radius:20px; font-weight:700; padding:12px 24px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" onclick="goHomeStorefront()">Volver a la tienda</button>
     </div>
   </div>
@@ -2731,6 +2732,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="param-tienda-general">General</a>
         <a class="submenu-link" data-view="param-tienda-pedidos">Configuración de Pedidos</a>
+        <a class="submenu-link" data-view="param-tienda-pagos">Pagos por transferencia</a>
         <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
         <a class="submenu-link" data-view="param-tienda-clientes">Ajustes sobre clientes</a>
         <a class="submenu-link" data-view="param-tienda-contacto">Contacto</a>
@@ -4447,6 +4449,45 @@
       </div>
     </section>
 
+    <!-- PAGOS POR TRANSFERENCIA -->
+    <section id="view-param-tienda-pagos" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+          <h2>Cuenta para pagos por transferencia</h2>
+          <button class="btn primary" onclick="saveTransferenciaConfig()">Guardar</button>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+          Cuando un cliente elige <b>Transferencia bancaria</b> en el checkout, al confirmar su pedido ve estos datos (con el monto y su número de pedido como concepto) y también le llegan en el correo de confirmación.
+        </p>
+        <div class="card" style="margin:0; background:var(--plane); max-width:640px;">
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>Leyenda:</b>
+                <input type="text" id="cfgTransLeyenda" placeholder="Ej. Cuenta para reservaciones" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              </label>
+              <label><b>Titular de la cuenta:</b>
+                <input type="text" id="cfgTransTitular" placeholder="Razón social o nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              </label>
+              <label><b>Banco:</b>
+                <input type="text" id="cfgTransBanco" placeholder="Ej. Bancomer" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              </label>
+              <label><b>Número de cuenta:</b>
+                <input type="text" id="cfgTransCuenta" placeholder="Solo dígitos" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              </label>
+              <label><b>Cuenta CLABE (18 dígitos):</b>
+                <input type="text" id="cfgTransClabe" placeholder="012180001191093312" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              </label>
+              <label><b>Instrucciones para el cliente:</b>
+                <textarea id="cfgTransInstrucciones" rows="3" placeholder="Ej. Envíanos tu comprobante por WhatsApp…" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="cfgTransActiva"> Mostrar estos datos al cliente
+              </label>
+              <div id="cfgTransMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+            </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 13b. META PIXEL -->
     <section id="view-param-avanzados-pixel" class="view-panel hidden">
       <div class="card">
@@ -5838,6 +5879,7 @@ const PERMISSION_GROUPS = [
   { group: 'Parámetros de la Tienda', items: [
     { key: 'param-tienda-general', label: 'General' },
     { key: 'param-tienda-pedidos', label: 'Config. Pedidos' },
+    { key: 'param-tienda-pagos', label: 'Pagos por transferencia' },
     { key: 'param-tienda-productos', label: 'Config. Productos' },
     { key: 'param-tienda-clientes', label: 'Ajustes de Clientes' },
     { key: 'param-tienda-contacto', label: 'Contacto' },
@@ -6938,6 +6980,7 @@ function switchView(viewName) {
     'param-tienda-contacto': ['Parámetros de la Tienda', 'Contacto & Sucursales'],
     'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
+    'param-tienda-pagos': ['Parámetros de la Tienda', 'Pagos por transferencia'],
     'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento & Caché'],
     'param-avanzados-correo': ['Parámetros Avanzados', 'Configuración SMTP de Correo'],
     'plantillas-correo': ['Parámetros Avanzados', 'Plantillas de Correo Transaccional'],
@@ -6969,6 +7012,7 @@ function switchView(viewName) {
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
+  if (viewName === 'param-tienda-pagos') renderTransferenciaAdminForm();
   if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
@@ -14326,6 +14370,92 @@ function rememberClienteShipping({ name, phone, address, cp, estado, municipio, 
     .catch(() => {});
 }
 
+// ================= PAGO POR TRANSFERENCIA =================
+// Cuenta bancaria para transferencias: una sola fila en ajustes_pago
+// (lectura pública), editable en Parámetros de la Tienda → Pagos por
+// transferencia. Se muestra al confirmar un pedido pagado por
+// transferencia; el correo del pedido la agrega del lado del servidor.
+let transferenciaConfig = null;
+
+async function loadTransferenciaConfig() {
+  try {
+    const rows = await sbGet('ajustes_pago?select=*&id=eq.1');
+    transferenciaConfig = Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) {
+    transferenciaConfig = null;
+  }
+  return transferenciaConfig;
+}
+
+async function renderConfirmTransferBox(show, folio, total) {
+  const box = document.getElementById('confirmTransferBox');
+  if (!box) return;
+  box.classList.add('hidden');
+  if (!show) return;
+  const t = transferenciaConfig || await loadTransferenciaConfig();
+  if (!t || !t.transferencia_activa) return;
+  const row = (label, value, copy) => value ? `
+    <div style="display:flex; justify-content:space-between; gap:10px; padding:5px 0; border-bottom:1px solid #f5d6e6; flex-wrap:wrap;">
+      <span style="color:#8b7d97; font-size:13px;">${label}</span>
+      <span style="font-weight:700; font-size:14px;">${escapeHtml(value)}${copy ? ` <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText('${escapeHtml(value)}'); this.textContent='Copiado ✓';" style="margin-left:6px; border:1px solid #e5dce6; background:#fff; border-radius:6px; padding:2px 8px; font-size:11px; cursor:pointer;">Copiar</button>` : ''}</span>
+    </div>` : '';
+  box.innerHTML = `
+    <div style="font-weight:800; color:var(--mf-pink); font-size:16px; margin-bottom:4px;">🏦 Datos para tu transferencia</div>
+    ${t.transferencia_leyenda ? `<div style="font-weight:700; margin-bottom:8px;">${escapeHtml(t.transferencia_leyenda)}</div>` : ''}
+    ${row('Titular', t.transferencia_titular)}
+    ${row('Banco', t.transferencia_banco)}
+    ${row('Número de cuenta', t.transferencia_cuenta, true)}
+    ${row('CLABE', t.transferencia_clabe, true)}
+    ${row('Monto', fmtMoney(total))}
+    ${row('Concepto', 'Pedido ' + folio, true)}
+    ${t.transferencia_instrucciones ? `<p style="margin:10px 0 0; font-size:13px; color:#5b4a68;">${escapeHtml(t.transferencia_instrucciones)}</p>` : ''}
+    <p style="margin:6px 0 0; font-size:12px; color:#8b7d97;">También te enviamos estos datos a tu correo.</p>`;
+  box.classList.remove('hidden');
+}
+
+// --- Back office: Parámetros de la Tienda → Pagos por transferencia ---
+async function renderTransferenciaAdminForm() {
+  const t = await loadTransferenciaConfig() || {};
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('cfgTransLeyenda', t.transferencia_leyenda);
+  set('cfgTransTitular', t.transferencia_titular);
+  set('cfgTransBanco', t.transferencia_banco);
+  set('cfgTransCuenta', t.transferencia_cuenta);
+  set('cfgTransClabe', t.transferencia_clabe);
+  set('cfgTransInstrucciones', t.transferencia_instrucciones);
+  const act = document.getElementById('cfgTransActiva');
+  if (act) act.checked = t.transferencia_activa !== false;
+}
+
+async function saveTransferenciaConfig() {
+  const msgEl = document.getElementById('cfgTransMsg');
+  const val = id => document.getElementById(id)?.value || '';
+  const showMsg = (text, ok) => {
+    if (!msgEl) return;
+    msgEl.textContent = text;
+    msgEl.style.color = ok ? '#15803d' : '#dc2626';
+    msgEl.style.background = ok ? 'rgba(21,128,61,0.08)' : 'rgba(220,38,38,0.08)';
+    msgEl.classList.remove('hidden');
+  };
+  try {
+    const r = await fetch('/api/ajustes-pago', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), datos: {
+        activa: document.getElementById('cfgTransActiva')?.checked !== false,
+        leyenda: val('cfgTransLeyenda'), titular: val('cfgTransTitular'), banco: val('cfgTransBanco'),
+        cuenta: val('cfgTransCuenta'), clabe: val('cfgTransClabe'), instrucciones: val('cfgTransInstrucciones')
+      } })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (data.error || 'No se pudo guardar.'));
+    transferenciaConfig = data.ajustes || null;
+    showMsg('Cuenta para transferencias guardada. Ya se usa en la confirmación y en el correo de los pedidos.', true);
+  } catch (e) {
+    showMsg(e.message, false);
+  }
+}
+
 async function submitStorefrontOrder(){
   const cp = document.getElementById('checkoutCP').value.trim();
   const estado = document.getElementById('checkoutEstado').value.trim();
@@ -14420,12 +14550,15 @@ async function submitStorefrontOrder(){
     body: JSON.stringify({
       to: email,
       tipo: 'pedido',
-      datos: { nombre: name, pedidoId: folio, total, items: verifiedItems },
+      // El servidor agrega los datos bancarios (ajustes_pago) si se pagó por
+      // transferencia; nunca se mandan desde aquí.
+      datos: { nombre: name, pedidoId: folio, total, items: verifiedItems, pagoTransferencia: checkoutPayMethod === 'Transferencia bancaria' },
     }),
   }).catch(e => console.log('No se pudo enviar el correo de confirmación:', e.message));
 
   document.getElementById('confirmFolio').textContent = folio;
   document.getElementById('confirmTotal').textContent = fmtMoney(total);
+  renderConfirmTransferBox(checkoutPayMethod === 'Transferencia bancaria', folio, total);
 
   notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(total)}.`);
 
@@ -14453,6 +14586,7 @@ async function handleMercadoPagoReturn() {
 
   if (mpStatus === 'approved') {
     document.getElementById('confirmFolio').textContent = mpFolio;
+    renderConfirmTransferBox(false);
     document.getElementById('confirmTotal').textContent = isNaN(mpTotal) ? '' : fmtMoney(mpTotal);
     showStorefrontPage('storefrontOrderConfirmPage');
     if (!isNaN(mpTotal)) {
