@@ -52,11 +52,11 @@ async function fetchMigratedProducts() {
 // en vez de vacío por default.
 const WHOLESALE_GROUP_ID = '60';
 
-async function fetchWholesalePrices(baseUrl, headers) {
+async function fetchWholesalePrices(baseUrl, apiKey) {
   try {
     const fields = '[id,id_product,id_group,from_quantity,reduction,reduction_type,price]';
-    const url = `${baseUrl}/api/specific_prices?filter[id_group]=${WHOLESALE_GROUP_ID}&display=${encodeURIComponent(fields)}&limit=0,5000&output_format=JSON`;
-    const r = await fetch(url, { headers });
+    const url = `${baseUrl}/api/specific_prices?filter[id_group]=${WHOLESALE_GROUP_ID}&display=${encodeURIComponent(fields)}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
+    const r = await fetch(url);
     if (!r.ok) return {};
     const data = await r.json();
     const rows = Array.isArray(data.specific_prices) ? data.specific_prices : [];
@@ -150,7 +150,7 @@ module.exports = async function handler(req, res) {
   let filters = 'filter[active]=1';
   if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
   if (sort) filters += `&sort=${sort}`;
-  const productsUrl = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${offset},${limit}&output_format=JSON`;
+  const productsUrl = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${offset},${limit}&output_format=JSON&ws_key=${apiKey}`;
 
   // Extrae el primer valor de un campo multi-idioma de PrestaShop (array u objeto),
   // garantizando que el resultado sea siempre un string usable (PrestaShop a veces
@@ -168,8 +168,10 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    const authHeaders = { Authorization: `Basic ${auth}` };
+    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+    // header antes de llegar al webservice, así que siempre daba 401 aunque
+    // la key fuera válida y estuviera activa.
 
     // Un producto puede vivir en varias categorías a la vez, pero
     // PrestaShop solo expone UNA por producto vía id_category_default —
@@ -181,8 +183,8 @@ module.exports = async function handler(req, res) {
     // por defecto de PrestaShop (que sigue cubriendo todo lo no migrado).
     async function fetchDefaultCategoryIds(catId) {
       try {
-        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + catId + ']')}&limit=0,5000&output_format=JSON`;
-        const r = await fetch(url, { headers: authHeaders });
+        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + catId + ']')}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
+        const r = await fetch(url);
         if (!r.ok) return [];
         const data = await r.json();
         return Array.isArray(data.products) ? data.products.map(p => Number(p.id)) : [];
@@ -196,8 +198,8 @@ module.exports = async function handler(req, res) {
       const out = [];
       for (let i = 0; i < ids.length; i += CHUNK) {
         const chunk = ids.slice(i, i + CHUNK);
-        const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&filter[id]=${encodeURIComponent('[' + chunk.join('|') + ']')}&limit=0,${chunk.length}&output_format=JSON`;
-        const r = await fetch(url, { headers: authHeaders });
+        const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&filter[id]=${encodeURIComponent('[' + chunk.join('|') + ']')}&limit=0,${chunk.length}&output_format=JSON&ws_key=${apiKey}`;
+        const r = await fetch(url);
         if (!r.ok) continue;
         const data = await r.json();
         if (Array.isArray(data.products)) out.push(...data.products);
@@ -207,7 +209,7 @@ module.exports = async function handler(req, res) {
 
     const [migrated, wholesaleRules, categoryNames, defaultCatIds] = await Promise.all([
       fast ? Promise.resolve({}) : fetchMigratedProducts(),
-      fast ? Promise.resolve({}) : fetchWholesalePrices(baseUrl, authHeaders),
+      fast ? Promise.resolve({}) : fetchWholesalePrices(baseUrl, apiKey),
       fetchCategoryNames(),
       category ? fetchDefaultCategoryIds(category) : Promise.resolve(null)
     ]);
@@ -240,10 +242,10 @@ module.exports = async function handler(req, res) {
       // un producto puede aparecer en varias), eso rompía la paginación.
       // Se pide en paralelo con el listado (antes era una espera aparte,
       // una tras otra) — son dos consultas independientes a PrestaShop.
-      const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON`;
+      const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
       const [r, cr] = await Promise.all([
-        fetch(productsUrl, { headers: authHeaders }),
-        fast ? Promise.resolve(null) : fetch(countUrl, { headers: authHeaders }).catch(() => null)
+        fetch(productsUrl),
+        fast ? Promise.resolve(null) : fetch(countUrl).catch(() => null)
       ]);
       if (!r.ok) {
         const text = await r.text();

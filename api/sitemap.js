@@ -14,10 +14,13 @@ module.exports = async function handler(req, res) {
 
   if (apiKey) {
     try {
-      const auth = Buffer.from(`${apiKey}:`).toString('base64');
+      // La key va en la URL (?ws_key=), no en el header Authorization:
+      // Basic — Daiscom (el proveedor) confirmó que Apache/Cloudflare
+      // eliminan ese header antes de llegar al webservice, así que siempre
+      // daba 401 aunque la key fuera válida y estuviera activa.
       const fields = '[id,link_rewrite]';
-      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&limit=0,1000&output_format=JSON`;
-      const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[active]=1&limit=0,1000&output_format=JSON&ws_key=${apiKey}`;
+      const r = await fetch(url);
       if (r.ok) {
         const data = await r.json();
         const products = Array.isArray(data.products) ? data.products : [];

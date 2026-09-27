@@ -31,7 +31,10 @@ module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
   const apiKey = process.env.PS_API_KEY;
   if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
-  const authHeaders = { Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString('base64')}` };
+  // La key va en la URL (?ws_key=), no en el header Authorization: Basic —
+  // Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+  // header antes de llegar al webservice, así que siempre daba 401 aunque
+  // la key fuera válida y estuviera activa.
 
   if (req.method === 'GET') {
     const auth = await authenticateApiRequest(req, 'products:read');
@@ -39,7 +42,7 @@ module.exports = async function handler(req, res) {
 
     try {
       const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,weight]';
-      const r = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(fields)}&output_format=JSON`, { headers: authHeaders });
+      const r = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`);
       if (r.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
       if (!r.ok) return sendApiError(res, 502, `PrestaShop respondió ${r.status}.`, 'upstream_error');
       const data = await r.json();
@@ -102,7 +105,7 @@ module.exports = async function handler(req, res) {
       // Confirma que el producto existe y está activo en PrestaShop antes de
       // guardar la sobreescritura — nunca se acepta un id inventado.
       const checkFields = '[id,name,reference,active]';
-      const cr = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(checkFields)}&output_format=JSON`, { headers: authHeaders });
+      const cr = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(checkFields)}&output_format=JSON&ws_key=${apiKey}`);
       if (cr.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
       if (!cr.ok) return sendApiError(res, 502, `PrestaShop respondió ${cr.status}.`, 'upstream_error');
       const cdata = await cr.json();

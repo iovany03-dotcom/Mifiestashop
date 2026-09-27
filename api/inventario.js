@@ -28,10 +28,13 @@ module.exports = async function handler(req, res) {
 
   try {
     const limit = req.query.limit || 100;
-    const url = `${baseUrl}/api/stock_availables?display=full&limit=0,${limit}&output_format=JSON`;
-    const auth = Buffer.from(`${apiKey}:`).toString('base64');
-    
-    const r = await fetch(url, { headers: { Authorization: `Basic ${auth}` } });
+    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
+    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
+    // header antes de llegar al webservice, así que siempre daba 401 aunque
+    // la key fuera válida y estuviera activa.
+    const url = `${baseUrl}/api/stock_availables?display=full&limit=0,${limit}&output_format=JSON&ws_key=${apiKey}`;
+
+    const r = await fetch(url);
     if (!r.ok) {
       res.status(200).json({ status: 'warning', message: 'No se pudo consultar stock_availables', almacenes });
       return;

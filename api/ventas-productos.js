@@ -9,9 +9,13 @@
 
 const BATCH_SIZE = 300;
 
+// La key va en la URL (?ws_key=), no en el header Authorization: Basic —
+// Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese header
+// antes de llegar al webservice, así que siempre daba 401 aunque la key
+// fuera válida y estuviera activa.
 async function psGet(baseUrl, apiKey, path) {
-  const auth = Buffer.from(`${apiKey}:`).toString('base64');
-  const r = await fetch(`${baseUrl}${path}`, { headers: { Authorization: `Basic ${auth}` } });
+  const sep = path.includes('?') ? '&' : '?';
+  const r = await fetch(`${baseUrl}${path}${sep}ws_key=${apiKey}`);
   if (!r.ok) {
     const text = await r.text();
     throw new Error(`PrestaShop API ${r.status}: ${text.slice(0, 300)}`);
