@@ -64,7 +64,7 @@ ${header}
 <section class="hero ${p.heroImage ? '' : 'hero-text-only'}"><div class="hero-inner wrap"><div class="hero-copy">
 ${t.tags.length ? `<ul class="topic-tags">${t.tags.map(tag=>`<li>${esc(tag)}</li>`).join('')}</ul>` : ''}
 <h1>${esc(p.title)}</h1>${p.intro ? `<p class="hero-intro">${esc(p.intro)}</p>` : ''}
-${!informational ? `<div class="hero-actions"><a class="button primary" href="#productos">Explorar productos</a>${p.location ? '<a class="button secondary" href="#ubicacion">Visita nuestra tienda</a>' : `<a class="button secondary" href="${shopLink}">Ver en la tienda</a>`}</div>` : ''}
+${!informational ? `<div class="hero-actions"><a class="button primary" href="#productos">Explorar productos</a>${p.location ? '<a class="button secondary" href="#ubicacion">Visita nuestra tienda</a>' : '<a class="button secondary" href="/266-productos">Ver en la tienda</a>'}</div>` : ''}
 ${p.location && !p.location.multiple ? `<p class="location-note">${p.location.name ? `Tienda en ${esc(p.location.name)}` : 'Consulta nuestra ubicación'}</p>` : ''}
 </div>${p.heroImage ? `<figure class="hero-image"><img src="${esc(p.heroImage)}" alt="${esc(p.title)}" fetchpriority="high" width="720" height="560"><figcaption>${esc(t.label)}</figcaption></figure>` : ''}</div></section>
 ${!informational ? `<section class="wrap" aria-label="Beneficios de compra">${benefits}</section>` : ''}
