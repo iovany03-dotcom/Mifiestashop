@@ -1690,10 +1690,6 @@
       "destination": "/cms-pages/411.html"
     },
     {
-      "source": "/mayoristas",
-      "destination": "/mayoristas.html"
-    },
-    {
       "source": "/desarrolladores",
       "destination": "/desarrolladores.html"
     },
@@ -1746,7 +1742,11 @@
       "destination": "/index.html"
     },
     {
-      "source": "/contacto",
+      "source": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
+      "destination": "/mayoristas.html"
+    },
+    {
+      "source": "/content/418-contactanos",
       "destination": "/index.html"
     },
     {
@@ -1755,6 +1755,16 @@
     }
   ],
   "redirects": [
+    {
+      "source": "/mayoristas",
+      "destination": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
+      "permanent": true
+    },
+    {
+      "source": "/contacto",
+      "destination": "/content/418-contactanos",
+      "permanent": true
+    },
     {
       "source": "/index.php",
       "has": [
@@ -1818,17 +1828,17 @@
     },
     {
       "source": "/contactenos",
-      "destination": "/contacto",
+      "destination": "/content/418-contactanos",
       "permanent": true
     },
     {
       "source": "/contactanos",
-      "destination": "/contacto",
+      "destination": "/content/418-contactanos",
       "permanent": true
     },
     {
       "source": "/tiendas",
-      "destination": "/contacto",
+      "destination": "/content/418-contactanos",
       "permanent": true
     },
     {
