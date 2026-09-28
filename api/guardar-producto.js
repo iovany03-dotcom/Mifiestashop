@@ -81,6 +81,11 @@ module.exports = async function handler(req, res) {
     meta_keywords: null,
     link_rewrite: null,
     legacy_image_url: producto.img ? String(producto.img).trim() : null,
+    // La tienda pública (api/productos.js, lib/productos-supabase.js) lee la
+    // foto de "images" (arreglo), nunca de legacy_image_url — ese campo solo
+    // lo usa la propia lista del admin como respaldo. Sin esto, cambiar la
+    // imagen aquí se veía reflejado en el admin pero nunca en la tienda.
+    images: producto.img ? [String(producto.img).trim()] : null,
     // categoría y precios especiales adicionales se guardan como texto en
     // description hasta que el admin de catálogo tenga sus propios campos;
     // category_label se preserva aparte para no perder el nombre visible.
