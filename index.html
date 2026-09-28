@@ -7178,10 +7178,14 @@ function addToCart(product) {
 }
 
 function updateCartQty(id, delta) {
-  const item = cart.find(i => i.id === id);
+  // == a propósito: el onclick que llama a esto inserta item.id sin comillas
+  // en el HTML, así que aquí siempre llega como número aunque el id real del
+  // producto sea texto — con === nunca hacía match y los botones -/+ no
+  // hacían nada (ver también cpAddProduct/cpUpdateQty, mismo bug).
+  const item = cart.find(i => i.id == id);
   if (item) {
     item.qty += delta;
-    if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    if (item.qty <= 0) cart = cart.filter(i => i.id != id);
     else applyWholesalePricing(item);
   }
   updateCartUI();
@@ -10256,7 +10260,9 @@ function renderClienteCatalog(query = '') {
 // incondicionalmente "GRATIS (>$1,000)" sin validar nada.
 function addToClienteCart(pId) {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const prod = dataset.find(p => p.id === pId);
+  // == a propósito: mismo bug que cpAddProduct/updateCartQty — el onclick
+  // inserta el id sin comillas y llega como número aunque el id real sea texto.
+  const prod = dataset.find(p => p.id == pId);
   if(!prod) return;
   addToCart({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
   updateStoreCartBadge();
