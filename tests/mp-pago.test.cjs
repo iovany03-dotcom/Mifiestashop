@@ -47,7 +47,7 @@ test('mp-pago: una notificación de un intento fallido no baja un pedido ya paga
 test('mp-pago: no toca pedidos que el personal ya movió (Enviado)', async () => {
   const st = fake({ pago: { status: 'approved', transaction_amount: 100, external_reference: 'WEB-1' }, pedido: { status: 'Enviado', total: 100 } });
   const r = await aplicarPago(args);
-  assert.equal(r.estado, 'Enviado'); assert.equal(st.patches, 0);
+  assert.equal(r.estado, 'Enviado'); assert.equal(st.pedido.status, 'Enviado'); assert.equal(st.pedido.mp_status, 'approved');
 });
 
 test('mp-pago: el pago debe ser del mismo pedido', async () => {

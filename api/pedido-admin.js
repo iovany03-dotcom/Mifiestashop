@@ -113,6 +113,25 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    // Nota interna, fecha de entrega y guía de la paquetería (solo pedidos
+    // de la tienda en línea / manuales).
+    if (accion === 'datos') {
+      if (origen !== 'online') { res.status(400).json({ error: 'Solo se pueden editar pedidos de la tienda en línea o manuales.' }); return; }
+      const patch = {};
+      if (body.nota !== undefined) patch.nota = String(body.nota || '').slice(0, 2000) || null;
+      if (body.deliveryDate !== undefined) {
+        const d = body.deliveryDate ? String(body.deliveryDate) : null;
+        if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) { res.status(400).json({ error: 'Fecha inválida.' }); return; }
+        patch.delivery_date = d;
+      }
+      if (body.trackingNumber !== undefined) patch.tracking_number = String(body.trackingNumber || '').trim().slice(0, 100) || null;
+      if (!Object.keys(patch).length) { res.status(400).json({ error: 'Nada que guardar.' }); return; }
+      const rows = await api(`pedidos_online?folio=eq.${encodeURIComponent(folio)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch) });
+      if (!Array.isArray(rows) || rows.length === 0) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+      res.status(200).json({ ok: true });
+      return;
+    }
+
     if (accion === 'eliminar') {
       const esAdmin = await rpc('rpc_check_admin', { p_password: body.p_admin_password ?? null }).catch(() => false);
       if (!esAdmin) { res.status(403).json({ error: 'Solo el super administrador puede borrar pedidos.' }); return; }

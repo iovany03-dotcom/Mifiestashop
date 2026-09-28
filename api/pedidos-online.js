@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const select = 'folio,created_at,customer_name,customer_email,customer_phone,shipping_address,billing_address,bodega,nota,delivery_date,payment_method,shipping_carrier,shipping_cost,items,subtotal,discount_amount,discount_label,total,status,created_by,source';
+    const select = 'folio,created_at,customer_name,customer_email,customer_phone,shipping_address,billing_address,bodega,nota,delivery_date,payment_method,shipping_carrier,shipping_cost,items,subtotal,discount_amount,discount_label,total,status,created_by,source,tracking_number,mp_payment_id,mp_status,paid_at';
     const url = `${SUPABASE_URL}/rest/v1/pedidos_online?select=${select}&order=created_at.desc&limit=1000`;
     const r = await fetch(url, {
       headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
@@ -50,11 +50,15 @@ module.exports = async function handler(req, res) {
       billingAddress: o.billing_address || null,
       shippingCarrier: o.shipping_carrier || null,
       shippingCost: o.shipping_cost != null ? parseFloat(o.shipping_cost) : 0,
+      trackingNumber: o.tracking_number || null,
+      mpPaymentId: o.mp_payment_id || null,
+      mpStatus: o.mp_status || null,
+      paidAt: o.paid_at || null,
       subtotal: o.subtotal != null ? parseFloat(o.subtotal) : null,
       customerEmail: o.customer_email || null,
       customerPhone: o.customer_phone || null,
       items: (Array.isArray(o.items) ? o.items : []).map(it => ({
-        name: it.name, sku: it.sku, qty: it.qty, price: it.price, total: it.price * it.qty
+        id: it.id || null, name: it.name, sku: it.sku, qty: it.qty, price: it.price, total: it.price * it.qty
       })),
       _sortDate: o.created_at ? new Date(o.created_at).getTime() : 0
     }));
