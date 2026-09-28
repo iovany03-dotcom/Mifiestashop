@@ -4870,17 +4870,9 @@
       </div>
     </div>
 
-    <!-- 2FA Warning Banner -->
-    <div style="background:#fef3c7; border:1px solid #f59e0b; color:#92400e; padding:10px 16px; border-radius:8px; font-size:13px; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
-      <div> Activa la Verificación de dos pasos (2FA) para proteger tu Cuenta <b><a href="#" style="color:#92400e; text-decoration:underline;">haz click</a></b></div>
-      <span style="cursor:pointer; font-weight:bold;" onclick="this.parentElement.style.display='none'">✕</span>
-    </div>
-
     <!-- Top Action Buttons Bar -->
-    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
-      <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="reprintTicket(currentOrderObj ? currentOrderObj.id : '#486601', 180)">Imprimir Ticket</button>
-      <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Generando hoja de alistamiento de pedido...')">Imprimir Alistamiento</button>
-      <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="alert('Generando guía de transporte...')">Guía de Transporte</button>
+    <div id="odTopActions" style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+      <button class="btn secondary hidden" id="odReprintBtn" style="border-radius:6px; font-size:13px;" onclick="if (currentOrderObj) reprintTicket(currentOrderObj.id, currentOrderObj.total)">Reimprimir ticket</button>
     </div>
 
     <!-- Status Change & Action Toolbar -->
@@ -4905,8 +4897,8 @@
       </div>
 
       <div style="display:flex; gap:6px;">
-        <button class="btn small" onclick="alert('Navegando a pedido anterior')">←</button>
-        <button class="btn small" onclick="alert('Navegando a siguiente pedido')">→</button>
+        <button class="btn small" title="Pedido anterior" onclick="navigateOrderDetail(-1)">←</button>
+        <button class="btn small" title="Pedido siguiente" onclick="navigateOrderDetail(1)">→</button>
       </div>
     </div>
 
@@ -4919,16 +4911,15 @@
         <!-- CLIENT CARD -->
         <div class="card" style="padding:16px; border-radius:10px;">
           <div style="font-weight:700; font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
-            <span id="odClientName">Consumidor Final #101973</span>
+            <span id="odClientName">—</span>
           </div>
-          <a href="#" style="font-size:12px; color:var(--series-2); text-decoration:none; display:block; margin-bottom:12px;" onclick="return false;">Ver todos los detalles</a>
 
           <div style="font-size:12px; color:var(--text-secondary); display:flex; flex-direction:column; gap:8px;">
-            <div><b>Correo electrónico:</b><br><span id="odClientEmail" style="color:var(--series-2);">consumidorfinal@mifiestashop.com</span></div>
-            <div><b>Cuenta registrada:</b><br><span id="odClientRegDate">2026-03-26 10:15:20</span></div>
-            <div><b>Nit / CC:</b><br><span>22222222222</span></div>
-            <div><b>Pedidos realizados validados:</b><br><span class="pill ok" style="font-weight:800; font-size:11px;">3243</span></div>
-            <div><b>Total gastado desde su registro:</b><br><span style="font-weight:800; color:var(--text-primary); font-size:13px;" id="odClientSpent">$1.267.902,11 MXN</span></div>
+            <div><b>Correo electrónico:</b><br><span id="odClientEmail" style="color:var(--series-2);">—</span></div>
+            <div><b>Teléfono / WhatsApp:</b><br><span id="odClientPhone">—</span></div>
+            <div id="odClientRegWrap"><b>Cuenta registrada:</b><br><span id="odClientRegDate">—</span></div>
+            <div><b>Pedidos de este cliente:</b><br><span class="pill ok" style="font-weight:800; font-size:11px;" id="odClientOrders">—</span></div>
+            <div><b>Total comprado:</b><br><span style="font-weight:800; color:var(--text-primary); font-size:13px;" id="odClientSpent">—</span></div>
           </div>
         </div>
 
@@ -4937,54 +4928,32 @@
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:11px;">
             <div>
               <b style="color:var(--text-primary); display:block; margin-bottom:4px;">Dirección de envío:</b>
-              <div id="odShippingAddr" style="color:var(--text-secondary); line-height:1.4;">
-                Consumidor Final<br>México<br><b>CIUDAD DE MÉXICO</b><br>*<br>Rumania 6 13 C<br>1422
-              </div>
+              <div id="odShippingAddr" style="color:var(--text-secondary); line-height:1.4;">—</div>
             </div>
             <div>
               <b style="color:var(--text-primary); display:block; margin-bottom:4px;">Dirección de facturación:</b>
-              <div id="odBillingAddr" style="color:var(--text-secondary); line-height:1.4;">
-                Consumidor Final<br>México<br><b>CIUDAD DE MÉXICO</b><br>*<br>Rumania 6 13 C<br>1422
-              </div>
+              <div id="odBillingAddr" style="color:var(--text-secondary); line-height:1.4;">—</div>
             </div>
           </div>
         </div>
 
-        <!-- PRIVATE NOTE CARD -->
+        <!-- NOTA Y FECHA DE ENTREGA (se guardan en el pedido) -->
         <div class="card" style="padding:16px; border-radius:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <b style="font-size:13px; color:var(--text-primary);">Nota Privada</b>
-            <span style="cursor:pointer; font-weight:bold; font-size:16px;" onclick="document.getElementById('odPrivateNoteInput').focus()">+</span>
-          </div>
-          <textarea id="odPrivateNoteInput" rows="2" placeholder="Escribe una nota interna para este pedido..." style="width:100%; font-size:12px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
+          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:8px;">Nota interna</b>
+          <textarea id="odPrivateNoteInput" rows="2" placeholder="Nota interna para este pedido (no la ve el cliente)" style="width:100%; font-size:12px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:10px;"></textarea>
+          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:8px;">Fecha de entrega</b>
+          <input type="date" id="odDeliveryDate" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; margin-bottom:10px;">
+          <button class="btn primary" id="odSaveExtrasBtn" style="width:100%; justify-content:center; font-size:13px; font-weight:700;" onclick="saveOrderDetailExtras()">Guardar nota y fecha</button>
+          <div id="odExtrasNote" style="font-size:11px; color:var(--text-muted); margin-top:6px;"></div>
         </div>
 
-        <!-- DELIVERY DATE CARD -->
+        <!-- CONTACTAR AL CLIENTE -->
         <div class="card" style="padding:16px; border-radius:10px;">
-          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:8px;">Fecha de Entrega</b>
-          <input type="date" id="odDeliveryDate" value="2026-09-12" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; margin-bottom:10px;">
-          <button class="btn primary" style="width:100%; justify-content:center; font-size:13px; font-weight:700;" onclick="alert('Fecha de entrega guardada ✓')">Guardar Fecha de Entrega</button>
-        </div>
-
-        <!-- MESSAGES CARD -->
-        <div class="card" style="padding:16px; border-radius:10px;">
-          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:8px;">Mensajes (0)</b>
-          <label style="font-size:12px; color:var(--text-muted); display:block; margin-bottom:4px;">Elige el mensaje de tu pedido:</label>
-          <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; margin-bottom:6px;">
-            <option value="">Seleccionar mensaje predefinido...</option>
-            <option value="1">Su pedido ha sido preparado y enviado</option>
-            <option value="2">Gracias por su compra en Mi Fiestashop</option>
-          </select>
-          <a href="#" style="font-size:11px; color:var(--series-2); text-decoration:none; display:block; margin-bottom:10px;" onclick="return false;">Configurar mensajes predefinidos →</a>
-
-          <label style="display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:10px; cursor:pointer;">
-            <input type="checkbox"> ¿Mostrar al cliente?
-          </label>
-
-          <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">*Mensaje:</label>
-          <textarea rows="3" placeholder="Escriba un mensaje para enviar al cliente..." style="width:100%; padding:8px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); margin-bottom:10px;"></textarea>
-          
-          <button class="btn primary" style="width:100%; justify-content:center; font-size:13px; font-weight:700;" onclick="alert('Mensaje enviado al cliente ✓')">Enviar mensaje</button>
+          <b style="font-size:13px; color:var(--text-primary); display:block; margin-bottom:10px;">Contactar al cliente</b>
+          <a id="odWhatsBtn" class="btn primary" target="_blank" rel="noopener" style="width:100%; justify-content:center; font-size:13px; font-weight:700; background:#25D366; border-color:#25D366; margin-bottom:8px; text-decoration:none;">WhatsApp</a>
+          <a id="odMailBtn" class="btn" style="width:100%; justify-content:center; font-size:13px; font-weight:700; margin-bottom:8px; text-decoration:none;">Escribir correo</a>
+          <button class="btn secondary" id="odResendBtn" style="width:100%; justify-content:center; font-size:13px;" onclick="resendOrderConfirmation()">Reenviar confirmación del pedido</button>
+          <div id="odContactNote" style="font-size:11px; color:var(--text-muted); margin-top:6px;"></div>
         </div>
 
       </div>
@@ -5017,8 +4986,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
             <div>Artículos por página: <b>100 </b></div>
             <div style="display:flex; gap:10px;">
-              <button class="btn small" onclick="alert('Abriendo buscador para añadir producto al pedido...')">Añadir un producto</button>
-              <button class="btn small" onclick="alert('Abriendo ventana para aplicar descuento al pedido...')"> Añadir un descuento</button>
+
             </div>
           </div>
 
@@ -5051,7 +5019,7 @@
           <div style="display:flex; gap:8px; border-bottom:2px solid var(--border); margin-bottom:14px; overflow-x:auto;">
             <button class="btn primary" id="tabOdEstado" onclick="switchOdTab('estado')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Estado (1)</button>
             <button class="btn" id="tabOdDoc" onclick="switchOdTab('doc')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Documentos (0)</button>
-            <button class="btn" id="tabOdTrans" onclick="switchOdTab('trans')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Transportadoras (1)</button>
+            <button class="btn" id="tabOdTrans" onclick="switchOdTab('trans')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Envío</button>
             <button class="btn" id="tabOdDev" onclick="switchOdTab('dev')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Devoluciones de mercancía (0)</button>
           </div>
 
@@ -5063,12 +5031,12 @@
                 <span style="font-size:13px; color:var(--text-secondary);" id="odStateBox">Caja Puebla</span>
                 <span style="font-size:12px; color:var(--text-muted);" id="odStateDate">2026-09-11 15:52:16</span>
               </div>
-              <a href="#" style="font-size:12px; color:var(--series-2); text-decoration:none;" onclick="alert('Email de estado reenviado al cliente ✓'); return false;">Reenviar email</a>
+              <a href="#" style="font-size:12px; color:var(--series-2); text-decoration:none;" onclick="resendOrderConfirmation(); return false;">Reenviar confirmación</a>
             </div>
 
 
             <div style="border-top:1px dashed var(--border); padding-top:10px; font-size:13px;">
-              <b>Nota del pedido:</b> <span style="color:var(--text-muted); font-size:12px; margin-left:6px; cursor:pointer;">+</span>
+              <b>Nota del pedido:</b> <span id="odOrderNote" style="color:var(--text-secondary); font-size:12px; margin-left:6px;">—</span>
             </div>
           </div>
 
@@ -5081,16 +5049,7 @@
 
           <!-- TAB CONTENT: TRANSPORTADORAS -->
           <div id="contentOdTrans" class="hidden">
-            <div style="font-size:13px;">
-              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
-                <span><b>Transportadora:</b> Envío Estándar Mi Fiestashop</span>
-                <span><b>Costo:</b> $0.00 MXN</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; padding:8px 0;">
-                <span><b>Número de Guía / Rastreos:</b> FEDEX-9912084</span>
-                <span class="pill ok">En Tránsito</span>
-              </div>
-            </div>
+            <div id="odTransBody" style="font-size:13px;"></div>
           </div>
 
           <!-- TAB CONTENT: DEVOLUCIONES -->
@@ -5104,8 +5063,7 @@
         <!-- PAYMENTS CARD -->
         <div class="card" style="padding:16px; border-radius:10px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">Pago (1)</h3>
-            <button class="btn small primary" onclick="alert('Abriendo registro manual de pago...')">Agregar Pago</button>
+            <h3 style="margin:0; font-size:1.1rem; color:var(--text-primary);">Pago</h3>
           </div>
 
           <div class="table-wrap">
@@ -5113,21 +5071,13 @@
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>Forma de Pago</th>
-                  <th>ID de Transacción</th>
+                  <th>Forma de pago</th>
+                  <th>Referencia</th>
+                  <th>Estado</th>
                   <th style="text-align:right;">Valor</th>
-                  <th style="text-align:center;">Factura</th>
                 </tr>
               </thead>
-              <tbody id="odPaymentTableBody">
-                <tr>
-                  <td>2026-09-11 15:52:16</td>
-                  <td><b>Pago En Efectivo</b></td>
-                  <td><code>POS-TX-9901</code></td>
-                  <td style="text-align:right; font-weight:700; color:var(--text-primary);">180,00 MXN</td>
-                  <td style="text-align:center;"><button class="btn small" style="padding:3px 8px; font-size:11px;" onclick="alert('Viendo detalles de factura...')">Detalles</button></td>
-                </tr>
-              </tbody>
+              <tbody id="odPaymentTableBody"></tbody>
             </table>
           </div>
         </div>
@@ -10871,7 +10821,7 @@ async function loadOrdersFromAPI(){
     }
   } catch(e) {}
 
-  if(list.length === 0) list = DEFAULT_ORDERS;
+  // Sin pedidos reales no se muestran pedidos de ejemplo.
 
   // Las ventas del Sistema POS no se crean como pedido real en PrestaShop
   // (/api/pedidos nunca las va a traer) — se guardan aparte en pos_tickets.
@@ -10892,6 +10842,10 @@ async function loadOrdersFromAPI(){
         total: Number(t.total || 0),
         status: t.estado || 'Pago aceptado',
         origen: 'pos',
+        almacen: t.almacen || null,
+        pagoRecibido: t.pago_recibido != null ? Number(t.pago_recibido) : null,
+        cambio: t.cambio != null ? Number(t.cambio) : null,
+        createdAtIso: t.created_at || null,
         createdBy: t.registrado_por || null,
         shop: 'Mi Fiestashop',
         items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
@@ -11002,7 +10956,7 @@ function renderOdProductRows(items){
         <td>${escapeHtml(it.name)}${it.sku ? `<br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(it.sku)}</span>` : ''}</td>
         <td style="text-align:right;">${fmtMoney(it.price)}</td>
         <td style="text-align:center;">${it.qty}</td>
-        <td style="text-align:center;"><span class="pill ok">Sí</span></td>
+        <td style="text-align:center;">${odAvailabilityPill(it)}</td>
         <td style="text-align:right; font-weight:700;">${fmtMoney(it.total != null ? it.total : it.price * it.qty)}</td>
         <td style="text-align:center;">—</td>
       </tr>
@@ -11017,7 +10971,6 @@ function openOrderDetailModal(id){
   if (!modal) return;
 
   const order = loadedOrdersList.find(o => o.id === id)
-    || DEFAULT_ORDERS.find(o => o.id === id)
     || { id, date: '—', customer: 'Cliente', total: 0, status: 'Pendiente', rawId: null };
 
   currentOrderObj = order;
@@ -11052,32 +11005,201 @@ function openOrderDetailModal(id){
     if (tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:14px;">Cargando líneas de producto…</td></tr>`;
   }
 
+  renderOdDetails(order, {});
   switchOdTab('estado');
   modal.classList.remove('hidden');
 
   if (order.rawId) {
-    fetch(`/api/pedido-detalle?id=${order.rawId}`)
+    fetch('/api/pedido-detalle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), id: order.rawId })
+    })
       .then(r => r.json())
       .then(data => {
-        if (currentOrderObj !== order) return; // user opened another order meanwhile
+        if (currentOrderObj !== order) return; // se abrió otro pedido mientras tanto
         renderOdProductRows(data.items && data.items.length ? data.items : null);
-        if (data.customer) {
-          const emailEl = document.getElementById('odClientEmail');
-          const regEl = document.getElementById('odClientRegDate');
-          if (emailEl) emailEl.textContent = data.customer.email || 'No disponible';
-          if (regEl) regEl.textContent = data.customer.date_add || '—';
-        } else {
-          const emailEl = document.getElementById('odClientEmail');
-          if (emailEl) emailEl.textContent = 'No disponible';
-        }
+        renderOdDetails(order, { customer: data.customer || null, psOrder: data.order || null, loaded: true });
       })
       .catch(() => {
-        const emailEl = document.getElementById('odClientEmail');
-        if (emailEl) emailEl.textContent = 'No disponible';
+        if (currentOrderObj !== order) return;
         renderOdProductRows(null);
+        renderOdDetails(order, { loaded: true });
       });
+  }
+}
+
+// ---- Detalle del pedido: todo sale del pedido real, nada de ejemplo ----
+function odText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
+function odMoney(v) { return fmtMoney(v) + ' MXN'; }
+function odWhatsNumber(phone) {
+  let d = String(phone || '').replace(/\D/g, '');
+  if (d.length === 10) d = '52' + d;          // celular mexicano sin lada de país
+  if (d.length === 12 && d.startsWith('52')) return d;
+  if (d.length === 13 && d.startsWith('521')) return '52' + d.slice(3);
+  return d.length >= 11 ? d : '';
+}
+function odAvailabilityPill(it) {
+  const id = Number(it.id || it.id_product);
+  if (!id || !realStockLoaded) return '<span style="color:var(--text-muted);">—</span>';
+  const total = ['puebla', 'rumania', 'queretaro'].reduce((sum, wh) => sum + getStockFor(id, wh), 0);
+  return total >= (Number(it.qty) || 1) ? `<span class="pill ok">Sí (${total})</span>` : `<span class="pill ${total > 0 ? 'warn' : 'bad'}">${total > 0 ? 'Solo ' + total : 'No'}</span>`;
+}
+
+function renderOdDetails(order, extra) {
+  const origen = orderOrigen(order);
+  const customer = extra.customer || null;   // PrestaShop: ps_clientes
+  const ps = extra.psOrder || null;          // PrestaShop: ps_pedidos
+  const pendiente = order.rawId && !extra.loaded ? 'Cargando…' : '—';
+
+  // Cliente
+  const email = order.customerEmail || (customer && customer.email) || '';
+  const phone = order.customerPhone || (customer && customer.phone) || '';
+  odText('odClientName', order.customer || 'Cliente');
+  odText('odClientEmail', email || pendiente);
+  const phoneEl = document.getElementById('odClientPhone');
+  const wa = odWhatsNumber(phone);
+  if (phoneEl) phoneEl.innerHTML = phone ? `${escapeHtml(phone)}${wa ? ` · <a href="https://wa.me/${wa}" target="_blank" rel="noopener" style="color:#16a34a; font-weight:700;">WhatsApp</a>` : ''}` : escapeHtml(pendiente);
+  const regWrap = document.getElementById('odClientRegWrap');
+  if (regWrap) regWrap.style.display = customer && customer.date_add ? '' : 'none';
+  odText('odClientRegDate', customer && customer.date_add ? customer.date_add : '—');
+
+  // Pedidos y total del cliente con los pedidos cargados (mismo correo, o
+  // mismo nombre si no hay correo).
+  const key = email ? ['customerEmail', email.toLowerCase()] : ['customer', String(order.customer || '').toLowerCase()];
+  const suyos = key[1] && !/^cliente( pos)?$/i.test(key[1]) ? loadedOrdersList.filter(o => String(o[key[0]] || '').toLowerCase() === key[1] && !/cancelad|error/i.test(o.status || '')) : [];
+  odText('odClientOrders', suyos.length ? String(suyos.length) : '—');
+  odText('odClientSpent', suyos.length ? odMoney(suyos.reduce((sum, o) => sum + (Number(o.total) || 0), 0)) : '—');
+
+  // Direcciones
+  const shipAddr = order.shippingAddress || (customer && [customer.address, customer.city, customer.postcode && 'CP ' + customer.postcode].filter(Boolean).join(', ')) || '';
+  const billAddr = order.billingAddress || shipAddr;
+  const addrHtml = a => a ? `${escapeHtml(order.customer || '')}<br>${escapeHtml(a)}` : (origen === 'pos' ? 'Venta de mostrador' : escapeHtml(pendiente));
+  document.getElementById('odShippingAddr').innerHTML = addrHtml(shipAddr);
+  document.getElementById('odBillingAddr').innerHTML = addrHtml(billAddr);
+
+  // Nota y fecha de entrega (se pueden guardar solo en pedidos de la tienda en línea y manuales)
+  const editable = origen === 'online';
+  const noteEl = document.getElementById('odPrivateNoteInput');
+  if (noteEl) { noteEl.value = order.nota || (ps && ps.note) || ''; noteEl.disabled = !editable; }
+  const dateEl = document.getElementById('odDeliveryDate');
+  if (dateEl) { dateEl.value = String(order.deliveryDate || (ps && ps.delivery_date) || '').slice(0, 10); dateEl.disabled = !editable; }
+  const saveBtn = document.getElementById('odSaveExtrasBtn');
+  if (saveBtn) saveBtn.disabled = !editable;
+  odText('odExtrasNote', editable ? '' : (origen === 'prestashop' ? 'Pedido de las cajas de PrestaShop: se edita en PrestaShop.' : 'Venta del POS: no tiene nota ni fecha de entrega.'));
+  odText('odOrderNote', order.nota || (ps && ps.note) || '—');
+
+  // Contacto
+  const waBtn = document.getElementById('odWhatsBtn');
+  if (waBtn) {
+    const msg = `Hola ${order.customer || ''}, te escribimos de Mi Fiestashop sobre tu pedido ${order.id}.`;
+    waBtn.style.display = wa ? '' : 'none';
+    waBtn.href = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(msg)}` : '#';
+  }
+  const mailBtn = document.getElementById('odMailBtn');
+  if (mailBtn) { mailBtn.style.display = email ? '' : 'none'; mailBtn.href = email ? `mailto:${email}?subject=${encodeURIComponent('Tu pedido ' + order.id + ' — Mi Fiestashop')}` : '#'; }
+  const resendBtn = document.getElementById('odResendBtn');
+  if (resendBtn) resendBtn.style.display = email && origen === 'online' ? '' : 'none';
+  odText('odContactNote', !wa && !email ? 'Este pedido no tiene teléfono ni correo del cliente.' : '');
+
+  // Botón de reimpresión solo para ventas del POS
+  const reprint = document.getElementById('odReprintBtn');
+  if (reprint) reprint.classList.toggle('hidden', origen !== 'pos');
+
+  // Envío
+  const envio = Number(order.shippingCost != null ? order.shippingCost : (ps && ps.total_shipping)) || 0;
+  const carrier = order.shippingCarrier || '';
+  const trans = document.getElementById('odTransBody');
+  if (trans) {
+    if (origen === 'pos') {
+      trans.innerHTML = `<div style="padding:8px 0; color:var(--text-muted);">Venta de mostrador${order.almacen ? ' en ' + escapeHtml(WAREHOUSE_LABELS[order.almacen] || order.almacen) : ''}: no lleva envío.</div>`;
+    } else {
+      const guia = order.trackingNumber || '';
+      trans.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;">
+          <span><b>Paquetería:</b> ${escapeHtml(carrier || (origen === 'prestashop' ? 'Ver en PrestaShop' : 'Sin paquetería'))}</span>
+          <span><b>Costo:</b> ${envio > 0 ? odMoney(envio) : (carrier ? 'Gratis' : '—')}</span>
+        </div>
+        ${origen === 'online' ? `
+        <div style="display:flex; align-items:center; gap:8px; padding:10px 0; flex-wrap:wrap;">
+          <b>Número de guía:</b>
+          <input id="odTrackingInput" value="${escapeHtml(guia)}" placeholder="Captura la guía cuando se envíe" style="flex:1; min-width:180px; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+          <button class="btn small primary" onclick="saveOrderDetailExtras(true)">Guardar guía</button>
+        </div>` : ''}`;
+    }
+  }
+
+  // Pago
+  const pagos = document.getElementById('odPaymentTableBody');
+  if (pagos) {
+    const metodo = order.paymentMethodDetail && order.paymentMethodDetail !== 'Sin definir' ? order.paymentMethodDetail : (order.paymentMethod || (ps && ps.payment) || '—');
+    let ref = '—', estadoPago = order.status || '—', fecha = order.date || '—', extraInfo = '';
+    if (origen === 'online') {
+      if (order.mpPaymentId) ref = `Mercado Pago #${order.mpPaymentId}`;
+      estadoPago = order.mpStatus ? ({ approved: 'Aprobado', rejected: 'Rechazado', cancelled: 'Cancelado', pending: 'Pendiente', in_process: 'En proceso', refunded: 'Reembolsado' }[order.mpStatus] || order.mpStatus) : (/pago aceptado|pagado/i.test(order.status || '') ? 'Aprobado' : 'Sin confirmar');
+      if (order.paidAt) fecha = new Date(order.paidAt).toLocaleString('es-MX');
+    } else if (origen === 'pos') {
+      ref = order.id;
+      estadoPago = 'Cobrado';
+      if (order.pagoRecibido != null && order.cambio != null && order.pagoRecibido > 0) extraInfo = `<div style="font-size:11px; color:var(--text-muted);">Recibido ${fmtMoney(order.pagoRecibido)} · cambio ${fmtMoney(order.cambio)}</div>`;
+    } else {
+      ref = order.reference || (ps && ps.reference) || '—';
+      estadoPago = '—';
+    }
+    pagos.innerHTML = `<tr>
+      <td>${escapeHtml(fecha)}</td>
+      <td><b>${escapeHtml(metodo)}</b>${extraInfo}</td>
+      <td><code>${escapeHtml(ref)}</code></td>
+      <td>${escapeHtml(estadoPago)}</td>
+      <td style="text-align:right; font-weight:700; color:var(--text-primary);">${odMoney(order.total)}</td>
+    </tr>`;
+  }
+}
+
+function navigateOrderDetail(step) {
+  if (!currentOrderObj) return;
+  const i = loadedOrdersList.indexOf(currentOrderObj);
+  const next = loadedOrdersList[i + step];
+  if (next) openOrderDetailModal(next.id);
+}
+
+async function saveOrderDetailExtras(soloGuia) {
+  const order = currentOrderObj;
+  if (!order || orderOrigen(order) !== 'online') return;
+  const body = { accion: 'datos', origen: 'online', folio: order.id };
+  const trackingEl = document.getElementById('odTrackingInput');
+  if (soloGuia) {
+    body.trackingNumber = trackingEl ? trackingEl.value.trim() : '';
   } else {
-    document.getElementById('odClientEmail').textContent = order.customerEmail || 'No disponible';
+    body.nota = document.getElementById('odPrivateNoteInput').value.trim();
+    body.deliveryDate = document.getElementById('odDeliveryDate').value || null;
+  }
+  try {
+    await pedidoAdminRequest(body);
+    if (soloGuia) order.trackingNumber = body.trackingNumber;
+    else { order.nota = body.nota; order.deliveryDate = body.deliveryDate; odText('odOrderNote', body.nota || '—'); renderOrdersTableRows(); }
+    odText(soloGuia ? 'odContactNote' : 'odExtrasNote', soloGuia ? 'Guía guardada.' : 'Guardado.');
+  } catch (e) {
+    alert(e.message);
+  }
+}
+
+async function resendOrderConfirmation() {
+  const order = currentOrderObj;
+  const email = order && (order.customerEmail || '');
+  if (!order || !email) return alert('Este pedido no tiene correo del cliente.');
+  if (!confirm(`¿Reenviar la confirmación del pedido ${order.id} a ${email}?`)) return;
+  try {
+    const r = await fetch('/api/enviar-correo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to: email, tipo: 'pedido', datos: { nombre: order.customer || '', pedidoId: order.id, total: order.total, items: order.items || [], pagoTransferencia: /transferencia/i.test(order.paymentMethod || '') } })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || data.error) throw new Error(data.error || 'No se pudo enviar.');
+    odText('odContactNote', `Confirmación reenviada a ${email}.`);
+  } catch (e) {
+    alert('No se pudo reenviar el correo: ' + e.message);
   }
 }
 

@@ -79,3 +79,14 @@ test('pedido-admin: borrar solo lo hace el super administrador', async () => {
   r = await call({ p_admin_password: 'buena', accion: 'eliminar', origen: 'online', folio: 'MAN-1' });
   assert.equal(r.code, 200); assert.equal(st.deleted, true); assert.equal(r.data.piezasRegresadas, 4);
 });
+
+test('pedido-admin: guarda nota, fecha de entrega y guía de pedidos en línea', async () => {
+  const st = fakeSupabase();
+  let r = await call({ p_admin_password: 'buena', accion: 'datos', origen: 'online', folio: 'MAN-1', nota: 'Entregar en recepción', deliveryDate: '2026-10-01', trackingNumber: 'FDX123' });
+  assert.equal(r.code, 200);
+  assert.equal(st.pedido.nota, 'Entregar en recepción'); assert.equal(st.pedido.delivery_date, '2026-10-01'); assert.equal(st.pedido.tracking_number, 'FDX123');
+  r = await call({ p_admin_password: 'buena', accion: 'datos', origen: 'online', folio: 'MAN-1', deliveryDate: '1/10/2026' });
+  assert.equal(r.code, 400);
+  r = await call({ p_admin_password: 'buena', accion: 'datos', origen: 'pos', folio: 'MAN-1', nota: 'x' });
+  assert.equal(r.code, 400);
+});
