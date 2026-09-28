@@ -11266,10 +11266,13 @@ function cpRenderProductResults(){
 
 function cpAddProduct(id){
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => p.id === id);
+  // == a propósito: el id del producto llega como texto desde /api/productos,
+  // pero el onclick que llama a esta función lo inserta sin comillas, así que
+  // aquí siempre llega como número — con === nunca hacía match y no agregaba nada.
+  const product = dataset.find(p => p.id == id);
   if (!product) return;
 
-  const existing = cpItems.find(i => i.id === id);
+  const existing = cpItems.find(i => i.id == id);
   if (existing) {
     existing.qty++;
     applyWholesalePricing(existing);
@@ -11286,17 +11289,17 @@ function cpAddProduct(id){
 }
 
 function cpUpdateQty(id, delta){
-  const item = cpItems.find(i => i.id === id);
+  const item = cpItems.find(i => i.id == id);
   if (!item) return;
   item.qty += delta;
-  if (item.qty <= 0) cpItems = cpItems.filter(i => i.id !== id);
+  if (item.qty <= 0) cpItems = cpItems.filter(i => i.id != id);
   else applyWholesalePricing(item);
   cpRenderItemsTable();
   cpRenderSummary();
 }
 
 function cpRemoveItem(id){
-  cpItems = cpItems.filter(i => i.id !== id);
+  cpItems = cpItems.filter(i => i.id != id);
   cpRenderItemsTable();
   cpRenderSummary();
 }
