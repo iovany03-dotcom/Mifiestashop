@@ -283,7 +283,7 @@ function modelFor(page, pages) {
   // scrapeadas de PrestaShop) — reemplazan cualquier imagen anterior en el
   // hero de XV años, en vez de solo rellenar cuando falta una.
   if (theme === 'xv') heroImage = '/img/cms/xv-anos/pista-baile-neon.webp';
-  if (!heroImage && theme === 'fiesta') heroImage = '/img/hero-banner.png';
+  if (!heroImage && theme === 'fiesta') heroImage = '/img/hero-banner.webp';
   if (!heroImage && theme === 'batucada') heroImage = '/img/cms/0dede4bf5e127bbe.jpg';
   if (!heroImage && theme === 'mayoreo') heroImage = '/img/cms/mayoreo-fiesta.webp';
   // La foto del estante (0dede4bf5e127bbe.jpg, WhatsApp Image 2024-06-17) se
