@@ -1,4 +1,7 @@
-// Genera /mayoristas.html: página de aterrizaje para mayoristas, reutilizando
+// Genera /paginas/articulos-para-fiesta-mayoreo.html (servida en
+// /content/417-articulos-para-fiesta-mayoreo-en-mexico, la liga de PrestaShop;
+// no se llama mayoristas.html porque /mayoristas redirige a esa liga y el
+// nombre igual hacía un bucle en el router de Vercel): página de aterrizaje para mayoristas, reutilizando
 // el mismo sistema de plantillas/encabezado/pie que las páginas CMS migradas
 // (ver build-cms.cjs), pero SIN pasar por data/cms-pages.json ni por un id
 // numérico de PrestaShop. El id 417 (mifiestashop.com/content/417-...) sigue
@@ -104,5 +107,6 @@ ${related.length ? `<section class="related-pages wrap"><h2>Más ideas para tu f
 `;
 }
 
-fs.writeFileSync(path.join(root, 'mayoristas.html'), render(model));
-console.log('Built /mayoristas.html');
+fs.mkdirSync(path.join(root, 'paginas'), { recursive: true });
+fs.writeFileSync(path.join(root, 'paginas', 'articulos-para-fiesta-mayoreo.html'), render(model));
+console.log('Built /paginas/articulos-para-fiesta-mayoreo.html');
