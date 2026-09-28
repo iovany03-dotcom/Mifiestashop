@@ -38,7 +38,8 @@ function mockSupabase(tables, seen = []) {
 const CATALOGO = [
   { id: 101, sku: 'GLB-1', name: 'Globo rojo', description: 'Largo', description_short: 'Corto', price: 10, category_id: 269, price_mayoreo: 8.5, price_mayoreo_desde_unidades: 6, costo_compra: 4, link_rewrite: 'globo-rojo', images: ['https://sb/101.jpg'], source: 'prestashop', meta_keywords: 'Meta keywords- fiesta' },
   { id: 102, sku: 'VEL-1', name: 'Vela', description: null, description_short: null, price: 25, category_id: 270, price_mayoreo: null, link_rewrite: 'vela', images: null, source: 'prestashop' },
-  { id: 103, sku: 'ANT-1', name: 'Antifaz', price: 5, category_id: 270, link_rewrite: 'antifaz', images: null, source: 'prestashop' }
+  { id: 103, sku: 'ANT-1', name: 'Antifaz', price: 5, category_id: 270, link_rewrite: 'antifaz', images: null, source: 'prestashop' },
+  { id: 104, sku: 'BND-1', name: 'Banda', price: 30, category_id: 270, price_mayoreo: 28, price_mayoreo_desde_unidades: 1, link_rewrite: 'banda', images: null, source: 'prestashop' }
 ];
 const MIGRADOS = [
   { id: 102, sku: 'VEL-MIG', name: 'Vela migrada', description: 'Desc migrada', category_label: 'Velas', category_ids: [270, 269], images: ['https://sb/102-mig.jpg'] }
@@ -49,12 +50,16 @@ test('productos: catálogo completo desde Supabase con la misma forma que en viv
   const res = response();
   await require('../api/productos.js')({ query: { limit: '5000' } }, res);
   assert.equal(res.code, 200);
-  assert.equal(res.data.total, 3);
-  const [globo, vela, antifaz] = res.data.products;
+  assert.equal(res.data.total, 4);
+  const [globo, vela, antifaz, banda] = res.data.products;
   assert.equal(globo.id, '101'); assert.equal(globo.img, 'https://sb/101.jpg'); assert.equal(globo.priceMayoreo, 8.5); assert.equal(globo.priceMayoreoDesdeUnidades, 6);
   assert.equal(globo.categoryLabel, 'Globos'); assert.equal(globo.metaKeywords, 'fiesta'); assert.equal(globo.description, 'Corto'); assert.equal(globo.url, '/globos/101-globo-rojo.html'); // mismo formato que PrestaShop: /{categoria}/{id}-{rewrite}[-{ean13}].html
   assert.equal(vela.name, 'Vela migrada'); assert.equal(vela.sku, 'VEL-MIG'); assert.equal(vela.img, 'https://sb/102-mig.jpg'); assert.equal(vela.migrated, true);
   assert.match(antifaz.img, /unsplash/);
+  // "desde 1 pieza" en PrestaShop no es un descuento real por volumen (es
+  // el default cuando el precio especial es solo para clientes de
+  // mayoreo/distribuidores) — no debe salir como precio de mayoreo público.
+  assert.equal(banda.priceMayoreo, undefined); assert.equal(banda.priceMayoreoDesdeUnidades, undefined); assert.equal(banda.price, 30);
   assert.ok(!JSON.stringify(res.data).includes('llave-secreta'));
 });
 

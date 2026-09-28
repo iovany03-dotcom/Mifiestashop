@@ -326,8 +326,13 @@ module.exports = async function handler(req, res) {
         sku: m ? m.sku : (p.reference || `PS-${p.id}`),
         barcode: p.ean13 || undefined,
         price: basePrice,
-        priceMayoreo: wholesale ? Math.round(wholesale.price * 100) / 100 : undefined,
-        priceMayoreoDesdeUnidades: wholesale ? wholesale.fromQty : undefined,
+        // "desde 1 pieza" en specific_prices no es un descuento por volumen
+        // real: es el default cuando el precio especial es solo para un
+        // grupo de clientes (mayoristas/distribuidores) sin cantidad mínima
+        // real — no se expone como "precio de mayoreo" público a menos que
+        // el umbral real sea mayor a 1 (ver lib/productos-supabase.js).
+        priceMayoreo: (wholesale && wholesale.fromQty > 1) ? Math.round(wholesale.price * 100) / 100 : undefined,
+        priceMayoreoDesdeUnidades: (wholesale && wholesale.fromQty > 1) ? wholesale.fromQty : undefined,
         costoCompra,
         categoryId: p.id_category_default || '1',
         categoryLabel: (m && m.category_label) || categoryNames[String(p.id_category_default)] || undefined,
