@@ -14,6 +14,9 @@ module.exports = async function handler(req, res) {
   const urls = [{ loc: `${siteOrigin}/`, priority: '1.0' }];
   const cmsPages = require('../data/cms-manifest.json');
   cmsPages.forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
+  // Mayoristas y Contacto: mismas ligas que en PrestaShop.
+  ['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos']
+    .forEach(path => urls.push({ loc: `${siteOrigin}${path}`, priority: '0.7' }));
 
   if (!prestashopConectado()) {
     // PrestaShop desconectado (default, ver lib/prestashop.js): mismas URLs

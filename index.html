@@ -1385,9 +1385,9 @@
       </a>
       <nav class="store-header-nav">
         <a href="/266-productos" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); openStorefrontCatalog('all');">Productos</a>
-        <a href="/mayoristas">Mayoristas</a>
+        <a href="/content/417-articulos-para-fiesta-mayoreo-en-mexico">Mayoristas</a>
         <a onclick="openClientePortal(); switchClienteTab('promos');">Promociones</a>
-        <a href="/contacto" onclick="event.preventDefault(); history.pushState(null,'','/contacto'); openStorefrontContact();">Contacto</a>
+        <a href="/content/418-contactanos" onclick="event.preventDefault(); history.pushState(null,'','/content/418-contactanos'); openStorefrontContact();">Contacto</a>
       </nav>
     </div>
 
@@ -1416,9 +1416,9 @@
   </header>
   <nav id="storeMobileNav" class="store-mobile-nav">
     <a href="/266-productos" onclick="event.preventDefault(); toggleStoreMobileNav('storeMobileNav'); history.pushState(null,'','/266-productos'); openStorefrontCatalog('all');">Productos</a>
-    <a href="/mayoristas">Mayoristas</a>
+    <a href="/content/417-articulos-para-fiesta-mayoreo-en-mexico">Mayoristas</a>
     <a onclick="toggleStoreMobileNav('storeMobileNav'); openClientePortal(); switchClienteTab('promos');">Promociones</a>
-    <a href="/contacto" onclick="event.preventDefault(); toggleStoreMobileNav('storeMobileNav'); history.pushState(null,'','/contacto'); openStorefrontContact();">Contacto</a>
+    <a href="/content/418-contactanos" onclick="event.preventDefault(); toggleStoreMobileNav('storeMobileNav'); history.pushState(null,'','/content/418-contactanos'); openStorefrontContact();">Contacto</a>
   </nav>
 
   <!-- Hero Section -->
@@ -2605,9 +2605,9 @@
       </a>
       <nav class="store-header-nav">
         <a href="/266-productos" onclick="event.preventDefault(); closeBodaPage(); history.pushState(null,'','/266-productos'); openStorefrontCatalog('all');">Productos</a>
-        <a href="/mayoristas">Mayoristas</a>
+        <a href="/content/417-articulos-para-fiesta-mayoreo-en-mexico">Mayoristas</a>
         <a onclick="closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
-        <a href="/contacto" onclick="event.preventDefault(); closeBodaPage(); history.pushState(null,'','/contacto'); openStorefrontContact();">Contacto</a>
+        <a href="/content/418-contactanos" onclick="event.preventDefault(); closeBodaPage(); history.pushState(null,'','/content/418-contactanos'); openStorefrontContact();">Contacto</a>
       </nav>
     </div>
 
@@ -2633,9 +2633,9 @@
   </header>
   <nav id="bodaMobileNav" class="store-mobile-nav">
     <a href="/266-productos" onclick="event.preventDefault(); toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); history.pushState(null,'','/266-productos'); openStorefrontCatalog('all');">Productos</a>
-    <a href="/mayoristas">Mayoristas</a>
+    <a href="/content/417-articulos-para-fiesta-mayoreo-en-mexico">Mayoristas</a>
     <a onclick="toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); openClientePortal(); switchClienteTab('promos');">Promociones</a>
-    <a href="/contacto" onclick="event.preventDefault(); toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); history.pushState(null,'','/contacto'); openStorefrontContact();">Contacto</a>
+    <a href="/content/418-contactanos" onclick="event.preventDefault(); toggleStoreMobileNav('bodaMobileNav'); closeBodaPage(); history.pushState(null,'','/content/418-contactanos'); openStorefrontContact();">Contacto</a>
   </nav>
   <div id="bodaPageBody"></div>
 </div>
@@ -16022,7 +16022,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   // aquí, después de que el sync terminó, para que no se revierta.
   if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
   if (window.location.pathname === '/266-productos') openStorefrontCatalog('all');
-  if (window.location.pathname === '/contacto') openStorefrontContact();
+  if (isContactPath(window.location.pathname)) openStorefrontContact();
 }).then(renderLowStockByStoreCard);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();
@@ -16105,7 +16105,7 @@ function routeApp() {
     openStorefrontCatalog(categoryDeepLinkMatch[1]);
     return;
   }
-  if (window.location.pathname === '/contacto') {
+  if (isContactPath(window.location.pathname)) {
     showPublicStorefront();
     openStorefrontContact();
     return;
@@ -16160,6 +16160,11 @@ if (window.location.pathname === '/' && !new URLSearchParams(window.location.sea
     .catch(() => { grid.hidden = true; });
 })();
 window.addEventListener('popstate', routeApp);
+
+// Página de contacto: misma liga que en PrestaShop (/content/418-contactanos).
+function isContactPath(pathname) {
+  return pathname === '/content/418-contactanos' || pathname === '/contacto';
+}
 
 function goToAdmin() {
   // Recarga completa en /admin (no pushState): esa página ya sale del

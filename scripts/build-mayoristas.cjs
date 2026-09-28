@@ -44,7 +44,7 @@ const page = {
   inFooter: false,
   description: 'Contamos con más de 400 productos para tu fiesta al mayoreo. Somos importadores y mayoristas de artículos para fiesta: regístrate y consulta precios preferenciales desde 3 piezas.',
   sourceContent,
-  sourcePath: '/mayoristas',
+  sourcePath: '/content/417-articulos-para-fiesta-mayoreo-en-mexico',
   sourceStatus: 200,
   sourceWasEmpty: false,
   assetAliases: {},
