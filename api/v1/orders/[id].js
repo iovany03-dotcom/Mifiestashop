@@ -7,7 +7,7 @@
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
-const VALID_STATUSES = ['Pendiente', 'Pagado', 'Pago Aceptado', 'Enviado', 'Entregado', 'Cancelado'];
+const VALID_STATUSES = ['Pendiente', 'Pendiente de pago', 'Pagado', 'Pago Aceptado', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
 
 function toPublicOrder(o) {
   return {
