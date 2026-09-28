@@ -21,6 +21,7 @@
 //
 // Requiere PS_BASE_URL, PS_API_KEY (mismos que el resto de /api).
 
+const { prestashopFetch } = require('../lib/ps-http.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
@@ -93,7 +94,7 @@ module.exports = async function handler(req, res) {
   // la key fuera válida y estuviera activa.
   async function psGet(path) {
     const sep = path.includes('?') ? '&' : '?';
-    const r = await fetch(`${baseUrl}${path}${sep}output_format=JSON&ws_key=${apiKey}`);
+    const r = await prestashopFetch(`${baseUrl}${path}${sep}output_format=JSON&ws_key=${apiKey}`);
     const text = await r.text();
     if (!r.ok) throw new Error(`GET ${path} -> ${r.status}: ${text.slice(0, 400)}`);
     return JSON.parse(text);
@@ -101,7 +102,7 @@ module.exports = async function handler(req, res) {
 
   async function psWrite(method, path, xmlBody) {
     const sep = path.includes('?') ? '&' : '?';
-    const r = await fetch(`${baseUrl}${path}${sep}ws_key=${apiKey}`, {
+    const r = await prestashopFetch(`${baseUrl}${path}${sep}ws_key=${apiKey}`, {
       method,
       headers: { 'Content-Type': 'text/xml' },
       body: xmlBody
