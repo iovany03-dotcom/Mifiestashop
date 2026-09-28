@@ -27,10 +27,42 @@ async function probe(base, key) {
   return out;
 }
 
+// Conexión directa al servidor de PrestaShop (sin pasar por el DNS, que
+// ya apunta a Vercel), presentándose como mifiestashop.com.
+const https = require('https');
+const ORIGIN_IP = '82.29.152.84';
+function probeOrigin(hostname, key, verify) {
+  return new Promise(resolve => {
+    const out = { via: ORIGIN_IP, hostname, verify };
+    const path = `/api/orders?display=${encodeURIComponent('[id,id_shop]')}&sort=${encodeURIComponent('[id_DESC]')}&limit=0,3&output_format=JSON&ws_key=${key}`;
+    const req = https.request({ host: ORIGIN_IP, port: 443, path, method: 'GET', servername: hostname, headers: { Host: hostname }, rejectUnauthorized: verify, timeout: 15000 }, r => {
+      const cert = r.socket.getPeerCertificate ? r.socket.getPeerCertificate() : null;
+      out.status = r.statusCode;
+      out.cert = cert ? { subject: cert.subject && cert.subject.CN, issuer: cert.issuer && (cert.issuer.O || cert.issuer.CN), valid_to: cert.valid_to, altnames: String(cert.subjectaltname || '').slice(0, 200) } : null;
+      out.authorized = r.socket.authorized;
+      if (r.statusCode >= 300 && r.statusCode < 400) out.redirect = String(r.headers.location || '').split('?')[0];
+      let body = '';
+      r.on('data', c => { body += c; if (body.length > 20000) r.destroy(); });
+      r.on('end', () => {
+        try { out.orders = (JSON.parse(body).orders || []).map(o => ({ id: Number(o.id), id_shop: Number(o.id_shop) })); } catch (e) { out.body_start = body.slice(0, 80).replace(/ws_key=[^&"]*/g, ''); }
+        resolve(out);
+      });
+    });
+    req.on('timeout', () => { req.destroy(new Error('timeout')); });
+    req.on('error', e => { out.error = String(e.code || e.message).slice(0, 120); resolve(out); });
+    req.end();
+  });
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const key = process.env.PS_API_KEY;
   if (!key) { res.status(500).json({ error: 'sin PS_API_KEY' }); return; }
   const results = await Promise.all(HOSTS.map(h => probe(h, key)));
-  res.status(200).json({ results });
+  const origin = await Promise.all([
+    probeOrigin('mifiestashop.com', key, true),
+    probeOrigin('www.mifiestashop.com', key, true),
+    probeOrigin('mifiestashop.com', key, false)
+  ]);
+  res.status(200).json({ results, origin });
 };
