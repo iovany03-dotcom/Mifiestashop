@@ -2016,15 +2016,8 @@
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Teléfono / WhatsApp *</label>
             <input type="tel" id="checkoutPhone" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
           </div>
-          <div>
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:8px; color:#2e1065;">Método de pago *</label>
-            <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTransferencia" onclick="setCheckoutPayMethod('Transferencia bancaria')">🏦 Transferencia</button>
-              <button type="button" style="padding:8px 14px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; font-weight:600; cursor:pointer;" id="checkoutPayTarjeta" onclick="setCheckoutPayMethod('Mercado Pago')">💳 Tarjeta (Mercado Pago)</button>
-            </div>
-          </div>
           <div id="checkoutErrorMsg" class="hidden" style="color:#dc2626; font-size:13px; font-weight:600;"></div>
-          <button style="padding:14px; font-size:15px; font-weight:700; justify-content:center; display:flex; align-items:center; border-radius:10px; margin-top:8px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" id="checkoutSubmitBtn" onclick="submitStorefrontOrder()">✅ Confirmar Pedido</button>
+          <button style="padding:14px; font-size:15px; font-weight:700; justify-content:center; display:flex; align-items:center; border-radius:10px; margin-top:8px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" id="checkoutSubmitBtn" onclick="submitStorefrontOrder()">💳 Pagar con Mercado Pago</button>
         </div>
       </div>
       <div style="background:#fff; border:1px solid #f0e6ef; padding:20px; border-radius:12px;">
@@ -14704,20 +14697,9 @@ function openStorefrontCart(){
   showStorefrontPage('storefrontCartPage');
 }
 
-let checkoutPayMethod = '';
-
-function setCheckoutPayStyle(el, active){
-  if (!el) return;
-  el.style.background = active ? 'var(--mf-pink)' : '#faf7fb';
-  el.style.color = active ? '#fff' : '#2e1065';
-  el.style.borderColor = active ? 'var(--mf-pink)' : '#e5dce6';
-}
-
-function setCheckoutPayMethod(method){
-  checkoutPayMethod = method;
-  setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), method === 'Transferencia bancaria');
-  setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), method === 'Mercado Pago');
-}
+// Único método de pago del checkout público: Mercado Pago (tarjeta, sin
+// selector — se paga directo).
+const checkoutPayMethod = 'Mercado Pago';
 
 // Los 32 estados de México, para el selector de Estado en el checkout. Se
 // piden Estado/Municipio/Colonia directamente al cliente (en vez de
@@ -14928,13 +14910,10 @@ function goToStorefrontCheckout(){
     currency: 'MXN'
   });
   populateCheckoutEstadoSelect();
-  checkoutPayMethod = '';
   checkoutShippingCost = null;
   checkoutShippingCarrier = null;
   checkoutShippingOptions = [];
   checkoutSelectedShippingIndex = null;
-  setCheckoutPayStyle(document.getElementById('checkoutPayTransferencia'), false);
-  setCheckoutPayStyle(document.getElementById('checkoutPayTarjeta'), false);
   const errEl = document.getElementById('checkoutErrorMsg');
   if (errEl) errEl.classList.add('hidden');
   const cpInput = document.getElementById('checkoutCP');
@@ -15134,7 +15113,7 @@ async function submitStorefrontOrder(){
     await submitStorefrontOrderInner();
   } finally {
     storefrontOrderInFlight = false;
-    if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.label || '✅ Confirmar Pedido'; btn.style.opacity = ''; }
+    if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.label || '💳 Pagar con Mercado Pago'; btn.style.opacity = ''; }
   }
 }
 
@@ -15159,8 +15138,8 @@ async function submitStorefrontOrderInner(){
     errEl.classList.remove('hidden');
     return;
   }
-  if (!name || !email || !phone || !address || !checkoutPayMethod) {
-    errEl.textContent = 'Completa todos los campos y selecciona un método de pago.';
+  if (!name || !email || !phone || !address) {
+    errEl.textContent = 'Completa todos los campos para continuar.';
     errEl.classList.remove('hidden');
     return;
   }
@@ -15202,60 +15181,29 @@ async function submitStorefrontOrderInner(){
 
   const { folio, total, items: verifiedItems } = order;
 
-  if (checkoutPayMethod === 'Mercado Pago') {
-    try {
-      const mpItems = verifiedItems.map(i => ({ name: i.name, qty: i.qty, price: i.price }));
-      if (checkoutShippingCost > 0) mpItems.push({ name: 'Envío (' + (checkoutShippingCarrier || 'paquetería') + ')', qty: 1, price: checkoutShippingCost });
-      const mpRes = await fetch('/api/mp-crear-preferencia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folio, items: mpItems, payerEmail: email, payerName: name, siteUrl: window.location.origin }),
-      });
-      const mpData = await mpRes.json();
-      if (mpData.init_point) {
-        window.location.href = mpData.init_point;
-        // El botón sigue bloqueado mientras el navegador se va a Mercado Pago.
-        await new Promise(() => {});
-      }
-      errEl.textContent = 'No se pudo iniciar el pago con Mercado Pago: ' + (mpData.error || 'intenta de nuevo o elige otro método de pago.');
-      errEl.classList.remove('hidden');
-      return;
-    } catch (e) {
-      errEl.textContent = 'No se pudo conectar con Mercado Pago. Intenta de nuevo o elige otro método de pago.';
-      errEl.classList.remove('hidden');
-      return;
+  // Único método de pago: se manda directo a Mercado Pago (sin paso
+  // intermedio de "gracias por tu pedido" — eso ya lo maneja
+  // handleMercadoPagoReturn() cuando el cliente vuelve del pago).
+  try {
+    const mpItems = verifiedItems.map(i => ({ name: i.name, qty: i.qty, price: i.price }));
+    if (checkoutShippingCost > 0) mpItems.push({ name: 'Envío (' + (checkoutShippingCarrier || 'paquetería') + ')', qty: 1, price: checkoutShippingCost });
+    const mpRes = await fetch('/api/mp-crear-preferencia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folio, items: mpItems, payerEmail: email, payerName: name, siteUrl: window.location.origin }),
+    });
+    const mpData = await mpRes.json();
+    if (mpData.init_point) {
+      window.location.href = mpData.init_point;
+      // El botón sigue bloqueado mientras el navegador se va a Mercado Pago.
+      await new Promise(() => {});
     }
+    errEl.textContent = 'No se pudo iniciar el pago con Mercado Pago: ' + (mpData.error || 'intenta de nuevo.');
+    errEl.classList.remove('hidden');
+  } catch (e) {
+    errEl.textContent = 'No se pudo conectar con Mercado Pago. Intenta de nuevo.';
+    errEl.classList.remove('hidden');
   }
-
-  fetch('/api/enviar-correo', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: email,
-      tipo: 'pedido',
-      // El servidor agrega los datos bancarios (ajustes_pago) si se pagó por
-      // transferencia; nunca se mandan desde aquí.
-      datos: { nombre: name, pedidoId: folio, total, items: verifiedItems, pagoTransferencia: checkoutPayMethod === 'Transferencia bancaria' },
-    }),
-  }).catch(e => console.log('No se pudo enviar el correo de confirmación:', e.message));
-
-  setConfirmPage({ icon: '✅', title: '¡Gracias por tu pedido!', msg: 'Tu pedido ha sido registrado exitosamente. Te contactaremos pronto para confirmar los detalles de entrega.', folio, total });
-  renderConfirmTransferBox(checkoutPayMethod === 'Transferencia bancaria', folio, total);
-
-  notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(total)}.`);
-
-  trackPixelEvent('Purchase', {
-    content_ids: cart.map(i => String(i.id)),
-    content_type: 'product',
-    contents: cart.map(i => ({ id: String(i.id), quantity: i.qty })),
-    num_items: cart.reduce((s, i) => s + i.qty, 0),
-    value: total,
-    currency: 'MXN'
-  }, folio);
-
-  cart = [];
-  updateStoreCartBadge();
-  showStorefrontPage('storefrontOrderConfirmPage');
 }
 
 function setConfirmPage({ icon, title, msg, folio, total, retry }) {
