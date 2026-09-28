@@ -45,14 +45,14 @@ const MIGRADOS = [
 ];
 
 test('productos: catálogo completo desde Supabase con la misma forma que en vivo', async () => {
-  mockSupabase({ catalogo_productos: CATALOGO, productos_migrados: MIGRADOS, ps_categorias: [{ id: 269, name: 'GLOBOS' }, { id: 270, name: 'Velas' }] });
+  mockSupabase({ catalogo_productos: CATALOGO, productos_migrados: MIGRADOS, ps_categorias: [{ id: 269, name: 'GLOBOS', link_rewrite: 'globos' }, { id: 270, name: 'Velas', link_rewrite: 'velas' }] });
   const res = response();
   await require('../api/productos.js')({ query: { limit: '5000' } }, res);
   assert.equal(res.code, 200);
   assert.equal(res.data.total, 3);
   const [globo, vela, antifaz] = res.data.products;
   assert.equal(globo.id, '101'); assert.equal(globo.img, 'https://sb/101.jpg'); assert.equal(globo.priceMayoreo, 8.5); assert.equal(globo.priceMayoreoDesdeUnidades, 6);
-  assert.equal(globo.categoryLabel, 'Globos'); assert.equal(globo.metaKeywords, 'fiesta'); assert.equal(globo.description, 'Corto'); assert.equal(globo.url, 'https://ps.test/101-globo-rojo.html');
+  assert.equal(globo.categoryLabel, 'Globos'); assert.equal(globo.metaKeywords, 'fiesta'); assert.equal(globo.description, 'Corto'); assert.equal(globo.url, '/globos/101-globo-rojo.html'); // mismo formato que PrestaShop: /{categoria}/{id}-{rewrite}[-{ean13}].html
   assert.equal(vela.name, 'Vela migrada'); assert.equal(vela.sku, 'VEL-MIG'); assert.equal(vela.img, 'https://sb/102-mig.jpg'); assert.equal(vela.migrated, true);
   assert.match(antifaz.img, /unsplash/);
   assert.ok(!JSON.stringify(res.data).includes('llave-secreta'));
@@ -183,4 +183,12 @@ test('proveedores y sitemap desde Supabase', async () => {
   res = response();
   await require('../api/sitemap.js')({ query: {}, headers: { host: 'mifiestashop.vercel.app' } }, res);
   assert.match(res.sent, /https:\/\/mifiestashop\.vercel\.app\/101-globo-rojo\.html/);
+});
+
+test('url-producto: mismo formato de liga que PrestaShop', () => {
+  const { productoPath } = require('../lib/url-producto.js');
+  assert.equal(productoPath({ id: 83389, linkRewrite: 'bombin-neon', ean13: '9571834896571', categoryRewrite: 'neon-glow' }), '/neon-glow/83389-bombin-neon-9571834896571.html');
+  assert.equal(productoPath({ id: 392, linkRewrite: 'promo-batucada-estandar-', ean13: '9807654321890', categoryRewrite: 'promociones' }), '/promociones/392-promo-batucada-estandar--9807654321890.html');
+  assert.equal(productoPath({ id: 5, linkRewrite: 'x', ean13: '', categoryRewrite: '' }), '/5-x.html');
+  assert.equal(productoPath({ id: 5, linkRewrite: '' }), '');
 });

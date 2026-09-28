@@ -8791,12 +8791,14 @@ async function syncProductsFromPrestaShopAPI(){
         }
         return out;
       }
-      const [catalogo, migrados] = await Promise.all([
+      const [catalogo, migrados, categorias] = await Promise.all([
         sbGetAll('catalogo_productos?select=id,sku,barcode,name,description,description_short,price,price_mayoreo,price_mayoreo_desde_unidades,category_id,category_label,low_stock_threshold,link_rewrite,legacy_image_url,images&active=eq.true&order=id.asc'),
-        sbGetAll('productos_migrados?select=id,name,description,category_label,images&order=id.asc').catch(() => [])
+        sbGetAll('productos_migrados?select=id,name,description,category_label,images&order=id.asc').catch(() => []),
+        sbGetAll('ps_categorias?select=id,link_rewrite&order=id.asc').catch(() => [])
       ]);
       if (catalogo.length > 0) {
         const migMap = new Map(migrados.map(m => [String(m.id), m]));
+        const catRewrite = new Map(categorias.map(c => [String(c.id), c.link_rewrite]));
         liveProducts = catalogo.map(p => {
           const m = migMap.get(String(p.id));
           const images = (m && Array.isArray(m.images) && m.images.length) ? m.images
@@ -8818,7 +8820,7 @@ async function syncProductsFromPrestaShopAPI(){
             images,
             migrated: !!m,
             desc: (m && m.description) || p.description_short || p.description || p.name,
-            url: p.link_rewrite ? `/${p.id}-${p.link_rewrite}.html` : ''
+            url: productUrlPath(p.id, p.link_rewrite, p.barcode, catRewrite.get(String(p.category_id)))
           };
         });
         loaded = true;
@@ -14192,7 +14194,16 @@ let currentStorefrontList = [];
 
 function productPathFor(p){
   if (!p || !p.url) return '';
-  try { return new URL(p.url).pathname; } catch(e) { return ''; }
+  try { return new URL(p.url, window.location.origin).pathname; } catch(e) { return ''; }
+}
+
+// Mismo formato de liga que PrestaShop (ver lib/url-producto.js):
+// /{categoria}/{id}-{link_rewrite}-{ean13}.html — son las ligas que Google
+// ya tiene indexadas.
+function productUrlPath(id, linkRewrite, ean13, categoryRewrite) {
+  if (!id || !linkRewrite) return '';
+  const ean = String(ean13 || '').trim();
+  return `${categoryRewrite ? '/' + categoryRewrite : ''}/${id}-${linkRewrite}${ean ? '-' + ean : ''}.html`;
 }
 
 function openStorefrontProductDetail(idx){
@@ -15927,8 +15938,10 @@ renderMonthlyTable();
 renderStockTable();
 renderTopProductsTable();
 
-// ================= DEEP LINK: /{id}-{slug}.html PRODUCT DETAIL =================
-const productDeepLinkMatch = window.location.pathname.match(/^\/(\d+)-[^\/]+\.html$/);
+// ================= DEEP LINK: /{categoria}/{id}-{slug}.html PRODUCT DETAIL =================
+// También con la categoría delante, como las ligas de PrestaShop:
+// /neon-glow/83389-bombin-neon-9571834896571.html
+const productDeepLinkMatch = window.location.pathname.match(/^\/(?:[a-z0-9-]+\/)?(\d+)-[^\/]+\.html$/i);
 function openProductDeepLinkIfPresent() {
   if (!productDeepLinkMatch) return;
   const p = liveProducts.find(pr => String(pr.id) === productDeepLinkMatch[1]);

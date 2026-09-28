@@ -1707,6 +1707,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/:cat([a-zA-Z0-9-]+)/:id(\\d+)-:slug*.html",
+      "destination": "/index.html"
+    },
+    {
       "source": "/:id(\\d+)-:slug*",
       "destination": "/index.html"
     },
@@ -1745,6 +1749,194 @@
     {
       "source": "/content/:id(\\d+)-:slug",
       "destination": "/api/cms-redirect?slug=:slug"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/index.php",
+      "has": [
+        {
+          "type": "query",
+          "key": "id_product",
+          "value": "(?<pid>\\d+)"
+        }
+      ],
+      "destination": "/:pid-producto.html",
+      "permanent": true
+    },
+    {
+      "source": "/index.php",
+      "has": [
+        {
+          "type": "query",
+          "key": "id_category",
+          "value": "(?<cid>\\d+)"
+        }
+      ],
+      "destination": "/:cid-categoria",
+      "permanent": true
+    },
+    {
+      "source": "/index.php",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/buscar",
+      "has": [
+        {
+          "type": "query",
+          "key": "s",
+          "value": "(?<q>.*)"
+        }
+      ],
+      "destination": "/?buscar=:q",
+      "permanent": true
+    },
+    {
+      "source": "/buscar",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/carrito",
+      "destination": "/?vista=carrito",
+      "permanent": true
+    },
+    {
+      "source": "/pedido",
+      "destination": "/?vista=carrito",
+      "permanent": true
+    },
+    {
+      "source": "/pedido-rapido",
+      "destination": "/?vista=carrito",
+      "permanent": true
+    },
+    {
+      "source": "/contactenos",
+      "destination": "/contacto",
+      "permanent": true
+    },
+    {
+      "source": "/contactanos",
+      "destination": "/contacto",
+      "permanent": true
+    },
+    {
+      "source": "/tiendas",
+      "destination": "/contacto",
+      "permanent": true
+    },
+    {
+      "source": "/mapa-del-sitio",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/productos-rebajados",
+      "destination": "/290-promociones",
+      "permanent": true
+    },
+    {
+      "source": "/novedades",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/nuevos-productos",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/mas-vendidos",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/fabricantes",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/proveedores",
+      "destination": "/266-productos",
+      "permanent": true
+    },
+    {
+      "source": "/iniciar-sesion",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/mi-cuenta",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/datos-personales",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/direcciones",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/direccion",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/historial-compra",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/facturas-abono",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/seguimiento-pedido",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/seguimiento-pedido-invitado",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/descuento",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/recuperacion-contrasena",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/recuperar-contrasena",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/alertas",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/lista-de-deseos",
+      "destination": "/?cuenta=1",
+      "permanent": true
+    },
+    {
+      "source": "/nueva-cuenta",
+      "destination": "/?cuenta=1",
+      "permanent": true
     }
   ]
 }

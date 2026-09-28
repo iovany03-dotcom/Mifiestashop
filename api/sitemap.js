@@ -1,6 +1,7 @@
 // Vercel serverless function: generates sitemap.xml with the homepage and
 // every real product URL.
-const { prestashopConectado, fetchCatalogoActivo } = require('../lib/prestashop.js');
+const { prestashopConectado, fetchCatalogoActivo, sbGetAll } = require('../lib/prestashop.js');
+const { productoPath } = require('../lib/url-producto.js');
 
 module.exports = async function handler(req, res) {
   const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
@@ -19,9 +20,16 @@ module.exports = async function handler(req, res) {
     // de producto, desde catalogo_productos (solo los que vienen de
     // PrestaShop, que son los que tienen página /{id}-{link_rewrite}.html).
     try {
-      const rows = await fetchCatalogoActivo('id,link_rewrite', '&source=eq.prestashop');
+      // Misma liga que PrestaShop (/{categoria}/{id}-{link_rewrite}-{ean13}.html,
+      // ver lib/url-producto.js): la que Google ya tiene indexada.
+      const [rows, cats] = await Promise.all([
+        fetchCatalogoActivo('id,link_rewrite,barcode,category_id', '&source=eq.prestashop'),
+        sbGetAll('ps_categorias?select=id,link_rewrite&order=id.asc').catch(() => [])
+      ]);
+      const catRw = new Map(cats.map(c => [String(c.id), c.link_rewrite]));
       rows.forEach(p => {
-        if (p.id && p.link_rewrite) urls.push({ loc: `${siteOrigin}/${p.id}-${p.link_rewrite}.html`, priority: '0.8' });
+        const path = productoPath({ id: p.id, linkRewrite: p.link_rewrite, ean13: p.barcode, categoryRewrite: catRw.get(String(p.category_id)) });
+        if (path) urls.push({ loc: `${siteOrigin}${path}`, priority: '0.8' });
       });
     } catch (e) { /* fall back to just the homepage */ }
   } else if (apiKey) {
