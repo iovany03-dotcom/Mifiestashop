@@ -88,7 +88,7 @@ module.exports = async function handler(req, res) {
         await sendMetaEvent({
           eventName: 'Purchase',
           eventId: payment.external_reference,
-          eventSourceUrl: 'https://mifiestashop.vercel.app/',
+          eventSourceUrl: 'https://www.mifiestashop.com/',
           value: Number(previo.total) || Number(payment.transaction_amount) || 0,
           contents: (Array.isArray(previo.items) ? previo.items : []).map(i => ({ id: i.id, quantity: i.qty })),
           customer: { name: previo.customer_name, email: previo.customer_email, phone: previo.customer_phone },

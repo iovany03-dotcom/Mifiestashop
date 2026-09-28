@@ -8,7 +8,7 @@ const { usesBatucadaPackages, batucadaPricingHtml, HEADING } = require('./batuca
 const REVIEWS_MORE_URL={cdmx:'https://maps.app.goo.gl/t9gun227wXwa26Ff6',queretaro:'https://maps.app.goo.gl/ZKjUHHA1SSNaemxv8',puebla:'https://maps.app.goo.gl/Bs3YzM5CA2e39Guw9'};
 const root = path.resolve(__dirname, '..');
 const pages = require('../data/cms-pages.json');
-const origin = 'https://mifiestashop.vercel.app';
+const origin = 'https://www.mifiestashop.com';
 const models = pages.map(page => modelFor(page, pages));
 const output = path.join(root, 'cms-pages');
 fs.mkdirSync(output, { recursive: true });

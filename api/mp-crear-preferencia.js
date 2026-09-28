@@ -42,7 +42,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const origin = (siteUrl || 'https://mifiestashop.vercel.app').replace(/\/$/, '');
+  const origin = (siteUrl || 'https://www.mifiestashop.com').replace(/\/$/, '');
   const total = items.reduce((s, i) => s + (Number(i.price) || 0) * Math.max(1, Number(i.qty) || 1), 0);
   const backUrlParams = `mp_folio=${encodeURIComponent(folio)}&mp_total=${encodeURIComponent(total.toFixed(2))}`;
 
