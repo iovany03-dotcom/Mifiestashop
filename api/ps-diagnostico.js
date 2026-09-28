@@ -11,13 +11,14 @@ async function sitemapUrls() {
   const get = async u => { const r = await prestashopFetch(u); return { status: r.status, text: r.ok ? await r.text() : '' }; };
   const robots = await get(`${base}/robots.txt`);
   let maps = (robots.text.match(/^sitemap:\s*(\S+)/gim) || []).map(l => l.replace(/^sitemap:\s*/i, '').trim());
-  if (!maps.length) maps = [`${base}/1_index_sitemap.xml`, `${base}/sitemap.xml`];
+  // La tienda 50 comparte instalación: su sitemap se llama 50_index_sitemap.xml.
+  maps = [`${base}/50_index_sitemap.xml`, ...maps, `${base}/sitemap.xml`];
   const seen = new Set(); const urls = []; const tried = [];
   const queue = [...maps];
   while (queue.length && tried.length < 40) {
     const u = queue.shift();
     if (seen.has(u)) continue; seen.add(u);
-    let r; try { r = await get(u.replace(/^https?:\/\/(www\.)?mifiestashop\.com/, base)); } catch (e) { tried.push({ u, error: String(e.message).slice(0, 80) }); continue; }
+    let r; try { r = await get(u.replace(/^https?:\/\/[^/]+/, base)); } catch (e) { tried.push({ u, error: String(e.message).slice(0, 80) }); continue; }
     tried.push({ u, status: r.status });
     const locs = (r.text.match(/<loc>([^<]+)<\/loc>/g) || []).map(x => x.replace(/<\/?loc>/g, '').trim());
     if (/<sitemapindex/i.test(r.text)) queue.push(...locs); else urls.push(...locs);
