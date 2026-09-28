@@ -3456,6 +3456,9 @@
             <button class="btn primary" onclick="switchView('pos')">+ Nueva Venta POS</button>
           </div>
         </div>
+        <div style="margin-bottom:14px;">
+          <input type="search" id="ordersSearchInput" placeholder="Buscar por ID, referencia, cliente, estado, pago o quién lo creó…" autocomplete="off" oninput="renderOrdersTableRows()" style="width:100%; max-width:420px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13.5px;">
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -10953,7 +10956,14 @@ function orderStatusPillClass(status) {
 function renderOrdersTableRows() {
   const tbody = document.getElementById('ordersTableBody');
   if (!tbody) return;
-  const list = loadedOrdersList;
+  const q = (document.getElementById('ordersSearchInput')?.value || '').trim().toLowerCase();
+  const list = !q ? loadedOrdersList : loadedOrdersList.filter(o => [
+    o.id, o.reference, o.customer, o.status, o.paymentMethod, o.channel, o.createdBy, o.shop
+  ].some(field => String(field || '').toLowerCase().includes(q)));
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">${q ? 'Sin pedidos que coincidan con la búsqueda.' : 'Sin pedidos todavía.'}</td></tr>`;
+    return;
+  }
   tbody.innerHTML = list.map(o => {
     return `
     <tr style="cursor:pointer;" onclick="openOrderDetailModal('${escapeHtml(o.id)}')">
