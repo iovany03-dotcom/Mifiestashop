@@ -44,8 +44,40 @@ async function canonicas(ids) {
   return out;
 }
 
+// ?comparar=offset: compara, 200 productos activos por llamada, la liga
+// oficial de PrestaShop con la que arma el sitio nuevo. Devuelve solo las
+// diferencias.
+const { productoPath } = require('../lib/url-producto.js');
+const { sbGetAll } = require('../lib/prestashop.js');
+async function comparar(offset) {
+  const [rows, cats] = await Promise.all([
+    sbGetAll(`catalogo_productos?select=id,link_rewrite,barcode,category_id&active=eq.true&source=eq.prestashop&order=id.asc`),
+    sbGetAll('ps_categorias?select=id,link_rewrite&order=id.asc')
+  ]);
+  const catRw = new Map(cats.map(c => [String(c.id), c.link_rewrite]));
+  const page = rows.slice(offset, offset + 200);
+  const base = 'https://www.mifiestashop.com';
+  const diffs = []; let iguales = 0;
+  for (let i = 0; i < page.length; i += 20) {
+    await Promise.all(page.slice(i, i + 20).map(async p => {
+      const nuestra = productoPath({ id: p.id, linkRewrite: p.link_rewrite, ean13: p.barcode, categoryRewrite: catRw.get(String(p.category_id)) });
+      try {
+        const r = await prestashopFetch(`${base}/index.php?controller=product&id_product=${p.id}`);
+        const loc = r.headers.get('location');
+        const oficial = loc ? decodeURIComponent(new URL(loc, base).pathname) : null;
+        if (oficial === nuestra) iguales++; else diffs.push({ id: p.id, status: r.status, oficial, nuestra });
+      } catch (e) { diffs.push({ id: p.id, error: String(e.message || e).slice(0, 80), nuestra }); }
+    }));
+  }
+  return { total: rows.length, offset, revisados: page.length, iguales, diferentes: diffs.length, diffs };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  if (req.query && req.query.comparar !== undefined) {
+    res.status(200).json(await comparar(Math.max(0, parseInt(req.query.comparar, 10) || 0)));
+    return;
+  }
   if (req.query && req.query.canon) {
     const ids = String(req.query.canon).split(',').filter(x => /^\d+$/.test(x));
     res.status(200).json({ results: await canonicas(ids) });

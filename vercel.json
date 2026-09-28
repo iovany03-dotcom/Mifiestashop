@@ -111,6 +111,9 @@
     },
     "api/mp-webhook.js": {
       "maxDuration": 30
+    },
+    "api/ps-diagnostico.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
