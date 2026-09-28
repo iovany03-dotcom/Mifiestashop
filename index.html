@@ -4819,7 +4819,10 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen (PrestaShop / CDN):</label>
-            <input type="url" id="editProdImg" placeholder="https://..." oninput="refreshProductPhotoPreview()" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <!-- type="text", no "url" — mismo motivo que editProdUrl abajo: un valor que no
+                 valide como URL absoluta bloquea el guardado del producto ENTERO en
+                 silencio, sin mostrar ningún error. -->
+            <input type="text" id="editProdImg" placeholder="https://..." oninput="refreshProductPhotoPreview()" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
             <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">O sube una foto desde tu equipo:</label>
             <input type="file" id="editProdImgFile" accept="image/*" onchange="uploadProductPhoto(this)" style="width:100%; font-size:12.5px;">
             <div id="editProdImgStatus" style="font-size:12px; margin-top:4px; color:var(--text-muted);"></div>
@@ -4828,7 +4831,13 @@
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Actual del Producto (Tienda Web):</label>
             <div style="display:flex; gap:6px;">
-              <input type="url" id="editProdUrl" placeholder="https://mifiestashop.com/producto/..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              <!-- type="text", no "url": la liga real de un producto de PrestaShop es
+                   relativa a propósito (toProduct() en lib/productos-supabase.js, "sirve en
+                   cualquier dominio del sitio") — un <input type="url"> exige que el valor
+                   sea una URL absoluta y bloquea el envío del formulario ENTERO en silencio
+                   si no lo es (sin llegar siquiera a saveProductChanges()), así que guardar
+                   cualquier cambio en un producto con liga relativa nunca hacía nada. -->
+              <input type="text" id="editProdUrl" placeholder="https://mifiestashop.com/producto/..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
               <button type="button" class="btn small secondary" onclick="if(document.getElementById('editProdUrl').value) window.open(document.getElementById('editProdUrl').value, '_blank'); else alert('No hay URL definida');" title="Abrir enlace en pestaña nueva">Abrir</button>
             </div>
           </div>
@@ -7268,7 +7277,15 @@ function getCartTotalNum() {
   return applyIva ? subtotal * 1.16 : subtotal;
 }
 
-function requireCajaAbierta() {
+async function requireCajaAbierta() {
+  if (cajaActual) return true;
+  // cajaActual es un valor en memoria que solo se refresca al cargar la
+  // página o al cambiar de sucursal en el selector — si otra persona abrió
+  // la caja DESPUÉS de que esta sesión cargó el POS, se queda desactualizado
+  // y bloqueaba la venta aunque la caja sí estuviera abierta. Se confirma
+  // con el servidor antes de bloquear, en vez de confiar ciegamente en el
+  // valor en memoria.
+  await loadCajaActual();
   if (cajaActual) return true;
   alert('Abre la caja antes de realizar ventas. Usa el botón "Abrir Caja".');
   return false;
@@ -7388,9 +7405,9 @@ async function generateQuotePdf() {
   }
 }
 
-function openCheckoutModal() {
+async function openCheckoutModal() {
   if (cart.length === 0) return alert('Agrega productos al carrito primero.');
-  if (!requireCajaAbierta()) return;
+  if (!(await requireCajaAbierta())) return;
   const total = getCartTotalNum();
   document.getElementById('checkoutTotalAmount').textContent = fmtMoney(total);
   document.getElementById('cashGivenInput').value = Math.ceil(total);
@@ -7429,8 +7446,8 @@ function calculateChange() {
   document.getElementById('cashChangeAmount').textContent = fmtMoney(change);
 }
 
-function confirmPOSSale() {
-  if (!requireCajaAbierta()) { closeCheckoutModal(); return; }
+async function confirmPOSSale() {
+  if (!(await requireCajaAbierta())) { closeCheckoutModal(); return; }
   const total = getCartTotalNum();
   const given = parseFloat(document.getElementById('cashGivenInput').value) || total;
   const change = Math.max(0, given - total);
@@ -9133,7 +9150,7 @@ async function uploadProductPhoto(input) {
   }
 }
 
-function saveProductChanges() {
+async function saveProductChanges() {
   if (productPhotoUploading) { alert('Espera a que termine de subir la foto.'); return; }
   const pIdVal = document.getElementById('editProdId').value;
   const sku = (document.getElementById('editProdSku').value || '').trim();
@@ -9235,26 +9252,44 @@ function saveProductChanges() {
   }
 
   const wasNew = !pIdVal;
-  fetch('/api/guardar-producto', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...getSessionCredsParams(),
-      producto: {
-        id: wasNew ? null : targetProd.id,
-        sku, barcode, name, description: desc,
-        price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
-        categoryLabel: cat, active: status !== 'Inactivo', img,
-        lowStockThreshold: targetProd.lowStockThreshold
-      }
-    })
-  }).then(r => r.json()).then(r => {
-    if (!r.ok) { console.log('No se pudo guardar en catalogo_productos:', r.error); return; }
-    // Si era un producto nuevo, el id real es el que asignó el servidor
-    // (fuera del rango de PrestaShop) — se corrige aquí para que quede
-    // consistente en liveProducts/PRODUCTS_DATA con lo guardado.
-    if (wasNew && targetProd) targetProd.id = r.id;
-  }).catch(e => console.log('No se pudo guardar en catalogo_productos:', e.message));
+  // Antes esto era "fire and forget" (sin esperar la respuesta): el mensaje
+  // de éxito y el cierre del modal salían siempre, aunque el guardado real
+  // en catalogo_productos fallara — el único rastro quedaba en la consola
+  // del navegador, que nadie ve. Ahora si falla se avisa de verdad y el
+  // modal se queda abierto para reintentar, en vez de mentir que se guardó.
+  let saveError = '';
+  try {
+    const r = await fetch('/api/guardar-producto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...getSessionCredsParams(),
+        producto: {
+          id: wasNew ? null : targetProd.id,
+          sku, barcode, name, description: desc,
+          price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
+          categoryLabel: cat, active: status !== 'Inactivo', img,
+          lowStockThreshold: targetProd.lowStockThreshold
+        }
+      })
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      // Si era un producto nuevo, el id real es el que asignó el servidor
+      // (fuera del rango de PrestaShop) — se corrige aquí para que quede
+      // consistente en liveProducts/adminCatalogProducts con lo guardado.
+      if (wasNew && targetProd) targetProd.id = data.id;
+    } else {
+      saveError = data.error || `HTTP ${r.status}`;
+    }
+  } catch (e) {
+    saveError = e.message;
+  }
+
+  if (saveError) {
+    alert('No se pudo guardar el producto: ' + saveError + '. Vuelve a intentarlo.');
+    return;
+  }
 
   renderCatalogTable('all');
   renderProducts('all');
