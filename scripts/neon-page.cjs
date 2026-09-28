@@ -13,7 +13,7 @@ function designNeonPage(html,p){
  $('.related-pages').remove();
  $('meta[name="description"],meta[property="og:description"]').attr('content','Artículos neón para fiestas en CDMX: pulseras, lentes, luminosos y paquetes. Compra por pieza o consulta mayoreo. Visítanos en Rumania 613, Portales.');
  $('script[type="application/ld+json"]').each((_,el)=>{const data=JSON.parse($(el).text());data.description=$('meta[name="description"]').attr('content');$(el).text(JSON.stringify(data).replace(/</g,'\\u003c'));});
- $('meta[property="og:image"]').attr('content','https://mifiestashop.vercel.app/img/cms/94d6f367e829967d.jpg');
+ $('meta[property="og:image"]').attr('content','https://www.mifiestashop.com/img/cms/94d6f367e829967d.jpg');
  return $.html();
 }
 module.exports={designNeonPage};

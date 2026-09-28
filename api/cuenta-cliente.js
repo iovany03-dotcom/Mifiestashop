@@ -26,7 +26,7 @@ const { sendTemplate, smtpConfigured, ALLOWED_LINK_HOSTS } = require('../lib/cor
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const DEFAULT_HOST = 'mifiestashop.vercel.app';
+const DEFAULT_HOST = 'www.mifiestashop.com';
 
 // El enlace del correo va al mismo dominio desde el que se registró el
 // cliente, pero solo si es uno de los nuestros (el header Host lo manda el

@@ -41,7 +41,7 @@ test('registro: un Host ajeno no se usa en el enlace del correo', async () => {
   sent.length = 0; failSend = false;
   mockSupabase([['/auth/v1/admin/generate_link', reply(200, { id: 'u-2', hashed_token: 'tok' })]]);
   await call({ accion: 'registro', nombre: 'Ana', email: 'a@b.mx', password: 'secreta1' }, 'evil.example.com');
-  assert.equal(sent[0].datos.confirmUrl, 'https://mifiestashop.vercel.app/?confirmar=tok');
+  assert.equal(sent[0].datos.confirmUrl, 'https://www.mifiestashop.com/?confirmar=tok');
 });
 
 test('registro: correo ya registrado responde 409 sin mandar correo', async () => {

@@ -14,7 +14,7 @@ test('every source page has its exact title, slug, original path and static meta
     const route=config.rewrites.find(r=>r.source===m.path);assert.ok(route,m.path);
     const $=cheerio.load(fs.readFileSync(path.join(root,route.destination),'utf8'));
     assert.equal($('h1').length,1,m.path);assert.equal($('h1').text(),page.id===410?page.title.replace(/_+$/,''):page.title);
-    assert.equal($('link[rel=canonical]').attr('href'),'https://mifiestashop.vercel.app'+m.path);
+    assert.equal($('link[rel=canonical]').attr('href'),'https://www.mifiestashop.com'+m.path);
     assert.equal($('title').text(),page.title+' | Mi Fiestashop');
     assert.equal($('meta[name=description]').length,1);
     assert.equal($('script:not([src]):not([type="application/ld+json"])').length,0);
@@ -74,7 +74,7 @@ test('only Facebook and Google pages are migrated; VIP forms keep their original
 });
 test('sitemap includes all original CMS paths even without a PrestaShop key',async()=>{
   const prev=process.env.PS_API_KEY;delete process.env.PS_API_KEY;
-  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'mifiestashop.vercel.app'}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://mifiestashop.vercel.app${page.sourcePath}`));}
+  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'www.mifiestashop.com'}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://www.mifiestashop.com${page.sourcePath}`));}
   finally{if(prev!==undefined)process.env.PS_API_KEY=prev;}
 });
 test('excluded pages keep their original PrestaShop response and coexist with migrated pages',async()=>{
