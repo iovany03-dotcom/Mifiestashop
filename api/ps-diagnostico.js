@@ -26,8 +26,31 @@ async function sitemapUrls() {
   return { robots_status: robots.status, tried, count: urls.length, urls };
 }
 
+// ?canon=ids: liga oficial que da PrestaShop a cada producto (redirige
+// index.php?id_product=X a su URL canónica), hasta 60 ids por llamada.
+async function canonicas(ids) {
+  const base = 'https://www.mifiestashop.com';
+  const out = [];
+  const list = ids.slice(0, 60);
+  for (let i = 0; i < list.length; i += 10) {
+    await Promise.all(list.slice(i, i + 10).map(async id => {
+      try {
+        const r = await prestashopFetch(`${base}/index.php?controller=product&id_product=${id}`);
+        const loc = r.headers.get('location');
+        out.push({ id, status: r.status, path: loc ? new URL(loc, base).pathname : null });
+      } catch (e) { out.push({ id, error: String(e.message || e).slice(0, 80) }); }
+    }));
+  }
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+  if (req.query && req.query.canon) {
+    const ids = String(req.query.canon).split(',').filter(x => /^\d+$/.test(x));
+    res.status(200).json({ results: await canonicas(ids) });
+    return;
+  }
   if (req.query && req.query.sitemap === '1') {
     try { res.status(200).json(await sitemapUrls()); } catch (e) { res.status(200).json({ error: String(e.message || e).slice(0, 200) }); }
     return;
