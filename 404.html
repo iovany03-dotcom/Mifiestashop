@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Página no encontrada | Mi Fiestashop</title>
+<meta name="robots" content="noindex, follow">
+<link rel="icon" type="image/webp" href="/img/cms/logo.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --pink: #d3007b; --purple: #2e1065; --yellow: #ffe14d; --cream: #fdf9fb; --muted: #6b5b7b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: Poppins, system-ui, -apple-system, sans-serif; background: var(--cream); color: var(--purple); display: flex; flex-direction: column; }
+  .topbar { background: var(--pink); color: #fff; text-align: center; font-weight: 600; font-size: 14px; padding: 8px 16px; }
+  header { background: #fff; border-bottom: 1px solid #f0e6ef; padding: 12px 16px; display: flex; justify-content: center; }
+  header img { height: 56px; width: auto; }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 32px 16px 48px; }
+  .card { max-width: 620px; width: 100%; text-align: center; }
+  .code { font-family: Fredoka, Poppins, sans-serif; font-weight: 700; font-size: clamp(88px, 22vw, 150px); line-height: 1; margin: 0; background: linear-gradient(90deg, var(--pink), #7c3aed 55%, #06b6d4); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h1 { font-family: Fredoka, Poppins, sans-serif; font-size: clamp(24px, 5vw, 34px); margin: 8px 0 10px; }
+  p { color: var(--muted); font-size: 16px; line-height: 1.55; margin: 0 auto 22px; max-width: 480px; }
+  form { display: flex; gap: 8px; max-width: 480px; margin: 0 auto 18px; }
+  input { flex: 1; min-width: 0; padding: 13px 16px; border-radius: 999px; border: 2px solid #eadcf0; font: inherit; font-size: 15px; color: var(--purple); background: #fff; }
+  input:focus { outline: none; border-color: var(--pink); }
+  button, .btn { border: 0; border-radius: 999px; padding: 13px 22px; font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; text-decoration: none; display: inline-block; }
+  button { background: var(--pink); color: #fff; }
+  .actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary { background: var(--purple); color: #fff; }
+  .btn-secondary { background: var(--yellow); color: var(--purple); }
+  .help { margin-top: 28px; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; color: var(--purple); background: #fff; border: 1px solid #f0e6ef; border-radius: 18px; padding: 10px 16px 10px 10px; box-shadow: 0 6px 18px rgba(46,16,101,.08); }
+  .help img { width: 54px; height: 54px; object-fit: contain; }
+  .help span { text-align: left; font-size: 14px; line-height: 1.35; }
+  .help b { display: block; font-size: 15px; }
+  footer { text-align: center; font-size: 13px; color: var(--muted); padding: 18px 16px 24px; }
+  footer a { color: var(--purple); }
+  @media (max-width: 480px) { form { flex-direction: column; } button { width: 100%; } }
+</style>
+</head>
+<body>
+  <div class="topbar">🎉 Envío GRATIS en compras mayores a $1,500 MXN</div>
+  <header><a href="/" aria-label="Ir al inicio"><img src="/img/cms/logo.webp" alt="Mi Fiestashop" width="56" height="56"></a></header>
+  <main>
+    <div class="card">
+      <p class="code" aria-hidden="true">404</p>
+      <h1>¡Ups! Esta página se fue de fiesta</h1>
+      <p>No encontramos lo que buscabas: puede que el producto ya no esté disponible o que la liga haya cambiado. Búscalo aquí o sigue explorando el catálogo.</p>
+      <form action="/" method="get" role="search">
+        <input type="search" name="buscar" placeholder="¿Qué buscas para tu evento?" aria-label="Buscar productos" autocomplete="off">
+        <button type="submit">Buscar</button>
+      </form>
+      <div class="actions">
+        <a class="btn btn-primary" href="/266-productos">Ver catálogo</a>
+        <a class="btn btn-secondary" href="/">Ir al inicio</a>
+      </div>
+      <a class="help" href="https://wa.me/525612622146" target="_blank" rel="noopener">
+        <img src="/img/whatsapp-support.png" alt="Mikel, soporte por WhatsApp" width="54" height="54">
+        <span><b>¿Te ayudamos a encontrarlo?</b>Escríbele a Mikel por WhatsApp</span>
+      </a>
+    </div>
+  </main>
+  <footer>© Mi Fiestashop · <a href="/contacto">Contacto</a></footer>
+</body>
+</html>

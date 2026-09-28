@@ -19,7 +19,7 @@
 // no está migrado, la categoría no existe, o algo falla, se deja pasar el
 // HTML sin tocar — nunca rompe la carga de la página.
 export const config = {
-  matcher: '/:id(\\d+)-:slug*',
+  matcher: ['/:id(\\d+)-:slug*', '/:cat/:id(\\d+)-:slug*'],
 };
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -73,74 +73,79 @@ function buildProductJsonLd(name, sku, desc, images) {
   return json.replace(/</g, '\\u003c');
 }
 
-// Trae los datos reales (Supabase) para un producto o categoría por id.
-// exists=false solo cuando el id de plano no corresponde a nada real (ni
-// producto ni categoría) — ahí el llamador manda un 404 real en vez del
-// típico 200 "soft 404" de un SPA, que Google penaliza como señal de baja
-// calidad. exists=true con seo=null significa "es real pero sin datos
-// todavía" (producto no migrado, o falló Supabase) — eso SIGUE como 200
-// con el HTML genérico, nunca se inventa un 404 por un error transitorio.
-async function fetchProduct(id) {
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=name,sku,description,images`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-  );
-  if (r.ok) {
-    const rows = await r.json();
-    const p = Array.isArray(rows) && rows[0];
-    if (p && p.name) {
-      const desc = (stripHtml(p.description) || `Compra ${p.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160);
-      const images = Array.isArray(p.images) ? p.images : [];
-      return {
-        exists: true,
-        seo: {
-          title: `${p.name} | Mi Fiestashop`,
-          desc,
-          image: images[0] || null,
-          jsonLd: buildProductJsonLd(p.name, p.sku, desc, images)
-        }
-      };
-    }
-  }
-  // No migrado todavía (o Supabase falló) — antes de decidir 404, se
-  // revisa ps_stock: cubre TODO el catálogo real (migrado o no, ~82,000
-  // filas sincronizadas de PrestaShop), así que un id ausente ahí también
-  // sí es un id que de verdad no existe.
+// Consulta a Supabase con la llave pública. null = falla nuestra (red o
+// Supabase): en ese caso nunca se inventa un 404 ni una redirección.
+async function sb(path) {
   try {
-    const r2 = await fetch(
-      `${SUPABASE_URL}/rest/v1/ps_stock?id_product=eq.${id}&select=id_product&limit=1`,
-      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-    );
-    if (r2.ok) {
-      const rows2 = await r2.json();
-      if (Array.isArray(rows2) && rows2.length > 0) return { exists: true, seo: null };
-      return { exists: false, seo: null };
-    }
-  } catch (e) { /* fetch falló: no se afirma que no existe, ver abajo */ }
-  // No se pudo confirmar ni una cosa ni la otra (error de red/Supabase) —
-  // se asume que existe para no arriesgar un 404 falso por una falla
-  // transitoria nuestra.
-  return { exists: true, seo: null };
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+    if (!r.ok) return null;
+    const rows = await r.json();
+    return Array.isArray(rows) ? rows : null;
+  } catch (e) { return null; }
 }
 
-async function fetchCategory(id) {
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/ps_categorias?id=eq.${id}&select=name,active,description,meta_title,meta_description`,
-    { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-  );
-  if (!r.ok) return { exists: true, seo: null }; // falla nuestra: no se afirma que no existe
-  const rows = await r.json();
-  const c = Array.isArray(rows) && rows[0];
-  // ps_categorias sincroniza TODAS las categorías reales de PrestaShop cada
-  // hora — si el id no aparece aquí, de verdad no existe. Inactiva cuenta
-  // igual como "no existe" (no debe indexarse ni mostrar datos reales).
-  if (!c || !c.name || !c.active) return { exists: false, seo: null };
-  // meta_title/meta_description casi nunca están capturados a mano para
-  // categorías en PrestaShop (a diferencia de productos) — se cae a un
-  // texto genérico pero real (con el nombre de la categoría), nunca al
-  // título/descripción de la portada.
+// Misma liga que PrestaShop (ver lib/url-producto.js):
+// /{categoria}/{id}-{link_rewrite}-{ean13}.html
+function productoPath(id, linkRewrite, ean13, categoryRewrite) {
+  if (!id || !linkRewrite) return '';
+  const ean = String(ean13 || '').trim();
+  return `${categoryRewrite ? '/' + categoryRewrite : ''}/${id}-${linkRewrite}${ean ? '-' + ean : ''}.html`;
+}
+
+const CATALOGO_RAIZ = '/266-productos';
+
+// Producto por id (catalogo_productos: todo el catálogo de la tienda 50,
+// activo o no). Devuelve { unknown } si no se pudo consultar, { exists:
+// false } si el id no es de la tienda, { redirect } si está desactivado
+// (a su categoría, como hace PrestaShop) o { canonicalPath, seo }.
+async function resolveProduct(id) {
+  const rows = await sb(`catalogo_productos?id=eq.${id}&select=id,name,sku,link_rewrite,barcode,category_id,active,description_short,description,images,meta_title,meta_description`);
+  if (!rows) return { unknown: true };
+  const p = rows[0];
+  if (!p) return { exists: false };
+  const cats = p.category_id ? await sb(`ps_categorias?id=eq.${p.category_id}&select=id,link_rewrite,active`) : [];
+  const cat = cats && cats[0];
+  if (!p.active) {
+    return { redirect: cat && cat.active && cat.link_rewrite ? `/${cat.id}-${cat.link_rewrite}` : CATALOGO_RAIZ };
+  }
+  const canonicalPath = productoPath(p.id, p.link_rewrite, p.barcode, cat && cat.link_rewrite);
+  const migr = await sb(`productos_migrados?id=eq.${id}&select=name,sku,description,images`);
+  const m = migr && migr[0];
+  const name = (m && m.name) || p.name;
+  if (!name) return { exists: true, canonicalPath, seo: null };
+  const images = (Array.isArray(p.images) && p.images.length ? p.images : null) || (m && Array.isArray(m.images) ? m.images : []);
+  const desc = (stripHtml(p.meta_description) || stripHtml(m && m.description) || stripHtml(p.description_short) || stripHtml(p.description)
+    || `Compra ${name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160);
   return {
     exists: true,
+    canonicalPath,
+    seo: {
+      title: `${(p.meta_title && p.meta_title.trim()) || name} | Mi Fiestashop`,
+      desc,
+      image: images[0] || null,
+      jsonLd: buildProductJsonLd(name, (m && m.sku) || p.sku, desc, images)
+    }
+  };
+}
+
+// Categoría por id. Las categorías raíz de la instalación compartida
+// (1 "Raíz", 2 "inicio") y los ids que ya no existen pero cuyo nombre sí
+// (p. ej. /145-promociones -> /290-promociones) se redirigen.
+async function resolveCategory(id, slug) {
+  if (id === '1' || id === '2') return { redirect: CATALOGO_RAIZ };
+  const rows = await sb(`ps_categorias?id=eq.${id}&select=id,name,active,link_rewrite,description,meta_title,meta_description`);
+  if (!rows) return { unknown: true };
+  const c = rows[0];
+  if (!c || !c.name || !c.active) {
+    if (slug && /^[a-z0-9-]+$/i.test(slug)) {
+      const same = await sb(`ps_categorias?link_rewrite=eq.${encodeURIComponent(slug)}&active=eq.true&select=id,link_rewrite&order=id.desc&limit=1`);
+      if (same && same[0]) return { redirect: `/${same[0].id}-${same[0].link_rewrite}` };
+    }
+    return { exists: false };
+  }
+  return {
+    exists: true,
+    canonicalPath: c.link_rewrite ? `/${c.id}-${c.link_rewrite}` : null,
     seo: {
       title: `${(c.meta_title && c.meta_title.trim()) || c.name} | Mi Fiestashop`,
       desc: (stripHtml(c.meta_description) || stripHtml(c.description) || `Compra ${c.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160),
@@ -148,6 +153,19 @@ async function fetchCategory(id) {
       jsonLd: null
     }
   };
+}
+
+function redirectTo(url, path) {
+  return new Response(null, { status: 301, headers: { Location: new URL(path + url.search, url).toString(), 'Cache-Control': 'public, max-age=3600' } });
+}
+
+// Página 404 propia (404.html) con status 404 real.
+async function notFound(url, request) {
+  const headers = new Headers(request.headers);
+  headers.set(BYPASS_HEADER, '1');
+  const page = await fetch(new URL('/404.html', url).toString(), { headers });
+  const html = await page.text();
+  return new Response(html, { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
 // Arma la Response final a partir del HTML de origen: limpia los headers
@@ -167,29 +185,36 @@ export default async function middleware(request) {
   if (request.headers.get(BYPASS_HEADER)) return; // ya es la re-petición interna: no reprocesar
 
   const url = new URL(request.url);
-  const match = url.pathname.match(/^\/(\d+)-[^/]+?(\.html)?$/);
+  // Fotos con la liga vieja de PrestaShop (/{id_imagen}-large_default/x.jpg):
+  // no hay forma de saber a qué producto corresponden — 404 real en vez de
+  // la portada.
+  if (/^\/\d+-[a-z_]+\/[^/]+\.(jpe?g|png|webp|gif)$/i.test(url.pathname)) return notFound(url, request);
+  // /{id}-{slug} (categoría), /{id}-{slug}.html y /{categoria}/{id}-{slug}.html
+  // (producto, formato de PrestaShop).
+  const match = url.pathname.match(/^\/(?:([a-z0-9-]+)\/)?(\d+)-([^/]*?)(\.html)?$/i);
   if (!match) return; // deja que Vercel sirva la ruta normal, sin tocar nada
+  const [, catPrefix, id, slug, htmlExt] = match;
+  if (catPrefix && !htmlExt) return; // p. ej. /content/329-... (páginas CMS): no es de aquí
 
-  const id = match[1];
-  const isProduct = !!match[2];
+  const isProduct = !!htmlExt;
   try {
-    const { exists, seo } = isProduct ? await fetchProduct(id) : await fetchCategory(id);
+    const r = isProduct ? await resolveProduct(id) : await resolveCategory(id, slug);
+    if (r.unknown) return; // no se pudo consultar: HTML genérico tal cual, 200
+    if (r.redirect) return redirectTo(url, r.redirect);
+    if (!r.exists) return notFound(url, request);
+    // Cualquier otra variante de la liga (otro slug, sin categoría, la liga
+    // corta que usaba este sitio, una combinación) -> 301 a la liga
+    // canónica de PrestaShop, que es la que Google tiene indexada.
+    if (r.canonicalPath && decodeURIComponent(url.pathname) !== r.canonicalPath) return redirectTo(url, r.canonicalPath);
+    if (!r.seo) return;
 
     const bypassHeaders = new Headers(request.headers);
     bypassHeaders.set(BYPASS_HEADER, '1');
     const origin = await fetch(url.toString(), { headers: bypassHeaders });
     if (!origin.ok) return origin;
 
-    if (!exists) {
-      // Id que de plano no corresponde a nada real: 404 real en vez del
-      // 200 "soft 404" típico de un SPA — el HTML sigue siendo el mismo
-      // (la SPA ya sabe mostrar "no encontrado"), solo cambia el status.
-      return finalize(await origin.text(), origin, 404);
-    }
-    if (!seo) return; // existe pero sin datos todavía (no migrado / error transitorio): HTML genérico tal cual, 200
-
-    const { title, desc, image, jsonLd } = seo;
-    const pageUrl = url.toString();
+    const { title, desc, image, jsonLd } = r.seo;
+    const pageUrl = `${url.origin}${r.canonicalPath || url.pathname}`;
 
     let html = await origin.text();
     html = replaceTagText(html, 'pageTitleTag', 'title', title);
