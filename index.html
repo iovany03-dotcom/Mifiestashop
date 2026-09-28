@@ -2024,7 +2024,7 @@
             </div>
           </div>
           <div id="checkoutErrorMsg" class="hidden" style="color:#dc2626; font-size:13px; font-weight:600;"></div>
-          <button style="padding:14px; font-size:15px; font-weight:700; justify-content:center; display:flex; align-items:center; border-radius:10px; margin-top:8px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" onclick="submitStorefrontOrder()">✅ Confirmar Pedido</button>
+          <button style="padding:14px; font-size:15px; font-weight:700; justify-content:center; display:flex; align-items:center; border-radius:10px; margin-top:8px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" id="checkoutSubmitBtn" onclick="submitStorefrontOrder()">✅ Confirmar Pedido</button>
         </div>
       </div>
       <div style="background:#fff; border:1px solid #f0e6ef; padding:20px; border-radius:12px;">
@@ -2037,16 +2037,17 @@
   <!-- Order Confirmation Page -->
   <div class="store-container hidden" id="storefrontOrderConfirmPage">
     <div style="background:#fff; border:1px solid #f0e6ef; max-width:600px; margin:40px auto; text-align:center; padding:40px 30px; border-radius:16px;">
-      <div style="font-size:56px; margin-bottom:10px;">✅</div>
-      <h2 style="margin:0 0 10px; color:#2e1065;">¡Gracias por tu pedido!</h2>
-      <p style="color:#5b4a68; margin-bottom:20px;">Tu pedido ha sido registrado exitosamente. Te contactaremos pronto para confirmar los detalles de entrega.</p>
+      <div id="confirmIcon" style="font-size:56px; margin-bottom:10px;">✅</div>
+      <h2 id="confirmTitle" style="margin:0 0 10px; color:#2e1065;">¡Gracias por tu pedido!</h2>
+      <p id="confirmMsg" style="color:#5b4a68; margin-bottom:20px;">Tu pedido ha sido registrado exitosamente. Te contactaremos pronto para confirmar los detalles de entrega.</p>
       <div style="background:var(--mf-cream); border-radius:10px; padding:16px; margin-bottom:24px;">
         <div style="font-size:12px; color:#8b7d97; font-weight:700;">NÚMERO DE PEDIDO</div>
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-pink);" id="confirmFolio">WEB-000000</div>
         <div style="font-size:13px; color:#5b4a68; margin-top:8px;">Total: <b id="confirmTotal">$0.00</b></div>
       </div>
       <div id="confirmTransferBox" class="hidden" style="text-align:left; border:2px solid var(--mf-pink); border-radius:12px; padding:16px 18px; margin-bottom:24px; background:#fff5fa; color:#2e1065;"></div>
-      <button style="border-radius:20px; font-weight:700; padding:12px 24px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" onclick="goHomeStorefront()">Volver a la tienda</button>
+      <button id="confirmRetryBtn" class="hidden" style="border-radius:20px; font-weight:700; padding:12px 24px; background:#2e1065; color:#fff; border:none; cursor:pointer; margin:0 6px 8px;" onclick="storefrontPinnedPage = null; openStorefrontCart();">Intentar pagar de nuevo</button>
+      <button style="border-radius:20px; font-weight:700; padding:12px 24px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer; margin:0 6px 8px;" onclick="goHomeStorefront()">Volver a la tienda</button>
     </div>
   </div>
 
@@ -4889,6 +4890,7 @@
           <option value="Pendiente">Pendiente</option>
           <option value="Pendiente de pago">Pendiente de pago</option>
           <option value="Pago aceptado">Pago aceptado</option>
+          <option value="Error en el pago">Error en el pago</option>
           <option value="En preparación">En preparación</option>
           <option value="Enviado">Enviado</option>
           <option value="Entregado">Entregado</option>
@@ -5026,6 +5028,10 @@
               <div style="display:flex; justify-content:space-between; color:var(--text-secondary);">
                 <span>Productos:</span>
                 <span id="odSubtotalVal">180,00 MXN</span>
+              </div>
+              <div id="odShippingRow" style="display:none; justify-content:space-between; color:var(--text-secondary); gap:8px;">
+                <span>Envío<span id="odShippingCarrier" style="display:block; font-size:11px; color:var(--text-muted);"></span></span>
+                <span id="odShippingVal" style="white-space:nowrap;">0,00 MXN</span>
               </div>
               <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem; color:var(--series-2); border-top:1px dashed var(--border); padding-top:6px;">
                 <span>Total:</span>
@@ -10936,7 +10942,7 @@ async function loadOrdersFromAPI(){
 // reembolsado, amarillo = cualquier otro (pendiente, en preparación…).
 function orderStatusPillClass(status) {
   const s = String(status || '').toLowerCase();
-  if (/cancelad|reembols/.test(s)) return 'bad';
+  if (/cancelad|reembols|error/.test(s)) return 'bad';
   if (['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado', 'pago realizado'].includes(s)) return 'ok';
   return 'warn';
 }
@@ -11027,7 +11033,17 @@ function openOrderDetailModal(id){
   document.getElementById('odClientSpent').textContent = '—';
   renderOdStatus(order);
   document.getElementById('odStateDate').textContent = order.date || '—';
-  document.getElementById('odSubtotalVal').textContent = totalStr;
+  // Productos y envío por separado: los pedidos de la tienda en línea traen
+  // el costo de envío y la paquetería (antes solo se mostraba el total).
+  const envio = Number(order.shippingCost) || 0;
+  const productos = order.subtotal != null ? Number(order.subtotal) : Math.max(0, (Number(order.total) || 0) - envio);
+  document.getElementById('odSubtotalVal').textContent = fmtMoney(productos) + ' MXN';
+  const shipRow = document.getElementById('odShippingRow');
+  if (shipRow) {
+    shipRow.style.display = (envio > 0 || order.shippingCarrier) ? 'flex' : 'none';
+    document.getElementById('odShippingVal').textContent = envio > 0 ? fmtMoney(envio) + ' MXN' : 'Gratis';
+    document.getElementById('odShippingCarrier').textContent = order.shippingCarrier || '';
+  }
   document.getElementById('odTotalVal').textContent = totalStr;
 
   renderOdProductRows(order.items || null);
@@ -11515,7 +11531,7 @@ function orderOrigen(o) {
   return o.channel === 'Sistema POS' ? 'pos' : 'online';
 }
 
-const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
+const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
 
 // El selector antes siempre decía "Pago aceptado" (era su primera opción
 // fija); ahora muestra el estado real del pedido.
@@ -14433,7 +14449,13 @@ function renderProductFullPage(p){
   trackPixelEvent('ViewContent', { content_ids: [String(p.id)], content_name: p.name, content_type: 'product', value: p.price, currency: 'MXN' });
 }
 
+// Página que debe seguir visible aunque el catálogo termine de cargar
+// después (el sync vuelve a pintar el inicio): la de "gracias por tu
+// compra" al regresar de Mercado Pago.
+let storefrontPinnedPage = null;
+
 function goHomeStorefront(){
+  storefrontPinnedPage = null;
   if (window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
     history.pushState({}, '', '/');
   }
@@ -14442,7 +14464,7 @@ function goHomeStorefront(){
 }
 
 window.addEventListener('popstate', () => {
-  const m = window.location.pathname.match(/^\/(\d+)-[^\/]+\.html$/);
+  const m = window.location.pathname.match(/^\/(?:[a-z0-9-]+\/)?(\d+)-[^\/]+\.html$/i);
   if (m) {
     const p = liveProducts.find(pr => String(pr.id) === m[1]);
     if (p) { renderProductFullPage(p); return; }
@@ -14976,7 +14998,25 @@ async function saveTransferenciaConfig() {
   }
 }
 
+// Evita crear el pedido dos veces (doble clic o respuesta lenta): antes se
+// creaban dos pedidos iguales con segundos de diferencia y Mercado Pago solo
+// marcaba pagado uno de ellos.
+let storefrontOrderInFlight = false;
+
 async function submitStorefrontOrder(){
+  if (storefrontOrderInFlight) return;
+  const btn = document.getElementById('checkoutSubmitBtn');
+  storefrontOrderInFlight = true;
+  if (btn) { btn.disabled = true; btn.dataset.label = btn.innerHTML; btn.innerHTML = 'Procesando tu pedido…'; btn.style.opacity = '.7'; }
+  try {
+    await submitStorefrontOrderInner();
+  } finally {
+    storefrontOrderInFlight = false;
+    if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.label || '✅ Confirmar Pedido'; btn.style.opacity = ''; }
+  }
+}
+
+async function submitStorefrontOrderInner(){
   const cp = document.getElementById('checkoutCP').value.trim();
   const estado = document.getElementById('checkoutEstado').value.trim();
   const municipio = document.getElementById('checkoutMunicipio').value.trim();
@@ -15052,7 +15092,8 @@ async function submitStorefrontOrder(){
       const mpData = await mpRes.json();
       if (mpData.init_point) {
         window.location.href = mpData.init_point;
-        return;
+        // El botón sigue bloqueado mientras el navegador se va a Mercado Pago.
+        await new Promise(() => {});
       }
       errEl.textContent = 'No se pudo iniciar el pago con Mercado Pago: ' + (mpData.error || 'intenta de nuevo o elige otro método de pago.');
       errEl.classList.remove('hidden');
@@ -15076,8 +15117,7 @@ async function submitStorefrontOrder(){
     }),
   }).catch(e => console.log('No se pudo enviar el correo de confirmación:', e.message));
 
-  document.getElementById('confirmFolio').textContent = folio;
-  document.getElementById('confirmTotal').textContent = fmtMoney(total);
+  setConfirmPage({ icon: '✅', title: '¡Gracias por tu pedido!', msg: 'Tu pedido ha sido registrado exitosamente. Te contactaremos pronto para confirmar los detalles de entrega.', folio, total });
   renderConfirmTransferBox(checkoutPayMethod === 'Transferencia bancaria', folio, total);
 
   notifyEvent('newSale', '🛒 Nueva venta en la página', `Pedido ${folio} de ${name} por ${fmtMoney(total)}.`);
@@ -15096,23 +15136,53 @@ async function submitStorefrontOrder(){
   showStorefrontPage('storefrontOrderConfirmPage');
 }
 
+function setConfirmPage({ icon, title, msg, folio, total, retry }) {
+  document.getElementById('confirmIcon').textContent = icon;
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  document.getElementById('confirmFolio').textContent = folio;
+  document.getElementById('confirmTotal').textContent = (total === null || isNaN(total)) ? '—' : fmtMoney(total);
+  document.getElementById('confirmRetryBtn').classList.toggle('hidden', !retry);
+  renderConfirmTransferBox(false);
+}
+
+// Al regresar de Mercado Pago: se muestra la página de "gracias" y se
+// pregunta al servidor (api/mp-confirmar.js) cómo quedó el pago de verdad
+// — el servidor lo consulta en Mercado Pago y actualiza el pedido a "Pago
+// aceptado" o "Error en el pago".
 async function handleMercadoPagoReturn() {
   const params = new URLSearchParams(window.location.search);
   const mpStatus = params.get('mp_status');
   const mpFolio = params.get('mp_folio');
-  const mpTotal = parseFloat(params.get('mp_total'));
+  let mpTotal = parseFloat(params.get('mp_total'));
+  const paymentId = params.get('payment_id') || params.get('collection_id');
   if (!mpStatus || !mpFolio) return;
   history.replaceState({}, '', window.location.pathname);
 
-  if (mpStatus === 'approved') {
-    document.getElementById('confirmFolio').textContent = mpFolio;
-    renderConfirmTransferBox(false);
-    document.getElementById('confirmTotal').textContent = isNaN(mpTotal) ? '' : fmtMoney(mpTotal);
-    showStorefrontPage('storefrontOrderConfirmPage');
+  storefrontPinnedPage = 'storefrontOrderConfirmPage';
+  setConfirmPage({ icon: '⏳', title: 'Confirmando tu pago…', msg: 'Estamos verificando tu pago con Mercado Pago. No cierres esta página.', folio: mpFolio, total: mpTotal });
+  showStorefrontPage('storefrontOrderConfirmPage');
+
+  let estado = mpStatus === 'approved' ? 'Pago aceptado' : mpStatus === 'pending' ? 'Pendiente de pago' : 'Error en el pago';
+  if (paymentId && /^\d+$/.test(paymentId)) {
+    try {
+      const r = await fetch('/api/mp-confirmar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folio: mpFolio, paymentId })
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.estado) {
+        estado = data.estado;
+        if (Number(data.total) > 0) mpTotal = Number(data.total);
+      }
+    } catch (e) { /* se queda con lo que dijo Mercado Pago en la liga */ }
+  }
+
+  if (estado === 'Pago aceptado' || estado === 'Pagado') {
+    setConfirmPage({ icon: '🎉', title: '¡Gracias por tu compra!', msg: 'Tu pago con Mercado Pago fue aprobado y tu pedido quedó confirmado. Te enviamos la confirmación por correo y te avisaremos cuando salga hacia tu domicilio.', folio: mpFolio, total: mpTotal });
+    const mpItems = Array.isArray(cart) ? cart : [];
     if (!isNaN(mpTotal)) {
-      // El carrito guardado (localStorage) sobrevive a la ida y vuelta a
-      // Mercado Pago, así que aún trae los productos de esta compra.
-      const mpItems = Array.isArray(cart) ? cart : [];
       const purchase = { value: mpTotal, currency: 'MXN' };
       if (mpItems.length > 0) {
         purchase.content_ids = mpItems.map(i => String(i.id));
@@ -15122,13 +15192,16 @@ async function handleMercadoPagoReturn() {
       }
       trackPixelEvent('Purchase', purchase, mpFolio);
     }
-  } else if (mpStatus === 'pending') {
-    showPublicStorefront();
-    alert('Tu pago con Mercado Pago quedó pendiente de confirmación. Te avisaremos por correo en cuanto se acredite (pedido ' + mpFolio + ').');
+    cart = [];
+    updateStoreCartBadge();
+  } else if (estado === 'Pendiente de pago' || estado === 'Pendiente') {
+    setConfirmPage({ icon: '⏳', title: 'Tu pago está en proceso', msg: 'Mercado Pago todavía está procesando tu pago. En cuanto se acredite te llegará la confirmación por correo; no necesitas volver a pagar.', folio: mpFolio, total: mpTotal });
+    cart = [];
+    updateStoreCartBadge();
   } else {
-    showPublicStorefront();
-    alert('El pago con Mercado Pago no se completó. Tu pedido ' + mpFolio + ' quedó guardado — puedes intentar de nuevo o elegir otro método de pago.');
+    setConfirmPage({ icon: '⚠️', title: 'Hubo un problema con tu pago', msg: 'Mercado Pago no pudo completar el cobro, así que no se te hizo ningún cargo. Tus productos siguen en el carrito: puedes intentar de nuevo o elegir otro método de pago.', folio: mpFolio, total: mpTotal, retry: true });
   }
+  showStorefrontPage('storefrontOrderConfirmPage');
 }
 
 async function submitNewsletterSignup(){
@@ -16023,6 +16096,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   if (new URLSearchParams(window.location.search).get('vista') === 'catalogo' && window.location.pathname === '/') openStorefrontCatalog('all');
   if (window.location.pathname === '/266-productos') openStorefrontCatalog('all');
   if (isContactPath(window.location.pathname)) openStorefrontContact();
+  if (storefrontPinnedPage) showStorefrontPage(storefrontPinnedPage);
 }).then(renderLowStockByStoreCard);
 loadRealStockData().then(() => {
   checkNegativeStockWarning();

@@ -40,7 +40,8 @@ module.exports = async function handler(req, res) {
       origen: 'online',
       paymentMethod: o.payment_method || '—',
       total: parseFloat(o.total || 0),
-      status: o.status || 'Pendiente',
+      // "Pagado" era el nombre viejo que ponía el webhook de Mercado Pago.
+      status: o.status === 'Pagado' ? 'Pago aceptado' : (o.status || 'Pendiente'),
       createdBy: o.created_by || null,
       shop: 'Mi Fiestashop',
       bodega: o.bodega || null,
@@ -48,6 +49,8 @@ module.exports = async function handler(req, res) {
       shippingAddress: o.shipping_address || null,
       billingAddress: o.billing_address || null,
       shippingCarrier: o.shipping_carrier || null,
+      shippingCost: o.shipping_cost != null ? parseFloat(o.shipping_cost) : 0,
+      subtotal: o.subtotal != null ? parseFloat(o.subtotal) : null,
       customerEmail: o.customer_email || null,
       customerPhone: o.customer_phone || null,
       items: (Array.isArray(o.items) ? o.items : []).map(it => ({

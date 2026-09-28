@@ -24,7 +24,7 @@
 //        estado?, registradoPor? } -> { ok: true, estado?, piezasRegresadas }
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
-const ESTADOS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
+const ESTADOS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
 
 async function rpc(fn, params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
