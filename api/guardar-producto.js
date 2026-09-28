@@ -75,6 +75,10 @@ module.exports = async function handler(req, res) {
     wholesale_price: Number(producto.priceMayoreo) || null,
     category_id: null,
     active: producto.active !== false,
+    // Igual que api/producto-activo.js: sin esto, el ciclo de sincronización
+    // (cada 10 min, lib/sync-prestashop.js) pisaría este estado con lo que
+    // diga PrestaShop en ese momento.
+    active_override: producto.active !== false,
     low_stock_threshold: Number(producto.lowStockThreshold) || null,
     meta_title: null,
     meta_description: null,

@@ -3659,6 +3659,11 @@
         </div>
         <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
           <input type="search" id="catalogSearchInput" placeholder="Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
+          <select id="catalogStatusFilter" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            <option value="activos" selected>Solo activos</option>
+            <option value="inactivos">Solo desactivados</option>
+            <option value="todos">Todos</option>
+          </select>
         </div>
         <div class="table-wrap">
           <table>
@@ -8747,6 +8752,37 @@ function renderStockTable(){
 
 // DYNAMIC PRODUCTS SYNC FROM PRESTASHOP & SUPABASE API
 let liveProducts = [];
+
+// Catálogo COMPLETO (activos + inactivos) para el panel "Catálogo de
+// Productos" del admin — liveProducts (arriba) se queda solo con activos a
+// propósito, porque también lo usan el POS y la tienda pública para vender
+// (nunca debe poder venderse algo desactivado). Ver api/productos-admin.js.
+let adminCatalogProducts = [];
+
+function adminCatalogDataset() {
+  return adminCatalogProducts.length > 0 ? adminCatalogProducts : (liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA);
+}
+
+async function loadAdminCatalogProducts() {
+  try {
+    const r = await fetch('/api/productos-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(getSessionCredsParams())
+    });
+    const data = await r.json();
+    if (!r.ok || !Array.isArray(data.products)) return;
+    adminCatalogProducts = data.products.map(p => ({
+      ...p,
+      cat: (p.categoryLabel || 'general').toLowerCase(),
+      catLabel: p.categoryLabel || 'General',
+      status: p.active === false ? 'Inactivo' : 'Activo'
+    }));
+    if (document.getElementById('catalogTableBody')) renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
+  } catch (e) {
+    console.log('No se pudo cargar el catálogo completo del admin:', e.message);
+  }
+}
 // Mientras esto sigue en false, la tienda pública muestra un esqueleto de
 // carga en vez de PRODUCTS_DATA (datos de ejemplo pensados para el POS
 // interno) — antes se veían fotos de stock genéricas ("balloons", "concert",
@@ -8927,11 +8963,14 @@ function renderDynamicCatPills(){
 function renderCatalogTable(category = 'all', query = ''){
   const tbody = document.getElementById('catalogTableBody');
   if(!tbody) return;
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const dataset = adminCatalogDataset();
+  const statusFilter = document.getElementById('catalogStatusFilter')?.value || 'activos';
   const filtered = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
     const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
-    return matchCat && matchQ;
+    const isInactive = p.status === 'Inactivo';
+    const matchStatus = statusFilter === 'todos' || (statusFilter === 'activos' ? !isInactive : isInactive);
+    return matchCat && matchQ && matchStatus;
   });
 
   if(filtered.length === 0){
@@ -8944,6 +8983,13 @@ function renderCatalogTable(category = 'all', query = ''){
     const pillClass = isInactive ? 'bad' : 'ok';
     const statusText = p.status || 'Activo';
     const pUrl = p.url || `https://mifiestashop.com/producto/${p.sku || p.id}`;
+    // Igual que en PrestaShop: desactivado no significa borrado — solo deja
+    // de poder venderse. El botón aquí es la forma rápida de prender/apagar
+    // sin abrir el editor completo (que también puede cambiar el estado,
+    // con la casilla "Estado").
+    const toggleBtn = isInactive
+      ? `<button class="btn small" style="margin-left:4px; color:#0f9d58;" onclick="toggleProductoActivo('${p.id}', true)" title="Activar producto">Activar</button>`
+      : `<button class="btn small" style="margin-left:4px; color:#dc2626;" onclick="toggleProductoActivo('${p.id}', false)" title="Desactivar producto">Desactivar</button>`;
 
     return `
       <tr>
@@ -8961,6 +9007,7 @@ function renderCatalogTable(category = 'all', query = ''){
         <td><span class="pill ${pillClass}">${statusText}</span></td>
         <td style="text-align:center; white-space:nowrap;">
           <button class="btn small primary" onclick="openEditProductModal('${p.id}')"> Editar</button>
+          ${toggleBtn}
           <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('${pUrl}', '_blank')" title="Abrir URL pública del producto">URL</button>
           <button class="btn small" style="margin-left:4px;" onclick="goToProductAnalytics('${p.id}')" title="Ver análisis de ventas mensuales">Ventas</button>
           <button class="btn small danger" style="margin-left:4px;" onclick="deleteProduct('${p.id}')"></button>
@@ -8970,15 +9017,48 @@ function renderCatalogTable(category = 'all', query = ''){
   }).join('');
 }
 
+// Prender/apagar un producto desde la tabla (ver api/producto-activo.js) —
+// solo toca el estado, sin arriesgar pisar descripción/fotos/precios como
+// pasaría reusando el guardado completo del editor.
+async function toggleProductoActivo(id, nuevoActivo){
+  const accion = nuevoActivo ? 'activar' : 'desactivar';
+  if (!confirm(`¿Seguro que quieres ${accion} este producto?`)) return;
+  try {
+    const r = await fetch('/api/producto-activo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), id, activo: nuevoActivo })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) { alert('No se pudo cambiar el estado: ' + (data.error || 'error desconocido')); return; }
+
+    const prod = adminCatalogProducts.find(p => String(p.id) === String(id));
+    if (prod) { prod.active = nuevoActivo; prod.status = nuevoActivo ? 'Activo' : 'Inactivo'; }
+
+    // liveProducts (POS/tienda pública) al día sin esperar a la próxima
+    // carga de /api/productos: desactivado deja de poder venderse ya mismo;
+    // activado vuelve a aparecer sin recargar la página.
+    const idxLive = liveProducts.findIndex(p => String(p.id) === String(id));
+    if (!nuevoActivo && idxLive !== -1) liveProducts.splice(idxLive, 1);
+    else if (nuevoActivo && idxLive === -1 && prod) liveProducts.push({ ...prod });
+
+    renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
+    renderProducts('all');
+    renderStorefrontProducts('all');
+  } catch (e) {
+    alert('No se pudo cambiar el estado: ' + e.message);
+  }
+}
+
 // PRODUCT EDITOR MODAL CONTROLLER (EXTENDED ATTRIBUTES & LIVE URL)
 function openEditProductModal(pId) {
   const modal = document.getElementById('editProductModal');
   const title = document.getElementById('editProductModalTitle');
   if (!modal) return;
 
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const prod = (pId !== null && pId !== undefined && pId !== 'null' && pId !== '') 
-    ? dataset.find(p => String(p.id) === String(pId)) 
+  const dataset = adminCatalogDataset();
+  const prod = (pId !== null && pId !== undefined && pId !== 'null' && pId !== '')
+    ? dataset.find(p => String(p.id) === String(pId))
     : null;
 
   document.getElementById('editProdId').value = prod ? prod.id : '';
@@ -9076,7 +9156,7 @@ function saveProductChanges() {
     return;
   }
 
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const dataset = adminCatalogDataset();
   let targetProd = null;
 
   if (pIdVal) {
@@ -9118,8 +9198,17 @@ function saveProductChanges() {
       url: prodUrl,
       desc: desc
     };
-    if (liveProducts.length > 0) liveProducts.unshift(targetProd);
-    else PRODUCTS_DATA.unshift(targetProd);
+    if (adminCatalogProducts.length > 0) adminCatalogProducts.unshift(targetProd);
+    else if (liveProducts.length === 0) PRODUCTS_DATA.unshift(targetProd);
+  }
+
+  // liveProducts (POS/tienda pública) al día con el estado que se acaba de
+  // guardar — antes un producto nuevo se agregaba ahí sin importar el
+  // "Estado" elegido, así que uno creado como Inactivo se podía vender igual.
+  if (targetProd) {
+    const idxLive = liveProducts.findIndex(p => String(p.id) === String(targetProd.id));
+    if (status === 'Inactivo') { if (idxLive !== -1) liveProducts.splice(idxLive, 1); }
+    else if (idxLive === -1) liveProducts.push(targetProd);
   }
 
   // Respaldo legado (costos_productos_publico) — solo lo lee el propio
@@ -9177,13 +9266,15 @@ function saveProductChanges() {
 }
 
 function deleteProduct(pId) {
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const dataset = adminCatalogDataset();
   const index = dataset.findIndex(p => String(p.id) === String(pId));
   if (index === -1) return;
 
   const prod = dataset[index];
   if (confirm(`¿Está seguro de que desea eliminar el producto "${prod.name}" (SKU: ${prod.sku})?`)) {
     dataset.splice(index, 1);
+    const idxLive = liveProducts.findIndex(p => String(p.id) === String(pId));
+    if (idxLive !== -1) liveProducts.splice(idxLive, 1);
     renderCatalogTable('all');
     renderProducts('all');
     renderStorefrontProducts('all');
@@ -9195,6 +9286,11 @@ function deleteProduct(pId) {
 if(document.getElementById('catalogSearchInput')){
   document.getElementById('catalogSearchInput').addEventListener('input', (e)=>{
     renderCatalogTable('all', e.target.value);
+  });
+}
+if(document.getElementById('catalogStatusFilter')){
+  document.getElementById('catalogStatusFilter').addEventListener('change', ()=>{
+    renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
   });
 }
 
@@ -16266,6 +16362,7 @@ updateStoreCartBadge();
 if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
 loadCategoriesFromAPI();
+if (document.getElementById('catalogTableBody')) loadAdminCatalogProducts();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
 loadRealProductSales();
