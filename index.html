@@ -2964,6 +2964,18 @@
 
     <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
     <section id="view-dashboard" class="view-panel hidden">
+      <div class="card" id="storeTogglesCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+          <div style="min-width:0; flex:1;">
+            <h3 style="margin:0 0 4px; font-size:15px;">Existencia por sucursal en la tienda</h3>
+            <p style="margin:0; font-size:13px; color:var(--text-muted);">Muestra en cada producto cuántas piezas hay en CDMX Rumania, Puebla y Querétaro.</p>
+          </div>
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:700; font-size:14px;">
+            <span id="toggleStockSucursalLabel">Desactivado</span>
+            <input type="checkbox" id="toggleStockSucursal" onchange="saveToggleStockSucursal(this)" style="width:44px; height:24px; accent-color:var(--series-2, #7c3aed); cursor:pointer;">
+          </label>
+        </div>
+      </div>
       <div class="card hidden" id="negativeStockWarningCard" style="border:1px solid #fecaca; background:#fef2f2;">
         <div style="display:flex; align-items:flex-start; gap:12px;">
           <div style="font-size:22px; line-height:1;">⚠️</div>
@@ -7070,7 +7082,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
-  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); }
+  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
@@ -14233,7 +14245,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-orange);">${fmtMoney(p.price)}</div>
         ${wholesaleNoteHTML(p)}
         <p style="color:#5b4a68; line-height:1.5; font-size:14px; margin-top:14px;">${desc}</p>
-        <div id="productStockByBranch" style="margin-top:10px; padding:12px; border:1px solid #f0e6ef; border-radius:10px; background:var(--mf-cream);">
+        <div id="productStockByBranch" style="display:none; margin-top:10px; padding:12px; border:1px solid #f0e6ef; border-radius:10px; background:var(--mf-cream);">
           <div style="font-size:11px; color:#8b7d97; font-weight:700; text-transform:uppercase; letter-spacing:.03em; margin-bottom:8px;">Existencia por sucursal</div>
           <div id="productStockByBranchBody" style="font-size:13px; color:#5b4a68;">Consultando disponibilidad…</div>
         </div>
@@ -14328,9 +14340,16 @@ function renderRelatedProductsInto(containerId, sourceText, excludeId, heading){
   initScrollReveal();
 }
 
-function loadProductStockByBranch(productId){
+// "Existencia por sucursal" en la ficha de producto: se muestra solo si está
+// activado en el Dashboard (ajustes_pago.mostrar_stock_sucursal). Oculto
+// por defecto.
+async function loadProductStockByBranch(productId){
   const body = document.getElementById('productStockByBranchBody');
   if (!body) return;
+  const ajustes = transferenciaConfig || await loadTransferenciaConfig();
+  if (!ajustes || !ajustes.mostrar_stock_sucursal) return;
+  const box = document.getElementById('productStockByBranch');
+  if (box) box.style.display = '';
   if (!productId) {
     body.textContent = 'No disponible para este producto.';
     return;
@@ -14852,6 +14871,40 @@ async function loadTransferenciaConfig() {
     transferenciaConfig = null;
   }
   return transferenciaConfig;
+}
+
+// Interruptor del Dashboard: "Existencia por sucursal" en la tienda.
+function renderToggleStockSucursal(on) {
+  const input = document.getElementById('toggleStockSucursal');
+  const label = document.getElementById('toggleStockSucursalLabel');
+  if (input) input.checked = !!on;
+  if (label) { label.textContent = on ? 'Activado' : 'Desactivado'; label.style.color = on ? 'var(--good)' : 'var(--text-muted)'; }
+}
+
+async function loadStoreToggles() {
+  const ajustes = await loadTransferenciaConfig();
+  renderToggleStockSucursal(ajustes && ajustes.mostrar_stock_sucursal);
+}
+
+async function saveToggleStockSucursal(input) {
+  const on = !!input.checked;
+  input.disabled = true;
+  try {
+    const r = await fetch('/api/ajustes-tienda', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), mostrarStockSucursal: on })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (data.error || 'No se pudo guardar.'));
+    if (transferenciaConfig) transferenciaConfig.mostrar_stock_sucursal = data.mostrarStockSucursal;
+    renderToggleStockSucursal(data.mostrarStockSucursal);
+  } catch (e) {
+    renderToggleStockSucursal(!on);
+    alert(e.message);
+  } finally {
+    input.disabled = false;
+  }
 }
 
 async function renderConfirmTransferBox(show, folio, total) {
