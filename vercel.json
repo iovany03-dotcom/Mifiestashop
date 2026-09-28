@@ -118,6 +118,14 @@
   },
   "rewrites": [
     {
+      "source": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
+      "destination": "/paginas/articulos-para-fiesta-mayoreo.html"
+    },
+    {
+      "source": "/content/418-contactanos",
+      "destination": "/index.html"
+    },
+    {
       "source": "/content/269-articulos-para-boda-en-mexico",
       "destination": "/cms-pages/269.html"
     },
@@ -1739,14 +1747,6 @@
     },
     {
       "source": "/266-productos",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
-      "destination": "/paginas/articulos-para-fiesta-mayoreo.html"
-    },
-    {
-      "source": "/content/418-contactanos",
       "destination": "/index.html"
     },
     {
