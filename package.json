@@ -21,8 +21,7 @@
   },
   "homepage": "https://github.com/iovany03-dotcom/Mifiestashop#readme",
   "dependencies": {
-    "nodemailer": "^10.0.9",
-    "sharp": "^0.35.5"
+    "nodemailer": "^10.0.9"
   },
   "devDependencies": {
     "cheerio": "1.2.0"
