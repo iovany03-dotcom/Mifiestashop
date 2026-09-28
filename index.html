@@ -6876,6 +6876,57 @@ function saveCartToStorage() {
   try { localStorage.setItem('mf_cart', JSON.stringify(cart)); } catch (e) {}
 }
 
+// El carrito del navegador solo vivía en localStorage: un carrito
+// abandonado en la tienda pública no se veía en ningún lado desde que el
+// sitio dejó de tocar PrestaShop en vivo (antes PrestaShop lo guardaba en
+// su propio servidor con cada "Agregar al carrito"; ver
+// docs/dominio-mifiestashop-com.md). Esto manda una copia a Supabase
+// (api/carrito-guardar.js -> tabla carritos_web), con un pequeño retraso
+// para no mandar una llamada por cada clic. No aplica al POS (admin): ese
+// carrito es una venta en curso en la tienda física, no algo que se pueda
+// "abandonar".
+let cartKeyCache = null;
+function getCartKey() {
+  if (cartKeyCache) return cartKeyCache;
+  try {
+    let k = localStorage.getItem('mf_cart_key');
+    if (!k) {
+      k = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+      localStorage.setItem('mf_cart_key', k);
+    }
+    cartKeyCache = k;
+    return k;
+  } catch (e) { return null; }
+}
+
+let cartSaveTimer = null;
+function scheduleCartSave() {
+  if (window.location.pathname.startsWith('/admin')) return;
+  if (cartSaveTimer) clearTimeout(cartSaveTimer);
+  cartSaveTimer = setTimeout(() => saveCartToServer(), 1500);
+}
+
+function saveCartToServer(converted) {
+  if (window.location.pathname.startsWith('/admin')) return;
+  const cartKey = getCartKey();
+  if (!cartKey) return;
+  if (cart.length === 0 && !converted) return;
+  const checkoutName = document.getElementById('checkoutName');
+  const checkoutEmail = document.getElementById('checkoutEmail');
+  const checkoutPhone = document.getElementById('checkoutPhone');
+  const body = {
+    cartKey,
+    items: cart.map(i => ({ id: i.id, qty: i.qty, name: i.name, price: i.price })),
+    customerName: (clienteSession && clienteSession.user && clienteSession.user.user_metadata && clienteSession.user.user_metadata.full_name) || (checkoutName ? checkoutName.value.trim() : '') || '',
+    customerEmail: (clienteSession && clienteSession.user && clienteSession.user.email) || (checkoutEmail ? checkoutEmail.value.trim() : '') || '',
+    customerPhone: (clienteSession && clienteSession.user && clienteSession.user.user_metadata && clienteSession.user.user_metadata.phone) || (checkoutPhone ? checkoutPhone.value.trim() : '') || ''
+  };
+  if (converted) body.converted = converted;
+  fetch('/api/carrito-guardar', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+  }).catch(e => console.log('No se pudo guardar el carrito en Supabase:', e.message));
+}
+
 function loadCartFromStorage() {
   try {
     const saved = localStorage.getItem('mf_cart');
@@ -7155,6 +7206,7 @@ function isIvaApplied() {
 
 function updateCartUI() {
   saveCartToStorage();
+  scheduleCartSave();
   const container = document.getElementById('cartItemsContainer');
   if (cart.length === 0) {
     container.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--text-muted); font-size:13px;">El carrito está vacío.<br>Haz clic en los productos para agregarlos.</div>`;
@@ -9788,13 +9840,11 @@ function showResetPasswordOffer(email, text) {
 }
 
 async function registerCliente(name, email, phone, password) {
-  const data = await cuentaClienteRequest({ accion: 'registro', nombre: name, email, telefono: phone, password });
+  await cuentaClienteRequest({ accion: 'registro', nombre: name, email, telefono: phone, password });
   trackPixelEvent('CompleteRegistration', { content_name: 'Cuenta de cliente', status: true });
-  try {
-    await sbInsert('clientes_web_perfil', { user_id: data.userId, nombre: name, email, telefono: phone });
-  } catch (e) {
-    // Si la tabla de perfil no existe todavía, la cuenta de autenticación ya quedó creada.
-  }
+  // Nombre/teléfono ya quedaron guardados por api/cuenta-cliente.js, en
+  // user_metadata del propio usuario de Supabase Auth (no hace falta otra
+  // tabla aparte para el perfil).
   // La cuenta queda activa hasta que el cliente abre el enlace del correo
   // de confirmación (ver handleEmailLink).
   return { confirmed: false };
@@ -14603,6 +14653,8 @@ function updateStorefrontCartQty(id, delta){
     if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
     else applyWholesalePricing(item);
   }
+  saveCartToStorage();
+  scheduleCartSave();
   updateStoreCartBadge();
   renderStorefrontCartBody();
 }
@@ -14620,6 +14672,8 @@ function setStorefrontCartQty(id, value){
     item.qty = Math.min(qty, 999);
     applyWholesalePricing(item);
   }
+  saveCartToStorage();
+  scheduleCartSave();
   updateStoreCartBadge();
   renderStorefrontCartBody();
 }
@@ -14649,6 +14703,8 @@ function freeShippingProgressHTML(subtotal){
 
 function removeStorefrontCartItem(id){
   cart = cart.filter(i => i.id !== id);
+  saveCartToStorage();
+  scheduleCartSave();
   updateStoreCartBadge();
   renderStorefrontCartBody();
 }
@@ -15253,6 +15309,7 @@ async function submitStorefrontOrderInner(){
     currency: 'MXN'
   }, folio);
 
+  saveCartToServer(folio);
   cart = [];
   updateStoreCartBadge();
   showStorefrontPage('storefrontOrderConfirmPage');
@@ -15314,6 +15371,7 @@ async function handleMercadoPagoReturn() {
       }
       trackPixelEvent('Purchase', purchase, mpFolio);
     }
+    saveCartToServer(mpFolio);
     cart = [];
     updateStoreCartBadge();
   } else if (estado === 'Pendiente de pago' || estado === 'Pendiente') {
