@@ -185,6 +185,18 @@ export default async function middleware(request) {
   if (request.headers.get(BYPASS_HEADER)) return; // ya es la re-petición interna: no reprocesar
 
   const url = new URL(request.url);
+  // TEMPORAL (sep 2026): algo carga /266-productos ~1,000 veces por minuto.
+  // Se registra 1 de cada 50 visitas con los datos para identificarlo.
+  if (url.pathname === '/266-productos' && Math.random() < 0.02) {
+    const h = request.headers;
+    console.log('diag266 ' + JSON.stringify({
+      ip: (h.get('x-forwarded-for') || '').split(',')[0].trim() || h.get('x-real-ip'),
+      ua: h.get('user-agent'), ref: h.get('referer'), lang: h.get('accept-language'),
+      pais: h.get('x-vercel-ip-country'), region: h.get('x-vercel-ip-country-region'), ciudad: h.get('x-vercel-ip-city'),
+      asn: h.get('x-vercel-ip-as-number'), ja4: h.get('x-vercel-ja4-digest'), chua: h.get('sec-ch-ua'),
+      q: url.search, cookie: !!h.get('cookie'), purpose: h.get('purpose') || h.get('sec-purpose')
+    }));
+  }
   // Fotos con la liga vieja de PrestaShop (/{id_imagen}-large_default/x.jpg):
   // no hay forma de saber a qué producto corresponden — 404 real en vez de
   // la portada.
