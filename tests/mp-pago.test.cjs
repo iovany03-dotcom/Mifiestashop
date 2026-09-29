@@ -1,5 +1,5 @@
 const test = require('node:test'), assert = require('node:assert/strict');
-const { aplicarPago, estadoDesdePago } = require('../lib/mp-pago.js');
+const { aplicarPago, estadoDesdePago, conciliarPedido } = require('../lib/mp-pago.js');
 
 // Mercado Pago + Supabase falsos en memoria.
 function fake({ pago, pedido }) {
@@ -71,4 +71,40 @@ test('mp-confirmar: valida datos y responde el estado', async () => {
   fake({ pago: { status: 'approved', transaction_amount: 50, external_reference: 'WEB-1' }, pedido: { status: 'Pendiente', total: 50 } });
   r = await call({ folio: 'WEB-1', paymentId: '999' });
   assert.equal(r.code, 200); assert.equal(r.data.estado, 'Pago aceptado');
+});
+
+test('mp-pago: conciliar aplica el intento aprobado aunque haya rechazos más recientes', async () => {
+  const pedido = { status: 'Pendiente', total: 100, items: [] };
+  const st = { pedido: { ...pedido } };
+  const pagos = [
+    { id: 3, status: 'rejected', status_detail: 'cc_rejected_other_reason', external_reference: 'WEB-1', transaction_amount: 100 },
+    { id: 2, status: 'approved', status_detail: 'accredited', external_reference: 'WEB-1', transaction_amount: 100 },
+    { id: 9, status: 'approved', external_reference: 'WEB-99', transaction_amount: 5 }
+  ];
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, status: 200, json: async () => d, text: async () => JSON.stringify(d) });
+    if (u.includes('/v1/payments/search')) return ok({ results: pagos });
+    const m = u.match(/\/v1\/payments\/(\d+)/);
+    if (m) return ok(pagos.find(p => String(p.id) === m[1]));
+    if (u.includes('pedidos_online')) {
+      if (opts.method === 'PATCH') { Object.assign(st.pedido, JSON.parse(opts.body)); return ok(null); }
+      return ok([st.pedido]);
+    }
+    return ok({});
+  };
+  const r = await conciliarPedido({ accessToken: 't', serviceRoleKey: 's', folio: 'WEB-1' });
+  assert.equal(r.intentos.length, 2);
+  assert.equal(r.aplicado.estado, 'Pago aceptado');
+  assert.equal(st.pedido.mp_payment_id, '2');
+});
+
+test('mp-pago: conciliar sin intentos no toca el pedido', async () => {
+  let patches = 0;
+  global.fetch = async (url, opts = {}) => {
+    if (opts.method === 'PATCH') patches++;
+    return { ok: true, status: 200, json: async () => ({ results: [] }), text: async () => '' };
+  };
+  const r = await conciliarPedido({ accessToken: 't', serviceRoleKey: 's', folio: 'WEB-2' });
+  assert.equal(r.intentos.length, 0); assert.equal(r.aplicado, null); assert.equal(patches, 0);
 });

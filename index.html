@@ -12262,7 +12262,13 @@ function renderOdDetails(order, extra) {
     let ref = '—', estadoPago = order.status || '—', fecha = order.date || '—', extraInfo = '';
     if (origen === 'online') {
       if (order.mpPaymentId) ref = `Mercado Pago #${order.mpPaymentId}`;
-      estadoPago = order.mpStatus ? ({ approved: 'Aprobado', rejected: 'Rechazado', cancelled: 'Cancelado', pending: 'Pendiente', in_process: 'En proceso', refunded: 'Reembolsado' }[order.mpStatus] || order.mpStatus) : (/pago aceptado|pagado/i.test(order.status || '') ? 'Aprobado' : 'Sin confirmar');
+      estadoPago = order.mpStatus ? ({ approved: 'Aprobado', rejected: 'Rechazado', cancelled: 'Cancelado', pending: 'Pendiente', in_process: 'En proceso', refunded: 'Reembolsado' }[order.mpStatus] || order.mpStatus)
+        : /pago aceptado|pagado/i.test(order.status || '') ? 'Aprobado'
+        // Pedido de la tienda que se mandó a Mercado Pago pero sin ningún
+        // intento de pago registrado (api/cron-conciliar-mp lo revisa cada
+        // 15 min): el cliente salió de la página de pago sin pagar.
+        : (order.status === 'Pendiente' && /mercado pago/i.test(order.paymentMethod || '')) ? 'Sin intento de pago (el cliente salió de Mercado Pago sin pagar)'
+        : 'Sin confirmar';
       const motivo = mpStatusDetailText(order.mpStatusDetail);
       if (motivo && order.mpStatus !== 'approved') estadoPago += ` — ${motivo}`;
       if (order.paidAt) fecha = new Date(order.paidAt).toLocaleString('es-MX');
