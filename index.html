@@ -4368,6 +4368,12 @@
             </div>
           </div>
         </div>
+
+        <div class="card" style="margin:20px 0 0;">
+          <h3 style="margin-top:0; color:var(--series-2);">Códigos QR — Página de reseña por sucursal</h3>
+          <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Para imprimir y pegar en caja: el cliente escanea, deja correo/teléfono/tipo de evento (se guarda en <code>leads_tienda</code>) y lo mandamos directo a dejar su reseña en Google.</p>
+          <div id="qrBranchesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;"></div>
+        </div>
       </div>
     </section>
 
@@ -7387,6 +7393,7 @@ function switchView(viewName) {
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
   if (viewName === 'param-tienda-pagos') renderTransferenciaAdminForm();
+  if (viewName === 'param-tienda-contacto') renderQrBranchesGrid();
   if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
@@ -16289,6 +16296,69 @@ async function renderConfirmTransferBox(show, folio, total) {
     ${t.transferencia_instrucciones ? `<p style="margin:10px 0 0; font-size:13px; color:#5b4a68;">${escapeHtml(t.transferencia_instrucciones)}</p>` : ''}
     <p style="margin:6px 0 0; font-size:12px; color:#8b7d97;">También te enviamos estos datos a tu correo.</p>`;
   box.classList.remove('hidden');
+}
+
+// --- Back office: Parámetros de la Tienda → Contacto & Sucursales: QR de
+// las páginas de captura de reseña en tienda (resena-{cdmx,puebla,queretaro}.html).
+const QR_BRANCH_PAGES = [
+  { key: 'cdmx', label: 'CDMX', url: 'https://www.mifiestashop.com/resena-cdmx.html' },
+  { key: 'puebla', label: 'Puebla', url: 'https://www.mifiestashop.com/resena-puebla.html' },
+  { key: 'queretaro', label: 'Querétaro', url: 'https://www.mifiestashop.com/resena-queretaro.html' }
+];
+
+function renderQrBranchesGrid() {
+  const grid = document.getElementById('qrBranchesGrid');
+  if (!grid) return;
+  grid.innerHTML = QR_BRANCH_PAGES.map(b => `
+    <div class="card" style="margin:0; background:var(--plane); text-align:center;">
+      <div style="font-weight:700; margin-bottom:6px;">${escapeHtml(b.label)}</div>
+      <div style="font-size:11px; color:var(--text-muted); word-break:break-all; margin-bottom:10px;">${escapeHtml(b.url)}</div>
+      <div id="qrBox-${b.key}" style="margin:0 auto 10px; width:180px; height:180px; display:flex; align-items:center; justify-content:center; background:#fff; border:1px solid var(--border); border-radius:8px; overflow:hidden;"></div>
+      <button class="btn small primary" id="qrBtn-${b.key}" onclick="generateBranchQr('${b.key}')" style="width:100%; justify-content:center; margin-bottom:6px;">Generar QR</button>
+      <a id="qrDownload-${b.key}" href="#" class="btn small hidden" style="width:100%; justify-content:center;">Descargar PNG</a>
+    </div>
+  `).join('');
+}
+
+// Librería para generar el QR client-side (igual patrón que loadJsPdf() para
+// la cotización en PDF): se carga de cdnjs solo la primera vez que se pide
+// un QR, no en cada carga de la página.
+let qrLibLoading = null;
+function loadQrLib() {
+  if (window.QRCode && window.QRCode.toDataURL) return Promise.resolve(window.QRCode);
+  if (!qrLibLoading) {
+    qrLibLoading = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js';
+      s.onload = () => (window.QRCode && window.QRCode.toDataURL) ? resolve(window.QRCode) : (qrLibLoading = null, reject(new Error('El generador de QR no quedó disponible.')));
+      s.onerror = () => { qrLibLoading = null; reject(new Error('No se pudo cargar el generador de QR. Revisa tu conexión.')); };
+      document.head.appendChild(s);
+    });
+  }
+  return qrLibLoading;
+}
+
+async function generateBranchQr(key) {
+  const branch = QR_BRANCH_PAGES.find(b => b.key === key);
+  const box = document.getElementById(`qrBox-${key}`);
+  const btn = document.getElementById(`qrBtn-${key}`);
+  const dl = document.getElementById(`qrDownload-${key}`);
+  if (!branch || !box) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
+  try {
+    const QRCode = await loadQrLib();
+    const dataUrl = await QRCode.toDataURL(branch.url, { width: 220, margin: 1 });
+    box.innerHTML = `<img src="${dataUrl}" width="170" height="170" alt="QR ${escapeHtml(branch.label)}">`;
+    if (dl) {
+      dl.href = dataUrl;
+      dl.download = `qr-resena-${key}.png`;
+      dl.classList.remove('hidden');
+    }
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generar QR'; }
+  }
 }
 
 // --- Back office: Parámetros de la Tienda → Pagos por transferencia ---
