@@ -8843,6 +8843,7 @@ async function syncProductsFromPrestaShopAPI(){
           costoCompra: Number.isFinite(p.costoCompra) ? p.costoCompra : 0,
           cat: (p.categoryLabel || 'general').toLowerCase().trim(),
           catLabel: p.categoryLabel || 'General',
+          categoryId: p.categoryId,
           categoryIds: Array.isArray(p.categoryIds) ? p.categoryIds : undefined,
           weight: p.weight || 0,
           width: p.width || 0,
@@ -14524,33 +14525,76 @@ function setCatalogView(view){
   if (grid) grid.classList.toggle('list-view', view === 'list');
 }
 
+// Mismo filtro y orden que lib/productos-supabase.js (categoría por defecto
+// exacta O alguna de las categorías de productos_migrados; "relevancia" =
+// orden por id) — sobre liveProducts, que la tienda ya descargó completo al
+// abrir. Antes cada clic en una categoría volvía a pedirle al servidor el
+// catálogo entero (~1,000 productos con descripciones) solo para filtrarlo
+// allá, y tardaba varios segundos en cada cambio de categoría o de página.
+const CATALOG_CLIENT_SORTS = {
+  price_asc: (a, b) => a.price - b.price,
+  price_desc: (a, b) => b.price - a.price,
+  name_asc: (a, b) => a.name.localeCompare(b.name),
+  name_desc: (a, b) => b.name.localeCompare(a.name)
+};
+
+function catalogPageFromLiveProducts(offset) {
+  const cat = catalogState.catId !== 'all' ? String(catalogState.catId) : null;
+  let list = !cat ? liveProducts.slice() : liveProducts.filter(p =>
+    String(p.categoryId) === cat || (Array.isArray(p.categoryIds) && p.categoryIds.map(String).includes(cat))
+  );
+  const cmp = CATALOG_CLIENT_SORTS[catalogState.sort];
+  if (cmp) list.sort(cmp);
+  return {
+    total: list.length,
+    products: list.slice(offset, offset + catalogState.pageSize).map(p => ({
+      id: p.id, name: p.name, sku: p.sku, price: p.price, img: p.img, url: p.url, desc: p.desc, cat: 'general'
+    }))
+  };
+}
+
+let catalogLoadSeq = 0;
+
 async function loadCatalogPage(){
   const grid = document.getElementById('catalogGrid');
   const statusEl = document.getElementById('catalogStatus');
   if (!grid) return;
-  grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:#8b7d97;">Cargando productos…</div>';
+  // Si el cliente cambia de categoría/página antes de que termine la carga
+  // anterior, la respuesta vieja no debe pintar encima de la nueva.
+  const seq = ++catalogLoadSeq;
 
   const offset = (catalogState.page - 1) * catalogState.pageSize;
-  const params = new URLSearchParams({ limit: catalogState.pageSize, offset });
-  if (catalogState.catId !== 'all') params.set('category', catalogState.catId);
-  if (catalogState.sort !== 'relevance') params.set('sort', catalogState.sort);
-
   let products = [];
   let total = 0;
-  try {
-    const r = await fetch('/api/productos?' + params.toString());
-    const data = await r.json();
-    products = Array.isArray(data.products) ? data.products.map(p => ({
-      id: p.id, name: p.name, sku: p.sku, price: p.price, img: p.img, url: p.url, desc: p.description, cat: 'general'
-    })) : [];
-    // El total real de PrestaShop para este mismo filtro (id_category_default
-    // exacto o "todos los activos") — NUNCA la suma de los conteos del
-    // sidebar, que son recursivos (incluyen subcategorías, un producto puede
-    // contar en varias) y no coinciden con lo que esta consulta realmente
-    // regresa: eso hacía que páginas "de más" siempre salieran vacías.
-    total = Number.isFinite(data.total) ? data.total : products.length;
-  } catch (e) {
-    products = [];
+
+  // liveProducts solo trae productos con categoryId si ya cargó con esta
+  // versión del sitio — si no (o todavía no termina de cargar al entrar
+  // directo a la liga de una categoría), se usa el servidor como antes.
+  const canUseLocal = productsFirstLoadDone && liveProducts.length > 0 && liveProducts.some(p => p.categoryId !== undefined);
+  if (canUseLocal) {
+    ({ products, total } = catalogPageFromLiveProducts(offset));
+  } else {
+    grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:#8b7d97;">Cargando productos…</div>';
+    if (statusEl) statusEl.textContent = '';
+    const params = new URLSearchParams({ limit: catalogState.pageSize, offset });
+    if (catalogState.catId !== 'all') params.set('category', catalogState.catId);
+    if (catalogState.sort !== 'relevance') params.set('sort', catalogState.sort);
+    try {
+      const r = await fetch('/api/productos?' + params.toString());
+      const data = await r.json();
+      products = Array.isArray(data.products) ? data.products.map(p => ({
+        id: p.id, name: p.name, sku: p.sku, price: p.price, img: p.img, url: p.url, desc: p.description, cat: 'general'
+      })) : [];
+      // El total real para este mismo filtro (categoría por defecto exacta o
+      // "todos los activos") — NUNCA la suma de los conteos del sidebar, que
+      // son recursivos (incluyen subcategorías, un producto puede contar en
+      // varias) y no coinciden con lo que esta consulta realmente regresa:
+      // eso hacía que páginas "de más" siempre salieran vacías.
+      total = Number.isFinite(data.total) ? data.total : products.length;
+    } catch (e) {
+      products = [];
+    }
+    if (seq !== catalogLoadSeq) return;
   }
 
   currentStorefrontList = products;
