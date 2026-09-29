@@ -3671,11 +3671,11 @@
               <tr>
                 <th>Imagen</th>
                 <th>SKU / Referencia</th>
-                <th>Nombre del Producto</th>
+                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('nombre')">Nombre del Producto <span id="catalogSortArrow-nombre"></span></th>
                 <th>Categoría</th>
-                <th>Precio (MXN)</th>
+                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('precio')">Precio (MXN) <span id="catalogSortArrow-precio"></span></th>
                 <th>Origen</th>
-                <th>Estado</th>
+                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('estado')">Estado <span id="catalogSortArrow-estado"></span></th>
                 <th style="text-align:center;">Acciones</th>
               </tr>
             </thead>
@@ -8977,9 +8977,36 @@ function renderDynamicCatPills(){
 }
 
 // RENDER PRODUCTS TABLE IN CATALOG VIEW
+// Clic en "Nombre del Producto" / "Precio (MXN)" / "Estado" (encabezados de
+// la tabla, ver renderCatalogTable) — alterna asc/desc igual que en una
+// hoja de cálculo, ordena la lista real (no solo lo que se ve en pantalla).
+let catalogSortKey = null;
+let catalogSortDir = 'asc';
+
+function sortCatalogBy(key){
+  if (catalogSortKey === key) catalogSortDir = catalogSortDir === 'asc' ? 'desc' : 'asc';
+  else { catalogSortKey = key; catalogSortDir = 'asc'; }
+  renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
+}
+
+function updateCatalogSortArrows(){
+  ['nombre', 'precio', 'estado'].forEach(key => {
+    const el = document.getElementById('catalogSortArrow-' + key);
+    if (!el) return;
+    el.textContent = catalogSortKey === key ? (catalogSortDir === 'asc' ? '▲' : '▼') : '';
+  });
+}
+
+const CATALOG_SORT_COMPARATORS = {
+  nombre: (a, b) => a.name.localeCompare(b.name),
+  precio: (a, b) => (a.price || 0) - (b.price || 0),
+  estado: (a, b) => (a.status === 'Inactivo' ? 1 : 0) - (b.status === 'Inactivo' ? 1 : 0)
+};
+
 function renderCatalogTable(category = 'all', query = ''){
   const tbody = document.getElementById('catalogTableBody');
   if(!tbody) return;
+  updateCatalogSortArrows();
   const dataset = adminCatalogDataset();
   const statusFilter = document.getElementById('catalogStatusFilter')?.value || 'activos';
   const filtered = dataset.filter(p => {
@@ -8989,6 +9016,11 @@ function renderCatalogTable(category = 'all', query = ''){
     const matchStatus = statusFilter === 'todos' || (statusFilter === 'activos' ? !isInactive : isInactive);
     return matchCat && matchQ && matchStatus;
   });
+
+  if (catalogSortKey && CATALOG_SORT_COMPARATORS[catalogSortKey]) {
+    const cmp = CATALOG_SORT_COMPARATORS[catalogSortKey];
+    filtered.sort((a, b) => catalogSortDir === 'asc' ? cmp(a, b) : cmp(b, a));
+  }
 
   if(filtered.length === 0){
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">Sin productos registrados.</td></tr>';
