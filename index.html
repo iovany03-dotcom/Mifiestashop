@@ -715,6 +715,26 @@
     display: flex; align-items: center; justify-content: center;
     z-index: 100;
   }
+  .mov-search-results {
+    position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 30; max-height: 300px; overflow-y: auto;
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+  }
+  .mov-search-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .mov-search-item:last-child { border-bottom: none; }
+  .mov-search-item:hover, .mov-search-item.active { background: rgba(249,115,22,0.10); }
+  .mov-search-item .mov-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .mov-search-item .mov-sub { font-size: 11px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 420px; }
+  .mov-lote-list { max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .mov-lote-row { display: grid; grid-template-columns: 1fr auto 92px 32px; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .mov-lote-row:last-child { border-bottom: none; }
+  .mov-lote-row input { width: 100%; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); font-size: 14px; font-weight: 700; text-align: center; }
+  .mov-lote-row.error input { border-color: #dc2626; }
+  .mov-lote-stock { font-size: 11px; color: var(--text-muted); text-align: right; white-space: nowrap; }
+  .mov-lote-row.error .mov-lote-stock { color: #dc2626; font-weight: 700; }
+  @media (max-width: 560px) {
+    .mov-lote-row { grid-template-columns: 1fr 80px 32px; }
+    .mov-lote-stock { grid-column: 1 / 2; text-align: left; }
+  }
   .modal {
     background: var(--card-bg);
     border: 1px solid var(--border);
@@ -5786,14 +5806,14 @@
 
 <!-- ================= MOVIMIENTOS E HISTORIAL DE INVENTARIO MODAL ================= -->
 <div class="modal-overlay hidden" id="traspasoModal">
-  <div class="modal" style="max-width: 640px;">
+  <div class="modal" style="max-width: 760px;">
     <div class="modal-header">
       <h2>Movimientos de Inventario & Traspasos</h2>
       <button class="btn small" onclick="closeTraspasoModal()">✕</button>
     </div>
 
     <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
-      Seleccione el tipo de movimiento (Entrada, Salida o Traspaso), la bodega y la cantidad a registrar.
+      Elige el tipo de movimiento y la bodega, agrega todos los productos que quieras con el buscador y revisa antes de aplicar.
     </p>
 
     <!-- Movement Type Toggle Buttons -->
@@ -5803,11 +5823,11 @@
       <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; justify-content:center; font-weight:700;">Traspaso</button>
     </div>
 
-    <form id="traspasoForm" onsubmit="event.preventDefault(); confirmStockTransfer();">
+    <form id="traspasoForm" onsubmit="event.preventDefault(); reviewStockMovement();">
       <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
         <div id="wrapperBodegaOrigen">
           <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;" id="lblBodegaOrigen">Bodega Salida / Origen:</label>
-          <select id="traspasoOrigen" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" onchange="updateTraspasoMaxStock()">
+          <select id="traspasoOrigen" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" onchange="onMovBodegaChange()">
             <option value="rumania">CDMX Rumania</option>
             <option value="puebla">Puebla</option>
             <option value="queretaro">Querétaro</option>
@@ -5816,7 +5836,7 @@
 
         <div id="wrapperBodegaDestino">
           <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;" id="lblBodegaDestino">Bodega Entrada / Destino:</label>
-          <select id="traspasoDestino" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+          <select id="traspasoDestino" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" onchange="onMovBodegaChange()">
             <option value="puebla">Puebla</option>
             <option value="rumania" selected>CDMX Rumania</option>
             <option value="queretaro">Querétaro</option>
@@ -5824,39 +5844,51 @@
         </div>
       </div>
 
-      <div style="margin-bottom:14px;">
-        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Producto Afectado:</label>
-        <select id="traspasoProduct" required style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;" onchange="updateTraspasoMaxStock()">
-        </select>
+      <div style="margin-bottom:14px; position:relative;">
+        <label for="movSearch" style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Agregar productos:</label>
+        <input type="search" id="movSearch" autocomplete="off" placeholder="Busca por nombre, palabra clave o ID (ej. pistola agua)"
+          oninput="renderMovSearchResults()" onfocus="renderMovSearchResults()" onkeydown="onMovSearchKey(event)"
+          style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <div id="movSearchResults" class="mov-search-results hidden"></div>
       </div>
 
       <div style="margin-bottom:14px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-          <label style="font-size:13px; font-weight:600; color:var(--text-primary);">Cantidad (unidades):</label>
-          <span style="font-size:12px; color:var(--text-muted);" id="traspasoStockAvailableInfo">Disponible en origen: <b>0 u.</b></span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px; flex-wrap:wrap;">
+          <span style="font-size:13px; font-weight:600; color:var(--text-primary);" id="movLoteTitle">Productos en este movimiento (0)</span>
+          <button type="button" class="btn small" id="movLoteClear" onclick="clearMovLote()">Vaciar lista</button>
         </div>
-        <input type="number" id="traspasoQty" min="1" value="10" required style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:15px; font-weight:600;">
+        <div id="movLoteNotice" class="hidden" style="font-size:12px; color:#b45309; background:rgba(245,158,11,0.10); border-radius:8px; padding:8px 10px; margin-bottom:8px;"></div>
+        <div id="movLoteList" class="mov-lote-list"></div>
       </div>
 
       <div style="margin-bottom:18px;">
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Motivo / Observaciones (Opcional):</label>
-        <input type="text" id="traspasoMotivo" placeholder="Ej. Reabastecimiento de proveedor, merma, folio #MOV-9901" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <input type="text" id="traspasoMotivo" oninput="saveMovDraft()" placeholder="Ej. Reabastecimiento de proveedor, merma, folio #MOV-9901" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button type="button" class="btn" onclick="closeTraspasoModal()">Cancelar</button>
         <button type="submit" class="btn primary" id="btnConfirmMovimiento" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">
-           Registrar Entrada de Stock
+           Revisar entrada
         </button>
       </div>
     </form>
+
+    <!-- Paso 2: revisar antes de aplicar (nada se guarda hasta "Confirmar y aplicar") -->
+    <div id="movReviewPanel" class="hidden">
+      <div id="movReviewBody"></div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap;">
+        <button type="button" class="btn" onclick="backToMovEditor()">← Regresar a editar</button>
+        <button type="button" class="btn primary" id="btnApplyMovimiento" onclick="confirmStockTransfer()" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">Confirmar y aplicar</button>
+      </div>
+    </div>
 
     <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Histórico de Movimientos de Inventario</h4>
         <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge">3 movimientos registrados</span>
       </div>
-      <div id="traspasoHistoryList" style="max-height:160px; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
+      <div id="traspasoHistoryList" style="max-height:260px; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
       </div>
     </div>
   </div>
@@ -5938,7 +5970,9 @@ async function sbRpc(fnName, params){
   });
   if (!r.ok) {
     const text = await r.text().catch(() => '');
-    throw new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
+    const err = new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
+    err.detail = text;
+    throw err;
   }
   // Functions that RETURN void (every rpc_*_delete) send back an empty body —
   // r.json() throws on that, which made a successful delete look like a failure.
@@ -10168,6 +10202,61 @@ let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
 let traspasosHistory = [];
 const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro: 'Querétaro' };
 
+// Lote del movimiento que se está capturando: varios productos en un solo
+// movimiento (una petición de 50 productos es UN traspaso con un folio, no
+// 50). Se guarda en este navegador mientras se captura para no perderlo si
+// se cierra el modal o se recarga la página.
+let movLote = [];              // [{ id, qty }]
+let movSearchActive = 0;       // resultado resaltado con las flechas
+const MOV_DRAFT_KEY = 'mf_mov_lote_borrador';
+const MOV_TIPO_LABEL = { entrada: 'Entrada', salida: 'Salida', traspaso: 'Traspaso' };
+
+function movDataset() {
+  return adminCatalogDataset();
+}
+
+function movFindProduct(id) {
+  return movDataset().find(p => String(p.id) === String(id));
+}
+
+function movBodegaLabel(key) {
+  return WAREHOUSE_LABELS[key] || key;
+}
+
+function saveMovDraft() {
+  try {
+    if (movLote.length === 0) { localStorage.removeItem(MOV_DRAFT_KEY); return; }
+    localStorage.setItem(MOV_DRAFT_KEY, JSON.stringify({
+      tipo: currentMovType,
+      origen: document.getElementById('traspasoOrigen').value,
+      destino: document.getElementById('traspasoDestino').value,
+      motivo: document.getElementById('traspasoMotivo').value,
+      items: movLote
+    }));
+  } catch (e) {}
+}
+
+function loadMovDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(MOV_DRAFT_KEY) || 'null');
+    if (!d || !Array.isArray(d.items) || d.items.length === 0) return false;
+    applyMovState(d);
+    return true;
+  } catch (e) { return false; }
+}
+
+// Carga un estado completo en el editor (borrador guardado o un movimiento
+// revertido para corregirlo).
+function applyMovState(d) {
+  if (d.origen) document.getElementById('traspasoOrigen').value = d.origen;
+  if (d.destino) document.getElementById('traspasoDestino').value = d.destino;
+  document.getElementById('traspasoMotivo').value = d.motivo || '';
+  movLote = d.items
+    .map(it => ({ id: String(it.id), qty: Math.max(1, parseInt(it.qty, 10) || 1) }))
+    .filter(it => it.id);
+  setMovimientoType(MOV_TIPO_LABEL[d.tipo] ? d.tipo : 'entrada');
+}
+
 function setMovimientoType(tipo) {
   currentMovType = tipo;
   const btnEntrada = document.getElementById('btnTipoEntrada');
@@ -10180,72 +10269,310 @@ function setMovimientoType(tipo) {
 
   const wrapOrigen = document.getElementById('wrapperBodegaOrigen');
   const wrapDestino = document.getElementById('wrapperBodegaDestino');
-  const btnConfirm = document.getElementById('btnConfirmMovimiento');
 
   if (tipo === 'entrada') {
     if(wrapOrigen) wrapOrigen.style.display = 'none';
     if(wrapDestino) wrapDestino.style.display = 'block';
-    if(btnConfirm) btnConfirm.innerHTML = 'Registrar Entrada de Stock';
   } else if (tipo === 'salida') {
     if(wrapOrigen) wrapOrigen.style.display = 'block';
     if(wrapDestino) wrapDestino.style.display = 'none';
-    if(btnConfirm) btnConfirm.innerHTML = 'Registrar Salida de Stock';
   } else if (tipo === 'traspaso') {
     if(wrapOrigen) wrapOrigen.style.display = 'block';
     if(wrapDestino) wrapDestino.style.display = 'block';
-    if(btnConfirm) btnConfirm.innerHTML = 'Confirmar Traspaso entre Bodegas';
   }
 
-  updateTraspasoMaxStock();
+  backToMovEditor();
+  renderMovLote();
+  saveMovDraft();
 }
 
 function openTraspasoModal() {
   const modal = document.getElementById('traspasoModal');
   if(!modal) return;
 
-  const prodSelect = document.getElementById('traspasoProduct');
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-
-  if (prodSelect) {
-    prodSelect.innerHTML = dataset.map(p => 
-      `<option value="${p.id}">${p.sku} - ${p.name} ($${p.price.toFixed(2)})</option>`
-    ).join('');
-  }
-
+  // Si quedó un movimiento a medias (se cerró el modal o se recargó la
+  // página), se recupera tal cual.
+  const restored = movLote.length === 0 && loadMovDraft();
   setMovimientoType(currentMovType);
+  const notice = document.getElementById('movLoteNotice');
+  if (notice) {
+    notice.textContent = restored ? `Se recuperó un movimiento sin terminar (${movLote.length} productos). Revísalo y aplícalo, o usa "Vaciar lista".` : '';
+    notice.classList.toggle('hidden', !restored);
+  }
+  const search = document.getElementById('movSearch');
+  if (search) search.value = '';
+  hideMovSearchResults();
   loadTraspasoHistory();
   modal.classList.remove('hidden');
+  if (adminCatalogProducts.length === 0) loadAdminCatalogProducts().then(() => renderMovLote()).catch(() => {});
 }
 
 function closeTraspasoModal() {
   const modal = document.getElementById('traspasoModal');
   if(modal) modal.classList.add('hidden');
+  hideMovSearchResults();
 }
 
-function updateTraspasoMaxStock() {
+// Existencia de un producto en la bodega que se ve afectada por el tipo de
+// movimiento actual (origen en salida/traspaso, destino en entrada).
+function movStockInfo(pId) {
   const origen = document.getElementById('traspasoOrigen').value;
-  const prodSelect = document.getElementById('traspasoProduct');
-  if(!prodSelect || !prodSelect.value) return;
+  const destino = document.getElementById('traspasoDestino').value;
+  if (currentMovType === 'entrada') {
+    return { bodega: destino, stock: getStockFor(pId, destino), limit: Infinity };
+  }
+  const stock = getStockFor(pId, origen);
+  return { bodega: origen, stock, limit: stock };
+}
 
-  const pId = parseInt(prodSelect.value);
-  const currentStock = getStockFor(pId, origen);
-  const totalStock = ['puebla', 'rumania', 'queretaro'].reduce((s, wh) => s + getStockFor(pId, wh), 0);
+function onMovBodegaChange() {
+  saveMovDraft();
+  renderMovLote();
+}
 
-  const infoEl = document.getElementById('traspasoStockAvailableInfo');
-  if (infoEl) {
+// ---- Buscador de productos ----
+// Cada palabra tiene que aparecer en el nombre, las palabras clave (SKU) o
+// el ID, en cualquier orden y sin importar acentos: "pistola globo"
+// encuentra "Pistola de globos". Primero lo que coincide en el nombre.
+const MOV_STOPWORDS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'con', 'para', 'y', 'en', 'un', 'una']);
+
+function movSearchProducts(q) {
+  const all = normalizeEs(q).trim().split(/\s+/).filter(Boolean);
+  // "pistola de globo" también encuentra "Pistola lanza globos".
+  const words = all.filter(w => !MOV_STOPWORDS.has(w)).length ? all.filter(w => !MOV_STOPWORDS.has(w)) : all;
+  if (words.length === 0) return [];
+  return movDataset()
+    .map(p => {
+      const name = normalizeEs(p.name);
+      const hay = name + ' ' + normalizeEs(p.sku) + ' ' + String(p.id);
+      if (!words.every(w => hay.includes(w))) return null;
+      const inName = words.every(w => name.includes(w));
+      return { p, score: (inName ? 0 : 1000) + (name.startsWith(words[0]) ? 0 : 100) };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score)
+    .map(x => x.p);
+}
+
+let movSearchCurrent = [];
+
+function renderMovSearchResults() {
+  const input = document.getElementById('movSearch');
+  const box = document.getElementById('movSearchResults');
+  if (!input || !box) return;
+  const q = input.value;
+  if (!q.trim()) { hideMovSearchResults(); return; }
+  const all = movSearchProducts(q);
+  movSearchCurrent = all.slice(0, 40);
+  movSearchActive = 0;
+  if (movSearchCurrent.length === 0) {
+    box.innerHTML = `<div style="padding:12px; font-size:13px; color:var(--text-muted); text-align:center;">Sin resultados para "${escapeHtml(q.trim())}"</div>`;
+    box.classList.remove('hidden');
+    return;
+  }
+  box.innerHTML = movSearchCurrent.map((p, i) => {
+    const info = movStockInfo(p.id);
+    const inLote = movLote.find(it => it.id === String(p.id));
+    return `
+      <div class="mov-search-item ${i === 0 ? 'active' : ''}" data-idx="${i}" onmousedown="event.preventDefault(); addMovProduct('${escapeHtml(String(p.id))}')">
+        <div style="min-width:0;">
+          <div class="mov-name">${escapeHtml(p.name)}${p.active === false ? ' <span style="color:#b45309; font-weight:600;">(desactivado)</span>' : ''}</div>
+          <div class="mov-sub">ID ${escapeHtml(String(p.id))} · ${escapeHtml(p.sku || '')}</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); text-align:right; white-space:nowrap;">
+          ${escapeHtml(movBodegaLabel(info.bodega))}: <b style="color:var(--text-primary);">${info.stock} u.</b>
+          ${inLote ? `<div style="color:#16a34a; font-weight:700;">En la lista (${inLote.qty})</div>` : ''}
+        </div>
+      </div>`;
+  }).join('') + (all.length > movSearchCurrent.length
+    ? `<div style="padding:8px 12px; font-size:11px; color:var(--text-muted); text-align:center;">Se muestran ${movSearchCurrent.length} de ${all.length}. Escribe más palabras para acotar.</div>`
+    : '');
+  box.classList.remove('hidden');
+}
+
+function hideMovSearchResults() {
+  const box = document.getElementById('movSearchResults');
+  if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+  movSearchCurrent = [];
+}
+
+function onMovSearchKey(e) {
+  const box = document.getElementById('movSearchResults');
+  if (e.key === 'Escape') { hideMovSearchResults(); return; }
+  if (!movSearchCurrent.length) { if (e.key === 'Enter') e.preventDefault(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    movSearchActive = (movSearchActive + (e.key === 'ArrowDown' ? 1 : -1) + movSearchCurrent.length) % movSearchCurrent.length;
+    box.querySelectorAll('.mov-search-item').forEach((el, i) => el.classList.toggle('active', i === movSearchActive));
+    box.querySelector('.mov-search-item.active')?.scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    // Enter agrega el resultado resaltado (no manda el formulario).
+    e.preventDefault();
+    addMovProduct(String(movSearchCurrent[movSearchActive].id));
+  }
+}
+
+// Agrega el producto a la lista (si ya estaba, le suma 1) y deja el cursor
+// en su cantidad para escribirla de inmediato.
+function addMovProduct(id) {
+  id = String(id);
+  const existing = movLote.find(it => it.id === id);
+  if (existing) existing.qty += 1;
+  else movLote.push({ id, qty: 1 });
+  const search = document.getElementById('movSearch');
+  if (search) search.value = '';
+  hideMovSearchResults();
+  document.getElementById('movLoteNotice')?.classList.add('hidden');
+  saveMovDraft();
+  renderMovLote();
+  const qtyInput = document.querySelector(`#movLoteList input[data-id="${CSS.escape(id)}"]`);
+  if (qtyInput) { qtyInput.focus(); qtyInput.select(); }
+}
+
+function setMovQty(id, value) {
+  const it = movLote.find(x => x.id === String(id));
+  if (!it) return;
+  const qty = parseInt(value, 10);
+  it.qty = Number.isFinite(qty) && qty > 0 ? Math.min(qty, 99999) : 0;
+  saveMovDraft();
+  updateMovLoteSummary();
+  const row = document.querySelector(`#movLoteList .mov-lote-row[data-id="${CSS.escape(String(id))}"]`);
+  if (row) row.classList.toggle('error', movRowError(it) !== '');
+}
+
+function removeMovProduct(id) {
+  movLote = movLote.filter(it => it.id !== String(id));
+  saveMovDraft();
+  renderMovLote();
+}
+
+function clearMovLote() {
+  if (movLote.length > 3 && !confirm(`¿Quitar los ${movLote.length} productos de la lista?`)) return;
+  movLote = [];
+  document.getElementById('movLoteNotice')?.classList.add('hidden');
+  saveMovDraft();
+  renderMovLote();
+}
+
+function movRowError(it) {
+  if (!(it.qty > 0)) return 'Cantidad inválida';
+  const info = movStockInfo(it.id);
+  if (it.qty > info.limit) return `Solo hay ${info.stock} u. en ${movBodegaLabel(info.bodega)}`;
+  return '';
+}
+
+function renderMovLote() {
+  const list = document.getElementById('movLoteList');
+  if (!list) return;
+  if (movLote.length === 0) {
+    list.innerHTML = '<div style="padding:18px; text-align:center; font-size:13px; color:var(--text-muted);">Busca un producto arriba y dale clic (o Enter) para agregarlo. Puedes agregar todos los que necesites.</div>';
+  } else {
+    list.innerHTML = movLote.map(it => {
+      const p = movFindProduct(it.id);
+      const info = movStockInfo(it.id);
+      const err = movRowError(it);
+      return `
+        <div class="mov-lote-row ${err ? 'error' : ''}" data-id="${escapeHtml(it.id)}">
+          <div style="min-width:0;">
+            <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(p ? p.name : 'Producto #' + it.id)}</div>
+            <div style="font-size:11px; color:var(--text-muted);">ID ${escapeHtml(it.id)}</div>
+          </div>
+          <div class="mov-lote-stock" title="${escapeHtml(err)}">${escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.</div>
+          <input type="number" min="1" inputmode="numeric" value="${it.qty || ''}" data-id="${escapeHtml(it.id)}" aria-label="Cantidad de ${escapeHtml(p ? p.name : it.id)}"
+            oninput="setMovQty('${escapeHtml(it.id)}', this.value)"
+            onkeydown="if (event.key === 'Enter') { event.preventDefault(); document.getElementById('movSearch').focus(); }">
+          <button type="button" class="btn small" title="Quitar" aria-label="Quitar" onclick="removeMovProduct('${escapeHtml(it.id)}')">✕</button>
+        </div>`;
+    }).join('');
+  }
+  updateMovLoteSummary();
+}
+
+function updateMovLoteSummary() {
+  const units = movLote.reduce((s, it) => s + (it.qty || 0), 0);
+  const title = document.getElementById('movLoteTitle');
+  if (title) title.textContent = `Productos en este movimiento (${movLote.length})${movLote.length ? ` · ${units.toLocaleString('es-MX')} u.` : ''}`;
+  const clearBtn = document.getElementById('movLoteClear');
+  if (clearBtn) clearBtn.style.display = movLote.length ? '' : 'none';
+  const btn = document.getElementById('btnConfirmMovimiento');
+  if (btn) btn.textContent = movLote.length
+    ? `Revisar ${MOV_TIPO_LABEL[currentMovType].toLowerCase()} (${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'})`
+    : `Revisar ${MOV_TIPO_LABEL[currentMovType].toLowerCase()}`;
+}
+
+// ---- Paso 2: revisión ----
+function movValidate() {
+  const origen = document.getElementById('traspasoOrigen').value;
+  const destino = document.getElementById('traspasoDestino').value;
+  if (movLote.length === 0) return 'Agrega al menos un producto con el buscador.';
+  if (currentMovType === 'traspaso' && origen === destino) return 'En un traspaso, la bodega de origen y destino deben ser diferentes.';
+  const bad = movLote.filter(it => movRowError(it));
+  if (bad.length) {
+    return 'Revisa estos productos:\n' + bad.slice(0, 10).map(it => {
+      const p = movFindProduct(it.id);
+      return `• ${p ? p.name : it.id}: ${movRowError(it)}`;
+    }).join('\n') + (bad.length > 10 ? `\n… y ${bad.length - 10} más` : '');
+  }
+  return '';
+}
+
+function reviewStockMovement() {
+  const err = movValidate();
+  if (err) { alert(err); renderMovLote(); return; }
+  const origen = document.getElementById('traspasoOrigen').value;
+  const destino = document.getElementById('traspasoDestino').value;
+  const motivo = document.getElementById('traspasoMotivo').value.trim();
+  const units = movLote.reduce((s, it) => s + it.qty, 0);
+  const ruta = currentMovType === 'entrada' ? `a ${movBodegaLabel(destino)}`
+    : currentMovType === 'salida' ? `de ${movBodegaLabel(origen)}`
+    : `de ${movBodegaLabel(origen)} a ${movBodegaLabel(destino)}`;
+
+  const rows = movLote.map(it => {
+    const p = movFindProduct(it.id);
+    let cols;
     if (currentMovType === 'entrada') {
-      infoEl.innerHTML = `Stock actual total: <b style="color:var(--text-primary);">${totalStock.toLocaleString()} u.</b>`;
+      const a = getStockFor(parseInt(it.id, 10), destino);
+      cols = `<td style="text-align:right;">${a} → <b>${a + it.qty}</b></td>`;
+    } else if (currentMovType === 'salida') {
+      const a = getStockFor(parseInt(it.id, 10), origen);
+      cols = `<td style="text-align:right;">${a} → <b>${a - it.qty}</b></td>`;
     } else {
-      infoEl.innerHTML = `Disponible en origen: <b style="color:var(--text-primary);">${currentStock.toLocaleString()} u.</b>`;
+      const a = getStockFor(parseInt(it.id, 10), origen), b = getStockFor(parseInt(it.id, 10), destino);
+      cols = `<td style="text-align:right;">${a} → <b>${a - it.qty}</b></td><td style="text-align:right;">${b} → <b>${b + it.qty}</b></td>`;
     }
-  }
+    return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right; font-weight:700;">${it.qty}</td>${cols}</tr>`;
+  }).join('');
+  const heads = currentMovType === 'entrada' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`
+    : currentMovType === 'salida' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(origen))}</th>`
+    : `<th style="text-align:right;">${escapeHtml(movBodegaLabel(origen))}</th><th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`;
 
-  const qtyInput = document.getElementById('traspasoQty');
-  if (qtyInput && currentMovType !== 'entrada') {
-    qtyInput.max = currentStock;
-  } else if (qtyInput) {
-    qtyInput.removeAttribute('max');
-  }
+  document.getElementById('movReviewBody').innerHTML = `
+    <div style="padding:12px 14px; border-radius:10px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.35); margin-bottom:12px;">
+      <div style="font-size:15px; font-weight:800; color:var(--text-primary);">${MOV_TIPO_LABEL[currentMovType]} ${escapeHtml(ruta)}</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades${motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Todavía no se ha guardado nada. Revisa las cantidades y la existencia que quedará; si algo está mal, regresa a editar.</div>
+    </div>
+    <div style="max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
+      <table style="width:100%; font-size:13px; border-collapse:collapse;">
+        <thead><tr><th style="text-align:left;">Producto</th><th style="text-align:right;">Cant.</th>${heads}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('traspasoForm').classList.add('hidden');
+  document.getElementById('movReviewPanel').classList.remove('hidden');
+  hideMovSearchResults();
+}
+
+function backToMovEditor() {
+  document.getElementById('traspasoForm')?.classList.remove('hidden');
+  document.getElementById('movReviewPanel')?.classList.add('hidden');
+}
+
+// Folio único por movimiento (antes era un número al azar de 4 dígitos que
+// se podía repetir). Todas las partidas del lote comparten el folio, y con
+// él se revierte el movimiento completo.
+function newMovFolio(prefix) {
+  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 36).toString(36).toUpperCase()}`;
 }
 
 async function loadTraspasoHistory() {
@@ -10260,141 +10587,228 @@ async function loadTraspasoHistory() {
   renderTraspasoHistory();
 }
 
+const MOV_MANUAL_TAGS = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entrada'];
+
+function movRowTag(row) {
+  const tagRaw = String(row.motivo || '').split(':')[0].trim();
+  return ['entrada', 'salida', 'traspaso_salida', 'traspaso_entrada', 'venta_pos'].includes(tagRaw) ? tagRaw : 'ajuste';
+}
+
+// El historial agrupa por folio: un lote (o un ticket del POS con varios
+// productos) se ve como UN movimiento con el detalle desplegable.
+function movHistoryGroups() {
+  const groups = [];
+  const byKey = new Map();
+  traspasosHistory.forEach(row => {
+    const key = row.folio ? 'f:' + row.folio : 'id:' + row.id;
+    let g = byKey.get(key);
+    if (!g) { g = { key, folio: row.folio, rows: [] }; byKey.set(key, g); groups.push(g); }
+    g.rows.push(row);
+  });
+  const revertedFolios = new Set(traspasosHistory.filter(r => r.revierte_id && r.folio).map(r => String(r.folio).replace(/^REV-/, '')));
+  groups.forEach(g => {
+    // En el orden en que se capturaron (la lista viene de más nuevo a más viejo).
+    g.rows.sort((a, b) => (a.id || 0) - (b.id || 0));
+    const tags = new Set(g.rows.map(movRowTag));
+    g.tipo = tags.has('traspaso_salida') || tags.has('traspaso_entrada') ? 'traspaso'
+      : tags.size === 1 ? [...tags][0] : 'ajuste';
+    g.isReversal = g.rows.some(r => r.revierte_id);
+    g.reverted = !!g.folio && revertedFolios.has(g.folio);
+    g.revertible = !!g.folio && /^(ENT|SAL|TR)-/.test(g.folio) && !g.isReversal && !g.reverted
+      && g.rows.every(r => MOV_MANUAL_TAGS.includes(movRowTag(r)));
+    g.date = g.rows[0].created_at;
+    g.nota = String(g.rows[0].motivo || '').split(':').slice(1).join(':').trim();
+    g.por = g.rows[0].registrado_por || '';
+  });
+  return groups;
+}
+
 function renderTraspasoHistory() {
   const container = document.getElementById('traspasoHistoryList');
   if(!container) return;
 
+  const groups = movHistoryGroups();
   const countBadge = document.getElementById('movCountBadge');
-  if (countBadge) countBadge.textContent = `${traspasosHistory.length} movimientos registrados`;
+  if (countBadge) countBadge.textContent = `${groups.length} movimientos recientes`;
 
-  if (traspasosHistory.length === 0) {
+  if (groups.length === 0) {
     container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:10px;">Aún no hay movimientos registrados.</div>';
     return;
   }
 
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const knownTags = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entrada', 'venta_pos'];
+  const PILLS = {
+    entrada: ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada'],
+    salida: ['rgba(239,68,68,0.15)', '#dc2626', 'Salida'],
+    traspaso: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso'],
+    traspaso_salida: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso (salida)'],
+    traspaso_entrada: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso (entrada)'],
+    venta_pos: ['rgba(236,72,153,0.15)', '#db2777', 'Venta POS'],
+    ajuste: ['rgba(148,163,184,0.15)', '#64748b', 'Ajuste']
+  };
 
-  container.innerHTML = traspasosHistory.map(row => {
-    const parts = (row.motivo || '').split(':');
-    const tagRaw = (parts[0] || '').trim();
-    const tag = knownTags.includes(tagRaw) ? tagRaw : 'ajuste';
-    const nota = parts.slice(1).join(':').trim();
-
-    let pillBg = 'rgba(148,163,184,0.15)', pillColor = '#64748b', tipoText = 'Ajuste';
-    if (tag === 'entrada') { pillBg = 'rgba(34,197,94,0.15)'; pillColor = '#16a34a'; tipoText = 'Entrada'; }
-    else if (tag === 'salida') { pillBg = 'rgba(239,68,68,0.15)'; pillColor = '#dc2626'; tipoText = 'Salida'; }
-    else if (tag === 'traspaso_salida') { pillBg = 'rgba(59,130,246,0.15)'; pillColor = '#2563eb'; tipoText = 'Traspaso (salida)'; }
-    else if (tag === 'traspaso_entrada') { pillBg = 'rgba(59,130,246,0.15)'; pillColor = '#2563eb'; tipoText = 'Traspaso (entrada)'; }
-    else if (tag === 'venta_pos') { pillBg = 'rgba(236,72,153,0.15)'; pillColor = '#db2777'; tipoText = 'Venta POS'; }
-
-    const prod = dataset.find(p => String(p.id) === String(row.id_product));
-    const prodName = prod ? prod.name : `Producto #${row.id_product}`;
-    const whLabel = WAREHOUSE_LABELS[row.almacen] || row.almacen;
-    const qty = parseFloat(row.qty) || 0;
-    const qtyLabel = (qty > 0 ? '+' : '') + qty;
-    const dateStr = row.created_at ? new Date(row.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-    const folioLabel = row.folio ? (row.folio.startsWith('#') ? row.folio : '#' + row.folio) : '—';
+  container.innerHTML = groups.map((g, gi) => {
+    const [pillBg, pillColor, tipoText] = g.isReversal ? ['rgba(148,163,184,0.15)', '#64748b', 'Reversa'] : (PILLS[g.tipo] || PILLS.ajuste);
+    const folioLabel = g.folio ? (g.folio.startsWith('#') ? g.folio : '#' + g.folio) : '—';
+    const dateStr = g.date ? new Date(g.date).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    // En un traspaso cada producto tiene 2 renglones (salida y entrada): se
+    // cuentan los productos y unidades una sola vez.
+    const itemRows = g.tipo === 'traspaso' ? g.rows.filter(r => parseFloat(r.qty) > 0) : g.rows;
+    const nProductos = new Set(g.rows.map(r => String(r.id_product))).size;
+    const bodegas = [...new Set(g.rows.map(r => movBodegaLabel(r.almacen)))];
+    const bodegaText = g.tipo === 'traspaso'
+      ? `${movBodegaLabel((g.rows.find(r => parseFloat(r.qty) < 0) || g.rows[0]).almacen)} → ${movBodegaLabel((g.rows.find(r => parseFloat(r.qty) > 0) || g.rows[0]).almacen)}`
+      : bodegas.join(', ');
+    const units = itemRows.reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
+    const unitsLabel = g.tipo === 'traspaso' ? `${units} u.` : `${units > 0 ? '+' : ''}${units} u.`;
+    const first = movFindProduct(itemRows[0].id_product);
+    const resumen = nProductos === 1
+      ? escapeHtml(first ? first.name : `Producto #${itemRows[0].id_product}`)
+      : `${nProductos} productos`;
+    // Una reversa de traspaso mueve en las dos bodegas: se muestra cada
+    // renglón con su bodega en vez de un total que daría 0.
+    const detailRows = g.isReversal ? g.rows : itemRows;
+    const detail = detailRows.map(r => {
+      const p = movFindProduct(r.id_product);
+      const q = parseFloat(r.qty) || 0;
+      return `<div style="display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border);">
+        <span>${escapeHtml(p ? p.name : `Producto #${r.id_product}`)}${g.isReversal ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(r.almacen))})</span>` : ''}</span><b>${g.tipo === 'traspaso' ? q : (q > 0 ? '+' : '') + q} u.</b></div>`;
+    }).join('');
+    const folioArg = escapeHtml(JSON.stringify(g.folio || ''));
 
     return `
-      <div style="padding:8px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
-            <b style="color:var(--text-primary);">${escapeHtml(folioLabel)}</b>
-            <span style="padding:2px 8px; border-radius:12px; font-size:10px; background:${pillBg}; color:${pillColor}; font-weight:700;">${tipoText}</span>
-            <span style="font-weight:600; color:var(--text-primary);">${escapeHtml(prodName)}</span>
-            <b style="color:var(--series-2); font-size:12px;">(${qtyLabel} u.)</b>
+      <div style="padding:8px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div style="min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
+              <b style="color:var(--text-primary);">${escapeHtml(folioLabel)}</b>
+              <span style="padding:2px 8px; border-radius:12px; font-size:10px; background:${pillBg}; color:${pillColor}; font-weight:700;">${tipoText}</span>
+              ${g.reverted ? '<span style="padding:2px 8px; border-radius:12px; font-size:10px; background:rgba(148,163,184,0.2); color:#64748b; font-weight:700;">Revertido</span>' : ''}
+              <span style="font-weight:600; color:var(--text-primary);">${resumen}</span>
+              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${unitsLabel})</b>`}
+            </div>
+            <div style="font-size:11px; color:var(--text-muted);">
+              <b>Bodega:</b> ${escapeHtml(bodegaText)} ${g.nota ? '• <i>' + escapeHtml(g.nota) + '</i>' : ''} ${g.por ? '• ' + escapeHtml(g.por) : ''}
+            </div>
           </div>
-          <div style="font-size:11px; color:var(--text-muted);">
-            <b>Bodega:</b> ${escapeHtml(whLabel)} ${nota ? '• <i>' + escapeHtml(nota) + '</i>' : ''} ${row.registrado_por ? '• ' + escapeHtml(row.registrado_por) : ''}
-          </div>
+          <div style="font-size:11px; color:var(--text-muted); text-align:right; min-width:110px;">${dateStr}</div>
         </div>
-        <div style="font-size:11px; color:var(--text-muted); text-align:right; min-width:110px;">
-          ${dateStr}
+        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+          ${detailRows.length > 1 ? `<button type="button" class="btn small" onclick="document.getElementById('movHistDet${gi}').classList.toggle('hidden')">Ver productos</button>` : ''}
+          ${g.revertible ? `<button type="button" class="btn small" onclick="revertStockMovement(${folioArg}, true)">Corregir</button>
+          <button type="button" class="btn small" style="color:#dc2626;" onclick="revertStockMovement(${folioArg}, false)">Revertir</button>` : ''}
         </div>
+        <div id="movHistDet${gi}" class="hidden" style="margin-top:6px; font-size:12px;">${detail}</div>
       </div>
     `;
   }).join('');
 }
 
-async function confirmStockTransfer() {
-  const origen = document.getElementById('traspasoOrigen').value;
-  const destino = document.getElementById('traspasoDestino').value;
-  const prodSelect = document.getElementById('traspasoProduct');
-  if (!prodSelect || !prodSelect.value) return;
+// Revierte un movimiento manual completo (todas sus partidas) insertando
+// el movimiento contrario. Con "Corregir", además carga esas partidas en el
+// editor para arreglarlas y volver a aplicarlas.
+async function revertStockMovement(folio, corregir) {
+  const g = movHistoryGroups().find(x => x.folio === folio);
+  if (!g || !g.revertible) return;
+  if (corregir && movLote.length > 0 && !confirm('Tienes productos en la lista del movimiento actual. Se reemplazarán por los del movimiento a corregir. ¿Continuar?')) return;
 
-  const pId = parseInt(prodSelect.value);
-  const qty = parseInt(document.getElementById('traspasoQty').value) || 0;
-  const notaTexto = document.getElementById('traspasoMotivo').value.trim();
-
-  if (currentMovType === 'traspaso' && origen === destino) {
-    alert(' En un traspaso, la bodega de origen y destino deben ser diferentes.');
-    return;
-  }
-
-  if (qty <= 0) {
-    alert(' Ingrese una cantidad válida a procesar.');
-    return;
-  }
-
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => String(p.id) === String(pId));
-  if (!product) return;
-
-  const origLabel = document.getElementById('traspasoOrigen').options[document.getElementById('traspasoOrigen').selectedIndex].text;
-  const destLabel = document.getElementById('traspasoDestino').options[document.getElementById('traspasoDestino').selectedIndex].text;
-  const registradoPor = nombreSesionActual();
-
-  let folio = '';
-  let rutaDesc = '';
-  let moves = [];
-
-  if (currentMovType === 'entrada') {
-    folio = 'ENT-' + Math.floor(1000 + Math.random() * 9000);
-    rutaDesc = destLabel;
-    moves = [{ id_product: pId, almacen: destino, qty: qty, motivo: notaTexto ? `entrada: ${notaTexto}` : 'entrada', folio, registrado_por: registradoPor }];
-  } else if (currentMovType === 'salida') {
-    const available = getStockFor(pId, origen);
-    if (qty > available) {
-      alert(` Stock insuficiente en bodega de origen (${available} u. disponibles).`);
-      return;
-    }
-    folio = 'SAL-' + Math.floor(1000 + Math.random() * 9000);
-    rutaDesc = origLabel;
-    moves = [{ id_product: pId, almacen: origen, qty: -qty, motivo: notaTexto ? `salida: ${notaTexto}` : 'salida', folio, registrado_por: registradoPor }];
-  } else if (currentMovType === 'traspaso') {
-    const available = getStockFor(pId, origen);
-    if (qty > available) {
-      alert(` Stock insuficiente en bodega de origen (${available} u. disponibles).`);
-      return;
-    }
-    folio = 'TR-' + Math.floor(1000 + Math.random() * 9000);
-    rutaDesc = `${origLabel}  ${destLabel}`;
-    moves = [
-      { id_product: pId, almacen: origen, qty: -qty, motivo: notaTexto ? `traspaso_salida: ${notaTexto}` : 'traspaso_salida', folio, registrado_por: registradoPor },
-      { id_product: pId, almacen: destino, qty: qty, motivo: notaTexto ? `traspaso_entrada: ${notaTexto}` : 'traspaso_entrada', folio, registrado_por: registradoPor }
-    ];
-  }
-
-  const btnConfirm = document.getElementById('btnConfirmMovimiento');
-  if (btnConfirm) btnConfirm.disabled = true;
+  const itemRows = g.tipo === 'traspaso' ? g.rows.filter(r => parseFloat(r.qty) > 0) : g.rows;
+  // Al revertir una entrada (o la parte de entrada de un traspaso) se quita
+  // existencia: se avisa si alguna bodega quedaría en negativo.
+  const faltantes = g.rows.filter(r => parseFloat(r.qty) > 0 && getStockFor(r.id_product, r.almacen) < parseFloat(r.qty));
+  const aviso = faltantes.length
+    ? `\n\n⚠ ${faltantes.length} producto(s) ya no tienen suficiente existencia en ${movBodegaLabel(faltantes[0].almacen)} para regresarla (quizá ya se vendieron).`
+    : '';
+  const msg = `${corregir ? 'Corregir' : 'Revertir'} el movimiento #${folio} (${MOV_TIPO_LABEL[g.tipo] || 'Movimiento'}, ${itemRows.length} ${itemRows.length === 1 ? 'producto' : 'productos'}).\n\n` +
+    'Se registrará el movimiento contrario para dejar la existencia como estaba antes.' +
+    (corregir ? ' Después se cargarán los mismos productos para que los corrijas y vuelvas a aplicar.' : '') + aviso + '\n\n¿Continuar?';
+  if (!confirm(msg)) return;
 
   try {
+    await sbRpc('rpc_stock_move_revert', { ...getSessionCredsParams(), p_folio: folio, p_registrado_por: nombreSesionActual() });
+  } catch (e) {
+    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.'
+      : /ya_revertido/.test(e.detail || '') ? 'Este movimiento ya se había revertido.'
+      : 'No se pudo revertir el movimiento. Intenta de nuevo.');
+    await loadTraspasoHistory();
+    return;
+  }
+  g.rows.forEach(r => {
+    const key = `${r.id_product}|${r.almacen}`;
+    stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) - (parseFloat(r.qty) || 0);
+  });
+  renderInventarioTable();
+
+  if (corregir) {
+    const salida = g.rows.find(r => parseFloat(r.qty) < 0);
+    const entrada = g.rows.find(r => parseFloat(r.qty) > 0);
+    applyMovState({
+      tipo: g.tipo,
+      origen: salida ? salida.almacen : undefined,
+      destino: entrada ? entrada.almacen : undefined,
+      motivo: g.nota,
+      items: itemRows.map(r => ({ id: String(r.id_product), qty: Math.abs(parseFloat(r.qty) || 0) }))
+    });
+    saveMovDraft();
+    const notice = document.getElementById('movLoteNotice');
+    if (notice) { notice.textContent = `Se revirtió #${folio}. Corrige los productos y cantidades y vuelve a aplicarlo.`; notice.classList.remove('hidden'); }
+    document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  await loadTraspasoHistory();
+}
+
+async function confirmStockTransfer() {
+  const err = movValidate();
+  if (err) { alert(err); backToMovEditor(); renderMovLote(); return; }
+
+  const origen = document.getElementById('traspasoOrigen').value;
+  const destino = document.getElementById('traspasoDestino').value;
+  const notaTexto = document.getElementById('traspasoMotivo').value.trim();
+  const registradoPor = nombreSesionActual();
+  const tag = t => notaTexto ? `${t}: ${notaTexto}` : t;
+
+  let folio;
+  const moves = [];
+  if (currentMovType === 'entrada') {
+    folio = newMovFolio('ENT');
+    movLote.forEach(it => moves.push({ id_product: parseInt(it.id, 10), almacen: destino, qty: it.qty, motivo: tag('entrada'), folio, registrado_por: registradoPor }));
+  } else if (currentMovType === 'salida') {
+    folio = newMovFolio('SAL');
+    movLote.forEach(it => moves.push({ id_product: parseInt(it.id, 10), almacen: origen, qty: -it.qty, motivo: tag('salida'), folio, registrado_por: registradoPor }));
+  } else {
+    folio = newMovFolio('TR');
+    movLote.forEach(it => {
+      moves.push({ id_product: parseInt(it.id, 10), almacen: origen, qty: -it.qty, motivo: tag('traspaso_salida'), folio, registrado_por: registradoPor });
+      moves.push({ id_product: parseInt(it.id, 10), almacen: destino, qty: it.qty, motivo: tag('traspaso_entrada'), folio, registrado_por: registradoPor });
+    });
+  }
+
+  const btnApply = document.getElementById('btnApplyMovimiento');
+  if (btnApply) { btnApply.disabled = true; btnApply.textContent = 'Aplicando…'; }
+
+  try {
+    // Una sola llamada: rpc_stock_move_insert_bulk guarda todas las partidas
+    // en una transacción (o todas o ninguna).
     await sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves });
 
     moves.forEach(m => {
       const key = `${m.id_product}|${m.almacen}`;
       stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
     });
+    const n = movLote.length;
+    const units = movLote.reduce((s, it) => s + it.qty, 0);
+    movLote = [];
+    document.getElementById('traspasoMotivo').value = '';
+    saveMovDraft();
     renderInventarioTable();
+    backToMovEditor();
+    renderMovLote();
     await loadTraspasoHistory();
 
-    alert(` Movimiento #${folio} registrado correctamente.\n\nTipo: ${currentMovType.toUpperCase()}\nProducto: ${product.name}\nCantidad: ${qty} u.\nDetalle: ${rutaDesc}`);
-    closeTraspasoModal();
+    alert(`Movimiento #${folio} aplicado.\n\n${MOV_TIPO_LABEL[currentMovType]}: ${n} ${n === 1 ? 'producto' : 'productos'}, ${units.toLocaleString('es-MX')} unidades.\n\nSi algo quedó mal, en el historial puedes usar "Corregir" o "Revertir".`);
   } catch (e) {
-    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo registrar el movimiento. Intenta de nuevo.');
+    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo registrar el movimiento (no se guardó nada). Intenta de nuevo.');
   } finally {
-    if (btnConfirm) btnConfirm.disabled = false;
+    if (btnApply) { btnApply.disabled = false; btnApply.textContent = 'Confirmar y aplicar'; }
   }
 }
 
