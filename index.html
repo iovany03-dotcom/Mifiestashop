@@ -7194,6 +7194,17 @@ function updateCartQty(id, delta) {
   updateCartUI();
 }
 
+// Escribir la cantidad directo en el campo (en vez de solo -/+): si queda
+// vacía, en 0 o inválida se quita el producto, igual que al bajar con "-".
+function setCartQty(id, value) {
+  const qty = parseInt(value, 10);
+  const item = cart.find(i => i.id == id);
+  if (!item) return;
+  if (!Number.isFinite(qty) || qty <= 0) cart = cart.filter(i => i.id != id);
+  else { item.qty = qty; applyWholesalePricing(item); }
+  updateCartUI();
+}
+
 function clearCart() {
   cart = [];
   updateCartUI();
@@ -7232,7 +7243,7 @@ function updateCartUI() {
       </div>
       <div class="ci-qty">
         <button class="ci-btn" onclick="updateCartQty(${item.id}, -1)">-</button>
-        <span style="font-size:13px; font-weight:600; min-width:18px; text-align:center;">${item.qty}</span>
+        <input type="number" min="1" step="1" inputmode="numeric" value="${item.qty}" class="ci-qty-input" style="width:42px; text-align:center; font-size:13px; font-weight:600; border:1px solid var(--border); border-radius:6px; padding:2px 0; background:var(--card-bg); color:var(--text-primary);" onfocus="this.select()" onchange="setCartQty(${item.id}, this.value)">
         <button class="ci-btn" onclick="updateCartQty(${item.id}, 1)">+</button>
       </div>
       <div style="font-weight:700; margin-left:10px; font-size:13px;">${fmtMoney(lineTotal)}</div>
@@ -11364,6 +11375,18 @@ function cpUpdateQty(id, delta){
   cpRenderSummary();
 }
 
+// Escribir la cantidad directo en el campo (en vez de solo -/+): si queda
+// vacía, en 0 o inválida se quita el producto, igual que al bajar con "-".
+function cpSetQty(id, value){
+  const qty = parseInt(value, 10);
+  const item = cpItems.find(i => i.id == id);
+  if (!item) return;
+  if (!Number.isFinite(qty) || qty <= 0) cpItems = cpItems.filter(i => i.id != id);
+  else { item.qty = qty; applyWholesalePricing(item); }
+  cpRenderItemsTable();
+  cpRenderSummary();
+}
+
 function cpRemoveItem(id){
   cpItems = cpItems.filter(i => i.id != id);
   cpRenderItemsTable();
@@ -11381,7 +11404,7 @@ function cpRenderItemsTable(){
       <td>${escapeHtml(item.name)}${item.sku ? `<br><span style="font-size:11px; color:var(--text-muted);">${escapeHtml(item.sku)}</span>` : ''}</td>
       <td style="text-align:center;">
         <button class="ci-btn" onclick="cpUpdateQty(${item.id}, -1)">-</button>
-        <span style="font-weight:600; margin:0 8px;">${item.qty}</span>
+        <input type="number" min="1" step="1" inputmode="numeric" value="${item.qty}" style="width:46px; text-align:center; font-weight:600; margin:0 6px; border:1px solid var(--border); border-radius:6px; padding:2px 0; background:var(--card-bg); color:var(--text-primary);" onfocus="this.select()" onchange="cpSetQty(${item.id}, this.value)">
         <button class="ci-btn" onclick="cpUpdateQty(${item.id}, 1)">+</button>
       </td>
       <td style="text-align:right;">${fmtMoney(item.price)}</td>
