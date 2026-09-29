@@ -12263,6 +12263,8 @@ function renderOdDetails(order, extra) {
     if (origen === 'online') {
       if (order.mpPaymentId) ref = `Mercado Pago #${order.mpPaymentId}`;
       estadoPago = order.mpStatus ? ({ approved: 'Aprobado', rejected: 'Rechazado', cancelled: 'Cancelado', pending: 'Pendiente', in_process: 'En proceso', refunded: 'Reembolsado' }[order.mpStatus] || order.mpStatus) : (/pago aceptado|pagado/i.test(order.status || '') ? 'Aprobado' : 'Sin confirmar');
+      const motivo = mpStatusDetailText(order.mpStatusDetail);
+      if (motivo && order.mpStatus !== 'approved') estadoPago += ` — ${motivo}`;
       if (order.paidAt) fecha = new Date(order.paidAt).toLocaleString('es-MX');
     } else if (origen === 'pos') {
       ref = order.id;
@@ -12280,6 +12282,46 @@ function renderOdDetails(order, extra) {
       <td style="text-align:right; font-weight:700; color:var(--text-primary);">${odMoney(order.total)}</td>
     </tr>`;
   }
+}
+
+// Motivo del estado de un pago de Mercado Pago (status_detail) en español.
+// https://www.mercadopago.com.mx/developers/es/docs/checkout-api/response-handling/collection-results
+const MP_STATUS_DETAIL_TEXT = {
+  cc_rejected_insufficient_amount: 'la tarjeta no tiene fondos suficientes',
+  cc_rejected_bad_filled_security_code: 'código de seguridad (CVV) incorrecto',
+  cc_rejected_bad_filled_date: 'fecha de vencimiento incorrecta',
+  cc_rejected_bad_filled_card_number: 'número de tarjeta incorrecto',
+  cc_rejected_bad_filled_other: 'algún dato de la tarjeta está mal',
+  cc_rejected_call_for_authorize: 'el banco pide que el cliente autorice el pago (llamar al banco)',
+  cc_rejected_card_disabled: 'la tarjeta no está activada',
+  cc_rejected_card_error: 'el banco no pudo procesar la tarjeta',
+  cc_rejected_duplicated_payment: 'pago duplicado (ya había hecho uno igual)',
+  cc_rejected_high_risk: 'rechazado por seguridad (prevención de fraude de Mercado Pago)',
+  cc_rejected_blacklist: 'rechazado por seguridad (prevención de fraude de Mercado Pago)',
+  cc_rejected_max_attempts: 'demasiados intentos con esa tarjeta',
+  cc_rejected_invalid_installments: 'la tarjeta no acepta esos meses sin intereses',
+  cc_rejected_other_reason: 'el banco rechazó el pago (sin dar motivo)',
+  cc_rejected_3ds_challenge: 'no pasó la verificación 3D Secure del banco',
+  cc_rejected_3ds_mandatory: 'el banco exige verificación 3D Secure',
+  cc_rejected_card_type_not_allowed: 'ese tipo de tarjeta no se acepta',
+  cc_amount_rate_limit_exceeded: 'la tarjeta llegó a su límite',
+  rejected_by_bank: 'el banco rechazó el pago',
+  rejected_by_regulations: 'rechazado por regulaciones',
+  rejected_insufficient_data: 'faltaron datos del comprador',
+  rejected_high_risk: 'rechazado por seguridad (prevención de fraude de Mercado Pago)',
+  expired: 'venció sin pagarse',
+  by_payer: 'el cliente lo canceló',
+  by_collector: 'cancelado por la tienda',
+  pending_contingency: 'Mercado Pago lo está procesando',
+  pending_review_manual: 'Mercado Pago lo está revisando',
+  pending_waiting_payment: 'esperando que el cliente pague (OXXO / transferencia)',
+  pending_waiting_transfer: 'esperando la transferencia',
+  pending_challenge: 'esperando verificación del banco'
+};
+
+function mpStatusDetailText(detail) {
+  if (!detail) return '';
+  return MP_STATUS_DETAIL_TEXT[detail] || detail;
 }
 
 function navigateOrderDetail(step) {

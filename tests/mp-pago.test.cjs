@@ -38,6 +38,13 @@ test('mp-pago: pago rechazado -> Error en el pago', async () => {
   assert.equal(r.estado, 'Error en el pago'); assert.equal(st.pedido.status, 'Error en el pago');
 });
 
+test('mp-pago: guarda el motivo del rechazo (status_detail)', async () => {
+  const st = fake({ pago: { id: 9, status: 'rejected', status_detail: 'cc_rejected_insufficient_amount', external_reference: 'WEB-1' }, pedido: { status: 'Pendiente', total: 100 } });
+  const r = await aplicarPago(args);
+  assert.equal(st.pedido.mp_status_detail, 'cc_rejected_insufficient_amount');
+  assert.equal(r.mpStatusDetail, 'cc_rejected_insufficient_amount');
+});
+
 test('mp-pago: una notificación de un intento fallido no baja un pedido ya pagado', async () => {
   const st = fake({ pago: { status: 'rejected', external_reference: 'WEB-1' }, pedido: { status: 'Pago aceptado', total: 100 } });
   const r = await aplicarPago(args);
