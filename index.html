@@ -3659,6 +3659,11 @@
         </div>
         <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
           <input type="search" id="catalogSearchInput" placeholder="Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
+          <select id="catalogStatusFilter" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            <option value="activos" selected>Solo activos</option>
+            <option value="inactivos">Solo desactivados</option>
+            <option value="todos">Todos</option>
+          </select>
         </div>
         <div class="table-wrap">
           <table>
@@ -3666,11 +3671,11 @@
               <tr>
                 <th>Imagen</th>
                 <th>SKU / Referencia</th>
-                <th>Nombre del Producto</th>
+                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('nombre')">Nombre del Producto <span id="catalogSortArrow-nombre"></span></th>
                 <th>Categoría</th>
-                <th>Precio (MXN)</th>
+                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('precio')">Precio (MXN) <span id="catalogSortArrow-precio"></span></th>
                 <th>Origen</th>
-                <th>Estado</th>
+                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('estado')">Estado <span id="catalogSortArrow-estado"></span></th>
                 <th style="text-align:center;">Acciones</th>
               </tr>
             </thead>
@@ -4814,7 +4819,10 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen (PrestaShop / CDN):</label>
-            <input type="url" id="editProdImg" placeholder="https://..." oninput="refreshProductPhotoPreview()" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <!-- type="text", no "url" — mismo motivo que editProdUrl abajo: un valor que no
+                 valide como URL absoluta bloquea el guardado del producto ENTERO en
+                 silencio, sin mostrar ningún error. -->
+            <input type="text" id="editProdImg" placeholder="https://..." oninput="refreshProductPhotoPreview()" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
             <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">O sube una foto desde tu equipo:</label>
             <input type="file" id="editProdImgFile" accept="image/*" onchange="uploadProductPhoto(this)" style="width:100%; font-size:12.5px;">
             <div id="editProdImgStatus" style="font-size:12px; margin-top:4px; color:var(--text-muted);"></div>
@@ -4823,7 +4831,13 @@
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Actual del Producto (Tienda Web):</label>
             <div style="display:flex; gap:6px;">
-              <input type="url" id="editProdUrl" placeholder="https://mifiestashop.com/producto/..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              <!-- type="text", no "url": la liga real de un producto de PrestaShop es
+                   relativa a propósito (toProduct() en lib/productos-supabase.js, "sirve en
+                   cualquier dominio del sitio") — un <input type="url"> exige que el valor
+                   sea una URL absoluta y bloquea el envío del formulario ENTERO en silencio
+                   si no lo es (sin llegar siquiera a saveProductChanges()), así que guardar
+                   cualquier cambio en un producto con liga relativa nunca hacía nada. -->
+              <input type="text" id="editProdUrl" placeholder="https://mifiestashop.com/producto/..." style="flex:1; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
               <button type="button" class="btn small secondary" onclick="if(document.getElementById('editProdUrl').value) window.open(document.getElementById('editProdUrl').value, '_blank'); else alert('No hay URL definida');" title="Abrir enlace en pestaña nueva">Abrir</button>
             </div>
           </div>
@@ -7143,7 +7157,10 @@ function renderProducts(category = 'all', query = '') {
 function wholesaleNoteHTML(p, compact){
   const threshold = p.priceMayoreoDesdeUnidades;
   const price = p.priceMayoreo;
-  if (!(threshold > 0 && Number.isFinite(price) && price > 0 && price < p.price)) return '';
+  // threshold > 1 (no > 0): "desde 1 pieza" en PrestaShop no es un
+  // descuento real por volumen, es el default cuando el precio especial es
+  // solo para clientes de mayoreo/distribuidores — ver lib/productos-supabase.js.
+  if (!(threshold > 1 && Number.isFinite(price) && price > 0 && price < p.price)) return '';
   if (compact) {
     return `<div style="font-size:11.5px; color:#0f9d58; font-weight:700; margin-top:2px;">${fmtMoney(price)} c/u desde ${threshold} pzas</div>`;
   }
@@ -7162,7 +7179,11 @@ function applyWholesalePricing(item) {
   if (!Number.isFinite(item.basePrice)) item.basePrice = item.price;
   const threshold = item.priceMayoreoDesdeUnidades;
   const wholesalePrice = item.priceMayoreo;
-  item.price = (threshold > 0 && Number.isFinite(wholesalePrice) && wholesalePrice > 0 && item.qty >= threshold)
+  // threshold > 1 (no > 0): "desde 1 pieza" no es un descuento real por
+  // volumen (ver wholesaleNoteHTML) — sin esto, un precio pensado solo
+  // para clientes de mayoreo/distribuidores se le cobraba de menos a
+  // cualquier cliente general (tienda pública o POS) desde la 1a pieza.
+  item.price = (threshold > 1 && Number.isFinite(wholesalePrice) && wholesalePrice > 0 && item.qty >= threshold)
     ? wholesalePrice
     : item.basePrice;
 }
@@ -7267,7 +7288,15 @@ function getCartTotalNum() {
   return applyIva ? subtotal * 1.16 : subtotal;
 }
 
-function requireCajaAbierta() {
+async function requireCajaAbierta() {
+  if (cajaActual) return true;
+  // cajaActual es un valor en memoria que solo se refresca al cargar la
+  // página o al cambiar de sucursal en el selector — si otra persona abrió
+  // la caja DESPUÉS de que esta sesión cargó el POS, se queda desactualizado
+  // y bloqueaba la venta aunque la caja sí estuviera abierta. Se confirma
+  // con el servidor antes de bloquear, en vez de confiar ciegamente en el
+  // valor en memoria.
+  await loadCajaActual();
   if (cajaActual) return true;
   alert('Abre la caja antes de realizar ventas. Usa el botón "Abrir Caja".');
   return false;
@@ -7387,9 +7416,9 @@ async function generateQuotePdf() {
   }
 }
 
-function openCheckoutModal() {
+async function openCheckoutModal() {
   if (cart.length === 0) return alert('Agrega productos al carrito primero.');
-  if (!requireCajaAbierta()) return;
+  if (!(await requireCajaAbierta())) return;
   const total = getCartTotalNum();
   document.getElementById('checkoutTotalAmount').textContent = fmtMoney(total);
   document.getElementById('cashGivenInput').value = Math.ceil(total);
@@ -7428,8 +7457,8 @@ function calculateChange() {
   document.getElementById('cashChangeAmount').textContent = fmtMoney(change);
 }
 
-function confirmPOSSale() {
-  if (!requireCajaAbierta()) { closeCheckoutModal(); return; }
+async function confirmPOSSale() {
+  if (!(await requireCajaAbierta())) { closeCheckoutModal(); return; }
   const total = getCartTotalNum();
   const given = parseFloat(document.getElementById('cashGivenInput').value) || total;
   const change = Math.max(0, given - total);
@@ -8751,6 +8780,37 @@ function renderStockTable(){
 
 // DYNAMIC PRODUCTS SYNC FROM PRESTASHOP & SUPABASE API
 let liveProducts = [];
+
+// Catálogo COMPLETO (activos + inactivos) para el panel "Catálogo de
+// Productos" del admin — liveProducts (arriba) se queda solo con activos a
+// propósito, porque también lo usan el POS y la tienda pública para vender
+// (nunca debe poder venderse algo desactivado). Ver api/productos-admin.js.
+let adminCatalogProducts = [];
+
+function adminCatalogDataset() {
+  return adminCatalogProducts.length > 0 ? adminCatalogProducts : (liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA);
+}
+
+async function loadAdminCatalogProducts() {
+  try {
+    const r = await fetch('/api/productos-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(getSessionCredsParams())
+    });
+    const data = await r.json();
+    if (!r.ok || !Array.isArray(data.products)) return;
+    adminCatalogProducts = data.products.map(p => ({
+      ...p,
+      cat: (p.categoryLabel || 'general').toLowerCase(),
+      catLabel: p.categoryLabel || 'General',
+      status: p.active === false ? 'Inactivo' : 'Activo'
+    }));
+    if (document.getElementById('catalogTableBody')) renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
+  } catch (e) {
+    console.log('No se pudo cargar el catálogo completo del admin:', e.message);
+  }
+}
 // Mientras esto sigue en false, la tienda pública muestra un esqueleto de
 // carga en vez de PRODUCTS_DATA (datos de ejemplo pensados para el POS
 // interno) — antes se veían fotos de stock genéricas ("balloons", "concert",
@@ -8928,15 +8988,50 @@ function renderDynamicCatPills(){
 }
 
 // RENDER PRODUCTS TABLE IN CATALOG VIEW
+// Clic en "Nombre del Producto" / "Precio (MXN)" / "Estado" (encabezados de
+// la tabla, ver renderCatalogTable) — alterna asc/desc igual que en una
+// hoja de cálculo, ordena la lista real (no solo lo que se ve en pantalla).
+let catalogSortKey = null;
+let catalogSortDir = 'asc';
+
+function sortCatalogBy(key){
+  if (catalogSortKey === key) catalogSortDir = catalogSortDir === 'asc' ? 'desc' : 'asc';
+  else { catalogSortKey = key; catalogSortDir = 'asc'; }
+  renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
+}
+
+function updateCatalogSortArrows(){
+  ['nombre', 'precio', 'estado'].forEach(key => {
+    const el = document.getElementById('catalogSortArrow-' + key);
+    if (!el) return;
+    el.textContent = catalogSortKey === key ? (catalogSortDir === 'asc' ? '▲' : '▼') : '';
+  });
+}
+
+const CATALOG_SORT_COMPARATORS = {
+  nombre: (a, b) => a.name.localeCompare(b.name),
+  precio: (a, b) => (a.price || 0) - (b.price || 0),
+  estado: (a, b) => (a.status === 'Inactivo' ? 1 : 0) - (b.status === 'Inactivo' ? 1 : 0)
+};
+
 function renderCatalogTable(category = 'all', query = ''){
   const tbody = document.getElementById('catalogTableBody');
   if(!tbody) return;
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  updateCatalogSortArrows();
+  const dataset = adminCatalogDataset();
+  const statusFilter = document.getElementById('catalogStatusFilter')?.value || 'activos';
   const filtered = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
-    return matchCat && matchQ;
+    const matchQ = !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)) || (p.barcode && p.barcode.includes(query));
+    const isInactive = p.status === 'Inactivo';
+    const matchStatus = statusFilter === 'todos' || (statusFilter === 'activos' ? !isInactive : isInactive);
+    return matchCat && matchQ && matchStatus;
   });
+
+  if (catalogSortKey && CATALOG_SORT_COMPARATORS[catalogSortKey]) {
+    const cmp = CATALOG_SORT_COMPARATORS[catalogSortKey];
+    filtered.sort((a, b) => catalogSortDir === 'asc' ? cmp(a, b) : cmp(b, a));
+  }
 
   if(filtered.length === 0){
     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:20px;">Sin productos registrados.</td></tr>';
@@ -8948,6 +9043,13 @@ function renderCatalogTable(category = 'all', query = ''){
     const pillClass = isInactive ? 'bad' : 'ok';
     const statusText = p.status || 'Activo';
     const pUrl = p.url || `https://mifiestashop.com/producto/${p.sku || p.id}`;
+    // Igual que en PrestaShop: desactivado no significa borrado — solo deja
+    // de poder venderse. El botón aquí es la forma rápida de prender/apagar
+    // sin abrir el editor completo (que también puede cambiar el estado,
+    // con la casilla "Estado").
+    const toggleBtn = isInactive
+      ? `<button class="btn small" style="margin-left:4px; color:#0f9d58;" onclick="toggleProductoActivo('${p.id}', true)" title="Activar producto">Activar</button>`
+      : `<button class="btn small" style="margin-left:4px; color:#dc2626;" onclick="toggleProductoActivo('${p.id}', false)" title="Desactivar producto">Desactivar</button>`;
 
     return `
       <tr>
@@ -8965,6 +9067,7 @@ function renderCatalogTable(category = 'all', query = ''){
         <td><span class="pill ${pillClass}">${statusText}</span></td>
         <td style="text-align:center; white-space:nowrap;">
           <button class="btn small primary" onclick="openEditProductModal('${p.id}')"> Editar</button>
+          ${toggleBtn}
           <button class="btn small secondary" style="margin-left:4px;" onclick="window.open('${pUrl}', '_blank')" title="Abrir URL pública del producto">URL</button>
           <button class="btn small" style="margin-left:4px;" onclick="goToProductAnalytics('${p.id}')" title="Ver análisis de ventas mensuales">Ventas</button>
           <button class="btn small danger" style="margin-left:4px;" onclick="deleteProduct('${p.id}')"></button>
@@ -8974,15 +9077,48 @@ function renderCatalogTable(category = 'all', query = ''){
   }).join('');
 }
 
+// Prender/apagar un producto desde la tabla (ver api/producto-activo.js) —
+// solo toca el estado, sin arriesgar pisar descripción/fotos/precios como
+// pasaría reusando el guardado completo del editor.
+async function toggleProductoActivo(id, nuevoActivo){
+  const accion = nuevoActivo ? 'activar' : 'desactivar';
+  if (!confirm(`¿Seguro que quieres ${accion} este producto?`)) return;
+  try {
+    const r = await fetch('/api/producto-activo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), id, activo: nuevoActivo })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.ok) { alert('No se pudo cambiar el estado: ' + (data.error || 'error desconocido')); return; }
+
+    const prod = adminCatalogProducts.find(p => String(p.id) === String(id));
+    if (prod) { prod.active = nuevoActivo; prod.status = nuevoActivo ? 'Activo' : 'Inactivo'; }
+
+    // liveProducts (POS/tienda pública) al día sin esperar a la próxima
+    // carga de /api/productos: desactivado deja de poder venderse ya mismo;
+    // activado vuelve a aparecer sin recargar la página.
+    const idxLive = liveProducts.findIndex(p => String(p.id) === String(id));
+    if (!nuevoActivo && idxLive !== -1) liveProducts.splice(idxLive, 1);
+    else if (nuevoActivo && idxLive === -1 && prod) liveProducts.push({ ...prod });
+
+    renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
+    renderProducts('all');
+    renderStorefrontProducts('all');
+  } catch (e) {
+    alert('No se pudo cambiar el estado: ' + e.message);
+  }
+}
+
 // PRODUCT EDITOR MODAL CONTROLLER (EXTENDED ATTRIBUTES & LIVE URL)
 function openEditProductModal(pId) {
   const modal = document.getElementById('editProductModal');
   const title = document.getElementById('editProductModalTitle');
   if (!modal) return;
 
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const prod = (pId !== null && pId !== undefined && pId !== 'null' && pId !== '') 
-    ? dataset.find(p => String(p.id) === String(pId)) 
+  const dataset = adminCatalogDataset();
+  const prod = (pId !== null && pId !== undefined && pId !== 'null' && pId !== '')
+    ? dataset.find(p => String(p.id) === String(pId))
     : null;
 
   document.getElementById('editProdId').value = prod ? prod.id : '';
@@ -9057,7 +9193,7 @@ async function uploadProductPhoto(input) {
   }
 }
 
-function saveProductChanges() {
+async function saveProductChanges() {
   if (productPhotoUploading) { alert('Espera a que termine de subir la foto.'); return; }
   const pIdVal = document.getElementById('editProdId').value;
   const sku = (document.getElementById('editProdSku').value || '').trim();
@@ -9080,7 +9216,7 @@ function saveProductChanges() {
     return;
   }
 
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const dataset = adminCatalogDataset();
   let targetProd = null;
 
   if (pIdVal) {
@@ -9122,8 +9258,17 @@ function saveProductChanges() {
       url: prodUrl,
       desc: desc
     };
-    if (liveProducts.length > 0) liveProducts.unshift(targetProd);
-    else PRODUCTS_DATA.unshift(targetProd);
+    if (adminCatalogProducts.length > 0) adminCatalogProducts.unshift(targetProd);
+    else if (liveProducts.length === 0) PRODUCTS_DATA.unshift(targetProd);
+  }
+
+  // liveProducts (POS/tienda pública) al día con el estado que se acaba de
+  // guardar — antes un producto nuevo se agregaba ahí sin importar el
+  // "Estado" elegido, así que uno creado como Inactivo se podía vender igual.
+  if (targetProd) {
+    const idxLive = liveProducts.findIndex(p => String(p.id) === String(targetProd.id));
+    if (status === 'Inactivo') { if (idxLive !== -1) liveProducts.splice(idxLive, 1); }
+    else if (idxLive === -1) liveProducts.push(targetProd);
   }
 
   // Respaldo legado (costos_productos_publico) — solo lo lee el propio
@@ -9150,26 +9295,44 @@ function saveProductChanges() {
   }
 
   const wasNew = !pIdVal;
-  fetch('/api/guardar-producto', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...getSessionCredsParams(),
-      producto: {
-        id: wasNew ? null : targetProd.id,
-        sku, barcode, name, description: desc,
-        price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
-        categoryLabel: cat, active: status !== 'Inactivo', img,
-        lowStockThreshold: targetProd.lowStockThreshold
-      }
-    })
-  }).then(r => r.json()).then(r => {
-    if (!r.ok) { console.log('No se pudo guardar en catalogo_productos:', r.error); return; }
-    // Si era un producto nuevo, el id real es el que asignó el servidor
-    // (fuera del rango de PrestaShop) — se corrige aquí para que quede
-    // consistente en liveProducts/PRODUCTS_DATA con lo guardado.
-    if (wasNew && targetProd) targetProd.id = r.id;
-  }).catch(e => console.log('No se pudo guardar en catalogo_productos:', e.message));
+  // Antes esto era "fire and forget" (sin esperar la respuesta): el mensaje
+  // de éxito y el cierre del modal salían siempre, aunque el guardado real
+  // en catalogo_productos fallara — el único rastro quedaba en la consola
+  // del navegador, que nadie ve. Ahora si falla se avisa de verdad y el
+  // modal se queda abierto para reintentar, en vez de mentir que se guardó.
+  let saveError = '';
+  try {
+    const r = await fetch('/api/guardar-producto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...getSessionCredsParams(),
+        producto: {
+          id: wasNew ? null : targetProd.id,
+          sku, barcode, name, description: desc,
+          price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
+          categoryLabel: cat, active: status !== 'Inactivo', img,
+          lowStockThreshold: targetProd.lowStockThreshold
+        }
+      })
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      // Si era un producto nuevo, el id real es el que asignó el servidor
+      // (fuera del rango de PrestaShop) — se corrige aquí para que quede
+      // consistente en liveProducts/adminCatalogProducts con lo guardado.
+      if (wasNew && targetProd) targetProd.id = data.id;
+    } else {
+      saveError = data.error || `HTTP ${r.status}`;
+    }
+  } catch (e) {
+    saveError = e.message;
+  }
+
+  if (saveError) {
+    alert('No se pudo guardar el producto: ' + saveError + '. Vuelve a intentarlo.');
+    return;
+  }
 
   renderCatalogTable('all');
   renderProducts('all');
@@ -9181,13 +9344,15 @@ function saveProductChanges() {
 }
 
 function deleteProduct(pId) {
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const dataset = adminCatalogDataset();
   const index = dataset.findIndex(p => String(p.id) === String(pId));
   if (index === -1) return;
 
   const prod = dataset[index];
   if (confirm(`¿Está seguro de que desea eliminar el producto "${prod.name}" (SKU: ${prod.sku})?`)) {
     dataset.splice(index, 1);
+    const idxLive = liveProducts.findIndex(p => String(p.id) === String(pId));
+    if (idxLive !== -1) liveProducts.splice(idxLive, 1);
     renderCatalogTable('all');
     renderProducts('all');
     renderStorefrontProducts('all');
@@ -9199,6 +9364,11 @@ function deleteProduct(pId) {
 if(document.getElementById('catalogSearchInput')){
   document.getElementById('catalogSearchInput').addEventListener('input', (e)=>{
     renderCatalogTable('all', e.target.value);
+  });
+}
+if(document.getElementById('catalogStatusFilter')){
+  document.getElementById('catalogStatusFilter').addEventListener('change', ()=>{
+    renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
   });
 }
 
@@ -9253,7 +9423,7 @@ function renderInventarioTable() {
   if (!tbody) return;
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const q = (document.getElementById('invSearchInput')?.value || '').toLowerCase();
+  const q = normalizeEs(document.getElementById('invSearchInput')?.value || '');
   const wh = document.getElementById('invWhSelect')?.value || 'all';
   const stFilter = document.getElementById('invStatusSelect')?.value || 'all';
 
@@ -9278,7 +9448,7 @@ function renderInventarioTable() {
     totalValueSum += stTotal * p.price;
     if (stTotal < 150) lowStockCount++;
 
-    const matchQ = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+    const matchQ = !q || normalizeEs(p.name).includes(q) || normalizeEs(p.sku).includes(q);
     
     let matchWh = true;
     if (wh === 'puebla') matchWh = stPuebla > 0;
@@ -9366,10 +9536,10 @@ function openKardexForProduct(id) {
 }
 
 function kardexMatches(q) {
-  q = q.trim().toLowerCase();
+  q = normalizeEs(q.trim());
   if (!q) return [];
   const list = liveProducts.length ? liveProducts : PRODUCTS_DATA;
-  return list.filter(p => String(p.id) === q || (p.sku || '').toLowerCase().includes(q) || (p.name || '').toLowerCase().includes(q)).slice(0, 25);
+  return list.filter(p => String(p.id) === q || normalizeEs(p.sku || '').includes(q) || normalizeEs(p.name || '').includes(q)).slice(0, 25);
 }
 
 function kardexSuggest() {
@@ -10250,7 +10420,7 @@ function renderClienteCatalog(query = '') {
   if(!grid) return;
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
 
-  const filtered = dataset.filter(p => !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()));
+  const filtered = dataset.filter(p => !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)));
 
   grid.innerHTML = filtered.slice(0, 12).map(p => `
     <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -10460,7 +10630,7 @@ function renderProducts(category = 'all', query = '') {
 
   const matchedByFilters = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
+    const matchQ = !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
 
@@ -11320,11 +11490,11 @@ function cpAutofillCliente(){
 
 function cpRenderProductResults(){
   const box = document.getElementById('cpProductResults');
-  const q = document.getElementById('cpProductSearch').value.trim().toLowerCase();
+  const q = normalizeEs(document.getElementById('cpProductSearch').value.trim());
   if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const matched = dataset.filter(p => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))).slice(0, 15);
+  const matched = dataset.filter(p => normalizeEs(p.name).includes(q) || (p.sku && normalizeEs(p.sku).includes(q))).slice(0, 15);
 
   if (matched.length === 0) {
     box.innerHTML = `<div style="padding:10px 12px; color:var(--text-muted); font-size:13px;">Sin resultados.</div>`;
@@ -15488,8 +15658,9 @@ function scheduleSearchLog(q) {
     if (key === lastLoggedSearchQuery) return;
     lastLoggedSearchQuery = key;
     const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+    const normKey = normalizeEs(key);
     const resultsCount = dataset.filter(p =>
-      p.name.toLowerCase().includes(key) || (p.sku || '').toLowerCase().includes(key)
+      normalizeEs(p.name).includes(normKey) || normalizeEs(p.sku || '').includes(normKey)
     ).length;
     fetch('/api/log-busqueda', {
       method: 'POST',
@@ -15888,9 +16059,9 @@ function onAnalyticsSearchInput(query) {
 
   const dataset = liveProducts;
   if (dataset.length === 0) return;
-  const filtered = dataset.filter(p => 
-    p.name.toLowerCase().includes(query.toLowerCase()) || 
-    p.sku.toLowerCase().includes(query.toLowerCase())
+  const filtered = dataset.filter(p =>
+    normalizeEs(p.name).includes(normalizeEs(query)) ||
+    normalizeEs(p.sku).includes(normalizeEs(query))
   ).slice(0, 8);
 
   if (filtered.length === 0) {
@@ -16282,6 +16453,7 @@ updateStoreCartBadge();
 if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
 loadCategoriesFromAPI();
+if (document.getElementById('catalogTableBody')) loadAdminCatalogProducts();
 loadCustomersFromAPI();
 loadOrdersFromAPI();
 loadRealProductSales();

@@ -70,16 +70,20 @@ module.exports = async function handler(req, res) {
     barcode: producto.barcode ? String(producto.barcode).trim() : null,
     name,
     description: producto.description ? String(producto.description).trim() : null,
-    description_short: null,
     price: Number.isFinite(Number(producto.price)) ? Number(producto.price) : 0,
-    wholesale_price: Number(producto.priceMayoreo) || null,
-    category_id: null,
+    // Iba como "wholesale_price" — un campo que no existe en esta tabla (ese
+    // nombre es el que usa la propia API de PrestaShop para el costo de
+    // compra; el precio de mayoreo AL CLIENTE aquí se llama "price_mayoreo").
+    // catalogo_productos?columns=wholesale_price -> Supabase rechazaba la
+    // fila entera con HTTP 400, así que hasta ahora NINGÚN guardado desde
+    // este editor había llegado a completarse.
+    price_mayoreo: Number(producto.priceMayoreo) || null,
     active: producto.active !== false,
+    // Igual que api/producto-activo.js: sin esto, el ciclo de sincronización
+    // (cada 10 min, lib/sync-prestashop.js) pisaría este estado con lo que
+    // diga PrestaShop en ese momento.
+    active_override: producto.active !== false,
     low_stock_threshold: Number(producto.lowStockThreshold) || null,
-    meta_title: null,
-    meta_description: null,
-    meta_keywords: null,
-    link_rewrite: null,
     legacy_image_url: producto.img ? String(producto.img).trim() : null,
     // La tienda pública (api/productos.js, lib/productos-supabase.js) lee la
     // foto de "images" (arreglo), nunca de legacy_image_url — ese campo solo
@@ -94,9 +98,28 @@ module.exports = async function handler(req, res) {
     price_volumen: Number(producto.priceVolumen) || null,
     price_distribuidor: Number(producto.priceDistribuidor) || null,
     costo_compra: Number(producto.costoCompra) || null,
-    source: 'manual',
     updated_at: new Date().toISOString()
   };
+  // Este editor no tiene campos para categoría real (numérica), SEO
+  // (meta_title/description/keywords), la liga corta (link_rewrite, de la
+  // que depende la URL pública real del producto — ver lib/url-producto.js)
+  // ni la descripción corta — así que en un producto YA EXISTENTE se dejan
+  // tal cual en vez de guardarlos vacíos: antes se borraban en cada edición
+  // aunque el admin solo hubiera cambiado el precio.
+  if (isNew) {
+    row.description_short = null;
+    row.category_id = null;
+    row.meta_title = null;
+    row.meta_description = null;
+    row.meta_keywords = null;
+    row.link_rewrite = null;
+    // Un producto real de PrestaShop no debe dejar de sincronizarse solo
+    // porque se editó aquí una vez — el próximo ciclo de
+    // lib/sync-prestashop.js (cada 10 min) lo pisaría de cualquier forma,
+    // volviendo su "source" a 'prestashop'. "manual" es correcto solo para
+    // uno creado aquí desde cero, que PrestaShop nunca va a traer.
+    row.source = 'manual';
+  }
 
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_productos?on_conflict=id`, {
