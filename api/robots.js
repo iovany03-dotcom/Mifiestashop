@@ -5,6 +5,9 @@ module.exports = async function handler(req, res) {
   const siteOrigin = `https://${req.headers.host}`;
   const body = `User-agent: *
 Allow: /
+Disallow: /*SubmitCurrency=
+Disallow: /*id_currency=
+Disallow: /*order=product.
 
 Sitemap: ${siteOrigin}/sitemap.xml
 `;

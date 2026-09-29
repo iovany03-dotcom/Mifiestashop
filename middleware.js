@@ -181,22 +181,33 @@ function finalize(html, origin, status) {
   return new Response(html, { status, headers });
 }
 
+function isPrestashopFacetQuery(params) {
+  if (params.has('SubmitCurrency') || params.has('id_currency')) return true;
+  if (/^product\./.test(params.get('order') || '')) return true;
+  return /^Categor[ií]as-/i.test(params.get('q') || '');
+}
+
+function goneFacet(url) {
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="robots" content="noindex"><title>Página no disponible | Mi Fiestashop</title></head>` +
+    `<body style="font-family:sans-serif;text-align:center;padding:40px;"><p>Esta liga de filtros ya no existe.</p><p><a href="${escapeAttr(url.pathname)}">Ver los productos</a></p></body></html>`;
+  return new Response(html, {
+    status: 410,
+    headers: { 'Content-Type': 'text/html; charset=utf-8', 'X-Robots-Tag': 'noindex', 'Cache-Control': 'public, max-age=86400' }
+  });
+}
+
 export default async function middleware(request) {
   if (request.headers.get(BYPASS_HEADER)) return; // ya es la re-petición interna: no reprocesar
 
   const url = new URL(request.url);
-  // TEMPORAL (sep 2026): algo carga /266-productos ~1,000 veces por minuto.
-  // Se registra 1 de cada 50 visitas con los datos para identificarlo.
-  if (url.pathname === '/266-productos' && Math.random() < 0.02) {
-    const h = request.headers;
-    console.log('diag266 ' + JSON.stringify({
-      ip: (h.get('x-forwarded-for') || '').split(',')[0].trim() || h.get('x-real-ip'),
-      ua: h.get('user-agent'), ref: h.get('referer'), lang: h.get('accept-language'),
-      pais: h.get('x-vercel-ip-country'), region: h.get('x-vercel-ip-country-region'), ciudad: h.get('x-vercel-ip-city'),
-      asn: h.get('x-vercel-ip-as-number'), ja4: h.get('x-vercel-ja4-digest'), chua: h.get('sec-ch-ua'),
-      q: url.search, cookie: !!h.get('cookie'), purpose: h.get('purpose') || h.get('sec-purpose')
-    }));
-  }
+  // Filtros viejos de PrestaShop (?SubmitCurrency=1&id_currency=2&order=
+  // product.name.desc&q=Categorías-Globos-Velas...): desde el 28 de sep.
+  // 2026 un robot con miles de IPs (proxies residenciales de todo el
+  // mundo) recorre todas las combinaciones sobre /266-productos, ~1,000
+  // cargas por minuto. El sitio nuevo no usa esos parámetros: se contesta
+  // 410 al instante, sin consultar Supabase ni cargar la tienda (y le dice
+  // a Google que esas ligas ya no existen).
+  if (isPrestashopFacetQuery(url.searchParams)) return goneFacet(url);
   // Fotos con la liga vieja de PrestaShop (/{id_imagen}-large_default/x.jpg):
   // no hay forma de saber a qué producto corresponden — 404 real en vez de
   // la portada.
