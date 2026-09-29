@@ -2692,6 +2692,7 @@
         <a class="submenu-link" data-view="facturacion">Facturación</a>
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
+        <a class="submenu-link" data-view="embudo">Embudo de compra</a>
         <a class="submenu-link" data-view="promociones">Promociones</a>
       </div>
     </div>
@@ -3543,6 +3544,98 @@
           </table>
         </div>
         <div id="kxFoot" style="font-size:12px; color:var(--text-muted); margin-top:8px;"></div>
+      </div>
+    </section>
+
+    <!-- ================= EMBUDO DE COMPRA ================= -->
+    <section id="view-embudo" class="view-panel hidden">
+      <div class="card">
+        <div style="margin-bottom:14px;">
+          <h2 style="margin:0 0 4px;">Embudo de compra</h2>
+          <div style="font-size:13px; color:var(--text-muted);">Cuántos visitantes de la tienda en línea llegan a cada paso de la compra y en cuál se van. Anónimo, sin datos personales; no cuenta los navegadores con sesión del equipo.</div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px;">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Periodo</label>
+            <select id="embRango" onchange="loadEmbudo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="hoy" selected>Hoy</option>
+              <option value="ayer">Ayer</option>
+              <option value="7">Últimos 7 días</option>
+              <option value="30">Últimos 30 días</option>
+              <option value="90">Últimos 90 días</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">De dónde llegaron</label>
+            <select id="embOrigen" onchange="renderEmbudo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Dispositivo</label>
+            <select id="embDispositivo" onchange="renderEmbudo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="">Todos</option>
+              <option value="movil">Celular</option>
+              <option value="escritorio">Computadora</option>
+              <option value="tablet">Tablet</option>
+            </select>
+          </div>
+          <button class="btn primary" onclick="loadEmbudo()">Actualizar</button>
+        </div>
+        <div class="kpis" id="embKpis" style="margin-bottom:16px;"></div>
+        <div id="embInsight" style="margin-bottom:14px;"></div>
+        <div id="embFunnel"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin:0 0 10px; font-size:1.05rem;">Por origen de la visita</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Origen</th><th>Visitas</th><th>Agregaron al carrito</th><th>Iniciaron pago</th><th>Fueron a pagar</th><th>Compraron</th><th>Conversión</th></tr></thead>
+            <tbody id="embOrigenBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px;">
+        <div class="card" style="margin:0;">
+          <h2 style="margin:0 0 4px; font-size:1.05rem;">Errores que vieron en el checkout</h2>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Mensajes que les salieron al intentar pagar.</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Mensaje</th><th>Veces</th><th>Visitantes</th></tr></thead>
+              <tbody id="embErroresBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="margin:0;">
+          <h2 style="margin:0 0 4px; font-size:1.05rem;">Productos que dejaron en el carrito</h2>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Agregados al carrito en visitas que no terminaron en compra.</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Producto</th><th>Visitantes</th><th>Piezas</th></tr></thead>
+              <tbody id="embAbandonadosBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <div>
+            <h2 style="margin:0 0 4px; font-size:1.05rem;">Visitas una por una</h2>
+            <div style="font-size:12px; color:var(--text-muted);">Hasta dónde llegó cada visita (las más recientes primero). Clic en "Ver recorrido" para ver cada paso.</div>
+          </div>
+          <label style="font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;">
+            <input type="checkbox" id="embSoloCarrito" checked onchange="renderEmbudo()"> Solo las que agregaron algo al carrito
+          </label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Última actividad</th><th>Origen</th><th>Dispositivo</th><th>Llegó hasta</th><th>Valor</th><th>Pasos</th><th></th></tr></thead>
+            <tbody id="embSesionesBody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -5899,7 +5992,8 @@ const PERMISSION_GROUPS = [
     { key: 'envios', label: 'Envíos & Skydropx' },
     { key: 'facturacion', label: 'Facturación' },
     { key: 'costos', label: 'Costos y Gastos' },
-    { key: 'carritos', label: 'Carritos de Compra' }
+    { key: 'carritos', label: 'Carritos de Compra' },
+    { key: 'embudo', label: 'Embudo de compra' }
   ]},
   { group: 'Caja (dentro de Sistema POS)', items: [
     { key: 'caja-puebla', label: 'Acceso a caja: Puebla' },
@@ -6090,20 +6184,158 @@ function trackVirtualPageView() {
   fbq('track', 'PageView');
 }
 
+// ================= EMBUDO DE COMPRA (rastreo propio por visitante) =================
+// Registra cada paso que da un visitante de la tienda pública (visita, ver
+// producto, agregar al carrito, ver carrito, iniciar pago, cotizar envío,
+// pedido creado, compra, errores del checkout) en eventos_tienda vía
+// /api/evento — el panel "Embudo de compra" del admin muestra en qué paso
+// se queda cada uno. A diferencia del píxel de Meta, no lo bloquean los
+// bloqueadores de anuncios ni depende de la configuración de Meta, y se ve
+// sesión por sesión. Anónimo: un id aleatorio por navegador, nunca el
+// nombre/correo/teléfono del cliente. No corre en el admin/POS.
+const FUNNEL_SESSION_IDLE_MS = 30 * 60 * 1000;
+let funnelQueue = [];
+let funnelTimer = null;
+let funnelLastPath = null;
+
+function funnelRandomId() {
+  return (window.crypto && crypto.randomUUID) ? crypto.randomUUID().replace(/-/g, '') : (Date.now().toString(36) + Math.random().toString(36).slice(2, 14));
+}
+
+// De dónde llegó la visita, con base en la URL de entrada (utm, fbclid,
+// gclid) o el sitio de donde venía — solo al iniciar una sesión nueva.
+function funnelDetectOrigin() {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const utm = (q.get('utm_source') || '').toLowerCase();
+    const ref = (document.referrer || '').toLowerCase();
+    const refHost = ref ? new URL(ref).hostname : '';
+    if (refHost && refHost.endsWith(window.location.hostname.replace(/^www\./, ''))) return null;
+    // Regreso de Mercado Pago: es la misma visita que hizo el checkout, no
+    // una nueva que "viene de otro sitio".
+    if (q.get('mp_status') || /mercadopago|mercadolibre|mercadolivre/.test(refHost)) return null;
+    if (/instagram|^ig$/.test(utm) || refHost.includes('instagram')) return 'instagram';
+    if (/facebook|^fb$|meta/.test(utm) || q.get('fbclid') || refHost.includes('facebook') || refHost === 'fb.me') return 'facebook';
+    if (/google/.test(utm) || q.get('gclid') || refHost.includes('google.')) return 'google';
+    if (/tiktok/.test(utm) || refHost.includes('tiktok')) return 'tiktok';
+    if (/whatsapp|wa/.test(utm) || refHost.includes('whatsapp')) return 'whatsapp';
+    if (/mail|newsletter/.test(utm) || refHost.includes('mail')) return 'email';
+    if (utm || refHost) return 'otro';
+    return 'directo';
+  } catch (e) { return 'directo'; }
+}
+
+function funnelDevice() {
+  const ua = navigator.userAgent || '';
+  if (/iPad|Tablet/i.test(ua)) return 'tablet';
+  if (/Mobi|Android|iPhone/i.test(ua)) return 'movil';
+  return 'escritorio';
+}
+
+function funnelSession() {
+  let vid = null, sid = null, origin = null;
+  try {
+    vid = localStorage.getItem('mf_vid');
+    if (!vid) { vid = funnelRandomId(); localStorage.setItem('mf_vid', vid); }
+    const now = Date.now();
+    const last = Number(localStorage.getItem('mf_sid_ts') || 0);
+    sid = localStorage.getItem('mf_sid');
+    origin = localStorage.getItem('mf_sid_origen');
+    const fresh = funnelDetectOrigin();
+    // Sesión nueva tras 30 min sin actividad, o si llega de una campaña/
+    // sitio distinto al de la sesión actual (otro anuncio = otra visita).
+    if (!sid || now - last > FUNNEL_SESSION_IDLE_MS || (fresh && fresh !== 'directo' && fresh !== origin)) {
+      sid = funnelRandomId();
+      origin = fresh || 'directo';
+      localStorage.setItem('mf_sid', sid);
+      localStorage.setItem('mf_sid_origen', origin);
+    }
+    localStorage.setItem('mf_sid_ts', String(now));
+  } catch (e) { return null; }
+  return { vid, sid, origin };
+}
+
+function flushFunnel() {
+  if (funnelTimer) { clearTimeout(funnelTimer); funnelTimer = null; }
+  if (funnelQueue.length === 0) return;
+  const body = JSON.stringify({ events: funnelQueue.splice(0, 50) });
+  try {
+    if (navigator.sendBeacon && navigator.sendBeacon('/api/evento', new Blob([body], { type: 'text/plain' }))) return;
+  } catch (e) {}
+  fetch('/api/evento', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body, keepalive: true }).catch(() => {});
+}
+
+// productId/valor/datos opcionales. `urgente`: se manda ya (antes de salir a
+// Mercado Pago o al completar una compra), no con el lote de 2 s.
+function trackFunnel(evento, { productId, valor, datos, urgente } = {}) {
+  if (window.location.pathname.startsWith('/admin')) return;
+  if (navigator.webdriver) return;
+  // Navegador del equipo (hay sesión de admin o de personal guardada): sus
+  // pruebas en la tienda no deben contar como clientes en el embudo.
+  if (getAdminPassword() || getStaffCreds()) return;
+  const ses = funnelSession();
+  if (!ses) return;
+  funnelQueue.push({
+    v: ses.vid, s: ses.sid, e: evento, p: window.location.pathname, t: Date.now(),
+    pid: productId, val: valor, o: ses.origin, dv: funnelDevice(), d: datos
+  });
+  if (urgente || funnelQueue.length >= 20) { flushFunnel(); return; }
+  if (!funnelTimer) funnelTimer = setTimeout(flushFunnel, 2000);
+}
+
+function trackFunnelPageView() {
+  const path = window.location.pathname;
+  if (path === funnelLastPath) return;
+  funnelLastPath = path;
+  trackFunnel('visita');
+}
+
+window.addEventListener('pagehide', flushFunnel);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushFunnel(); });
+
+// Mismos momentos que ya reporta el píxel de Meta -> paso del embudo.
+const PIXEL_TO_FUNNEL = {
+  ViewContent: 'ver_producto', AddToCart: 'agregar_carrito', InitiateCheckout: 'iniciar_checkout',
+  Purchase: 'compra', Search: 'buscar', Contact: 'contacto', CompleteRegistration: 'registro', Lead: 'newsletter'
+};
+
+function funnelFromPixel(eventName, params) {
+  const evento = PIXEL_TO_FUNNEL[eventName];
+  if (!evento) return;
+  const p = params || {};
+  const ids = Array.isArray(p.content_ids) ? p.content_ids : [];
+  const datos = {};
+  if (p.content_name) datos.nombre = String(p.content_name);
+  if (p.search_string) datos.busqueda = String(p.search_string);
+  if (p.num_items) datos.piezas = p.num_items;
+  if (evento === 'agregar_carrito') {
+    const c = Array.isArray(p.contents) && p.contents[0];
+    datos.cantidad = (c && c.quantity) || 1;
+  }
+  trackFunnel(evento, {
+    productId: ids.length === 1 ? ids[0] : undefined,
+    valor: p.value,
+    datos,
+    urgente: evento === 'compra'
+  });
+}
+
 (function hookPixelNavigation() {
   const origPushState = history.pushState;
   history.pushState = function () {
     const result = origPushState.apply(this, arguments);
     trackVirtualPageView();
+    trackFunnelPageView();
     return result;
   };
-  window.addEventListener('popstate', trackVirtualPageView);
+  window.addEventListener('popstate', () => { trackVirtualPageView(); trackFunnelPageView(); });
 })();
 
 // eventId (opcional): el mismo id que manda el servidor por la API de
 // Conversiones, para que Meta cuente UN solo evento y no dos.
 function trackPixelEvent(eventName, params, eventId) {
   if (!pixelAllowedHere()) return;
+  funnelFromPixel(eventName, params);
   if (window.fbq) { eventId ? fbq('track', eventName, params || {}, { eventID: eventId }) : fbq('track', eventName, params || {}); return; }
   // Config aún cargando: se guarda (con tope) y se manda al iniciar el píxel.
   if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {}, eventId });
@@ -7064,6 +7296,7 @@ function switchView(viewName) {
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
+    embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
     productos: ['Catálogo de Productos', 'Gestión del Catálogo'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
@@ -7104,6 +7337,7 @@ function switchView(viewName) {
   // Auto-fetch API data when opening specific views
   if (viewName === 'categorias') loadCategoriesFromAPI();
   if (viewName === 'movimientos') initKardexView();
+  if (viewName === 'embudo') loadEmbudo();
   if (viewName === 'paginas-cms') loadCmsPagesAdmin();
   if (viewName === 'resenas-clientes') loadResenasAdmin();
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
@@ -9518,6 +9752,221 @@ function renderInventarioTable() {
 function syncInventoryData() {
   renderInventarioTable();
   alert('Inventario por almacén sincronizado correctamente.');
+}
+
+// ================= EMBUDO DE COMPRA (panel del admin) =================
+// Datos: api/embudo.js, a partir de eventos_tienda (ver trackFunnel()).
+// El embudo cuenta VISITAS (sesiones): cada una suma en todos los pasos
+// hasta el más lejano al que llegó.
+const EMBUDO_PASOS = [
+  { n: 1, label: 'Visitaron la tienda' },
+  { n: 2, label: 'Vieron un producto' },
+  { n: 3, label: 'Agregaron al carrito' },
+  { n: 4, label: 'Vieron su carrito' },
+  { n: 5, label: 'Iniciaron el pago' },
+  { n: 6, label: 'Cotizaron su envío' },
+  { n: 7, label: 'Crearon su pedido' },
+  { n: 8, label: 'Compraron' }
+];
+const EMBUDO_ORIGENES = { facebook: 'Facebook', instagram: 'Instagram', google: 'Google', tiktok: 'TikTok', whatsapp: 'WhatsApp', email: 'Correo', otro: 'Otro sitio', directo: 'Directo / sin origen' };
+const EMBUDO_DISPOSITIVOS = { movil: 'Celular', escritorio: 'Computadora', tablet: 'Tablet', desconocido: '—' };
+const EMBUDO_EVENTOS = {
+  visita: 'Abrió una página', ver_producto: 'Vio un producto', buscar: 'Buscó', agregar_carrito: 'Agregó al carrito',
+  ver_carrito: 'Vio su carrito', iniciar_checkout: 'Inició el pago', cotizar_envio: 'Cotizó envío',
+  elegir_envio: 'Eligió paquetería', error_checkout: 'Le salió un error', pedido_creado: 'Creó su pedido',
+  ir_a_pago: 'Se fue a Mercado Pago', compra: 'Compró', pago_pendiente: 'Pago pendiente',
+  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel.)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
+};
+let embudoData = null;
+
+function embudoRango() {
+  const r = document.getElementById('embRango')?.value || 'hoy';
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const manana = new Date(hoy); manana.setDate(manana.getDate() + 1);
+  if (r === 'hoy') return { desde: hoy, hasta: manana };
+  if (r === 'ayer') { const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1); return { desde: ayer, hasta: hoy }; }
+  const desde = new Date(hoy); desde.setDate(desde.getDate() - (parseInt(r, 10) - 1));
+  return { desde, hasta: manana };
+}
+
+async function loadEmbudo() {
+  const funnel = document.getElementById('embFunnel');
+  if (!funnel) return;
+  funnel.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">Cargando…</div>';
+  const { desde, hasta } = embudoRango();
+  try {
+    const r = await fetch('/api/embudo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), accion: 'resumen', desde: desde.toISOString(), hasta: hasta.toISOString() })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    embudoData = data;
+  } catch (e) {
+    embudoData = null;
+    funnel.innerHTML = `<div style="padding:20px; text-align:center; color:#dc2626;">No se pudo cargar el embudo: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  // Orígenes que de verdad aparecen en este periodo.
+  const sel = document.getElementById('embOrigen');
+  const prev = sel.value;
+  const origenes = [...new Set((embudoData.filas || []).map(f => f.origen))];
+  sel.innerHTML = '<option value="">Todos</option>' + origenes.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(EMBUDO_ORIGENES[o] || o)}</option>`).join('');
+  if (origenes.includes(prev)) sel.value = prev;
+  renderEmbudo();
+}
+
+function embudoConteos(filas) {
+  // conteo[n] = visitas que llegaron al menos al paso n.
+  const conteo = {};
+  EMBUDO_PASOS.forEach(p => { conteo[p.n] = 0; });
+  filas.forEach(f => EMBUDO_PASOS.forEach(p => { if (f.max_paso >= p.n) conteo[p.n] += Number(f.sesiones) || 0; }));
+  return conteo;
+}
+
+function embudoPct(a, b) { return b > 0 ? (a / b * 100) : 0; }
+
+function renderEmbudo() {
+  if (!embudoData) return;
+  const origen = document.getElementById('embOrigen')?.value || '';
+  const disp = document.getElementById('embDispositivo')?.value || '';
+  const filas = (embudoData.filas || []).filter(f => (!origen || f.origen === origen) && (!disp || f.dispositivo === disp));
+  const c = embudoConteos(filas);
+  const visitas = c[1];
+
+  document.getElementById('embKpis').innerHTML = `
+    <div class="kpi-card"><div class="label">Visitas</div><div class="value">${fmtNum(visitas)}</div><div class="sub">sesiones en la tienda</div></div>
+    <div class="kpi-card"><div class="label">Agregaron al carrito</div><div class="value">${fmtNum(c[3])}</div><div class="sub">${embudoPct(c[3], visitas).toFixed(1)}% de las visitas</div></div>
+    <div class="kpi-card"><div class="label">Iniciaron el pago</div><div class="value">${fmtNum(c[5])}</div><div class="sub">${embudoPct(c[5], c[3]).toFixed(0)}% de los que agregaron</div></div>
+    <div class="kpi-card"><div class="label">Compraron</div><div class="value">${fmtNum(c[8])}</div><div class="sub">${embudoPct(c[8], visitas).toFixed(2)}% de conversión</div></div>`;
+
+  if (visitas === 0) {
+    document.getElementById('embFunnel').innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">Todavía no hay visitas registradas en este periodo. El registro empieza a partir de que se publicó esta herramienta.</div>';
+    document.getElementById('embInsight').innerHTML = '';
+  } else {
+    // El paso (después de entrar a la tienda) donde se pierde el mayor % de
+    // los que llegaron al anterior — el cuello de botella a atacar.
+    let peor = null;
+    for (let i = 2; i < EMBUDO_PASOS.length; i++) {
+      const antes = c[EMBUDO_PASOS[i - 1].n], ahora = c[EMBUDO_PASOS[i].n];
+      if (antes < 3) continue;
+      const perdida = 100 - embudoPct(ahora, antes);
+      if (!peor || perdida > peor.perdida) peor = { perdida, de: EMBUDO_PASOS[i - 1].label, a: EMBUDO_PASOS[i].label, se: antes - ahora };
+    }
+    document.getElementById('embInsight').innerHTML = peor ? `
+      <div style="padding:12px 14px; border-radius:10px; background:rgba(220,38,38,0.07); border:1px solid rgba(220,38,38,0.25); font-size:13px;">
+        <b>Donde más se van:</b> de "${escapeHtml(peor.de)}" a "${escapeHtml(peor.a)}" — ${fmtNum(peor.se)} visitas (${peor.perdida.toFixed(0)}%) no siguieron.
+      </div>` : '';
+
+    document.getElementById('embFunnel').innerHTML = EMBUDO_PASOS.map((p, i) => {
+      const n = c[p.n];
+      const ancho = Math.max(embudoPct(n, visitas), n > 0 ? 1.5 : 0);
+      const prevN = i > 0 ? c[EMBUDO_PASOS[i - 1].n] : null;
+      const perdidos = prevN !== null ? prevN - n : 0;
+      return `
+        <div style="display:grid; grid-template-columns:minmax(150px, 210px) 1fr; gap:12px; align-items:center; margin-bottom:10px;">
+          <div style="font-size:13px; font-weight:600;">${p.n}. ${p.label}</div>
+          <div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:1; background:var(--plane, rgba(0,0,0,0.05)); border-radius:6px; height:26px; overflow:hidden;">
+                <div style="width:${ancho}%; height:100%; background:${p.n === 8 ? '#15a34a' : 'var(--mf-pink, #d3007b)'}; border-radius:6px;"></div>
+              </div>
+              <div style="min-width:110px; font-size:13px; text-align:right;"><b>${fmtNum(n)}</b> · ${embudoPct(n, visitas).toFixed(1)}%</div>
+            </div>
+            ${prevN !== null && perdidos > 0 ? `<div style="font-size:11.5px; color:#b45309; margin-top:3px;">− ${fmtNum(perdidos)} se fueron antes de este paso (${(100 - embudoPct(n, prevN)).toFixed(0)}% de los que llegaron al anterior)</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // Por origen (respetando el filtro de dispositivo).
+  const porOrigen = {};
+  (embudoData.filas || []).filter(f => !disp || f.dispositivo === disp).forEach(f => { (porOrigen[f.origen] = porOrigen[f.origen] || []).push(f); });
+  const origenRows = Object.entries(porOrigen).map(([o, fs]) => ({ o, c: embudoConteos(fs) })).sort((a, b) => b.c[1] - a.c[1]);
+  document.getElementById('embOrigenBody').innerHTML = origenRows.length ? origenRows.map(({ o, c: oc }) => `
+    <tr>
+      <td><b>${escapeHtml(EMBUDO_ORIGENES[o] || o)}</b></td>
+      <td>${fmtNum(oc[1])}</td>
+      <td>${fmtNum(oc[3])} <span style="color:var(--text-muted); font-size:12px;">(${embudoPct(oc[3], oc[1]).toFixed(1)}%)</span></td>
+      <td>${fmtNum(oc[5])}</td>
+      <td>${fmtNum(oc[7])}</td>
+      <td><b>${fmtNum(oc[8])}</b></td>
+      <td>${embudoPct(oc[8], oc[1]).toFixed(2)}%</td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:14px;">Sin datos.</td></tr>';
+
+  const errores = embudoData.errores || [];
+  document.getElementById('embErroresBody').innerHTML = errores.length ? errores.map(e => `
+    <tr><td>${escapeHtml(e.mensaje)}</td><td>${fmtNum(e.veces)}</td><td>${fmtNum(e.sesiones)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Ningún error en este periodo.</td></tr>';
+
+  const abandonados = embudoData.abandonados || [];
+  document.getElementById('embAbandonadosBody').innerHTML = abandonados.length ? abandonados.map(a => `
+    <tr><td>${escapeHtml(a.nombre || ('Producto #' + a.producto_id))}</td><td>${fmtNum(a.sesiones)}</td><td>${fmtNum(a.piezas)}</td></tr>`).join('')
+    : '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:14px;">Nada abandonado en este periodo.</td></tr>';
+
+  const soloCarrito = document.getElementById('embSoloCarrito')?.checked;
+  const sesiones = (embudoData.sesiones || []).filter(s =>
+    (!origen || s.origen === origen) && (!disp || s.dispositivo === disp) && (!soloCarrito || s.max_paso >= 3));
+  document.getElementById('embSesionesBody').innerHTML = sesiones.length ? sesiones.map(s => {
+    const paso = EMBUDO_PASOS.find(p => p.n === s.max_paso);
+    const compro = s.max_paso === 8;
+    return `
+      <tr>
+        <td>${escapeHtml(new Date(s.fin).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }))}</td>
+        <td>${escapeHtml(EMBUDO_ORIGENES[s.origen] || s.origen)}</td>
+        <td>${escapeHtml(EMBUDO_DISPOSITIVOS[s.dispositivo] || s.dispositivo)}</td>
+        <td><span class="pill ${compro ? 'ok' : (s.max_paso >= 5 ? 'warn' : 'bad')}">${escapeHtml(paso ? paso.label : '—')}</span>${Number(s.errores) > 0 ? ` <span style="color:#dc2626; font-size:12px;">⚠ ${fmtNum(s.errores)} error(es)</span>` : ''}</td>
+        <td>${s.valor != null ? fmtMoney(s.valor) : '—'}</td>
+        <td>${fmtNum(s.eventos)}</td>
+        <td><button class="btn small" onclick="verSesionEmbudo('${escapeHtml(s.session_id)}', this)">Ver recorrido</button></td>
+      </tr>
+      <tr id="embDet-${escapeHtml(s.session_id)}" class="hidden"><td colspan="7" style="background:var(--plane, rgba(0,0,0,0.03));"></td></tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:14px;">Sin visitas con estos filtros.</td></tr>';
+}
+
+function embudoDetalleTexto(ev) {
+  const d = ev.datos || {};
+  const partes = [];
+  if (d.nombre) partes.push(d.nombre);
+  if (d.cantidad && ev.evento === 'agregar_carrito') partes.push(`${d.cantidad} pza(s)`);
+  if (d.busqueda) partes.push(`"${d.busqueda}"`);
+  if (d.mensaje) partes.push(d.mensaje);
+  if (d.cp) partes.push(`C.P. ${d.cp}${d.estado ? ', ' + d.estado : ''}`);
+  if (ev.evento === 'cotizar_envio' && d.opciones != null) partes.push(`${d.opciones} opción(es)${d.estimado ? ' (estimado, sin Skydropx)' : ''}`);
+  if (d.paqueteria) partes.push(d.paqueteria + (d.gratis ? ' (gratis)' : ''));
+  if (d.folio) partes.push(`Pedido ${d.folio}`);
+  if (d.piezas && ev.evento !== 'agregar_carrito') partes.push(`${d.piezas} pza(s)`);
+  if (ev.valor != null) partes.push(fmtMoney(ev.valor));
+  if (ev.evento === 'visita' && ev.path) partes.push(ev.path);
+  return partes.join(' · ');
+}
+
+async function verSesionEmbudo(sid, btn) {
+  const row = document.getElementById('embDet-' + sid);
+  if (!row) return;
+  if (!row.classList.contains('hidden')) { row.classList.add('hidden'); return; }
+  row.classList.remove('hidden');
+  const cell = row.querySelector('td');
+  cell.innerHTML = '<div style="padding:8px; color:var(--text-muted);">Cargando recorrido…</div>';
+  try {
+    const r = await fetch('/api/embudo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), accion: 'sesion', sessionId: sid })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || ('HTTP ' + r.status));
+    const evs = data.eventos || [];
+    cell.innerHTML = `<ol style="margin:6px 0; padding-left:20px; font-size:13px; line-height:1.7;">${evs.map(ev => {
+      const hora = new Date(ev.created_at).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const color = ev.evento === 'compra' ? '#15a34a' : (ev.evento === 'error_checkout' || ev.evento === 'pago_rechazado' ? '#dc2626' : 'inherit');
+      const detalle = embudoDetalleTexto(ev);
+      return `<li><span style="color:var(--text-muted);">${hora}</span> — <b style="color:${color};">${escapeHtml(EMBUDO_EVENTOS[ev.evento] || ev.evento)}</b>${detalle ? ` <span style="color:var(--text-muted);">· ${escapeHtml(detalle)}</span>` : ''}</li>`;
+    }).join('')}</ol>`;
+  } catch (e) {
+    cell.innerHTML = `<div style="padding:8px; color:#dc2626;">No se pudo cargar: ${escapeHtml(e.message)}</div>`;
+  }
 }
 
 // ================= MOVIMIENTOS DE INVENTARIO (KARDEX) =================
@@ -15058,6 +15507,10 @@ function renderStorefrontCartBody(){
 function openStorefrontCart(){
   renderStorefrontCartBody();
   showStorefrontPage('storefrontCartPage');
+  trackFunnel('ver_carrito', {
+    valor: cart.reduce((s, i) => s + i.price * i.qty, 0),
+    datos: { piezas: cart.reduce((s, i) => s + i.qty, 0), productos: cart.length }
+  });
 }
 
 // Único método de pago del checkout público: Mercado Pago (tarjeta, sin
@@ -15186,6 +15639,7 @@ function selectCheckoutShippingOption(idx) {
   checkoutShippingCarrier = opt.carrier + (opt.service ? ' - ' + opt.service : '');
   renderCheckoutShippingOptions();
   renderCheckoutSummary();
+  trackFunnel('elegir_envio', { valor: checkoutShippingCost, datos: { paqueteria: checkoutShippingCarrier, gratis: envioGratis } });
 }
 
 async function onCheckoutShippingFieldsInput() {
@@ -15224,6 +15678,10 @@ async function onCheckoutShippingFieldsInput() {
   if (requestId !== checkoutCpRequestSeq) return; // el usuario ya cambió los datos de envío
 
   checkoutShippingOptions = options;
+  trackFunnel('cotizar_envio', {
+    valor: options.length ? options[0].price : undefined,
+    datos: { cp, estado, opciones: options.length, estimado: options.length === 1 && options[0].carrier === 'Envío estándar' }
+  });
   if (options.length === 1) {
     // Única opción disponible (estimación de referencia): se selecciona sola.
     selectCheckoutShippingOption(0);
@@ -15490,20 +15948,24 @@ async function submitStorefrontOrderInner(){
   const phone = document.getElementById('checkoutPhone').value.trim();
   const address = document.getElementById('checkoutAddress').value.trim();
   const errEl = document.getElementById('checkoutErrorMsg');
+  // Todo error que ve el cliente en el checkout queda también en el embudo
+  // (panel "Embudo de compra") — así se ve qué mensaje los está frenando.
+  const fail = (msg) => {
+    errEl.textContent = msg;
+    errEl.classList.remove('hidden');
+    trackFunnel('error_checkout', { datos: { mensaje: msg } });
+  };
 
   if (cp.length !== 5 || !estado || !municipio || !colonia) {
-    errEl.textContent = 'Completa código postal, estado, municipio y colonia para ver tus opciones de envío.';
-    errEl.classList.remove('hidden');
+    fail('Completa código postal, estado, municipio y colonia para ver tus opciones de envío.');
     return;
   }
   if (checkoutShippingCost === null) {
-    errEl.textContent = 'Selecciona una opción de envío para continuar.';
-    errEl.classList.remove('hidden');
+    fail('Selecciona una opción de envío para continuar.');
     return;
   }
   if (!name || !email || !phone || !address) {
-    errEl.textContent = 'Completa todos los campos para continuar.';
-    errEl.classList.remove('hidden');
+    fail('Completa todos los campos para continuar.');
     return;
   }
   errEl.classList.add('hidden');
@@ -15530,19 +15992,18 @@ async function submitStorefrontOrderInner(){
     });
     const data = await r.json();
     if (!r.ok || data.error) {
-      errEl.textContent = data.error || 'No se pudo procesar tu pedido. Intenta de nuevo.';
-      errEl.classList.remove('hidden');
+      fail(data.error || 'No se pudo procesar tu pedido. Intenta de nuevo.');
       return;
     }
     order = data;
     rememberClienteShipping({ name, phone, address, cp, estado, municipio, colonia });
   } catch (e) {
-    errEl.textContent = 'No se pudo procesar tu pedido. Verifica tu conexión e intenta de nuevo.';
-    errEl.classList.remove('hidden');
+    fail('No se pudo procesar tu pedido. Verifica tu conexión e intenta de nuevo.');
     return;
   }
 
   const { folio, total, items: verifiedItems } = order;
+  trackFunnel('pedido_creado', { valor: total, datos: { folio, piezas: cart.reduce((s, i) => s + i.qty, 0), envio: checkoutShippingCost || 0 }, urgente: true });
 
   // Único método de pago: se manda directo a Mercado Pago (sin paso
   // intermedio de "gracias por tu pedido" — eso ya lo maneja
@@ -15557,15 +16018,15 @@ async function submitStorefrontOrderInner(){
     });
     const mpData = await mpRes.json();
     if (mpData.init_point) {
+      // Se manda antes de salir del sitio (sendBeacon sobrevive la navegación).
+      trackFunnel('ir_a_pago', { valor: total, datos: { folio }, urgente: true });
       window.location.href = mpData.init_point;
       // El botón sigue bloqueado mientras el navegador se va a Mercado Pago.
       await new Promise(() => {});
     }
-    errEl.textContent = 'No se pudo iniciar el pago con Mercado Pago: ' + (mpData.error || 'intenta de nuevo.');
-    errEl.classList.remove('hidden');
+    fail('No se pudo iniciar el pago con Mercado Pago: ' + (mpData.error || 'intenta de nuevo.'));
   } catch (e) {
-    errEl.textContent = 'No se pudo conectar con Mercado Pago. Intenta de nuevo.';
-    errEl.classList.remove('hidden');
+    fail('No se pudo conectar con Mercado Pago. Intenta de nuevo.');
   }
 }
 
@@ -15624,15 +16085,21 @@ async function handleMercadoPagoReturn() {
         purchase.num_items = mpItems.reduce((s, i) => s + i.qty, 0);
       }
       trackPixelEvent('Purchase', purchase, mpFolio);
+    } else {
+      // Sin total en la liga no se reporta Purchase a Meta, pero la compra
+      // sí cuenta para el embudo propio.
+      trackFunnel('compra', { datos: { folio: mpFolio }, urgente: true });
     }
     saveCartToServer(mpFolio);
     cart = [];
     updateStoreCartBadge();
   } else if (estado === 'Pendiente de pago' || estado === 'Pendiente') {
+    trackFunnel('pago_pendiente', { valor: isNaN(mpTotal) ? undefined : mpTotal, datos: { folio: mpFolio }, urgente: true });
     setConfirmPage({ icon: '⏳', title: 'Tu pago está en proceso', msg: 'Mercado Pago todavía está procesando tu pago. En cuanto se acredite te llegará la confirmación por correo; no necesitas volver a pagar.', folio: mpFolio, total: mpTotal });
     cart = [];
     updateStoreCartBadge();
   } else {
+    trackFunnel('pago_rechazado', { valor: isNaN(mpTotal) ? undefined : mpTotal, datos: { folio: mpFolio, estado_mp: mpStatus }, urgente: true });
     setConfirmPage({ icon: '⚠️', title: 'Hubo un problema con tu pago', msg: 'Mercado Pago no pudo completar el cobro, así que no se te hizo ningún cargo. Tus productos siguen en el carrito: puedes intentar de nuevo o elegir otro método de pago.', folio: mpFolio, total: mpTotal, retry: true });
   }
   showStorefrontPage('storefrontOrderConfirmPage');
@@ -16634,6 +17101,7 @@ handleEmailLink();
 handleMercadoPagoReturn();
 loadCmsPagesForFooter();
 loadMetaPixelConfig();
+trackFunnelPageView();
 populateCheckoutEstadoSelect();
 populateSkydropxEstadoSelects();
 
