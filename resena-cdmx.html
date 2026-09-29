@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>¡Gracias por tu compra! — Mi Fiestashop CDMX</title>
+<link rel="icon" type="image/webp" href="/img/cms/logo.webp">
+<style>
+  :root {
+    --mf-pink: #d3007b;
+    --mf-cream: #fff3de;
+    --text: #2e1065;
+    --muted: #8b7d97;
+    --border: #e5dce6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: var(--mf-cream);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
+    padding: 28px 24px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  }
+  .logo { display: block; margin: 0 auto 14px; width: 64px; height: 64px; }
+  h1 { font-size: 22px; text-align: center; margin: 0 0 6px; color: var(--mf-pink); }
+  p.sub { text-align: center; font-size: 14px; color: var(--muted); margin: 0 0 22px; }
+  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  input, select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #faf7fb;
+    color: var(--text);
+    font-size: 15px;
+    margin-bottom: 16px;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 24px;
+    background: var(--mf-pink);
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .6; cursor: default; }
+  .hidden { display: none; }
+  #leadMsg { text-align: center; font-size: 14px; margin-top: 14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <img class="logo" src="/img/cms/logo.webp" alt="Mi Fiestashop">
+    <h1>¡Gracias por tu compra!</h1>
+    <p class="sub">Déjanos tus datos y te llevamos a dejarnos tu reseña — nos ayuda muchísimo.</p>
+
+    <form id="leadForm">
+      <label for="leadCorreo">Correo electrónico</label>
+      <input type="email" id="leadCorreo" required placeholder="tucorreo@ejemplo.com">
+
+      <label for="leadTelefono">Teléfono</label>
+      <input type="tel" id="leadTelefono" required placeholder="10 dígitos">
+
+      <label for="leadTipoEvento">¿Para qué evento fue tu compra?</label>
+      <select id="leadTipoEvento" required>
+        <option value="" disabled selected>Selecciona una opción</option>
+        <option value="XV años">XV años</option>
+        <option value="Boda">Boda</option>
+        <option value="Cumpleaños">Cumpleaños</option>
+        <option value="Baby shower">Baby shower</option>
+        <option value="Despedida de soltera">Despedida de soltera</option>
+        <option value="Graduación">Graduación</option>
+        <option value="Otro">Otro</option>
+      </select>
+
+      <button type="submit" id="leadSubmitBtn">Enviar</button>
+    </form>
+    <div id="leadMsg" class="hidden"></div>
+  </div>
+
+  <script src="/assets/resena-tienda.js" data-ciudad="CDMX" data-review-url=""></script>
+</body>
+</html>
