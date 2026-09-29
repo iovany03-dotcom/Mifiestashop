@@ -910,6 +910,8 @@
     position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
     font-size: 1.1rem; opacity: 0.6;
   }
+  button.store-search-icon { background: none; border: none; padding: 4px; cursor: pointer; line-height: 1; z-index: 1; }
+  button.store-search-icon:hover { opacity: 1; }
   .store-search-suggest {
     position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #fff;
     border-radius: 16px; box-shadow: 0 10px 30px rgba(46,16,101,0.18); border: 1px solid #f0e6ef;
@@ -927,6 +929,12 @@
   .store-search-suggest-name { font-size: 0.85rem; font-weight: 600; color: #2e1065; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .store-search-suggest-price { font-size: 0.8rem; color: var(--mf-pink); font-weight: 700; }
   .store-search-suggest-empty { padding: 14px; text-align: center; font-size: 0.85rem; color: #8b7d97; }
+  .store-search-suggest-all {
+    display: block; padding: 10px; margin-top: 4px; border-top: 1px solid #f0e6ef; text-align: center;
+    font-size: 0.85rem; font-weight: 700; color: var(--mf-pink); cursor: pointer; border-radius: 0 0 10px 10px;
+  }
+  .store-search-suggest-all:hover { background: #faf7fb; }
+  .catalog-search-title { font-size: 1.4rem; font-weight: 800; color: #2e1065; margin: 0 0 12px; overflow-wrap: anywhere; }
   .store-header-left {
     display: flex; align-items: center; gap: 30px;
   }
@@ -1331,7 +1339,12 @@
 
   /* ================= FULL CATALOG BROWSE PANEL ================= */
   .catalog-layout { display: grid; grid-template-columns: 240px 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 820px) { .catalog-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 820px) {
+    .catalog-layout { grid-template-columns: 1fr; }
+    /* En el celular, en los resultados de búsqueda la lista de categorías
+       empujaba los productos fuera de la pantalla. */
+    .catalog-layout.searching .catalog-sidebar { display: none; }
+  }
   .catalog-sidebar { background: #fff; border: 1px solid #f0e6ef; border-radius: 16px; overflow: hidden; }
   .catalog-sidebar-head { background: var(--mf-teal-light); color: #2e1065; font-weight: 800; padding: 14px 16px; font-size: 0.85rem; }
   .catalog-sidebar-title { padding: 14px 16px 6px; font-weight: 800; color: #2e1065; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -1392,9 +1405,10 @@
     </div>
 
     <div class="store-search-box">
-      <span class="store-search-icon">🔍</span>
-      <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off"
+      <button type="button" class="store-search-icon" aria-label="Buscar" onclick="openStorefrontSearch(document.getElementById('storeSearchInput').value)">🔍</button>
+      <input type="search" id="storeSearchInput" placeholder="¿Qué buscas para tu evento?" autocomplete="off" enterkeyhint="search"
         oninput="filterStorefrontProducts(this.value); updateSearchSuggestions(this.value); scheduleSearchLog(this.value);"
+        onkeydown="if (event.key === 'Enter') { event.preventDefault(); openStorefrontSearch(this.value); } else if (event.key === 'Escape') { hideSearchSuggestions(); }"
         onfocus="updateSearchSuggestions(this.value)"
         onblur="hideSearchSuggestions()">
       <div id="storeSearchSuggest" class="store-search-suggest hidden"></div>
@@ -2054,6 +2068,7 @@
         <ul class="catalog-cat-list" id="catalogCatList"></ul>
       </aside>
       <div class="catalog-main">
+        <h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>
         <div class="catalog-toolbar">
           <div class="catalog-view-toggle">
             <button id="catalogViewGrid" class="active" onclick="setCatalogView('grid')" aria-label="Vista de cuadrícula" title="Cuadrícula">▦</button>
@@ -14299,7 +14314,7 @@ function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
 
   const filtered = dataset.filter(p => {
     const matchCat = currentStorefrontCat === 'all' || (p.cat || '').toLowerCase().includes(currentStorefrontCat.toLowerCase());
-    const matchQ = !q || normalizeEs(p.name).includes(q) || normalizeEs(p.sku).includes(q);
+    const matchQ = !q || searchScore(p, q) !== null;
     return matchCat && matchQ;
   });
 
@@ -14398,10 +14413,13 @@ function loadMoreStorefrontProducts(){
 
 // ================= FULL CATALOG BROWSE PANEL (real PrestaShop categories) =================
 let catalogCategories = [];
-let catalogState = { catId: 'all', page: 1, pageSize: 24, sort: 'relevance', view: 'grid', total: 0 };
+// query: texto buscado — cuando no está vacío la página muestra los
+// resultados del buscador (openStorefrontSearch) en vez de una categoría.
+let catalogState = { catId: 'all', page: 1, pageSize: 24, sort: 'relevance', view: 'grid', total: 0, query: '' };
 
 async function openStorefrontCatalog(catId){
   showStorefrontPage('storefrontCatalogPage');
+  catalogState.query = '';
   catalogState.catId = catId || 'all';
   catalogState.page = 1;
   if (catalogCategories.length === 0) await loadCatalogCategories();
@@ -14417,6 +14435,9 @@ async function openStorefrontCatalog(catId){
     applyCategorySeoTags(cat);
     const path = categoryPathFor(cat);
     if (path && window.location.pathname !== path) history.pushState({}, '', path);
+    // Sin liga propia, al venir de los resultados de búsqueda no se deja
+    // /?buscar= en la barra (al recargar volvería a la búsqueda).
+    else if (!path && new URLSearchParams(window.location.search).has('buscar')) history.pushState({}, '', '/?categoria=' + encodeURIComponent(cat.id));
   } else {
     resetStorefrontSeoTags();
     // Solo se navega a /266-productos cuando de verdad se pidió "todos los
@@ -14496,13 +14517,16 @@ function renderCatalogSidebar(){
   const list = document.getElementById('catalogCatList');
   if (!list) return;
   list.innerHTML = `
-    <li><a class="${catalogState.catId === 'all' ? 'active' : ''}" href="/266-productos" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); selectCatalogCategory('all');">Todos los productos</a></li>
+    <li><a class="${catalogState.catId === 'all' && !catalogState.query ? 'active' : ''}" href="/266-productos" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); selectCatalogCategory('all');">Todos los productos</a></li>
     ` + catalogCategories.map(c => `
-    <li><a class="${String(catalogState.catId) === String(c.id) ? 'active' : ''}" onclick="selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
+    <li><a class="${String(catalogState.catId) === String(c.id) && !catalogState.query ? 'active' : ''}" onclick="selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
   `).join('');
 }
 
 function selectCatalogCategory(catId){
+  // Desde la página de resultados de búsqueda, elegir una categoría sale
+  // de la búsqueda (URL, título y SEO de la categoría).
+  if (catalogState.query) { openStorefrontCatalog(catId); return; }
   catalogState.catId = catId;
   catalogState.page = 1;
   renderCatalogSidebar();
@@ -14540,7 +14564,10 @@ const CATALOG_CLIENT_SORTS = {
 
 function catalogPageFromLiveProducts(offset) {
   const cat = catalogState.catId !== 'all' ? String(catalogState.catId) : null;
-  let list = !cat ? liveProducts.slice() : liveProducts.filter(p =>
+  // En búsqueda, "relevancia" es el orden de searchProducts() (primero lo
+  // que coincide en el nombre), no el orden por id.
+  let list = catalogState.query ? searchProducts(catalogState.query)
+    : !cat ? liveProducts.slice() : liveProducts.filter(p =>
     String(p.categoryId) === cat || (Array.isArray(p.categoryIds) && p.categoryIds.map(String).includes(cat))
   );
   const cmp = CATALOG_CLIENT_SORTS[catalogState.sort];
@@ -14567,10 +14594,27 @@ async function loadCatalogPage(){
   let products = [];
   let total = 0;
 
+  const searching = !!catalogState.query;
+  const titleEl = document.getElementById('catalogSearchTitle');
+  if (titleEl) {
+    titleEl.textContent = searching ? `Resultados para “${catalogState.query}”` : '';
+    titleEl.classList.toggle('hidden', !searching);
+  }
+  document.querySelector('#storefrontCatalogPage .catalog-layout')?.classList.toggle('searching', searching);
+  if (searching && !(productsFirstLoadDone && liveProducts.length > 0)) {
+    // La búsqueda es sobre el catálogo que descarga la tienda; en cuanto
+    // termina de cargar, el arranque vuelve a abrir esta página por el
+    // ?buscar= de la URL.
+    grid.innerHTML = '<div style="grid-column:1/-1; padding:30px; text-align:center; color:#8b7d97;">Buscando productos…</div>';
+    if (statusEl) statusEl.textContent = '';
+    renderCatalogPager(0);
+    return;
+  }
+
   // liveProducts solo trae productos con categoryId si ya cargó con esta
   // versión del sitio — si no (o todavía no termina de cargar al entrar
   // directo a la liga de una categoría), se usa el servidor como antes.
-  const canUseLocal = productsFirstLoadDone && liveProducts.length > 0 && liveProducts.some(p => p.categoryId !== undefined);
+  const canUseLocal = searching || (productsFirstLoadDone && liveProducts.length > 0 && liveProducts.some(p => p.categoryId !== undefined));
   if (canUseLocal) {
     ({ products, total } = catalogPageFromLiveProducts(offset));
   } else {
@@ -14600,7 +14644,12 @@ async function loadCatalogPage(){
   currentStorefrontList = products;
   catalogState.total = total;
 
-  if (products.length === 0) {
+  if (products.length === 0 && searching) {
+    grid.innerHTML = `<div style="grid-column:1/-1; padding:40px; text-align:center; color:#8b7d97;">
+        No encontramos productos para “${escapeHtml(catalogState.query)}”. Prueba con otra palabra o revisa la ortografía.
+        <div style="margin-top:16px;"><button class="btn secondary" style="border-radius:20px; font-weight:700;" onclick="openStorefrontCatalog('all')">Ver todos los productos</button></div>
+      </div>`;
+  } else if (products.length === 0) {
     grid.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:#8b7d97;">No se encontraron productos en esta categoría.</div>';
   } else {
     grid.innerHTML = products.map((p, idx) => buildStorefrontProductCardHTML(p, idx)).join('');
@@ -14609,7 +14658,9 @@ async function loadCatalogPage(){
 
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + products.length, total);
-  if (statusEl) statusEl.textContent = total > 0 ? `Mostrando ${from}–${to} de ${total} productos` : '';
+  if (statusEl) statusEl.textContent = total > 0
+    ? `Mostrando ${from}–${to} de ${total} ${searching ? (total === 1 ? 'resultado' : 'resultados') : 'productos'}`
+    : '';
 
   renderCatalogPager(total);
 }
@@ -15625,8 +15676,97 @@ async function submitNewsletterSignup(){
   input.value = '';
 }
 
+// ================= BUSCADOR DE LA TIENDA =================
+// Coincidencia de una búsqueda (ya pasada por normalizeEs) con un producto.
+// Cada palabra buscada tiene que aparecer en el nombre o en el SKU, en
+// cualquier orden ("globo dorado" encuentra "Globo metálico dorado"), y el
+// plural también encuentra el singular ("globos" -> "globo"). Regresa
+// null si no coincide; si coincide, un puntaje donde menor = más relevante.
+//
+// El SKU en este catálogo es en realidad una lista de palabras clave
+// relacionadas ("sombrero, bombín, casino, batucada"), no solo el nombre
+// real del producto — sin priorizar, un producto que de verdad se llama
+// "Bombin neón" podía quedar detrás de otros que solo lo mencionan como
+// etiqueta y aparecen antes en el catálogo.
+function searchScore(p, query) {
+  query = String(query || '').trim();
+  const words = query.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return null;
+  const name = normalizeEs(p.name);
+  const sku = normalizeEs(p.sku);
+  const has = (text, w) => text.includes(w) ||
+    (w.length > 3 && w.endsWith('es') && text.includes(w.slice(0, -2))) ||
+    (w.length > 3 && w.endsWith('s') && text.includes(w.slice(0, -1)));
+  if (!words.every(w => has(name, w) || has(sku, w))) return null;
+  const phraseIdx = name.indexOf(query);
+  if (phraseIdx !== -1) return phraseIdx;          // la frase tal cual en el nombre
+  if (words.every(w => has(name, w))) return 500;  // todas las palabras en el nombre
+  return 1000;                                     // alguna solo en las palabras clave
+}
+
+// Todos los productos que coinciden con la búsqueda, del más al menos
+// relevante (a igual puntaje, en el orden del catálogo).
+function searchProducts(q) {
+  const query = normalizeEs(q).trim();
+  if (!query) return [];
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  return dataset
+    .map(p => ({ p, score: searchScore(p, query) }))
+    .filter(x => x.score !== null)
+    .sort((a, b) => a.score - b.score)
+    .map(x => x.p);
+}
+
+function isStorefrontSearchPageOpen() {
+  const page = document.getElementById('storefrontCatalogPage');
+  return !!catalogState.query && !!page && !page.classList.contains('hidden');
+}
+
+let storefrontSearchLiveTimer = null;
+
+// Página con TODOS los resultados de la búsqueda (Enter en el buscador,
+// la lupa, "Ver todos los resultados" o una liga /?buscar=...) — la misma
+// página del catálogo, con su paginación, orden y vista.
+async function openStorefrontSearch(q, opts = {}) {
+  const query = String(q || '').trim().slice(0, 100);
+  const input = document.getElementById('storeSearchInput');
+  if (!query) { if (input) input.focus(); return; }
+  clearTimeout(storefrontSearchLiveTimer);
+  // Mientras sigue escribiendo se deja la lista de sugerencias abierta.
+  if (!opts.keepFocus) hideSearchSuggestions();
+  if (input) {
+    if (input.value.trim() !== query) input.value = query;
+    // En el celular, cierra el teclado para que se vean los resultados.
+    if (!opts.keepFocus) input.blur();
+  }
+  storefrontPinnedPage = null;
+  if (!isStorefrontSearchPageOpen()) showStorefrontPage('storefrontCatalogPage');
+  catalogState.query = query;
+  catalogState.catId = 'all';
+  catalogState.page = 1;
+  resetStorefrontSeoTags();
+  document.title = `Resultados para "${query}" | Mi Fiestashop`;
+  const url = '/?buscar=' + encodeURIComponent(query);
+  if (window.location.pathname + window.location.search !== url) {
+    history[opts.replace ? 'replaceState' : 'pushState']({}, '', url);
+  }
+  trackSearchDebounced(query);
+  scheduleSearchLog(query);
+  renderCatalogSidebar();
+  await loadCatalogPage();
+  if (catalogCategories.length === 0) { await loadCatalogCategories(); renderCatalogSidebar(); }
+}
+
 function filterStorefrontProducts(q) {
   trackSearchDebounced(q);
+  // Con la página de resultados abierta, seguir escribiendo actualiza esos
+  // resultados (sin regresar al inicio).
+  if (isStorefrontSearchPageOpen()) {
+    clearTimeout(storefrontSearchLiveTimer);
+    if (!String(q || '').trim()) return;
+    storefrontSearchLiveTimer = setTimeout(() => openStorefrontSearch(q, { replace: true, keepFocus: true }), 350);
+    return;
+  }
   renderStorefrontProducts('all', q);
 }
 
@@ -15634,29 +15774,14 @@ function updateSearchSuggestions(q) {
   const box = document.getElementById('storeSearchSuggest');
   if (!box) return;
   trackSearchDebounced(q);
-  const query = normalizeEs(q);
+  const query = normalizeEs(q).trim();
   if (!query) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  // El SKU en este catálogo es en realidad una lista de palabras clave
-  // relacionadas ("sombrero, bombín, casino, batucada"), no solo el nombre
-  // real del producto — sin priorizar, un producto que de verdad se llama
-  // "Bombin neón" podía quedar fuera del top 6 por culpa de otros que solo
-  // lo mencionan como etiqueta y aparecen antes en el catálogo.
-  const matches = dataset
-    .map(p => {
-      const nameIdx = normalizeEs(p.name).indexOf(query);
-      const skuIdx = normalizeEs(p.sku).indexOf(query);
-      if (nameIdx === -1 && skuIdx === -1) return null;
-      return { p, score: nameIdx !== -1 ? nameIdx : 1000 + skuIdx };
-    })
-    .filter(Boolean)
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 8)
-    .map(x => x.p);
+  const results = searchProducts(q);
+  const matches = results.slice(0, 8);
 
   if (matches.length === 0) {
-    box.innerHTML = `<div class="store-search-suggest-empty">Sin resultados para "${query}"</div>`;
+    box.innerHTML = `<div class="store-search-suggest-empty">Sin resultados para "${escapeHtml(String(q).trim())}"</div>`;
     box.classList.remove('hidden');
     return;
   }
@@ -15669,7 +15794,10 @@ function updateSearchSuggestions(q) {
         <div class="store-search-suggest-price">${fmtMoney(p.price)}</div>
       </div>
     </div>
-  `).join('');
+  `).join('') + `
+    <div class="store-search-suggest-all" onmousedown="event.preventDefault(); openStorefrontSearch(document.getElementById('storeSearchInput').value)">
+      Ver todos los resultados (${results.length}) →
+    </div>`;
   box.classList.remove('hidden');
 }
 
@@ -15701,11 +15829,7 @@ function scheduleSearchLog(q) {
     const key = query.toLowerCase();
     if (key === lastLoggedSearchQuery) return;
     lastLoggedSearchQuery = key;
-    const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-    const normKey = normalizeEs(key);
-    const resultsCount = dataset.filter(p =>
-      normalizeEs(p.name).includes(normKey) || normalizeEs(p.sku || '').includes(normKey)
-    ).length;
+    const resultsCount = searchProducts(query).length;
     fetch('/api/log-busqueda', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -16468,11 +16592,7 @@ syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
   const category = new URLSearchParams(window.location.search).get('categoria');
   if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
   const query = new URLSearchParams(window.location.search).get('buscar');
-  if (query && window.location.pathname === '/') {
-    const input = document.getElementById('storeSearchInput');
-    if (input) input.value = query;
-    filterStorefrontProducts(query);
-  }
+  if (query && window.location.pathname === '/') openStorefrontSearch(query, { replace: true });
   // renderStorefrontProducts() de arriba (llamado dentro del propio sync)
   // ya volvió a mostrar el home y ocultó el panel de catálogo completo que
   // routeApp() pudo haber abierto por "?vista=catalogo" — se vuelve a abrir
@@ -16576,6 +16696,9 @@ if(window.location.pathname==='/'){
  else if(vista==='catalogo')openStorefrontCatalog('all');
  else if(vista==='admin')goToAdmin();
  else if(['pedidos','promos','perfil'].includes(vista)){openClientePortal();switchClienteTab(vista);}
+ // Página de resultados del buscador (también al ir atrás/adelante).
+ const buscar=new URLSearchParams(window.location.search).get('buscar');
+ if(!vista&&buscar)openStorefrontSearch(buscar,{replace:true});
 }
 }
 routeApp();
