@@ -9,6 +9,10 @@
       "schedule": "30 * * * *"
     },
     {
+      "path": "/api/cron-conciliar-mp",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron-sync-prestashop?domains=productos",
       "schedule": "*/10 * * * *"
     },
@@ -26,6 +30,9 @@
       "includeFiles": "index.html"
     },
     "api/cron-sync-prestashop.js": {
+      "maxDuration": 60
+    },
+    "api/cron-conciliar-mp.js": {
       "maxDuration": 60
     },
     "api/ventas-productos.js": {
