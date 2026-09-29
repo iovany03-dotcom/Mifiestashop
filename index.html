@@ -16329,7 +16329,11 @@ function loadQrLib() {
   if (!qrLibLoading) {
     qrLibLoading = new Promise((resolve, reject) => {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js';
+      // Ojo: cdnjs no tiene archivos publicados para las versiones 1.5.x de
+      // este paquete (el npm de "qrcode" ya no incluye un bundle de
+      // navegador prearmado) — 1.4.4 es la última versión ahí que sí trae
+      // el archivo .min.js real, verificado directo contra el CDN.
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.4.4/qrcode.min.js';
       s.onload = () => (window.QRCode && window.QRCode.toDataURL) ? resolve(window.QRCode) : (qrLibLoading = null, reject(new Error('El generador de QR no quedó disponible.')));
       s.onerror = () => { qrLibLoading = null; reject(new Error('No se pudo cargar el generador de QR. Revisa tu conexión.')); };
       document.head.appendChild(s);
