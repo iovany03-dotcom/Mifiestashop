@@ -8984,7 +8984,7 @@ function renderCatalogTable(category = 'all', query = ''){
   const statusFilter = document.getElementById('catalogStatusFilter')?.value || 'activos';
   const filtered = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
+    const matchQ = !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)) || (p.barcode && p.barcode.includes(query));
     const isInactive = p.status === 'Inactivo';
     const matchStatus = statusFilter === 'todos' || (statusFilter === 'activos' ? !isInactive : isInactive);
     return matchCat && matchQ && matchStatus;
@@ -9380,7 +9380,7 @@ function renderInventarioTable() {
   if (!tbody) return;
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const q = (document.getElementById('invSearchInput')?.value || '').toLowerCase();
+  const q = normalizeEs(document.getElementById('invSearchInput')?.value || '');
   const wh = document.getElementById('invWhSelect')?.value || 'all';
   const stFilter = document.getElementById('invStatusSelect')?.value || 'all';
 
@@ -9405,7 +9405,7 @@ function renderInventarioTable() {
     totalValueSum += stTotal * p.price;
     if (stTotal < 150) lowStockCount++;
 
-    const matchQ = !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
+    const matchQ = !q || normalizeEs(p.name).includes(q) || normalizeEs(p.sku).includes(q);
     
     let matchWh = true;
     if (wh === 'puebla') matchWh = stPuebla > 0;
@@ -9493,10 +9493,10 @@ function openKardexForProduct(id) {
 }
 
 function kardexMatches(q) {
-  q = q.trim().toLowerCase();
+  q = normalizeEs(q.trim());
   if (!q) return [];
   const list = liveProducts.length ? liveProducts : PRODUCTS_DATA;
-  return list.filter(p => String(p.id) === q || (p.sku || '').toLowerCase().includes(q) || (p.name || '').toLowerCase().includes(q)).slice(0, 25);
+  return list.filter(p => String(p.id) === q || normalizeEs(p.sku || '').includes(q) || normalizeEs(p.name || '').includes(q)).slice(0, 25);
 }
 
 function kardexSuggest() {
@@ -10377,7 +10377,7 @@ function renderClienteCatalog(query = '') {
   if(!grid) return;
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
 
-  const filtered = dataset.filter(p => !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()));
+  const filtered = dataset.filter(p => !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)));
 
   grid.innerHTML = filtered.slice(0, 12).map(p => `
     <div style="background:var(--card-bg); border:1px solid var(--border); border-radius:12px; padding:14px; display:flex; flex-direction:column; justify-content:space-between;">
@@ -10587,7 +10587,7 @@ function renderProducts(category = 'all', query = '') {
 
   const matchedByFilters = dataset.filter(p => {
     const matchCat = category === 'all' || p.cat === category.toLowerCase();
-    const matchQ = !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.sku.toLowerCase().includes(query.toLowerCase()) || (p.barcode && p.barcode.includes(query));
+    const matchQ = !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)) || (p.barcode && p.barcode.includes(query));
     return matchCat && matchQ;
   });
 
@@ -11447,11 +11447,11 @@ function cpAutofillCliente(){
 
 function cpRenderProductResults(){
   const box = document.getElementById('cpProductResults');
-  const q = document.getElementById('cpProductSearch').value.trim().toLowerCase();
+  const q = normalizeEs(document.getElementById('cpProductSearch').value.trim());
   if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
 
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const matched = dataset.filter(p => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))).slice(0, 15);
+  const matched = dataset.filter(p => normalizeEs(p.name).includes(q) || (p.sku && normalizeEs(p.sku).includes(q))).slice(0, 15);
 
   if (matched.length === 0) {
     box.innerHTML = `<div style="padding:10px 12px; color:var(--text-muted); font-size:13px;">Sin resultados.</div>`;
@@ -15603,8 +15603,9 @@ function scheduleSearchLog(q) {
     if (key === lastLoggedSearchQuery) return;
     lastLoggedSearchQuery = key;
     const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+    const normKey = normalizeEs(key);
     const resultsCount = dataset.filter(p =>
-      p.name.toLowerCase().includes(key) || (p.sku || '').toLowerCase().includes(key)
+      normalizeEs(p.name).includes(normKey) || normalizeEs(p.sku || '').includes(normKey)
     ).length;
     fetch('/api/log-busqueda', {
       method: 'POST',
@@ -16003,9 +16004,9 @@ function onAnalyticsSearchInput(query) {
 
   const dataset = liveProducts;
   if (dataset.length === 0) return;
-  const filtered = dataset.filter(p => 
-    p.name.toLowerCase().includes(query.toLowerCase()) || 
-    p.sku.toLowerCase().includes(query.toLowerCase())
+  const filtered = dataset.filter(p =>
+    normalizeEs(p.name).includes(normalizeEs(query)) ||
+    normalizeEs(p.sku).includes(normalizeEs(query))
   ).slice(0, 8);
 
   if (filtered.length === 0) {
