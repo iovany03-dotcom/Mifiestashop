@@ -2713,7 +2713,6 @@
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
         <a class="submenu-link" data-view="embudo">Embudo de compra</a>
-        <a class="submenu-link" data-view="promociones">Promociones</a>
       </div>
     </div>
 
@@ -2729,7 +2728,6 @@
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
-        <a class="submenu-link" data-view="categorias">Categorías</a>
       </div>
     </div>
 
@@ -3775,39 +3773,84 @@
     <!-- ================= VIEW DE PRODUCTOS ================= -->
     <section id="view-productos" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Catálogo de Productos</h2>
-          <div style="display:flex; gap:10px;">
-            <button class="btn primary" onclick="openEditProductModal(null)">Crear Nuevo Producto</button>
-            <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">Actualizar Catálogo</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="prodTabBtn-catalogo" onclick="switchProductosTab('catalogo')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Catálogo</button>
+          <button class="btn" id="prodTabBtn-categorias" onclick="switchProductosTab('categorias')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Categorías</button>
+          <button class="btn" id="prodTabBtn-promociones" onclick="switchProductosTab('promociones')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Promociones</button>
+        </div>
+
+        <div id="prodTab-catalogo">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <h2>Catálogo de Productos</h2>
+            <div style="display:flex; gap:10px;">
+              <button class="btn primary" onclick="openEditProductModal(null)">Crear Nuevo Producto</button>
+              <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">Actualizar Catálogo</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+            <input type="search" id="catalogSearchInput" placeholder="Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
+            <select id="catalogStatusFilter" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="activos" selected>Solo activos</option>
+              <option value="inactivos">Solo desactivados</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Imagen</th>
+                  <th>SKU / Referencia</th>
+                  <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('nombre')">Nombre del Producto <span id="catalogSortArrow-nombre"></span></th>
+                  <th>Categoría</th>
+                  <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('precio')">Precio (MXN) <span id="catalogSortArrow-precio"></span></th>
+                  <th>Origen</th>
+                  <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('estado')">Estado <span id="catalogSortArrow-estado"></span></th>
+                  <th style="text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="catalogTableBody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
           </div>
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
-          <input type="search" id="catalogSearchInput" placeholder="Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
-          <select id="catalogStatusFilter" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-            <option value="activos" selected>Solo activos</option>
-            <option value="inactivos">Solo desactivados</option>
-            <option value="todos">Todos</option>
-          </select>
+
+        <div id="prodTab-categorias" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <h2>Categorías de Productos</h2>
+            <button class="btn primary" onclick="loadCategoriesFromAPI()">Recargar Categorías</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Nombre de Categoría</th><th>Estado</th><th>Origen</th></tr>
+              </thead>
+              <tbody id="categoriesTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>SKU / Referencia</th>
-                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('nombre')">Nombre del Producto <span id="catalogSortArrow-nombre"></span></th>
-                <th>Categoría</th>
-                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('precio')">Precio (MXN) <span id="catalogSortArrow-precio"></span></th>
-                <th>Origen</th>
-                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('estado')">Estado <span id="catalogSortArrow-estado"></span></th>
-                <th style="text-align:center;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="catalogTableBody">
-              <!-- Dynamically rendered -->
-            </tbody>
-          </table>
+
+        <div id="prodTab-promociones" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <h2>Promociones y Cupones</h2>
+            <button class="btn primary" onclick="openPromoAdminModal(null)">Nueva Promoción</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+            Estas son las promociones que ven los clientes en su portal ("Mi Perfil" → Promociones & Cupones). Solo las marcadas como activas se muestran.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Título</th><th>Tipo</th><th>Código</th><th>Vigencia</th><th style="text-align:center;">Activa</th><th style="text-align:center;">Acciones</th></tr>
+              </thead>
+              <tbody id="promosAdminTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -3926,25 +3969,6 @@
       </div>
     </section>
 
-    <!-- ================= VIEW CATEGORÍAS ================= -->
-    <section id="view-categorias" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Categorías de Productos</h2>
-          <button class="btn primary" onclick="loadCategoriesFromAPI()">Recargar Categorías</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre de Categoría</th><th>Estado</th><th>Origen</th></tr>
-            </thead>
-            <tbody id="categoriesTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
     <!-- ================= VIEW PÁGINAS CMS ================= -->
     <section id="view-paginas-cms" class="view-panel hidden">
@@ -4029,28 +4053,6 @@
       </div>
     </section>
 
-    <!-- ================= VIEW PROMOCIONES ================= -->
-    <section id="view-promociones" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Promociones y Cupones</h2>
-          <button class="btn primary" onclick="openPromoAdminModal(null)">Nueva Promoción</button>
-        </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Estas son las promociones que ven los clientes en su portal ("Mi Perfil" → Promociones & Cupones). Solo las marcadas como activas se muestran.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Título</th><th>Tipo</th><th>Código</th><th>Vigencia</th><th style="text-align:center;">Activa</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="promosAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
     <!-- ================= VIEW CLIENTES ================= -->
     <section id="view-clientes" class="view-panel hidden">
@@ -6032,9 +6034,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
-    { key: 'categorias', label: 'Categorías' },
-    { key: 'paginas-cms', label: 'Páginas CMS' },
-    { key: 'promociones', label: 'Promociones' }
+    { key: 'paginas-cms', label: 'Páginas CMS' }
   ]},
   { group: 'Contactos & Equipo', items: [
     { key: 'personal', label: 'Personal / Equipo' },
@@ -7312,12 +7312,10 @@ function switchView(viewName) {
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
-    productos: ['Catálogo de Productos', 'Gestión del Catálogo'],
+    productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
-    categorias: ['Categorías', 'Organización del Catálogo'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
-    promociones: ['Promociones y Cupones', 'Ofertas visibles en el portal de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
     proveedores: ['Proveedores', 'Directorio de Insumos'],
@@ -7343,12 +7341,11 @@ function switchView(viewName) {
   }
 
   // Auto-fetch API data when opening specific views
-  if (viewName === 'categorias') loadCategoriesFromAPI();
+  if (viewName === 'productos') switchProductosTab('catalogo');
   if (viewName === 'movimientos') initKardexView();
   if (viewName === 'embudo') loadEmbudo();
   if (viewName === 'paginas-cms') switchCmsTab('paginas');
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
-  if (viewName === 'promociones') loadPromosAdmin();
   if (viewName === 'notificaciones') markNotificationsRead();
   if (viewName === 'clientes') switchClientesAdminTab('directorio');
   if (viewName === 'pedidos') loadOrdersFromAPI();
@@ -16330,6 +16327,21 @@ async function generateBranchQr(key) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generar QR'; }
   }
+}
+
+// --- Back office: Productos (pestañas: Catálogo, Categorías,
+// Promociones — antes 3 vistas separadas, Categorías vivía en "Catálogo &
+// Stock" y Promociones en "Vender").
+let categoriasTabLoaded = false, promocionesTabLoaded = false;
+function switchProductosTab(tab) {
+  ['catalogo', 'categorias', 'promociones'].forEach(key => {
+    const panel = document.getElementById(`prodTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`prodTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'categorias' && !categoriasTabLoaded) { categoriasTabLoaded = true; loadCategoriesFromAPI(); }
+  if (tab === 'promociones' && !promocionesTabLoaded) { promocionesTabLoaded = true; loadPromosAdmin(); }
 }
 
 // --- Back office: Clientes (pestañas: Directorio, Ajustes — antes 2
