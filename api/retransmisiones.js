@@ -10,17 +10,24 @@
 //       teléfono, sin los que ya compraron después. Uno por cliente.
 //   'enviar'     { canal: 'email'|'whatsapp', destinatarios: [{ tipo, referencia }],
 //                  asunto, mensaje, cupon: { modo: 'ninguno'|'personal'|'existente',
-//                  tipo, valor, minimo, horas, codigo, prefijo } }
+//                  tipo, valor, minimo, horas, codigo, prefijo },
+//                  plantillaWa?: { name, language, mapping: ['nombre'|'cupon'|'descuento'|'vence'|'liga', ...] } }
 //       -> { resultados: [{ referencia, ok, codigo, whatsapp, error }] }
 //       El mensaje admite {nombre}, {cupon}, {descuento}, {vence} y {liga}.
-//       WhatsApp no se puede mandar solo (no hay API de WhatsApp Business):
-//       se regresa la liga wa.me con el texto listo para abrirla.
+//       WhatsApp: si se manda "plantillaWa" (una plantilla ya aprobada por Meta, ver
+//       'plantillas_whatsapp' abajo), se manda real y directo vía chatbotproia
+//       (lib/chatbotproia.js); sin ella, se regresa la liga wa.me con el texto listo para que
+//       el staff la abra y la mande a mano (no hay otra forma de que Meta lo entregue solo).
+//   'plantillas_whatsapp' -> { plantillas: [{ name, language, status, category, body_text,
+//                              param_count }] } — las aprobadas en Meta para el bot de
+//                              chatbotproia conectado (CHATBOTPROIA_TOKEN en Vercel).
 //   'cupones'    -> { cupones: [...] }
 //   'crear_cupon' { codigo?, prefijo?, tipo, valor, minimo, inicia, vence, usos_max, email, descripcion }
 //   'cupon_activo' { codigo, activo }
 //   'historial'  -> { historial: [...] }
 const { layout, escapeHtml, sendHtml, smtpConfigured } = require('../lib/correo.js');
 const { CODIGO_RE, normalizarCodigo, generarCodigo, etiquetaCupon } = require('../lib/cupones.js');
+const { cpListarPlantillas, cpBuscarOCrearContacto, cpEnviarPlantilla } = require('../lib/chatbotproia.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -278,7 +285,11 @@ async function enviar(db, body, enviadoPor) {
   if (!destinos.length) throw new Error('Selecciona al menos un cliente.');
   const mensaje = String(body.mensaje || '').slice(0, 3000);
   const asunto = String(body.asunto || '').slice(0, 150) || '¡Tu carrito te está esperando!';
-  if (!mensaje.trim()) throw new Error('Escribe el mensaje.');
+  const plantillaWa = body.plantillaWa && body.plantillaWa.name && body.plantillaWa.language ? body.plantillaWa : null;
+  // Con una plantilla real de Meta, el mensaje que de verdad se manda es la propia plantilla
+  // aprobada (ver más abajo) — el "mensaje" libre solo se usa para el registro en
+  // "retransmisiones" (historial), así que aquí no es obligatorio.
+  if (!mensaje.trim() && !plantillaWa) throw new Error('Escribe el mensaje.');
   if (canal === 'email' && !smtpConfigured()) throw new Error('El correo (SMTP) no está configurado en Vercel.');
 
   const cfg = body.cupon || { modo: 'ninguno' };
@@ -331,8 +342,24 @@ async function enviar(db, body, enviadoPor) {
         // El texto ya lleva la liga si el mensaje usa {liga}; si no, se agrega.
         const final = texto.includes(liga) ? texto : `${texto}\n\n${liga}`;
         log.mensaje = final;
-        log.estado = 'preparado';
-        r.whatsapp = `https://wa.me/${wa}?text=${encodeURIComponent(final)}`;
+        // Con una plantilla real de Meta elegida (ver plantillas_whatsapp abajo) se manda
+        // directo vía chatbotproia; sin ella, se regresa el wa.me de siempre para que el staff
+        // lo abra y lo mande a mano (no hay otra forma de que Meta lo entregue solo).
+        if (plantillaWa) {
+          try {
+            const campos = { nombre, cupon: tc ? tc.codigo : '', descuento: tc ? tc.descuento : '', vence: tc ? tc.vence : '', liga };
+            const parametros = (Array.isArray(plantillaWa.mapping) ? plantillaWa.mapping : []).map(k => campos[k] || '');
+            const contactId = await cpBuscarOCrearContacto(wa, dest.nombre);
+            await cpEnviarPlantilla(contactId, { name: plantillaWa.name, language: plantillaWa.language, parametros });
+            log.estado = 'enviado';
+          } catch (e) {
+            log.estado = 'error';
+            log.error = String(e.message).slice(0, 300);
+          }
+        } else {
+          log.estado = 'preparado';
+          r.whatsapp = `https://wa.me/${wa}?text=${encodeURIComponent(final)}`;
+        }
       }
       await db.post('retransmisiones', [log], 'return=minimal');
       r.ok = log.estado !== 'error';
@@ -370,6 +397,9 @@ module.exports = async function handler(req, res) {
       }
       case 'enviar':
         res.status(200).json({ resultados: await enviar(db, body, enviadoPor) });
+        return;
+      case 'plantillas_whatsapp':
+        res.status(200).json({ plantillas: await cpListarPlantillas() });
         return;
       case 'cupones':
         res.status(200).json({ cupones: await db.get('cupones?select=*&order=created_at.desc&limit=300') });

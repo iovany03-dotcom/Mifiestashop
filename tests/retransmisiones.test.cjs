@@ -105,6 +105,74 @@ test('api/retransmisiones: WhatsApp con cupón personal regresa la liga wa.me co
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 
+test('api/retransmisiones: WhatsApp con plantilla aprobada manda real vía chatbotproia (no wa.me)', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  process.env.CHATBOTPROIA_TOKEN = 'cpt_test';
+  const logs = [];
+  let enviado = null;
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    if (u.includes('/pedidos_online?folio=eq.WEB-1')) return ok([{ folio: 'WEB-1', customer_name: 'Cinthya Durán', customer_email: 'c@x.com', customer_phone: '844 494 0974', items: [{ id: 83591, qty: 1, name: 'Promo Boda VIP' }] }]);
+    if (u.endsWith('/retransmisiones') && opts.method === 'POST') { logs.push(JSON.parse(opts.body)[0]); return ok(null); }
+    if (u.includes('panel.chatbotproia.com/api/contacts/find_by_custom_field')) return ok({ data: [] }); // nunca le ha escrito al bot
+    if (u.includes('panel.chatbotproia.com/api/contacts') && opts.method === 'POST' && !u.includes('/send/whatsapp')) {
+      assert.equal(JSON.parse(opts.body).phone, '528444940974');
+      return ok({ success: true, id: 'contact-uuid-1' });
+    }
+    if (u.includes('panel.chatbotproia.com/api/contacts/contact-uuid-1/send/whatsapp')) {
+      enviado = JSON.parse(opts.body);
+      return ok({ ok: true, messageIds: ['wamid.1'] });
+    }
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'enviar', canal: 'whatsapp',
+      destinatarios: [{ tipo: 'pedido', referencia: 'WEB-1' }],
+      cupon: { modo: 'ninguno' },
+      plantillaWa: { name: 'cupon_carrito', language: 'es_MX', mapping: ['nombre', 'liga'] }
+    } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    const r = res.data.resultados[0];
+    assert.equal(r.ok, true);
+    assert.equal(r.whatsapp, undefined);
+    assert.equal(enviado.template.name, 'cupon_carrito');
+    assert.equal(enviado.template.language, 'es_MX');
+    assert.equal(enviado.template.parameters[0], 'Cinthya');
+    assert.match(enviado.template.parameters[1], /^https:\/\/www\.mifiestashop\.com\/\?carrito=83591x1/);
+    assert.equal(logs[0].estado, 'enviado');
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
+});
+
+test('api/retransmisiones: plantillas_whatsapp solo regresa las aprobadas por Meta', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  process.env.CHATBOTPROIA_TOKEN = 'cpt_test';
+  global.fetch = async (url) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    if (u.includes('panel.chatbotproia.com/api/whatsapp/message-templates')) return ok({
+      data: [
+        { name: 'cupon_carrito', language: 'es_MX', status: 'APPROVED', category: 'MARKETING', body_text: 'Hola {{1}}, {{2}}', param_count: 2 },
+        { name: 'en_revision', language: 'es_MX', status: 'PENDING', category: 'MARKETING', body_text: 'x', param_count: 0 }
+      ]
+    });
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: { p_admin_password: 'x', accion: 'plantillas_whatsapp' } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.plantillas.length, 1);
+    assert.equal(res.data.plantillas[0].name, 'cupon_carrito');
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
+});
+
 test('api/crear-pedido: aplica el cupón con el subtotal del servidor y lo guarda en el pedido', async () => {
   const prev = global.fetch;
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';

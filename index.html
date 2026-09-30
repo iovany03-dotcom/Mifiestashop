@@ -3755,25 +3755,43 @@
             <h3 style="margin:0 0 10px; font-size:15px;">Mensaje <span id="rtSelCount" style="font-weight:400; color:var(--text-muted);">(0 clientes seleccionados)</span></h3>
             <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; font-size:14px;">
               <label><input type="radio" name="rtCanal" value="email" checked onchange="rtRenderCompose()"> Correo (se manda solo)</label>
-              <label><input type="radio" name="rtCanal" value="whatsapp" onchange="rtRenderCompose()"> WhatsApp (te preparamos el mensaje)</label>
+              <label><input type="radio" name="rtCanal" value="whatsapp" onchange="rtRenderCompose()"> WhatsApp</label>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" class="rt-grid">
-              <div>
-                <label class="rt-label" for="rtPlantilla">Plantilla</label>
-                <select id="rtPlantilla" class="rt-input" onchange="rtAplicarPlantilla()">
-                  <option value="cupon">Cupón para que regrese</option>
-                  <option value="recordatorio">Recordatorio (sin cupón)</option>
-                  <option value="rechazado">Pago rechazado</option>
-                </select>
+
+            <div id="rtWaModoWrap" class="hidden" style="margin-bottom:10px;">
+              <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:13px;">
+                <label><input type="radio" name="rtWaModo" value="manual" checked onchange="rtRenderCompose()"> Manual (te preparamos el mensaje y wa.me para abrirlo)</label>
+                <label><input type="radio" name="rtWaModo" value="automatico" onchange="rtRenderCompose()"> Automático (mandar directo con una plantilla aprobada por Meta)</label>
               </div>
-              <div id="rtAsuntoWrap">
-                <label class="rt-label" for="rtAsunto">Asunto del correo</label>
-                <input type="text" id="rtAsunto" class="rt-input" maxlength="150" oninput="rtRenderPreview()">
+              <div id="rtWaAutoWrap" class="hidden" style="margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:12px;">
+                <div id="rtWaAutoMsg" style="font-size:12.5px; color:var(--text-muted);">Cargando plantillas…</div>
+                <div id="rtWaAutoBody" class="hidden">
+                  <label class="rt-label" for="rtPlantillaWa">Plantilla aprobada</label>
+                  <select id="rtPlantillaWa" class="rt-input" onchange="rtRenderPlantillaWaMapeo()"></select>
+                  <div id="rtPlantillaWaTexto" style="font-size:12.5px; color:var(--text-secondary); background:var(--plane); border-radius:8px; padding:8px 10px; margin:8px 0;"></div>
+                  <div id="rtPlantillaWaMapeo" style="display:flex; flex-direction:column; gap:6px;"></div>
+                </div>
               </div>
             </div>
-            <label class="rt-label" for="rtMensaje" style="margin-top:10px;">Mensaje</label>
-            <textarea id="rtMensaje" class="rt-input" rows="6" maxlength="3000" oninput="rtRenderPreview()" style="width:100%; resize:vertical;"></textarea>
-            <div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px;">Se reemplazan solos: <code>{nombre}</code> <code>{cupon}</code> <code>{descuento}</code> <code>{vence}</code> <code>{liga}</code> (la liga le vuelve a llenar su carrito y le aplica el cupón).</div>
+            <div id="rtMensajeLibreWrap">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" class="rt-grid">
+                <div>
+                  <label class="rt-label" for="rtPlantilla">Plantilla</label>
+                  <select id="rtPlantilla" class="rt-input" onchange="rtAplicarPlantilla()">
+                    <option value="cupon">Cupón para que regrese</option>
+                    <option value="recordatorio">Recordatorio (sin cupón)</option>
+                    <option value="rechazado">Pago rechazado</option>
+                  </select>
+                </div>
+                <div id="rtAsuntoWrap">
+                  <label class="rt-label" for="rtAsunto">Asunto del correo</label>
+                  <input type="text" id="rtAsunto" class="rt-input" maxlength="150" oninput="rtRenderPreview()">
+                </div>
+              </div>
+              <label class="rt-label" for="rtMensaje" style="margin-top:10px;">Mensaje</label>
+              <textarea id="rtMensaje" class="rt-input" rows="6" maxlength="3000" oninput="rtRenderPreview()" style="width:100%; resize:vertical;"></textarea>
+              <div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px;">Se reemplazan solos: <code>{nombre}</code> <code>{cupon}</code> <code>{descuento}</code> <code>{vence}</code> <code>{liga}</code> (la liga le vuelve a llenar su carrito y le aplica el cupón).</div>
+            </div>
 
             <div class="rt-cupon-box">
               <label class="rt-label" for="rtCuponModo">Cupón</label>
@@ -10534,6 +10552,71 @@ function rtCanal() {
   return document.querySelector('input[name="rtCanal"]:checked')?.value || 'email';
 }
 
+function rtWaModo() {
+  return document.querySelector('input[name="rtWaModo"]:checked')?.value || 'manual';
+}
+
+// Campos que ya rellena rtRenderPreview()/api/retransmisiones.js — el admin mapea cada {{n}}
+// de la plantilla aprobada a uno de estos en vez de escribir la plantilla a mano.
+const RT_WA_CAMPOS = [
+  ['nombre', 'Nombre del cliente'], ['cupon', 'Código de cupón'], ['descuento', 'Descuento'],
+  ['vence', 'Fecha de vencimiento del cupón'], ['liga', 'Liga para terminar la compra']
+];
+
+let rtPlantillasWa = null; // null = no cargadas todavía; [] = cargadas, ninguna aprobada.
+
+async function loadRtPlantillasWa() {
+  if (rtPlantillasWa !== null) return;
+  const msg = document.getElementById('rtWaAutoMsg');
+  const body = document.getElementById('rtWaAutoBody');
+  try {
+    const data = await rtApi('plantillas_whatsapp');
+    rtPlantillasWa = data.plantillas || [];
+  } catch (e) {
+    rtPlantillasWa = [];
+    msg.textContent = 'No se pudieron cargar las plantillas: ' + e.message;
+    msg.classList.remove('hidden');
+    body.classList.add('hidden');
+    return;
+  }
+  if (rtPlantillasWa.length === 0) {
+    msg.textContent = 'Todavía no tienes ninguna plantilla aprobada por Meta para este número de WhatsApp — créala y espera su aprobación en chatbotproia (Ajustes → Plantillas) para poder mandar automático.';
+    msg.classList.remove('hidden');
+    body.classList.add('hidden');
+    return;
+  }
+  msg.classList.add('hidden');
+  body.classList.remove('hidden');
+  const sel = document.getElementById('rtPlantillaWa');
+  sel.innerHTML = rtPlantillasWa.map((t, i) => `<option value="${i}">${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
+  rtRenderPlantillaWaMapeo();
+}
+
+function rtRenderPlantillaWaMapeo() {
+  const t = rtPlantillasWa[document.getElementById('rtPlantillaWa').value] || rtPlantillasWa[0];
+  if (!t) return;
+  document.getElementById('rtPlantillaWaTexto').textContent = t.body_text || '(esta plantilla no trae texto)';
+  const mapeo = document.getElementById('rtPlantillaWaMapeo');
+  mapeo.innerHTML = Array.from({ length: t.param_count || 0 }, (_, i) => `
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px;">
+      <span style="min-width:80px;">Variable {{${i + 1}}}:</span>
+      <select class="rt-input" id="rtWaParam${i}" style="flex:1;" onchange="rtRenderCompose()">
+        ${RT_WA_CAMPOS.map(([k, l]) => `<option value="${k}" ${k === (RT_WA_CAMPOS[i] || [])[0] ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}
+      </select>
+    </label>`).join('') || '<div style="font-size:12.5px; color:var(--text-muted);">Esta plantilla no tiene variables.</div>';
+  rtRenderCompose();
+}
+
+// { name, language, mapping } listo para mandar a api/retransmisiones.js, o null si el modo no
+// es automático o falta elegir/mapear la plantilla.
+function rtPlantillaWaSeleccionada() {
+  if (rtCanal() !== 'whatsapp' || rtWaModo() !== 'automatico' || !rtPlantillasWa || !rtPlantillasWa.length) return null;
+  const t = rtPlantillasWa[document.getElementById('rtPlantillaWa').value];
+  if (!t) return null;
+  const mapping = Array.from({ length: t.param_count || 0 }, (_, i) => document.getElementById('rtWaParam' + i)?.value || '');
+  return { name: t.name, language: t.language, mapping };
+}
+
 function rtAplicarPlantilla() {
   const p = RT_PLANTILLAS[document.getElementById('rtPlantilla').value] || RT_PLANTILLAS.cupon;
   document.getElementById('rtAsunto').value = p.asunto;
@@ -10554,12 +10637,20 @@ function rtRenderCompose() {
   document.getElementById('rtAsuntoWrap').style.visibility = canal === 'email' ? 'visible' : 'hidden';
   document.getElementById('rtCuponPersonal').style.display = modo === 'personal' ? 'grid' : 'none';
   document.getElementById('rtCuponExistenteWrap').classList.toggle('hidden', modo !== 'existente');
+  document.getElementById('rtWaModoWrap').classList.toggle('hidden', canal !== 'whatsapp');
+  const waAuto = canal === 'whatsapp' && rtWaModo() === 'automatico';
+  document.getElementById('rtWaAutoWrap').classList.toggle('hidden', !waAuto);
+  document.getElementById('rtMensajeLibreWrap').classList.toggle('hidden', waAuto);
+  if (waAuto) loadRtPlantillasWa();
   const sel = rtSeleccionados();
   const validos = sel.filter(d => canal === 'email' ? d.email : d.telefono);
   document.getElementById('rtSelCount').textContent = `(${sel.length} clientes seleccionados${sel.length !== validos.length ? `, ${sel.length - validos.length} sin ${canal === 'email' ? 'correo' : 'teléfono'}` : ''})`;
+  const plantillaWa = rtPlantillaWaSeleccionada();
   const btn = document.getElementById('rtEnviarBtn');
-  btn.textContent = canal === 'email' ? `Enviar correo a ${validos.length} cliente${validos.length === 1 ? '' : 's'}` : `Preparar WhatsApp para ${validos.length} cliente${validos.length === 1 ? '' : 's'}`;
-  btn.disabled = validos.length === 0;
+  btn.textContent = canal === 'email' ? `Enviar correo a ${validos.length} cliente${validos.length === 1 ? '' : 's'}`
+    : plantillaWa ? `Mandar WhatsApp a ${validos.length} cliente${validos.length === 1 ? '' : 's'}`
+    : `Preparar WhatsApp para ${validos.length} cliente${validos.length === 1 ? '' : 's'}`;
+  btn.disabled = validos.length === 0 || (waAuto && !plantillaWa);
   rtRenderPreview();
 }
 
@@ -10593,10 +10684,18 @@ function rtRenderPreview() {
   const c = rtCuponPreview();
   const nombre = d ? (String(d.nombre || '').trim().split(/\s+/)[0] || '') : 'Cliente';
   const liga = 'https://www.mifiestashop.com/?carrito=…' + (c ? `&cupon=${c.codigo}` : '');
-  const fill = t => String(t || '')
-    .replace(/\{nombre\}/g, nombre).replace(/\{cupon\}/g, c ? c.codigo : '')
-    .replace(/\{descuento\}/g, c ? c.descuento : '').replace(/\{vence\}/g, c ? c.vence : '').replace(/\{liga\}/g, liga);
+  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: c ? c.vence : '', liga };
+  const fill = t => String(t || '').replace(/\{(nombre|cupon|descuento|vence|liga)\}/g, (_, k) => campos[k]);
   const canal = rtCanal();
+
+  const plantillaWa = rtPlantillaWaSeleccionada();
+  if (plantillaWa) {
+    const t = rtPlantillasWa[document.getElementById('rtPlantillaWa').value];
+    const texto = (t?.body_text || '').replace(/\{\{(\d+)\}\}/g, (_, n) => escapeHtml(campos[plantillaWa.mapping[n - 1]] || `{{${n}}}`));
+    el.innerHTML = texto || '(esta plantilla no trae texto)';
+    return;
+  }
+
   const mensaje = fill(document.getElementById('rtMensaje').value);
   const avisos = [];
   if (!c && /\{(cupon|descuento|vence)\}/.test(document.getElementById('rtMensaje').value)) avisos.push('⚠ El mensaje menciona un cupón pero no elegiste ninguno.');
@@ -10617,7 +10716,10 @@ async function rtEnviar() {
     horas: Number(document.getElementById('rtCuponHoras').value), minimo: Number(document.getElementById('rtCuponMinimo').value) || 0, prefijo: 'VUELVE'
   } : modo === 'existente' ? { modo, codigo: document.getElementById('rtCuponExistente').value } : { modo: 'ninguno' };
   const c = rtCuponPreview();
-  const accionTxt = canal === 'email' ? `mandar un correo a ${destinos.length} cliente(s)` : `preparar el WhatsApp de ${destinos.length} cliente(s)`;
+  const plantillaWa = rtPlantillaWaSeleccionada();
+  const accionTxt = canal === 'email' ? `mandar un correo a ${destinos.length} cliente(s)`
+    : plantillaWa ? `mandar el WhatsApp de ${destinos.length} cliente(s) automáticamente`
+    : `preparar el WhatsApp de ${destinos.length} cliente(s)`;
   if (!confirm(`¿${accionTxt[0].toUpperCase() + accionTxt.slice(1)}${c ? ` con cupón de ${c.descuento}${modo === 'personal' ? ` (uno personal por cliente, válido ${document.getElementById('rtCuponHoras').selectedOptions[0].text})` : ` (${c.codigo})`}` : ' sin cupón'}?`)) return;
 
   const btn = document.getElementById('rtEnviarBtn');
@@ -10628,7 +10730,7 @@ async function rtEnviar() {
     for (let i = 0; i < destinos.length; i += 20) {
       btn.textContent = `Enviando… ${Math.min(i + 20, destinos.length)}/${destinos.length}`;
       const data = await rtApi('enviar', {
-        canal, asunto: document.getElementById('rtAsunto').value, mensaje: document.getElementById('rtMensaje').value, cupon,
+        canal, asunto: document.getElementById('rtAsunto').value, mensaje: document.getElementById('rtMensaje').value, cupon, plantillaWa,
         destinatarios: destinos.slice(i, i + 20).map(d => ({ tipo: d.tipo, referencia: d.referencia }))
       });
       resultados.push(...(data.resultados || []));
@@ -10641,7 +10743,7 @@ async function rtEnviar() {
   }
   const porRef = Object.fromEntries(rtAudiencia.map(d => [d.referencia, d]));
   const okN = resultados.filter(r => r.ok).length;
-  out.innerHTML = `<div style="margin-top:14px; font-weight:700;">${canal === 'email' ? `Correos enviados: ${okN} de ${resultados.length}` : `WhatsApp listos: ${okN} de ${resultados.length}. Dale clic a cada uno para abrirlo y enviarlo.`}</div>` +
+  out.innerHTML = `<div style="margin-top:14px; font-weight:700;">${canal === 'email' ? `Correos enviados: ${okN} de ${resultados.length}` : plantillaWa ? `WhatsApp enviados: ${okN} de ${resultados.length}.` : `WhatsApp listos: ${okN} de ${resultados.length}. Dale clic a cada uno para abrirlo y enviarlo.`}</div>` +
     resultados.map(r => {
       const d = porRef[r.referencia] || {};
       return `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;">
