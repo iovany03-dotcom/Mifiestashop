@@ -110,6 +110,9 @@
     "api/skydropx-cotizar.js": {
       "maxDuration": 30
     },
+    "api/skydropx-envios.js": {
+      "maxDuration": 30
+    },
     "api/enviar-correo.js": {
       "maxDuration": 30
     },

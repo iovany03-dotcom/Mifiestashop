@@ -230,6 +230,7 @@ module.exports = async function handler(req, res) {
     return rawRates
       .filter((r) => r.success !== false)
       .map((r) => ({
+        rate_id: r.id || null,
         carrier: r.provider_name || r.carrier_name || r.carrier || 'Paquetería',
         service: r.provider_service_name || r.service_level_name || r.service || '',
         price: parseFloat(r.total_pricing || r.total || r.amount || 0),
@@ -280,7 +281,7 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    res.status(200).json({ rates, cheapest: rates[0] });
+    res.status(200).json({ rates, cheapest: rates[0], quotation_id: quotationId });
   } catch (err) {
     res.status(200).json({ fallback: true, rates: [], error: err.message });
   }
