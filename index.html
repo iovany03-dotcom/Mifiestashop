@@ -2762,7 +2762,6 @@
         <a class="submenu-link" data-view="param-tienda-general">General</a>
         <a class="submenu-link" data-view="param-tienda-pedidos">Configuración de Pedidos</a>
         <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
-        <a class="submenu-link" data-view="param-tienda-clientes">Ajustes sobre clientes</a>
         <a class="submenu-link" data-view="param-tienda-seo">Tráfico & SEO</a>
         <a class="submenu-link" data-view="param-tienda-buscar">Buscar</a>
       </div>
@@ -2778,7 +2777,6 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="paginas-cms">Páginas CMS</a>
-        <a class="submenu-link" data-view="resenas-clientes">Reseñas de Clientes</a>
         <a class="submenu-link" data-view="param-avanzados-rendimiento">Rendimiento</a>
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
@@ -3951,50 +3949,54 @@
     <!-- ================= VIEW PÁGINAS CMS ================= -->
     <section id="view-paginas-cms" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Páginas CMS</h2>
-          <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="cmsTabBtn-paginas" onclick="switchCmsTab('paginas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Páginas CMS</button>
+          <button class="btn" id="cmsTabBtn-resenas" onclick="switchCmsTab('resenas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Reseñas de Clientes</button>
         </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
-          Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
-        </p>
-        <div style="margin-bottom:14px;">
-          <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Título</th><th>Slug</th><th>En el footer</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="cmsPagesAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
-    <!-- ================= VIEW RESEÑAS DE CLIENTES ================= -->
-    <section id="view-resenas-clientes" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Reseñas de Clientes</h2>
-          <button class="btn primary" onclick="openResenaModal()">+ Agregar reseña</button>
+        <div id="cmsTab-paginas">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <h2>Páginas CMS</h2>
+            <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+            Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
+            Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
+          </p>
+          <div style="margin-bottom:14px;">
+            <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Título</th><th>Slug</th><th>En el footer</th><th style="text-align:center;">Acciones</th></tr>
+              </thead>
+              <tbody id="cmsPagesAdminTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Reseñas reales que los clientes dejaron en Google (u otro lugar), capturadas a mano con su foto y texto.
-          Solo las marcadas como "Activa" se muestran en la tienda.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Foto</th><th>Cliente</th><th>Reseña</th><th>Calificación</th><th>Activa</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="resenasAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
+
+        <div id="cmsTab-resenas" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <h2>Reseñas de Clientes</h2>
+            <button class="btn primary" onclick="openResenaModal()">+ Agregar reseña</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+            Reseñas reales que los clientes dejaron en Google (u otro lugar), capturadas a mano con su foto y texto.
+            Solo las marcadas como "Activa" se muestran en la tienda.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Foto</th><th>Cliente</th><th>Reseña</th><th>Calificación</th><th>Activa</th><th style="text-align:center;">Acciones</th></tr>
+              </thead>
+              <tbody id="resenasAdminTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -4053,21 +4055,58 @@
     <!-- ================= VIEW CLIENTES ================= -->
     <section id="view-clientes" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Directorio de Clientes</h2>
-          <button class="btn primary" onclick="loadCustomersFromAPI()">Recargar Clientes</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="clientesTabBtn-directorio" onclick="switchClientesAdminTab('directorio')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Directorio</button>
+          <button class="btn" id="clientesTabBtn-ajustes" onclick="switchClientesAdminTab('ajustes')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Ajustes</button>
         </div>
-        <input type="search" id="customersSearchInput" placeholder="Buscar por nombre o correo…" oninput="filterCustomersTable(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
-        <div id="customersCountNote" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
-            </thead>
-            <tbody id="customersTableBody">
-              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
-            </tbody>
-          </table>
+
+        <div id="clientesTab-directorio">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <h2>Directorio de Clientes</h2>
+            <button class="btn primary" onclick="loadCustomersFromAPI()">Recargar Clientes</button>
+          </div>
+          <input type="search" id="customersSearchInput" placeholder="Buscar por nombre o correo…" oninput="filterCustomersTable(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
+          <div id="customersCountNote" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
+              </thead>
+              <tbody id="customersTableBody">
+                <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="clientesTab-ajustes" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Ajustes sobre Clientes</h2>
+            <button class="btn primary" onclick="alert('Configuración de clientes guardada.')">Guardar Ajustes</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Requisitos de Registro</h3>
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Requerir número telefónico en registro</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Enviar correo de bienvenida al registrarse</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Habilitar campo de RFC para facturación</label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Grupos & Descuentos</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Grupo por defecto para nuevos clientes:</b>
+                  <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                    <option selected>Cliente Menudeo (General)</option>
+                    <option>Cliente Mayoreo (Descuento 15%)</option>
+                    <option>Cliente VIP (Descuento 20%)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -4378,39 +4417,6 @@
             <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
               <label><b>Notificar Stock Bajo cuando las unidades bajen de:</b> <input type="number" value="150" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
               <label><b>Productos por página en catálogo:</b> <input type="number" value="24" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. AJUSTES SOBRE CLIENTES -->
-    <section id="view-param-tienda-clientes" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Ajustes sobre Clientes</h2>
-          <button class="btn primary" onclick="alert('Configuración de clientes guardada.')">Guardar Ajustes</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Requisitos de Registro</h3>
-            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Requerir número telefónico en registro</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Enviar correo de bienvenida al registrarse</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Habilitar campo de RFC para facturación</label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Grupos & Descuentos</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Grupo por defecto para nuevos clientes:</b> 
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-                  <option selected>Cliente Menudeo (General)</option>
-                  <option>Cliente Mayoreo (Descuento 15%)</option>
-                  <option>Cliente VIP (Descuento 20%)</option>
-                </select>
-              </label>
             </div>
           </div>
         </div>
@@ -6028,7 +6034,6 @@ const PERMISSION_GROUPS = [
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
     { key: 'categorias', label: 'Categorías' },
     { key: 'paginas-cms', label: 'Páginas CMS' },
-    { key: 'resenas-clientes', label: 'Reseñas de Clientes' },
     { key: 'promociones', label: 'Promociones' }
   ]},
   { group: 'Contactos & Equipo', items: [
@@ -6040,7 +6045,6 @@ const PERMISSION_GROUPS = [
     { key: 'param-tienda-general', label: 'General' },
     { key: 'param-tienda-pedidos', label: 'Config. Pedidos' },
     { key: 'param-tienda-productos', label: 'Config. Productos' },
-    { key: 'param-tienda-clientes', label: 'Ajustes de Clientes' },
     { key: 'param-tienda-seo', label: 'Tráfico & SEO' },
     { key: 'param-tienda-buscar', label: 'Buscar' }
   ]},
@@ -7312,8 +7316,7 @@ function switchView(viewName) {
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
     categorias: ['Categorías', 'Organización del Catálogo'],
-    'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop'],
-    'resenas-clientes': ['Reseñas de Clientes', 'Testimonios con foto para la tienda'],
+    'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
     promociones: ['Promociones y Cupones', 'Ofertas visibles en el portal de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
@@ -7325,7 +7328,6 @@ function switchView(viewName) {
     'param-tienda-general': ['Parámetros de la Tienda', 'General, pagos por transferencia y contacto'],
     'param-tienda-pedidos': ['Parámetros de la Tienda', 'Configuración de Pedidos'],
     'param-tienda-productos': ['Parámetros de la Tienda', 'Configuración de Productos'],
-    'param-tienda-clientes': ['Parámetros de la Tienda', 'Ajustes sobre Clientes'],
     'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
     'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento, caché y registros'],
@@ -7344,12 +7346,11 @@ function switchView(viewName) {
   if (viewName === 'categorias') loadCategoriesFromAPI();
   if (viewName === 'movimientos') initKardexView();
   if (viewName === 'embudo') loadEmbudo();
-  if (viewName === 'paginas-cms') loadCmsPagesAdmin();
-  if (viewName === 'resenas-clientes') loadResenasAdmin();
+  if (viewName === 'paginas-cms') switchCmsTab('paginas');
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
   if (viewName === 'promociones') loadPromosAdmin();
   if (viewName === 'notificaciones') markNotificationsRead();
-  if (viewName === 'clientes') loadCustomersFromAPI();
+  if (viewName === 'clientes') switchClientesAdminTab('directorio');
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
@@ -16329,6 +16330,32 @@ async function generateBranchQr(key) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generar QR'; }
   }
+}
+
+// --- Back office: Clientes (pestañas: Directorio, Ajustes — antes 2
+// vistas separadas, la de ajustes vivía en Parámetros de la Tienda).
+function switchClientesAdminTab(tab) {
+  ['directorio', 'ajustes'].forEach(key => {
+    const panel = document.getElementById(`clientesTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`clientesTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'directorio') loadCustomersFromAPI();
+}
+
+// --- Back office: Páginas CMS (pestañas: Páginas CMS, Reseñas de
+// Clientes — antes 2 vistas separadas).
+let resenasTabLoaded = false;
+function switchCmsTab(tab) {
+  ['paginas', 'resenas'].forEach(key => {
+    const panel = document.getElementById(`cmsTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`cmsTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'paginas') loadCmsPagesAdmin();
+  if (tab === 'resenas' && !resenasTabLoaded) { resenasTabLoaded = true; loadResenasAdmin(); }
 }
 
 // --- Back office: Parámetros Avanzados → Rendimiento (pestañas:
