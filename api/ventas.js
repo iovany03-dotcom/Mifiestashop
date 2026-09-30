@@ -10,6 +10,9 @@
 // en línea; cualquier otro empleado se agrupa en "Otros".
 const { prestashopConectado, sbGetAll } = require('../lib/prestashop.js');
 
+const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const PAGADOS_ONLINE = ['Pago aceptado', 'Pagado', 'En preparación', 'Enviado', 'Entregado'];
+
 const STORE_BY_EMPLOYEE = { 225: 'CDMX Rumania', 226: 'Querétaro', 230: 'Puebla', 227: 'Atizapán' };
 const ONLINE_STORE = 'Tienda en línea';
 const OTHER_STORE = 'Otros';
@@ -78,6 +81,25 @@ module.exports = async function handler(req, res) {
       const data = await r.json();
       orders = Array.isArray(data.orders) ? data.orders : [];
     }
+    // Pedidos de la tienda propia (checkout público / manuales / API) en
+    // pedidos_online: ya no pasan por PrestaShop, así que se suman aparte.
+    // Cuentan los que tienen pago validado; la fecha se toma en hora de México.
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceKey) {
+      const estados = PAGADOS_ONLINE.map(s => `"${s}"`).join(',');
+      const sbUrl = `${SUPABASE_URL}/rest/v1/pedidos_online?select=folio,total,created_at` +
+        `&status=in.(${encodeURIComponent(estados)})` +
+        `&created_at=gte.${encodeURIComponent(from + 'T00:00:00-06:00')}` +
+        `&created_at=lte.${encodeURIComponent(to + 'T23:59:59-06:00')}&order=created_at.asc&limit=10000`;
+      const r = await fetch(sbUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } });
+      if (!r.ok) throw new Error(`pedidos_online error ${r.status}`);
+      const rows = await r.json();
+      rows.forEach(o => {
+        const local = new Date(o.created_at).toLocaleString('sv-SE', { timeZone: 'America/Mexico_City' });
+        orders.push({ id: o.folio, total_paid: o.total, date_add: local, id_employee: 0 });
+      });
+    }
+
     const revenue = orders.reduce((sum, o) => sum + parseFloat(o.total_paid || 0), 0);
     const count = orders.length;
     const avgTicket = count > 0 ? revenue / count : 0;

@@ -3240,6 +3240,11 @@
           </div>
 
           <div style="display:flex; gap:10px;">
+            <div id="skSaldoBox" style="display:flex; flex-direction:column; justify-content:center; padding:6px 14px; border-radius:10px; background:rgba(255,255,255,0.08); min-width:130px;">
+              <span style="font-size:11px; color:#94a3b8;">Saldo Skydropx</span>
+              <b id="skSaldoVal" style="font-size:1.15rem; color:#fff;">—</b>
+            </div>
+            <button class="btn secondary" style="border-radius:10px; font-weight:700;" onclick="cargarSaldoSkydropx()">Actualizar saldo</button>
             <button class="btn secondary" style="border-radius:10px; font-weight:700;" onclick="document.getElementById('skydropxConfigCard').scrollIntoView({behavior:'smooth'})"> Configurar API Key</button>
             <button class="btn primary" style="border-radius:10px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);" onclick="document.getElementById('skOrigenCp').focus()">Cotizar Envío Rápido</button>
           </div>
@@ -3321,7 +3326,7 @@
         <div class="card" style="padding:20px;">
           <h3 style="margin-top:0; margin-bottom:14px; font-size:1.15rem; color:var(--text-primary);">Generador de Guía de Envío Skydropx</h3>
           
-          <form onsubmit="event.preventDefault(); crearGuiaSkydropxDirecta();">
+          <form onsubmit="event.preventDefault(); crearGuiaSkydropxReal();">
             <div style="margin-bottom:12px;">
               <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Asociar a Pedido:</label>
               <select id="skSelectOrder" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
@@ -3329,14 +3334,27 @@
               </select>
             </div>
 
-            <div style="margin-bottom:12px;">
-              <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Paquetería Elegida:</label>
-              <select id="skSelectCarrier" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
-                <option value="fedex">FedEx Express (Día Siguiente)</option>
-                <option value="dhl">DHL Express (Especial)</option>
-                <option value="redpack">Redpack Económico (4-6 días)</option>
-                <option value="99minutos">99minutos (Mismo día CDMX)</option>
-              </select>
+            <div id="skTarifaElegida" style="margin-bottom:12px; padding:10px 12px; border-radius:8px; background:var(--plane); font-size:12.5px; color:var(--text-muted);">
+              Primero cotiza y elige una tarifa con el botón "Seleccionar".
+            </div>
+
+            <div style="font-size:12px; font-weight:700; margin-bottom:6px;">Remitente (se recuerda en este navegador)</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+              <input type="text" id="skOrigNombre" placeholder="Nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"><input type="text" id="skOrigEmpresa" placeholder="Empresa" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              <input type="tel" id="skOrigTel" placeholder="Teléfono" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"><input type="email" id="skOrigEmail" placeholder="Correo" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            </div>
+            <div style="margin-bottom:12px;"><input type="text" id="skOrigCalle" placeholder="Calle y número" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"></div>
+
+            <div style="font-size:12px; font-weight:700; margin-bottom:6px;">Destinatario</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+              <input type="text" id="skDestNombre" placeholder="Nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"><input type="text" id="skDestEmpresa" placeholder="Empresa (opcional)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+              <input type="tel" id="skDestTel" placeholder="Teléfono" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"><input type="email" id="skDestEmail" placeholder="Correo" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            </div>
+            <div style="margin-bottom:12px;"><input type="text" id="skDestCalle" placeholder="Calle y número" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"></div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+              <div><label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Clave Carta Porte:</label><input type="text" id="skCartaPorte" placeholder="53102400" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"></div>
+              <div><label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Tipo de empaque:</label><input type="text" id="skTipoPaquete" placeholder="4G" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;"></div>
             </div>
 
             <div style="margin-bottom:16px;">
@@ -3344,8 +3362,8 @@
               <input type="text" id="skReference" placeholder="Ej: Entregar en recepción o dejar con vigilancia" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
             </div>
 
-            <button type="submit" class="btn success" style="width:100%; padding:10px; font-size:14px; font-weight:700; justify-content:center;">
-               Generar e Imprimir Guía Skydropx (PDF)
+            <button type="submit" id="skCrearBtn" class="btn success" style="width:100%; padding:10px; font-size:14px; font-weight:700; justify-content:center;">
+               Generar Guía Skydropx (se cobra de tu saldo)
             </button>
           </form>
         </div>
@@ -3356,17 +3374,17 @@
       <div class="card" style="padding:20px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
           <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">Bitácora de Envíos & Rastreos Activos Skydropx</h3>
-          <button class="btn small" onclick="renderSkydropxShipmentsTable()">Actualizar Rastreos</button>
+          <button class="btn small" onclick="cargarEnviosSkydropx()">Actualizar Rastreos</button>
         </div>
 
         <div class="table-wrap">
           <table style="width:100%; font-size:13px;">
             <thead>
               <tr>
-                <th>Folio Pedido</th>
-                <th>Folio Skydropx</th>
+                <th>Fecha</th>
+                <th>Guía / Rastreo</th>
                 <th>Paquetería</th>
-                <th>Origen → Destino</th>
+                <th>Rastreo</th>
                 <th>Costo Envío</th>
                 <th>Estatus Skydropx</th>
                 <th style="text-align:center;">Acciones</th>
@@ -7522,6 +7540,7 @@ function switchView(viewName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
   const target = document.getElementById('view-' + viewName);
   if (target) target.classList.remove('hidden');
+  if (viewName === 'envios' && typeof cargarSaldoSkydropx === 'function') { cargarSaldoSkydropx(); cargarEnviosSkydropx(); }
 
   // Update header text
   const titles = {
@@ -18567,7 +18586,47 @@ function goToAdmin() {
   }
 }
 // ================= SKYDROPX INTEGRATION LOGIC =================
-const SKYDROPX_SHIPMENTS = [];
+let SK_RATES = [];
+let SK_QUOTATION_ID = null;
+let SK_RATE_SEL = null;
+const SK_FIELDS = ['skOrigNombre','skOrigEmpresa','skOrigTel','skOrigEmail','skOrigCalle','skCartaPorte','skTipoPaquete'];
+
+async function skydropxAdminRequest(body) {
+  const r = await fetch('/api/skydropx-envios', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), ...body })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : ((data.error || 'Error de Skydropx') + (data.detail ? ' — ' + data.detail : '')));
+  return data;
+}
+
+async function cargarSaldoSkydropx() {
+  const el = document.getElementById('skSaldoVal');
+  if (!el) return;
+  el.textContent = '…';
+  try {
+    const d = await skydropxAdminRequest({ accion: 'saldo' });
+    el.textContent = isFinite(d.balance) ? `${fmtMoney(d.balance)} ${d.currency || ''}` : '—';
+  } catch (e) {
+    el.textContent = 'No disponible';
+    el.title = e.message;
+  }
+}
+
+function skRestaurarCampos() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('skRemitente') || '{}');
+    SK_FIELDS.forEach(id => { const el = document.getElementById(id); if (el && saved[id] && !el.value) el.value = saved[id]; });
+  } catch (e) { /* sin almacenamiento */ }
+}
+function skGuardarCampos() {
+  try {
+    const o = {}; SK_FIELDS.forEach(id => { o[id] = document.getElementById(id)?.value || ''; });
+    localStorage.setItem('skRemitente', JSON.stringify(o));
+  } catch (e) { /* sin almacenamiento */ }
+}
 
 async function calcularCotizacionesSkydropx() {
   const orig = (document.getElementById('skOrigenCp').value || '').trim();
@@ -18591,9 +18650,10 @@ async function calcularCotizacionesSkydropx() {
   }
 
   container.innerHTML = `<div style="font-size:12.5px; color:var(--text-muted); padding:10px 0;">⏳ Consultando tarifas reales con Skydropx…</div>`;
+  SK_RATES = []; SK_QUOTATION_ID = null; SK_RATE_SEL = null;
+  skMostrarTarifa();
 
-  let rates = [];
-  let usedFallback = false;
+  let errorMsg = '';
   try {
     const params = new URLSearchParams({
       cp_origen: orig, cp_destino: dest, peso, largo, ancho, alto,
@@ -18603,76 +18663,94 @@ async function calcularCotizacionesSkydropx() {
     const r = await fetch(`/api/skydropx-cotizar?${params.toString()}`);
     const data = await r.json();
     if (Array.isArray(data.rates) && data.rates.length > 0) {
-      rates = data.rates;
+      SK_RATES = data.rates; SK_QUOTATION_ID = data.quotation_id || null;
     } else {
-      usedFallback = true;
+      errorMsg = data.error || 'Sin tarifas disponibles para este destino.';
     }
   } catch (e) {
-    usedFallback = true;
+    errorMsg = e.message;
   }
 
-  if (usedFallback) {
-    // Sin cotización real disponible (credenciales no configuradas o sin
-    // cobertura para este destino): se muestra una estimación de referencia.
-    rates = [
-      { carrier: 'FedEx Express', service: 'Día Siguiente', price: 149, days: 1 },
-      { carrier: 'Redpack Económico', service: '4-6 Días', price: 99, days: 5 }
-    ];
+  if (!SK_RATES.length) {
+    container.innerHTML = `<div style="font-size:12.5px; color:var(--bad, #dc2626); padding:10px 0;">No se pudo cotizar con Skydropx: ${escapeHtml(errorMsg)}</div>`;
+    return;
   }
 
-  const badge = usedFallback
-    ? `<div style="font-size:11px; font-weight:700; color:var(--warn, #b8860b); margin-bottom:8px;"> Tarifas de referencia (Skydropx no disponible para esta consulta)</div>`
-    : `<div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">RESULTADOS EN VIVO DE SKYDROPX API (${orig}  ${dest}, ${peso} kg):</div>`;
-
-  container.innerHTML = badge + `
+  container.innerHTML = `<div style="font-size:12px; font-weight:700; color:var(--text-muted); margin-bottom:8px;">RESULTADOS EN VIVO DE SKYDROPX API (${escapeHtml(orig)} → ${escapeHtml(dest)}, ${escapeHtml(peso)} kg):</div>
     <div style="display:flex; flex-direction:column; gap:8px;">
-      ${rates.map(r => `
+      ${SK_RATES.map((r, i) => `
         <div style="display:flex; justify-content:space-between; align-items:center; background:var(--plane); padding:8px 12px; border-radius:6px; font-size:12.5px;">
-          <div><b>${r.carrier}</b> ${r.service ? `<span class="pill info" style="font-size:10px;">${r.service}${r.days ? ' · ' + r.days + 'd' : ''}</span>` : ''}</div>
+          <div><b>${escapeHtml(r.carrier)}</b> ${r.service ? `<span class="pill info" style="font-size:10px;">${escapeHtml(r.service)}${r.days ? ' · ' + r.days + 'd' : ''}</span>` : ''}</div>
           <div style="display:flex; align-items:center; gap:10px;">
             <b style="color:var(--series-2);">$${Number(r.price).toFixed(2)} MXN</b>
-            <button class="btn small primary" onclick="generarGuiaCotizada('${r.carrier.replace(/'/g,"\\'")}', ${Number(r.price)}, '${orig}', '${dest}')">Generar Guía</button>
+            <button class="btn small primary" onclick="skSeleccionarTarifa(${i})">Seleccionar</button>
           </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+        </div>`).join('')}
+    </div>`;
 }
 
-function generarGuiaCotizada(carrier, precio, orig = '72000', dest = '03100') {
-  const folio = 'SKY-' + carrier.substring(0,3).toUpperCase() + '-' + Math.floor(10000 + Math.random() * 90000);
-  const orderId = document.getElementById('skSelectOrder')?.value || '#General';
-  SKYDROPX_SHIPMENTS.unshift({
-    orderId: orderId,
-    folioSk: folio,
-    carrier: carrier,
-    route: `${orig}  ${dest}`,
-    cost: precio,
-    status: 'Guía Creada - Lista para Recolección',
-    trackingUrl: `https://pro.skydropx.com/tracking/${folio}`
-  });
-  renderSkydropxShipmentsTable();
-  alert(` Guía Skydropx #${folio} creada con éxito (${carrier} - $${precio}.00 MXN).\n\nAbriendo archivo PDF para impresión de etiqueta...`);
+function skMostrarTarifa() {
+  const box = document.getElementById('skTarifaElegida');
+  if (!box) return;
+  const r = SK_RATE_SEL;
+  box.innerHTML = r
+    ? `Tarifa elegida: <b>${escapeHtml(r.carrier)}</b> ${r.service ? '(' + escapeHtml(r.service) + ')' : ''} — <b>$${Number(r.price).toFixed(2)} MXN</b>`
+    : 'Primero cotiza y elige una tarifa con el botón "Seleccionar".';
 }
 
-function crearGuiaSkydropxDirecta() {
-  const orderId = document.getElementById('skSelectOrder')?.value || '#General';
-  const carrierSelect = document.getElementById('skSelectCarrier');
-  const carrierText = carrierSelect ? carrierSelect.options[carrierSelect.selectedIndex].text : 'FedEx Express';
-  const folio = 'SKY-' + Math.floor(10000 + Math.random() * 90000);
+function skSeleccionarTarifa(i) {
+  SK_RATE_SEL = SK_RATES[i] || null;
+  skMostrarTarifa();
+  document.getElementById('skOrigNombre')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
-  SKYDROPX_SHIPMENTS.unshift({
-    orderId: orderId,
-    folioSk: folio,
-    carrier: carrierText.split('(')[0].trim(),
-    route: 'Origen → Destino',
-    cost: 135.00,
-    status: 'Guía Generada PDF',
-    trackingUrl: `https://pro.skydropx.com/tracking/${folio}`
-  });
+async function crearGuiaSkydropxReal() {
+  const v = id => (document.getElementById(id)?.value || '').trim();
+  if (!SK_RATE_SEL || !SK_RATE_SEL.rate_id || !SK_QUOTATION_ID) { alert('Primero cotiza y selecciona una tarifa (las tarifas caducan: si pasó mucho tiempo, cotiza de nuevo).'); return; }
+  const orderId = v('skSelectOrder') || '#General';
+  const origen = { nombre: v('skOrigNombre'), empresa: v('skOrigEmpresa'), telefono: v('skOrigTel'), email: v('skOrigEmail'), calle: v('skOrigCalle'), referencia: 'Bodega' };
+  const destino = { nombre: v('skDestNombre'), empresa: v('skDestEmpresa'), telefono: v('skDestTel'), email: v('skDestEmail'), calle: v('skDestCalle'), referencia: v('skReference') };
+  const faltan = [['Nombre del remitente', origen.nombre], ['Teléfono del remitente', origen.telefono], ['Correo del remitente', origen.email], ['Calle del remitente', origen.calle],
+    ['Nombre del destinatario', destino.nombre], ['Teléfono del destinatario', destino.telefono], ['Correo del destinatario', destino.email], ['Calle del destinatario', destino.calle]]
+    .filter(x => !x[1]).map(x => x[0]);
+  if (faltan.length) { alert('Faltan datos: ' + faltan.join(', ')); return; }
+  const r = SK_RATE_SEL;
+  if (!confirm(`Se generará la guía con ${r.carrier} por $${Number(r.price).toFixed(2)} MXN y se cobrará de tu saldo de Skydropx. ¿Continuar?`)) return;
 
+  skGuardarCampos();
+  const btn = document.getElementById('skCrearBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando guía…'; }
+  try {
+    const d = await skydropxAdminRequest({
+      accion: 'crear', quotation_id: SK_QUOTATION_ID, rate_id: r.rate_id, origen, destino,
+      carta_porte: v('skCartaPorte'), tipo_paquete: v('skTipoPaquete')
+    });
+    const sh = d.shipment || {};
+    SK_RATE_SEL = null; skMostrarTarifa();
+    await cargarEnviosSkydropx();
+    cargarSaldoSkydropx();
+    if (sh.error) alert('Skydropx reportó un problema con la guía: ' + sh.error);
+    else if (sh.labelUrl) { alert(`Guía creada (${sh.carrier || r.carrier}) para ${orderId}. Rastreo: ${sh.trackingNumber || 'pendiente'}.`); window.open(sh.labelUrl, '_blank', 'noopener'); }
+    else alert('La guía se está generando en Skydropx. Usa "Actualizar Rastreos" en unos segundos para obtener el PDF.');
+  } catch (e) {
+    alert('No se pudo generar la guía: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Generar Guía Skydropx (se cobra de tu saldo)'; }
+  }
+}
+
+let SKYDROPX_SHIPMENTS = [];
+
+async function cargarEnviosSkydropx() {
+  try {
+    const d = await skydropxAdminRequest({ accion: 'listar' });
+    SKYDROPX_SHIPMENTS = d.shipments || [];
+  } catch (e) {
+    SKYDROPX_SHIPMENTS = [];
+    const tbody = document.getElementById('skydropxShipmentsTableBody');
+    if (tbody) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No se pudieron cargar los envíos: ${escapeHtml(e.message)}</td></tr>`; return; }
+  }
   renderSkydropxShipmentsTable();
-  alert(` Guía Skydropx #${folio} generada correctamente para el pedido ${orderId}.\n\nSe ha descargado la etiqueta lista para pegar en el paquete.`);
 }
 
 function renderSkydropxShipmentsTable() {
@@ -18683,7 +18761,7 @@ function renderSkydropxShipmentsTable() {
     tbody.innerHTML = `
       <tr>
         <td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">
-           No hay envíos ni guías registradas en Skydropx. Realiza una cotización o genera una guía para iniciar el historial.
+           No hay envíos registrados en Skydropx todavía.
         </td>
       </tr>
     `;
@@ -18692,20 +18770,32 @@ function renderSkydropxShipmentsTable() {
 
   tbody.innerHTML = SKYDROPX_SHIPMENTS.map(s => `
     <tr>
-      <td><b>${s.orderId}</b></td>
-      <td><code>${s.folioSk}</code></td>
-      <td><b>${s.carrier}</b></td>
-      <td>${s.route}</td>
-      <td style="font-weight:700; color:var(--series-2);">${fmtMoney(s.cost)}</td>
-      <td><span class="pill ok" style="font-size:11px;">${s.status}</span></td>
+      <td>${s.createdAt ? escapeHtml(new Date(s.createdAt).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })) : '—'}</td>
+      <td><code>${escapeHtml(s.trackingNumber || String(s.id || '').slice(0, 8))}</code></td>
+      <td><b>${escapeHtml(s.carrier || '—')}</b></td>
+      <td>${escapeHtml(s.trackingStatus || '—')}</td>
+      <td style="font-weight:700; color:var(--series-2);">${s.total != null ? fmtMoney(s.total) : '—'}</td>
+      <td><span class="pill ${s.error ? 'bad' : 'ok'}" style="font-size:11px;">${escapeHtml(s.error || s.status || '—')}</span></td>
       <td style="text-align:center;">
-        <button class="btn small primary" onclick="alert('Descargando PDF de etiqueta Skydropx ${s.folioSk}...')">Imprimir PDF</button>
-        <button class="btn small" onclick="alert('Abriendo rastreo oficial en Skydropx: ${s.trackingUrl}')">Rastrear</button>
+        ${s.labelUrl ? `<a class="btn small primary" href="${escapeHtml(s.labelUrl)}" target="_blank" rel="noopener">Imprimir PDF</a>` : `<button class="btn small" onclick="verDetalleEnvioSkydropx('${escapeHtml(s.id)}')">Buscar PDF</button>`}
+        ${s.trackingUrl ? `<a class="btn small" href="${escapeHtml(s.trackingUrl)}" target="_blank" rel="noopener">Rastrear</a>` : ''}
       </td>
     </tr>
   `).join('');
 }
 
-renderSkydropxShipmentsTable();</script>
+async function verDetalleEnvioSkydropx(id) {
+  try {
+    const d = await skydropxAdminRequest({ accion: 'detalle', shipment_id: id });
+    const i = SKYDROPX_SHIPMENTS.findIndex(x => x.id === id);
+    if (i >= 0 && d.shipment) SKYDROPX_SHIPMENTS[i] = d.shipment;
+    renderSkydropxShipmentsTable();
+    if (d.shipment && !d.shipment.labelUrl) alert('La guía aún no tiene PDF disponible. Intenta de nuevo en unos segundos.');
+  } catch (e) { alert(e.message); }
+}
+
+skRestaurarCampos();
+renderSkydropxShipmentsTable();
+</script>
 </body>
 </html>
