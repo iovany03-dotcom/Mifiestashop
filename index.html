@@ -2713,7 +2713,6 @@
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
         <a class="submenu-link" data-view="embudo">Embudo de compra</a>
-        <a class="submenu-link" data-view="promociones">Promociones</a>
       </div>
     </div>
 
@@ -2729,7 +2728,6 @@
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
-        <a class="submenu-link" data-view="categorias">Categorías</a>
       </div>
     </div>
 
@@ -2745,7 +2743,6 @@
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
         <a class="submenu-link" data-view="clientes">Clientes</a>
         <a class="submenu-link" data-view="proveedores">Proveedores</a>
-        <a class="submenu-link" data-view="personal">Direcciones</a>
       </div>
     </div>
 
@@ -2762,10 +2759,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="param-tienda-general">General</a>
         <a class="submenu-link" data-view="param-tienda-pedidos">Configuración de Pedidos</a>
-        <a class="submenu-link" data-view="param-tienda-pagos">Pagos por transferencia</a>
         <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
-        <a class="submenu-link" data-view="param-tienda-clientes">Ajustes sobre clientes</a>
-        <a class="submenu-link" data-view="param-tienda-contacto">Contacto</a>
         <a class="submenu-link" data-view="param-tienda-seo">Tráfico & SEO</a>
         <a class="submenu-link" data-view="param-tienda-buscar">Buscar</a>
       </div>
@@ -2781,13 +2775,9 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="paginas-cms">Páginas CMS</a>
-        <a class="submenu-link" data-view="resenas-clientes">Reseñas de Clientes</a>
         <a class="submenu-link" data-view="param-avanzados-rendimiento">Rendimiento</a>
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
-        <a class="submenu-link" data-view="plantillas-correo">Plantillas de Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
-        <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
-        <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
         <a class="submenu-link" data-view="api-desarrolladores">API para Desarrolladores</a>
         <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
       </div>
@@ -2802,11 +2792,16 @@
       </div>
     </div>
 
-    <div class="menu-item" data-view="configuracion">
-      <div class="menu-link">
+    <!-- SISTEMA -->
+    <div class="menu-item" id="menu-sistema">
+      <div class="menu-link" onclick="toggleSubmenu('menu-sistema')">
         <div class="menu-left">
-          <span>Ajustes del Sistema</span>
+          <span>Sistema</span>
         </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="submenu">
+        <a class="submenu-link" data-view="configuracion">Ajustes del Sistema</a>
       </div>
     </div>
 
@@ -3778,39 +3773,84 @@
     <!-- ================= VIEW DE PRODUCTOS ================= -->
     <section id="view-productos" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Catálogo de Productos</h2>
-          <div style="display:flex; gap:10px;">
-            <button class="btn primary" onclick="openEditProductModal(null)">Crear Nuevo Producto</button>
-            <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">Actualizar Catálogo</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="prodTabBtn-catalogo" onclick="switchProductosTab('catalogo')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Catálogo</button>
+          <button class="btn" id="prodTabBtn-categorias" onclick="switchProductosTab('categorias')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Categorías</button>
+          <button class="btn" id="prodTabBtn-promociones" onclick="switchProductosTab('promociones')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Promociones</button>
+        </div>
+
+        <div id="prodTab-catalogo">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <h2>Catálogo de Productos</h2>
+            <div style="display:flex; gap:10px;">
+              <button class="btn primary" onclick="openEditProductModal(null)">Crear Nuevo Producto</button>
+              <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">Actualizar Catálogo</button>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+            <input type="search" id="catalogSearchInput" placeholder="Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
+            <select id="catalogStatusFilter" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+              <option value="activos" selected>Solo activos</option>
+              <option value="inactivos">Solo desactivados</option>
+              <option value="todos">Todos</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Imagen</th>
+                  <th>SKU / Referencia</th>
+                  <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('nombre')">Nombre del Producto <span id="catalogSortArrow-nombre"></span></th>
+                  <th>Categoría</th>
+                  <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('precio')">Precio (MXN) <span id="catalogSortArrow-precio"></span></th>
+                  <th>Origen</th>
+                  <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('estado')">Estado <span id="catalogSortArrow-estado"></span></th>
+                  <th style="text-align:center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="catalogTableBody">
+                <!-- Dynamically rendered -->
+              </tbody>
+            </table>
           </div>
         </div>
-        <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
-          <input type="search" id="catalogSearchInput" placeholder="Buscar por producto, SKU o código de barras…" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); min-width:260px;">
-          <select id="catalogStatusFilter" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-            <option value="activos" selected>Solo activos</option>
-            <option value="inactivos">Solo desactivados</option>
-            <option value="todos">Todos</option>
-          </select>
+
+        <div id="prodTab-categorias" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <h2>Categorías de Productos</h2>
+            <button class="btn primary" onclick="loadCategoriesFromAPI()">Recargar Categorías</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Nombre de Categoría</th><th>Estado</th><th>Origen</th></tr>
+              </thead>
+              <tbody id="categoriesTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>SKU / Referencia</th>
-                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('nombre')">Nombre del Producto <span id="catalogSortArrow-nombre"></span></th>
-                <th>Categoría</th>
-                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('precio')">Precio (MXN) <span id="catalogSortArrow-precio"></span></th>
-                <th>Origen</th>
-                <th style="cursor:pointer; user-select:none;" onclick="sortCatalogBy('estado')">Estado <span id="catalogSortArrow-estado"></span></th>
-                <th style="text-align:center;">Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="catalogTableBody">
-              <!-- Dynamically rendered -->
-            </tbody>
-          </table>
+
+        <div id="prodTab-promociones" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <h2>Promociones y Cupones</h2>
+            <button class="btn primary" onclick="openPromoAdminModal(null)">Nueva Promoción</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+            Estas son las promociones que ven los clientes en su portal ("Mi Perfil" → Promociones & Cupones). Solo las marcadas como activas se muestran.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Título</th><th>Tipo</th><th>Código</th><th>Vigencia</th><th style="text-align:center;">Activa</th><th style="text-align:center;">Acciones</th></tr>
+              </thead>
+              <tbody id="promosAdminTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -3929,73 +3969,58 @@
       </div>
     </section>
 
-    <!-- ================= VIEW CATEGORÍAS ================= -->
-    <section id="view-categorias" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Categorías de Productos</h2>
-          <button class="btn primary" onclick="loadCategoriesFromAPI()">Recargar Categorías</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre de Categoría</th><th>Estado</th><th>Origen</th></tr>
-            </thead>
-            <tbody id="categoriesTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
     <!-- ================= VIEW PÁGINAS CMS ================= -->
     <section id="view-paginas-cms" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Páginas CMS</h2>
-          <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="cmsTabBtn-paginas" onclick="switchCmsTab('paginas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Páginas CMS</button>
+          <button class="btn" id="cmsTabBtn-resenas" onclick="switchCmsTab('resenas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Reseñas de Clientes</button>
         </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
-          Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
-        </p>
-        <div style="margin-bottom:14px;">
-          <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Título</th><th>Slug</th><th>En el footer</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="cmsPagesAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
-    <!-- ================= VIEW RESEÑAS DE CLIENTES ================= -->
-    <section id="view-resenas-clientes" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Reseñas de Clientes</h2>
-          <button class="btn primary" onclick="openResenaModal()">+ Agregar reseña</button>
+        <div id="cmsTab-paginas">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <h2>Páginas CMS</h2>
+            <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+            Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
+            Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
+          </p>
+          <div style="margin-bottom:14px;">
+            <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Título</th><th>Slug</th><th>En el footer</th><th style="text-align:center;">Acciones</th></tr>
+              </thead>
+              <tbody id="cmsPagesAdminTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Reseñas reales que los clientes dejaron en Google (u otro lugar), capturadas a mano con su foto y texto.
-          Solo las marcadas como "Activa" se muestran en la tienda.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Foto</th><th>Cliente</th><th>Reseña</th><th>Calificación</th><th>Activa</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="resenasAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
+
+        <div id="cmsTab-resenas" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+            <h2>Reseñas de Clientes</h2>
+            <button class="btn primary" onclick="openResenaModal()">+ Agregar reseña</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
+            Reseñas reales que los clientes dejaron en Google (u otro lugar), capturadas a mano con su foto y texto.
+            Solo las marcadas como "Activa" se muestran en la tienda.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Foto</th><th>Cliente</th><th>Reseña</th><th>Calificación</th><th>Activa</th><th style="text-align:center;">Acciones</th></tr>
+              </thead>
+              <tbody id="resenasAdminTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -4028,47 +4053,62 @@
       </div>
     </section>
 
-    <!-- ================= VIEW PROMOCIONES ================= -->
-    <section id="view-promociones" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-          <h2>Promociones y Cupones</h2>
-          <button class="btn primary" onclick="openPromoAdminModal(null)">Nueva Promoción</button>
-        </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-          Estas son las promociones que ven los clientes en su portal ("Mi Perfil" → Promociones & Cupones). Solo las marcadas como activas se muestran.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Título</th><th>Tipo</th><th>Código</th><th>Vigencia</th><th style="text-align:center;">Activa</th><th style="text-align:center;">Acciones</th></tr>
-            </thead>
-            <tbody id="promosAdminTableBody">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
     <!-- ================= VIEW CLIENTES ================= -->
     <section id="view-clientes" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
-          <h2>Directorio de Clientes</h2>
-          <button class="btn primary" onclick="loadCustomersFromAPI()">Recargar Clientes</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="clientesTabBtn-directorio" onclick="switchClientesAdminTab('directorio')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Directorio</button>
+          <button class="btn" id="clientesTabBtn-ajustes" onclick="switchClientesAdminTab('ajustes')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Ajustes</button>
         </div>
-        <input type="search" id="customersSearchInput" placeholder="Buscar por nombre o correo…" oninput="filterCustomersTable(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
-        <div id="customersCountNote" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
-            </thead>
-            <tbody id="customersTableBody">
-              <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
-            </tbody>
-          </table>
+
+        <div id="clientesTab-directorio">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+            <h2>Directorio de Clientes</h2>
+            <button class="btn primary" onclick="loadCustomersFromAPI()">Recargar Clientes</button>
+          </div>
+          <input type="search" id="customersSearchInput" placeholder="Buscar por nombre o correo…" oninput="filterCustomersTable(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; margin-bottom:14px;">
+          <div id="customersCountNote" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>RFC / Identificador</th><th>Fecha Registro</th><th>Estado</th></tr>
+              </thead>
+              <tbody id="customersTableBody">
+                <tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="clientesTab-ajustes" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Ajustes sobre Clientes</h2>
+            <button class="btn primary" onclick="alert('Configuración de clientes guardada.')">Guardar Ajustes</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Requisitos de Registro</h3>
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Requerir número telefónico en registro</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Enviar correo de bienvenida al registrarse</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Habilitar campo de RFC para facturación</label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Grupos & Descuentos</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Grupo por defecto para nuevos clientes:</b>
+                  <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                    <option selected>Cliente Menudeo (General)</option>
+                    <option>Cliente Mayoreo (Descuento 15%)</option>
+                    <option>Cliente VIP (Descuento 20%)</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -4219,33 +4259,109 @@
     <!-- 1. GENERAL -->
     <section id="view-param-tienda-general" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2> Parámetros de la Tienda — General</h2>
-          <button class="btn primary" onclick="alert('Configuración General guardada con éxito.')">Guardar Cambios</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="genTabBtn-general" onclick="switchGeneralTab('general')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">General</button>
+          <button class="btn" id="genTabBtn-pagos" onclick="switchGeneralTab('pagos')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Pagos por transferencia</button>
+          <button class="btn" id="genTabBtn-contacto" onclick="switchGeneralTab('contacto')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Contacto & Sucursales</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Identificación & Estado</h3>
+
+        <div id="genTab-general">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2> Parámetros de la Tienda — General</h2>
+            <button class="btn primary" onclick="alert('Configuración General guardada con éxito.')">Guardar Cambios</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Identificación & Estado</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Nombre de la Tienda:</b> <input type="text" value="Mi Fiestashop" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Estado de la Tienda:</b>
+                  <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                    <option selected>Tienda Activa en Línea</option>
+                    <option>Modo Mantenimiento</option>
+                    <option>Modo Catálogo (Sin ventas)</option>
+                  </select>
+                </label>
+                <label><b>Correo Principal de Notificaciones:</b> <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Región & Moneda</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Moneda Predeterminada:</b> <input type="text" value="Peso Mexicano (MXN $)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+                <label><b>Zona Horaria:</b> <input type="text" value="America/Mexico_City (UTC-6)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+                <label><b>Idioma Predeterminado:</b> <input type="text" value="Español (México)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="genTab-pagos" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <h2>Cuenta para pagos por transferencia</h2>
+            <button class="btn primary" onclick="saveTransferenciaConfig()">Guardar</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+            Cuando un cliente elige <b>Transferencia bancaria</b> en el checkout, al confirmar su pedido ve estos datos (con el monto y su número de pedido como concepto) y también le llegan en el correo de confirmación.
+          </p>
+          <div class="card" style="margin:0; background:var(--plane); max-width:640px;">
             <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Nombre de la Tienda:</b> <input type="text" value="Mi Fiestashop" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Estado de la Tienda:</b> 
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-                  <option selected>Tienda Activa en Línea</option>
-                  <option>Modo Mantenimiento</option>
-                  <option>Modo Catálogo (Sin ventas)</option>
-                </select>
-              </label>
-              <label><b>Correo Principal de Notificaciones:</b> <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Leyenda:</b>
+                  <input type="text" id="cfgTransLeyenda" placeholder="Ej. Cuenta para reservaciones" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Titular de la cuenta:</b>
+                  <input type="text" id="cfgTransTitular" placeholder="Razón social o nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Banco:</b>
+                  <input type="text" id="cfgTransBanco" placeholder="Ej. Bancomer" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Número de cuenta:</b>
+                  <input type="text" id="cfgTransCuenta" placeholder="Solo dígitos" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Cuenta CLABE (18 dígitos):</b>
+                  <input type="text" id="cfgTransClabe" placeholder="012180001191093312" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Instrucciones para el cliente:</b>
+                  <textarea id="cfgTransInstrucciones" rows="3" placeholder="Ej. Envíanos tu comprobante por WhatsApp…" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" id="cfgTransActiva"> Mostrar estos datos al cliente
+                </label>
+                <div id="cfgTransMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+              </div>
+          </div>
+        </div>
+
+        <div id="genTab-contacto" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Información de Contacto & Tiendas</h2>
+            <button class="btn primary" onclick="alert('Datos de contacto actualizados.')">Guardar Contacto</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Datos Fiscales & Legales</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Razón Social:</b> <input type="text" value="Mi Fiestashop S.A. de C.V." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>RFC de la Empresa:</b> <input type="text" value="MFI200815XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Dirección Matriz:</b> <input type="text" value="Av. Juárez 102, Col. Centro, Puebla, Pue." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Atención al Cliente</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Teléfono Directo:</b> <input type="text" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>WhatsApp Oficial:</b> <input type="text" value="+52 55 9876 5432" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Horario de Atención:</b> <input type="text" value="Lun - Sáb: 9:00 AM - 7:00 PM" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
             </div>
           </div>
 
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Región & Moneda</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Moneda Predeterminada:</b> <input type="text" value="Peso Mexicano (MXN $)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-              <label><b>Zona Horaria:</b> <input type="text" value="America/Mexico_City (UTC-6)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-              <label><b>Idioma Predeterminado:</b> <input type="text" value="Español (México)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-            </div>
+          <div class="card" style="margin:20px 0 0;">
+            <h3 style="margin-top:0; color:var(--series-2);">Códigos QR — Página de reseña por sucursal</h3>
+            <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Para imprimir y pegar en caja: el cliente escanea, deja correo/teléfono/tipo de evento (se guarda en <code>leads_tienda</code>) y lo mandamos directo a dejar su reseña en Google.</p>
+            <div id="qrBranchesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;"></div>
           </div>
         </div>
       </div>
@@ -4305,74 +4421,6 @@
               <label><b>Productos por página en catálogo:</b> <input type="number" value="24" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. AJUSTES SOBRE CLIENTES -->
-    <section id="view-param-tienda-clientes" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Ajustes sobre Clientes</h2>
-          <button class="btn primary" onclick="alert('Configuración de clientes guardada.')">Guardar Ajustes</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Requisitos de Registro</h3>
-            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Requerir número telefónico en registro</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Enviar correo de bienvenida al registrarse</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Habilitar campo de RFC para facturación</label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Grupos & Descuentos</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Grupo por defecto para nuevos clientes:</b> 
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-                  <option selected>Cliente Menudeo (General)</option>
-                  <option>Cliente Mayoreo (Descuento 15%)</option>
-                  <option>Cliente VIP (Descuento 20%)</option>
-                </select>
-              </label>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. CONTACTO -->
-    <section id="view-param-tienda-contacto" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Información de Contacto & Tiendas</h2>
-          <button class="btn primary" onclick="alert('Datos de contacto actualizados.')">Guardar Contacto</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Datos Fiscales & Legales</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Razón Social:</b> <input type="text" value="Mi Fiestashop S.A. de C.V." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>RFC de la Empresa:</b> <input type="text" value="MFI200815XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Dirección Matriz:</b> <input type="text" value="Av. Juárez 102, Col. Centro, Puebla, Pue." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Atención al Cliente</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Teléfono Directo:</b> <input type="text" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>WhatsApp Oficial:</b> <input type="text" value="+52 55 9876 5432" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Horario de Atención:</b> <input type="text" value="Lun - Sáb: 9:00 AM - 7:00 PM" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin:20px 0 0;">
-          <h3 style="margin-top:0; color:var(--series-2);">Códigos QR — Página de reseña por sucursal</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Para imprimir y pegar en caja: el cliente escanea, deja correo/teléfono/tipo de evento (se guarda en <code>leads_tienda</code>) y lo mandamos directo a dejar su reseña en Google.</p>
-          <div id="qrBranchesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;"></div>
         </div>
       </div>
     </section>
@@ -4462,27 +4510,57 @@
     <!-- 8. RENDIMIENTO -->
     <section id="view-param-avanzados-rendimiento" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Rendimiento del Sistema & Caché</h2>
-          <button class="btn primary" onclick="alert('Caché del sistema vaciado y optimizado.')">Limpiar Caché General</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="rendTabBtn-cache" onclick="switchRendimientoTab('cache')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Rendimiento & Caché</button>
+          <button class="btn" id="rendTabBtn-registros" onclick="switchRendimientoTab('registros')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Registros (Logs)</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Caché de Plantillas & Assets</h3>
-            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Caché de plantillas Smarty activo</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Minificación y compresión de CSS/JS</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Compresión GZIP / Brotli habilitada</label>
+
+        <div id="rendTab-cache">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Rendimiento del Sistema & Caché</h2>
+            <button class="btn primary" onclick="alert('Caché del sistema vaciado y optimizado.')">Limpiar Caché General</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Caché de Plantillas & Assets</h3>
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Caché de plantillas Smarty activo</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Minificación y compresión de CSS/JS</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Compresión GZIP / Brotli habilitada</label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Servidor & Memoria</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <div>Límite de Memoria PHP: <b>512 MB</b></div>
+                <div>Versión de Ejecución: <b>Node v20.x / PHP 8.2</b></div>
+                <div>Servidor de Base de Datos: <span class="pill ok">Supabase PostgreSQL 15</span></div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Servidor & Memoria</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <div>Límite de Memoria PHP: <b>512 MB</b></div>
-              <div>Versión de Ejecución: <b>Node v20.x / PHP 8.2</b></div>
-              <div>Servidor de Base de Datos: <span class="pill ok">Supabase PostgreSQL 15</span></div>
+        <div id="rendTab-registros" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Registros del Sistema (Logs)</h2>
+            <div>
+              <button class="btn secondary" onclick="alert('Descargando archivo de log completo...')">Descargar Log</button>
+              <button class="btn danger" onclick="alert('Historial de logs limpiado.')"> Limpiar Logs</button>
             </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
+                <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
+                <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
+                <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -4491,49 +4569,53 @@
     <!-- 9. CORREO -->
     <section id="view-param-avanzados-correo" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2> Configuración del Servidor de Correo (SMTP)</h2>
-          <div>
-            <button class="btn secondary" onclick="alert('Enviando correo de prueba a admin@mifiestashop.com...')">Probar Correo</button>
-            <button class="btn primary" onclick="alert('Parámetros SMTP guardados.')">Guardar SMTP</button>
-          </div>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="correoTabBtn-smtp" onclick="switchCorreoTab('smtp')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Configuración SMTP</button>
+          <button class="btn" id="correoTabBtn-plantillas" onclick="switchCorreoTab('plantillas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Plantillas</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Servidor SMTP</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Servidor de Salida (Host):</b> <input type="text" value="smtp.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Puerto SMTP:</b> <input type="number" value="587" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Encriptación:</b> 
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-                  <option selected>TLS / STARTTLS</option>
-                  <option>SSL</option>
-                  <option>Ninguna</option>
-                </select>
-              </label>
+
+        <div id="correoTab-smtp">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2> Configuración del Servidor de Correo (SMTP)</h2>
+            <div>
+              <button class="btn secondary" onclick="alert('Enviando correo de prueba a admin@mifiestashop.com...')">Probar Correo</button>
+              <button class="btn primary" onclick="alert('Parámetros SMTP guardados.')">Guardar SMTP</button>
             </div>
           </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Servidor SMTP</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Servidor de Salida (Host):</b> <input type="text" value="smtp.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Puerto SMTP:</b> <input type="number" value="587" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Encriptación:</b>
+                  <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                    <option selected>TLS / STARTTLS</option>
+                    <option>SSL</option>
+                    <option>Ninguna</option>
+                  </select>
+                </label>
+              </div>
+            </div>
 
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Autenticación</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Usuario SMTP:</b> <input type="email" value="notificaciones@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Contraseña SMTP:</b> <input type="password" value="••••••••••••" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Autenticación</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Usuario SMTP:</b> <input type="email" value="notificaciones@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Contraseña SMTP:</b> <input type="password" value="••••••••••••" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- 9b. PLANTILLAS DE CORREO -->
-    <section id="view-plantillas-correo" class="view-panel hidden">
-      <div class="card">
-        <h2 style="margin-top:0;">Plantillas de Correo Transaccional</h2>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
-          Estas son las plantillas reales que se envían a los clientes (mismo diseño y contenido que recibirán). Se envían automáticamente en el momento indicado en cada tarjeta; usa "Vista previa" para verlas como las recibe el cliente, o "Enviar prueba" para mandarte una copia a un correo tuyo.
-        </p>
-        <div id="emailTemplatesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
-          <!-- Dynamically populated by renderEmailTemplatesGrid() -->
+        <div id="correoTab-plantillas" class="hidden">
+          <h2 style="margin-top:0;">Plantillas de Correo Transaccional</h2>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+            Estas son las plantillas reales que se envían a los clientes (mismo diseño y contenido que recibirán). Se envían automáticamente en el momento indicado en cada tarjeta; usa "Vista previa" para verlas como las recibe el cliente, o "Enviar prueba" para mandarte una copia a un correo tuyo.
+          </p>
+          <div id="emailTemplatesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+            <!-- Dynamically populated by renderEmailTemplatesGrid() -->
+          </div>
         </div>
       </div>
     </section>
@@ -4596,104 +4678,6 @@
       </div>
     </section>
 
-    <!-- 12. REGISTROS -->
-    <section id="view-param-avanzados-registros" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Registros del Sistema (Logs)</h2>
-          <div>
-            <button class="btn secondary" onclick="alert('Descargando archivo de log completo...')">Descargar Log</button>
-            <button class="btn danger" onclick="alert('Historial de logs limpiado.')"> Limpiar Logs</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
-              <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
-              <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
-              <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- 13. WEBSERVICE -->
-    <section id="view-param-avanzados-webservice" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Conexión API Webservice PrestaShop</h2>
-          <div>
-            <button class="btn secondary" onclick="alert('Probando respuesta de API webservice...')">Probar API</button>
-            <button class="btn primary" onclick="alert('Configuración webservice actualizada.')">Guardar Clave</button>
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Parámetros de la API</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Estado del Webservice:</b> <span class="pill ok">Habilitado y Conectado</span></label>
-              <label><b>URL Base:</b> <input type="text" value="https://www.mifiestashop.com/api" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-              <label><b>Clave API (Webservice Key):</b> <input type="text" value="PS_API_KEY_CONFIGURED_IN_ENV" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Permisos Activos de Endpoints</h3>
-            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
-              <div> <code>GET/POST /api/products</code> (Catálogo & Imágenes)</div>
-              <div> <code>GET/POST /api/orders</code> (Pedidos & Ventas)</div>
-              <div> <code>GET/POST /api/customers</code> (Clientes)</div>
-              <div> <code>GET/POST /api/categories</code> (Categorías)</div>
-              <div> <code>GET/POST /api/stock_availables</code> (Inventario)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGOS POR TRANSFERENCIA -->
-    <section id="view-param-tienda-pagos" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-          <h2>Cuenta para pagos por transferencia</h2>
-          <button class="btn primary" onclick="saveTransferenciaConfig()">Guardar</button>
-        </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
-          Cuando un cliente elige <b>Transferencia bancaria</b> en el checkout, al confirmar su pedido ve estos datos (con el monto y su número de pedido como concepto) y también le llegan en el correo de confirmación.
-        </p>
-        <div class="card" style="margin:0; background:var(--plane); max-width:640px;">
-          <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Leyenda:</b>
-                <input type="text" id="cfgTransLeyenda" placeholder="Ej. Cuenta para reservaciones" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Titular de la cuenta:</b>
-                <input type="text" id="cfgTransTitular" placeholder="Razón social o nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Banco:</b>
-                <input type="text" id="cfgTransBanco" placeholder="Ej. Bancomer" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Número de cuenta:</b>
-                <input type="text" id="cfgTransCuenta" placeholder="Solo dígitos" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Cuenta CLABE (18 dígitos):</b>
-                <input type="text" id="cfgTransClabe" placeholder="012180001191093312" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Instrucciones para el cliente:</b>
-                <textarea id="cfgTransInstrucciones" rows="3" placeholder="Ej. Envíanos tu comprobante por WhatsApp…" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" id="cfgTransActiva"> Mostrar estos datos al cliente
-              </label>
-              <div id="cfgTransMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
-            </div>
-        </div>
-      </div>
-    </section>
 
     <!-- 13b. META PIXEL -->
     <section id="view-param-avanzados-pixel" class="view-panel hidden">
@@ -6050,10 +6034,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
-    { key: 'categorias', label: 'Categorías' },
-    { key: 'paginas-cms', label: 'Páginas CMS' },
-    { key: 'resenas-clientes', label: 'Reseñas de Clientes' },
-    { key: 'promociones', label: 'Promociones' }
+    { key: 'paginas-cms', label: 'Páginas CMS' }
   ]},
   { group: 'Contactos & Equipo', items: [
     { key: 'personal', label: 'Personal / Equipo' },
@@ -6063,21 +6044,15 @@ const PERMISSION_GROUPS = [
   { group: 'Parámetros de la Tienda', items: [
     { key: 'param-tienda-general', label: 'General' },
     { key: 'param-tienda-pedidos', label: 'Config. Pedidos' },
-    { key: 'param-tienda-pagos', label: 'Pagos por transferencia' },
     { key: 'param-tienda-productos', label: 'Config. Productos' },
-    { key: 'param-tienda-clientes', label: 'Ajustes de Clientes' },
-    { key: 'param-tienda-contacto', label: 'Contacto' },
     { key: 'param-tienda-seo', label: 'Tráfico & SEO' },
     { key: 'param-tienda-buscar', label: 'Buscar' }
   ]},
   { group: 'Parámetros Avanzados', items: [
     { key: 'param-avanzados-rendimiento', label: 'Rendimiento' },
     { key: 'param-avanzados-correo', label: 'Correo' },
-    { key: 'plantillas-correo', label: 'Plantillas de Correo' },
     { key: 'param-avanzados-importar', label: 'Importar' },
     { key: 'param-avanzados-equipo', label: 'Equipo' },
-    { key: 'param-avanzados-registros', label: 'Registros' },
-    { key: 'param-avanzados-webservice', label: 'Webservice' },
     { key: 'api-desarrolladores', label: 'API para Desarrolladores' }
   ]},
   { group: 'Otros', items: [
@@ -7337,13 +7312,10 @@ function switchView(viewName) {
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
-    productos: ['Catálogo de Productos', 'Gestión del Catálogo'],
+    productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
-    categorias: ['Categorías', 'Organización del Catálogo'],
-    'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop'],
-    'resenas-clientes': ['Reseñas de Clientes', 'Testimonios con foto para la tienda'],
-    promociones: ['Promociones y Cupones', 'Ofertas visibles en el portal de clientes'],
+    'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
     proveedores: ['Proveedores', 'Directorio de Insumos'],
@@ -7351,21 +7323,15 @@ function switchView(viewName) {
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
     costos: ['Costos & Gastos', 'Control de Gastos'],
     configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
-    'param-tienda-general': ['Parámetros de la Tienda', 'General & Identificación'],
+    'param-tienda-general': ['Parámetros de la Tienda', 'General, pagos por transferencia y contacto'],
     'param-tienda-pedidos': ['Parámetros de la Tienda', 'Configuración de Pedidos'],
     'param-tienda-productos': ['Parámetros de la Tienda', 'Configuración de Productos'],
-    'param-tienda-clientes': ['Parámetros de la Tienda', 'Ajustes sobre Clientes'],
-    'param-tienda-contacto': ['Parámetros de la Tienda', 'Contacto & Sucursales'],
     'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
-    'param-tienda-pagos': ['Parámetros de la Tienda', 'Pagos por transferencia'],
-    'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento & Caché'],
-    'param-avanzados-correo': ['Parámetros Avanzados', 'Configuración SMTP de Correo'],
-    'plantillas-correo': ['Parámetros Avanzados', 'Plantillas de Correo Transaccional'],
+    'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento, caché y registros'],
+    'param-avanzados-correo': ['Parámetros Avanzados', 'SMTP y plantillas de correo'],
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
-    'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
-    'param-avanzados-webservice': ['Parámetros Avanzados', 'Conexión con PrestaShop'],
     'api-desarrolladores': ['API para Desarrolladores', 'Llaves y documentación para integraciones externas'],
     'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
   };
@@ -7375,25 +7341,23 @@ function switchView(viewName) {
   }
 
   // Auto-fetch API data when opening specific views
-  if (viewName === 'categorias') loadCategoriesFromAPI();
+  if (viewName === 'productos') switchProductosTab('catalogo');
   if (viewName === 'movimientos') initKardexView();
   if (viewName === 'embudo') loadEmbudo();
-  if (viewName === 'paginas-cms') loadCmsPagesAdmin();
-  if (viewName === 'resenas-clientes') loadResenasAdmin();
+  if (viewName === 'paginas-cms') switchCmsTab('paginas');
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
-  if (viewName === 'promociones') loadPromosAdmin();
   if (viewName === 'notificaciones') markNotificationsRead();
-  if (viewName === 'clientes') loadCustomersFromAPI();
+  if (viewName === 'clientes') switchClientesAdminTab('directorio');
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
-  if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
+  if (viewName === 'param-avanzados-correo') switchCorreoTab('smtp');
+  if (viewName === 'param-avanzados-rendimiento') switchRendimientoTab('cache');
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
-  if (viewName === 'param-tienda-pagos') renderTransferenciaAdminForm();
-  if (viewName === 'param-tienda-contacto') renderQrBranchesGrid();
+  if (viewName === 'param-tienda-general') switchGeneralTab('general');
   if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
@@ -16411,6 +16375,88 @@ async function generateBranchQr(key) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generar QR'; }
   }
+}
+
+// --- Back office: Productos (pestañas: Catálogo, Categorías,
+// Promociones — antes 3 vistas separadas, Categorías vivía en "Catálogo &
+// Stock" y Promociones en "Vender").
+let categoriasTabLoaded = false, promocionesTabLoaded = false;
+function switchProductosTab(tab) {
+  ['catalogo', 'categorias', 'promociones'].forEach(key => {
+    const panel = document.getElementById(`prodTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`prodTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'categorias' && !categoriasTabLoaded) { categoriasTabLoaded = true; loadCategoriesFromAPI(); }
+  if (tab === 'promociones' && !promocionesTabLoaded) { promocionesTabLoaded = true; loadPromosAdmin(); }
+}
+
+// --- Back office: Clientes (pestañas: Directorio, Ajustes — antes 2
+// vistas separadas, la de ajustes vivía en Parámetros de la Tienda).
+function switchClientesAdminTab(tab) {
+  ['directorio', 'ajustes'].forEach(key => {
+    const panel = document.getElementById(`clientesTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`clientesTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'directorio') loadCustomersFromAPI();
+}
+
+// --- Back office: Páginas CMS (pestañas: Páginas CMS, Reseñas de
+// Clientes — antes 2 vistas separadas).
+let resenasTabLoaded = false;
+function switchCmsTab(tab) {
+  ['paginas', 'resenas'].forEach(key => {
+    const panel = document.getElementById(`cmsTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`cmsTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'paginas') loadCmsPagesAdmin();
+  if (tab === 'resenas' && !resenasTabLoaded) { resenasTabLoaded = true; loadResenasAdmin(); }
+}
+
+// --- Back office: Parámetros Avanzados → Rendimiento (pestañas:
+// Rendimiento & Caché, Registros — antes 2 vistas separadas).
+function switchRendimientoTab(tab) {
+  ['cache', 'registros'].forEach(key => {
+    const panel = document.getElementById(`rendTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`rendTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+}
+
+// --- Back office: Parámetros Avanzados → Correo (pestañas: SMTP,
+// Plantillas — antes 2 vistas separadas).
+let correoTabLoaded = false;
+function switchCorreoTab(tab) {
+  ['smtp', 'plantillas'].forEach(key => {
+    const panel = document.getElementById(`correoTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`correoTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'plantillas' && !correoTabLoaded) { correoTabLoaded = true; renderEmailTemplatesGrid(); }
+}
+
+// --- Back office: Parámetros de la Tienda → General (pestañas: General,
+// Pagos por transferencia, Contacto & Sucursales — antes 3 vistas
+// separadas). Los datos de cada pestaña se cargan la primera vez que se abre,
+// no todos de entrada.
+const GENERAL_TABS = ['general', 'pagos', 'contacto'];
+let generalTabsLoaded = { pagos: false, contacto: false };
+function switchGeneralTab(tab) {
+  GENERAL_TABS.forEach(key => {
+    const panel = document.getElementById(`genTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`genTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'pagos' && !generalTabsLoaded.pagos) { generalTabsLoaded.pagos = true; renderTransferenciaAdminForm(); }
+  if (tab === 'contacto' && !generalTabsLoaded.contacto) { generalTabsLoaded.contacto = true; renderQrBranchesGrid(); }
 }
 
 // --- Back office: Parámetros de la Tienda → Pagos por transferencia ---
