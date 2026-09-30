@@ -19,8 +19,14 @@
 //   'crear_cupon' { codigo?, prefijo?, tipo, valor, minimo, inicia, vence, usos_max, email, descripcion }
 //   'cupon_activo' { codigo, activo }
 //   'historial'  -> { historial: [...] }
+//   WhatsApp automático por chatbotproia (lib/chatbotproia.js):
+//   'enviar' con canal 'chatbot' y plantilla: { nombre, idioma, variables: ['nombre','cupon',…], texto? }
+//   'chatbot_estado' / 'chatbot_guardar' { url, token } / 'chatbot_quitar'
+//   'plantillas' -> plantillas de WhatsApp del bot (Meta) + qué variable va en cada {{n}}
+//   'crear_plantilla' { nombre, categoria, texto con {nombre} {cupon}… } / 'mapear_plantilla' { nombre, idioma, variables }
 const { layout, escapeHtml, sendHtml, smtpConfigured } = require('../lib/correo.js');
 const { CODIGO_RE, normalizarCodigo, generarCodigo, etiquetaCupon } = require('../lib/cupones.js');
+const chatbot = require('../lib/chatbotproia.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -257,31 +263,64 @@ function textoCupon(c) {
 async function cargarDestinatario(db, d) {
   const ref = String(d.referencia || '');
   if (d.tipo === 'pedido' && /^[A-Z]+-\d+$/.test(ref)) {
-    const rows = await db.get(`pedidos_online?folio=eq.${encodeURIComponent(ref)}&select=folio,customer_name,customer_email,customer_phone,items&limit=1`);
+    const rows = await db.get(`pedidos_online?folio=eq.${encodeURIComponent(ref)}&select=folio,customer_name,customer_email,customer_phone,items,total&limit=1`);
     const p = rows[0];
     if (!p) return null;
-    return { tipo: 'pedido', referencia: p.folio, nombre: p.customer_name || '', email: p.customer_email || '', telefono: p.customer_phone || '', items: itemsDe(p.items) };
+    return { tipo: 'pedido', referencia: p.folio, nombre: p.customer_name || '', email: p.customer_email || '', telefono: p.customer_phone || '', items: itemsDe(p.items), total: Number(p.total) || 0 };
   }
   const m = ref.match(/^CRW-(\d+)$/);
   if (d.tipo === 'carrito' && m) {
-    const rows = await db.get(`carritos_web?id=eq.${m[1]}&select=id,customer_name,customer_email,customer_phone,items&limit=1`);
+    const rows = await db.get(`carritos_web?id=eq.${m[1]}&select=id,customer_name,customer_email,customer_phone,items,subtotal&limit=1`);
     const c = rows[0];
     if (!c) return null;
-    return { tipo: 'carrito', referencia: ref, nombre: c.customer_name || '', email: c.customer_email || '', telefono: c.customer_phone || '', items: itemsDe(c.items) };
+    const items = itemsDe(c.items);
+    return { tipo: 'carrito', referencia: ref, nombre: c.customer_name || '', email: c.customer_email || '', telefono: c.customer_phone || '', items, total: Number(c.subtotal) || items.reduce((s, i) => s + i.price * i.qty, 0) };
   }
   return null;
 }
 
+// ---------- chatbotproia ----------
+async function chatbotConfig(db) {
+  const rows = await db.get('integraciones?clave=eq.chatbotproia&select=config&limit=1');
+  const c = rows[0] && rows[0].config;
+  return c && c.token ? { url: c.url || chatbot.URL_DEFAULT, token: c.token } : null;
+}
+
+// Valores de las variables para el {{n}} de una plantilla de WhatsApp. Meta
+// rechaza parámetros vacíos: se pone un texto neutro.
+function valorVariable(v, datos) {
+  const val = String(datos[v] ?? '').replace(/\s+/g, ' ').trim();
+  if (val) return val;
+  return v === 'nombre' ? 'cliente' : '-';
+}
+
 async function enviar(db, body, enviadoPor) {
-  const canal = body.canal === 'whatsapp' ? 'whatsapp' : 'email';
+  const canal = ['whatsapp', 'chatbot'].includes(body.canal) ? body.canal : 'email';
   const destinos = (Array.isArray(body.destinatarios) ? body.destinatarios : []).slice(0, MAX_ENVIO);
   if (!destinos.length) throw new Error('Selecciona al menos un cliente.');
   const mensaje = String(body.mensaje || '').slice(0, 3000);
   const asunto = String(body.asunto || '').slice(0, 150) || '¡Tu carrito te está esperando!';
-  if (!mensaje.trim()) throw new Error('Escribe el mensaje.');
+  if (canal !== 'chatbot' && !mensaje.trim()) throw new Error('Escribe el mensaje.');
   if (canal === 'email' && !smtpConfigured()) throw new Error('El correo (SMTP) no está configurado en Vercel.');
 
+  // WhatsApp por chatbotproia: fuera de las 24 h desde el último mensaje del
+  // cliente Meta solo acepta plantillas aprobadas, así que siempre se manda
+  // una plantilla con sus {{n}} llenos con las variables elegidas.
+  let bot = null, plantilla = null;
+  if (canal === 'chatbot') {
+    bot = await chatbotConfig(db);
+    if (!bot) throw new Error('chatbotproia no está conectado. Pon la llave en la pestaña Plantillas WhatsApp.');
+    const p = body.plantilla || {};
+    const variables = (Array.isArray(p.variables) ? p.variables : []).map(v => String(v));
+    if (!p.nombre) throw new Error('Elige la plantilla de WhatsApp.');
+    if (variables.some(v => !(v in chatbot.VARIABLES))) throw new Error('Falta indicar qué va en cada {{n}} de la plantilla.');
+    plantilla = { nombre: String(p.nombre), idioma: String(p.idioma || 'es_MX'), variables, texto: String(p.texto || '') };
+  }
+
   const cfg = body.cupon || { modo: 'ninguno' };
+  if (plantilla && cfg.modo === 'ninguno' && plantilla.variables.some(v => ['cupon', 'descuento', 'vence'].includes(v))) {
+    throw new Error('La plantilla lleva cupón: elige un cupón o usa otra plantilla.');
+  }
   let cuponComun = null;
   if (cfg.modo === 'existente') {
     const rows = await db.get(`cupones?codigo=eq.${encodeURIComponent(normalizarCodigo(cfg.codigo))}&select=*&limit=1`);
@@ -299,8 +338,8 @@ async function enviar(db, body, enviadoPor) {
       const dest = await cargarDestinatario(db, d);
       if (!dest) throw new Error('No se encontró el pedido o carrito.');
       if (canal === 'email' && !EMAIL_RE.test(dest.email)) throw new Error('No tiene correo.');
-      const wa = canal === 'whatsapp' ? telefonoWhatsApp(dest.telefono) : null;
-      if (canal === 'whatsapp' && !wa) throw new Error('No tiene un teléfono válido.');
+      const wa = canal !== 'email' ? telefonoWhatsApp(dest.telefono) : null;
+      if (canal !== 'email' && !wa) throw new Error('No tiene un teléfono válido.');
 
       let cupon = cuponComun;
       if (cfg.modo === 'personal') {
@@ -317,13 +356,29 @@ async function enviar(db, body, enviadoPor) {
 
       const log = {
         canal, tipo_origen: dest.tipo, referencia: dest.referencia, nombre: dest.nombre || null,
-        email: dest.email || null, telefono: dest.telefono || null, asunto: canal === 'email' ? rellenar(asunto, { nombre }) : null,
+        email: dest.email || null, telefono: dest.telefono || null, asunto: canal === 'email' ? rellenar(asunto, { nombre }) : (canal === 'chatbot' ? `Plantilla ${plantilla.nombre}` : null),
         mensaje: texto, cupon_codigo: cupon ? cupon.codigo : null, enviado_por: enviadoPor
       };
       if (canal === 'email') {
         try {
           await sendHtml(dest.email, log.asunto, correoHtml({ mensaje: texto, items: dest.items, cupon: tc, liga }));
           log.estado = 'enviado';
+        } catch (e) {
+          log.estado = 'error'; log.error = String(e.message).slice(0, 300);
+        }
+      } else if (canal === 'chatbot') {
+        const datos = { nombre, cupon: tc && tc.codigo, descuento: tc && tc.descuento, vence: tc && tc.vence, liga, total: `$${(Number(dest.total) || 0).toFixed(2)}` };
+        const parametros = plantilla.variables.map(v => valorVariable(v, datos));
+        log.mensaje = plantilla.texto
+          ? plantilla.texto.replace(/\{\{(\d+)\}\}/g, (m, n) => parametros[Number(n) - 1] ?? m)
+          : `[Plantilla ${plantilla.nombre}] ${parametros.join(' | ')}`;
+        try {
+          const resp = await chatbot.llamar(bot, 'POST', 'whatsapp/send-to-phone', {
+            phone: wa, first_name: nombre || undefined, email: EMAIL_RE.test(dest.email) ? dest.email : undefined,
+            template: { name: plantilla.nombre, language: plantilla.idioma, parameters: parametros }
+          });
+          log.estado = 'enviado';
+          r.contactoNuevo = !!resp.contact_created;
         } catch (e) {
           log.estado = 'error'; log.error = String(e.message).slice(0, 300);
         }
@@ -389,6 +444,63 @@ module.exports = async function handler(req, res) {
         if (!CODIGO_RE.test(codigo)) { res.status(400).json({ error: 'Código inválido' }); return; }
         const rows = await db.patch(`cupones?codigo=eq.${encodeURIComponent(codigo)}`, { activo: !!body.activo });
         res.status(200).json({ cupon: rows[0] || null });
+        return;
+      }
+      case 'chatbot_estado': {
+        const c = await chatbotConfig(db);
+        if (!c) { res.status(200).json({ conectado: false, url: chatbot.URL_DEFAULT }); return; }
+        let cuenta = null, error = null;
+        try { cuenta = await chatbot.llamar(c, 'GET', 'accounts/me'); } catch (e) { error = e.message; }
+        res.status(200).json({ conectado: true, url: c.url, tokenFinal: c.token.slice(-4), cuenta: cuenta ? { nombre: cuenta.name, contactos: cuenta.total_users, activa: cuenta.active } : null, error });
+        return;
+      }
+      case 'chatbot_guardar': {
+        const actual = await chatbotConfig(db);
+        const url = chatbot.limpiarUrl(body.url);
+        const token = String(body.token || '').trim() || (actual && actual.token);
+        if (!token) throw new Error('Pega la llave (X-ACCESS-TOKEN) de la cuenta Mi Fiestashop en chatbotproia.');
+        // Se prueba antes de guardar: una llave equivocada nunca queda guardada.
+        const cuenta = await chatbot.llamar({ url, token }, 'GET', 'accounts/me');
+        await db.post('integraciones?on_conflict=clave', [{ clave: 'chatbotproia', config: { url, token }, actualizado_por: enviadoPor, updated_at: new Date().toISOString() }], 'resolution=merge-duplicates,return=minimal');
+        res.status(200).json({ conectado: true, url, tokenFinal: token.slice(-4), cuenta: { nombre: cuenta.name, contactos: cuenta.total_users, activa: cuenta.active } });
+        return;
+      }
+      case 'chatbot_quitar': {
+        await db.patch('integraciones?clave=eq.chatbotproia', { config: {}, actualizado_por: enviadoPor, updated_at: new Date().toISOString() });
+        res.status(200).json({ conectado: false });
+        return;
+      }
+      case 'plantillas': {
+        const c = await chatbotConfig(db);
+        if (!c) { res.status(200).json({ conectado: false, plantillas: [] }); return; }
+        const [meta, mapas] = await Promise.all([
+          chatbot.llamar(c, 'GET', 'whatsapp/message-templates'),
+          db.get('plantillas_whatsapp?select=nombre,idioma,variables')
+        ]);
+        const plantillas = (meta.data || []).map(t => {
+          const m = mapas.find(x => x.nombre === t.name && x.idioma === t.language);
+          const n = Number(t.parameters_count) || new Set((String(t.body || '').match(/\{\{\d+\}\}/g) || [])).size;
+          return { nombre: t.name, idioma: t.language, estado: t.status, categoria: t.category, texto: t.body || '', parametros: n, variables: m ? m.variables : null, motivoRechazo: t.rejected_reason || null };
+        });
+        res.status(200).json({ conectado: true, plantillas, variablesDisponibles: Object.keys(chatbot.VARIABLES) });
+        return;
+      }
+      case 'crear_plantilla': {
+        const c = await chatbotConfig(db);
+        if (!c) throw new Error('chatbotproia no está conectado.');
+        const nombre = chatbot.nombrePlantilla(body.nombre);
+        const categoria = body.categoria === 'UTILITY' ? 'UTILITY' : 'MARKETING';
+        const { cuerpo, variables, ejemplos } = chatbot.convertirTexto(body.texto);
+        const creada = await chatbot.llamar(c, 'POST', 'whatsapp/message-templates', { name: nombre, language: 'es_MX', category: categoria, bodyText: cuerpo, bodyExample: ejemplos });
+        await db.post('plantillas_whatsapp?on_conflict=nombre,idioma', [{ nombre, idioma: 'es_MX', variables, texto_original: String(body.texto).slice(0, 1024), creado_por: enviadoPor }], 'resolution=merge-duplicates,return=minimal');
+        res.status(200).json({ plantilla: { nombre, idioma: 'es_MX', estado: creada.status || 'PENDING', categoria, texto: cuerpo, parametros: variables.length, variables } });
+        return;
+      }
+      case 'mapear_plantilla': {
+        const variables = (Array.isArray(body.variables) ? body.variables : []).map(String);
+        if (!body.nombre || variables.some(v => !(v in chatbot.VARIABLES))) throw new Error('Variables inválidas.');
+        await db.post('plantillas_whatsapp?on_conflict=nombre,idioma', [{ nombre: String(body.nombre), idioma: String(body.idioma || 'es_MX'), variables, creado_por: enviadoPor }], 'resolution=merge-duplicates,return=minimal');
+        res.status(200).json({ ok: true });
         return;
       }
       case 'historial':

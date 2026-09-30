@@ -3705,6 +3705,7 @@
         <div class="rt-tabs">
           <button type="button" class="rt-tab active" data-tab="clientes" onclick="rtSetTab('clientes')">Clientes por recuperar</button>
           <button type="button" class="rt-tab" data-tab="cupones" onclick="rtSetTab('cupones')">Cupones</button>
+          <button type="button" class="rt-tab" data-tab="plantillas" onclick="rtSetTab('plantillas')">Plantillas WhatsApp</button>
           <button type="button" class="rt-tab" data-tab="historial" onclick="rtSetTab('historial')">Historial</button>
         </div>
 
@@ -3755,8 +3756,16 @@
             <h3 style="margin:0 0 10px; font-size:15px;">Mensaje <span id="rtSelCount" style="font-weight:400; color:var(--text-muted);">(0 clientes seleccionados)</span></h3>
             <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; font-size:14px;">
               <label><input type="radio" name="rtCanal" value="email" checked onchange="rtRenderCompose()"> Correo (se manda solo)</label>
-              <label><input type="radio" name="rtCanal" value="whatsapp" onchange="rtRenderCompose()"> WhatsApp (te preparamos el mensaje)</label>
+              <label><input type="radio" name="rtCanal" value="chatbot" onchange="rtRenderCompose()"> WhatsApp automático (chatbotproia)</label>
+              <label><input type="radio" name="rtCanal" value="whatsapp" onchange="rtRenderCompose()"> WhatsApp manual (te preparamos el mensaje)</label>
             </div>
+            <div id="rtChatbotWrap" class="hidden" style="margin-bottom:12px;">
+              <div id="rtChatbotAviso" class="rt-muted" style="margin-bottom:8px;"></div>
+              <label class="rt-label" for="rtWaPlantilla">Plantilla de WhatsApp (aprobada por Meta)</label>
+              <select id="rtWaPlantilla" class="rt-input" onchange="rtRenderWaMapeo()"></select>
+              <div id="rtWaMapeo" class="rt-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-top:10px;"></div>
+            </div>
+            <div id="rtTextoWrap">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" class="rt-grid">
               <div>
                 <label class="rt-label" for="rtPlantilla">Plantilla</label>
@@ -3774,6 +3783,7 @@
             <label class="rt-label" for="rtMensaje" style="margin-top:10px;">Mensaje</label>
             <textarea id="rtMensaje" class="rt-input" rows="6" maxlength="3000" oninput="rtRenderPreview()" style="width:100%; resize:vertical;"></textarea>
             <div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px;">Se reemplazan solos: <code>{nombre}</code> <code>{cupon}</code> <code>{descuento}</code> <code>{vence}</code> <code>{liga}</code> (la liga le vuelve a llenar su carrito y le aplica el cupón).</div>
+            </div>
 
             <div class="rt-cupon-box">
               <label class="rt-label" for="rtCuponModo">Cupón</label>
@@ -3874,6 +3884,72 @@
             <table>
               <thead><tr><th>Código</th><th>Descuento</th><th>Vigencia</th><th>Usos</th><th>Para</th><th>Estado</th><th></th></tr></thead>
               <tbody id="rtCuponesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+
+        <!-- Plantillas WhatsApp (chatbotproia) -->
+        <div id="rtTab-plantillas" class="hidden">
+          <div class="rt-compose" style="margin-top:0;">
+            <h3 style="margin:0 0 6px; font-size:15px;">Conexión con chatbotproia</h3>
+            <div class="rt-muted" style="margin-bottom:10px;">Para mandar WhatsApp automáticos desde el número del bot. La llave está en chatbotproia → Ajustes → Integraciones / API de la cuenta <b>Mi Fiesta Shop</b>. Se guarda en el servidor y aquí nunca se vuelve a mostrar completa.</div>
+            <div id="rtBotEstado" style="font-size:13px; margin-bottom:10px;">Revisando…</div>
+            <div class="rt-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div>
+                <label class="rt-label" for="rtBotUrl">URL de la API</label>
+                <input type="url" id="rtBotUrl" class="rt-input" placeholder="https://panel.chatbotproia.com/api">
+              </div>
+              <div>
+                <label class="rt-label" for="rtBotToken">Llave (X-ACCESS-TOKEN)</label>
+                <input type="password" id="rtBotToken" class="rt-input" autocomplete="off" placeholder="Pega aquí la llave">
+              </div>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+              <button type="button" class="btn" id="rtBotQuitar" onclick="rtBotQuitar()">Desconectar</button>
+              <button type="button" class="btn primary" onclick="rtBotGuardar()">Probar y guardar</button>
+            </div>
+          </div>
+
+          <div class="rt-compose">
+            <h3 style="margin:0 0 6px; font-size:15px;">Crear plantilla de WhatsApp</h3>
+            <div class="rt-muted" style="margin-bottom:10px;">WhatsApp solo deja escribirle a un cliente que no te ha escrito en las últimas 24 horas con una plantilla aprobada por Meta. Al crearla se manda a revisión (normalmente tarda de minutos a unas horas) y aparece abajo como "En revisión" hasta que la aprueben.</div>
+            <div class="rt-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div>
+                <label class="rt-label" for="rtNpNombre">Nombre</label>
+                <input type="text" id="rtNpNombre" class="rt-input" maxlength="60" placeholder="Ej. carrito cupon">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNpCategoria">Tipo</label>
+                <select id="rtNpCategoria" class="rt-input">
+                  <option value="MARKETING">Promoción (cupones, ofertas)</option>
+                  <option value="UTILITY">Aviso (pedido, pago pendiente)</option>
+                </select>
+              </div>
+            </div>
+            <label class="rt-label" for="rtNpTexto" style="margin-top:10px;">Texto</label>
+            <textarea id="rtNpTexto" class="rt-input" rows="5" maxlength="1024" oninput="rtNpPreview()" style="width:100%; resize:vertical;">Hola {nombre} 🎉 Vimos que dejaste artículos en tu carrito de Mi Fiestashop. Te regalamos {descuento} de descuento con el código {cupon} (válido hasta el {vence}). Termina tu compra aquí: {liga} ¡Te esperamos!</textarea>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; margin:6px 0;">
+              <span class="rt-muted">Insertar:</span>
+              <button type="button" class="btn small" onclick="rtNpInsertar('{nombre}')">{nombre}</button>
+              <button type="button" class="btn small" onclick="rtNpInsertar('{cupon}')">{cupon}</button>
+              <button type="button" class="btn small" onclick="rtNpInsertar('{descuento}')">{descuento}</button>
+              <button type="button" class="btn small" onclick="rtNpInsertar('{vence}')">{vence}</button>
+              <button type="button" class="btn small" onclick="rtNpInsertar('{liga}')">{liga}</button>
+              <button type="button" class="btn small" onclick="rtNpInsertar('{total}')">{total}</button>
+            </div>
+            <div class="rt-label">Así la verá el cliente (con datos de ejemplo)</div>
+            <div id="rtNpPreview" class="rt-preview"></div>
+            <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+              <button type="button" class="btn primary" onclick="rtCrearPlantilla()">Mandar a revisión de Meta</button>
+            </div>
+            <div id="rtNpMsg" class="hidden" style="font-size:13px; margin-top:8px;"></div>
+          </div>
+
+          <div class="table-wrap" style="margin-top:14px;">
+            <table>
+              <thead><tr><th>Plantilla</th><th>Tipo</th><th>Estado</th><th>Texto</th><th>Qué va en cada {{n}}</th></tr></thead>
+              <tbody id="rtPlantillasBody"></tbody>
             </table>
           </div>
         </div>
@@ -10415,11 +10491,16 @@ let rtAudiencia = [];
 let rtSeleccion = new Set();
 let rtCupones = [];
 let rtTab = 'clientes';
+// Plantillas de WhatsApp del bot (chatbotproia) y si está conectado.
+let rtPlantillasWa = [];
+let rtBotConectado = false;
+const RT_VARIABLES = { nombre: 'Nombre', cupon: 'Código del cupón', descuento: 'Descuento', vence: 'Vigencia del cupón', liga: 'Liga a su carrito', total: 'Total' };
+const RT_EJEMPLOS = { nombre: 'Ana', cupon: 'VUELVE-K7M2QP', descuento: '10%', vence: 'jueves 2 de octubre, 8:00 p.m.', liga: 'https://www.mifiestashop.com/?carrito=83591x1&cupon=VUELVE-K7M2QP', total: '$1,250.00' };
 
 const RT_PLANTILLAS = {
   cupon: {
     asunto: '{nombre}, tu carrito te está esperando 🎁',
-    mensaje: 'Hola {nombre} 🎉\n\nVimos que dejaste artículos en tu carrito de Mi Fiestashop. Para que no te quedes sin ellos, te regalamos {descuento} de descuento con el código {cupon}, válido hasta el {vence}.\n\nTermina tu compra aquí: {liga}\n\nSi tuviste algún problema para pagar, respóndenos y te ayudamos.'
+    mensaje: 'Hola {nombre} 🎉\n\nVimos que dejaste artículos en tu carrito de Mi Fiestashop. Para que no te quedes sin ellos, te regalamos {descuento} de descuento con el código {cupon} (válido hasta el {vence}).\n\nTermina tu compra aquí: {liga}\n\nSi tuviste algún problema para pagar, respóndenos y te ayudamos.'
   },
   recordatorio: {
     asunto: '{nombre}, guardamos tu carrito',
@@ -10458,8 +10539,9 @@ function loadRetransmisiones() {
 function rtSetTab(tab) {
   rtTab = tab;
   document.querySelectorAll('#view-retransmisiones .rt-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  ['clientes', 'cupones', 'historial'].forEach(t => document.getElementById('rtTab-' + t)?.classList.toggle('hidden', t !== tab));
-  if (tab === 'clientes') { loadRtAudiencia(); loadRtCupones(true); }
+  ['clientes', 'cupones', 'plantillas', 'historial'].forEach(t => document.getElementById('rtTab-' + t)?.classList.toggle('hidden', t !== tab));
+  if (tab === 'clientes') { loadRtAudiencia(); loadRtCupones(true); loadRtPlantillas(true); }
+  if (tab === 'plantillas') { loadRtBotEstado(); loadRtPlantillas(); rtNpPreview(); }
   if (tab === 'cupones') loadRtCupones();
   if (tab === 'historial') loadRtHistorial();
 }
@@ -10503,7 +10585,7 @@ function renderRtAudiencia() {
         : '<span class="pill">Carrito abandonado</span>';
       const productos = (d.productos || []).slice(0, 3).map(escapeHtml).join(', ') + ((d.productos || []).length > 3 ? '…' : '');
       const uc = d.ultimoContacto
-        ? `${d.ultimoContacto.canal === 'whatsapp' ? 'WhatsApp' : 'Correo'} ${rtFecha(d.ultimoContacto.fecha)}${d.ultimoContacto.cupon ? `<div class="rt-muted">Cupón ${escapeHtml(d.ultimoContacto.cupon)}</div>` : ''}`
+        ? `${d.ultimoContacto.canal === 'email' ? 'Correo' : 'WhatsApp'} ${rtFecha(d.ultimoContacto.fecha)}${d.ultimoContacto.cupon ? `<div class="rt-muted">Cupón ${escapeHtml(d.ultimoContacto.cupon)}</div>` : ''}`
         : '<span class="rt-muted">Nunca</span>';
       return `<tr>
         <td><input type="checkbox" ${rtSeleccion.has(d.referencia) ? 'checked' : ''} onchange="rtToggle('${escapeHtml(d.referencia)}', this.checked)" aria-label="Seleccionar ${escapeHtml(d.nombre || d.email || d.telefono)}"></td>
@@ -10552,14 +10634,19 @@ function rtRenderCompose() {
   const canal = rtCanal();
   const modo = document.getElementById('rtCuponModo').value;
   document.getElementById('rtAsuntoWrap').style.visibility = canal === 'email' ? 'visible' : 'hidden';
+  document.getElementById('rtChatbotWrap').classList.toggle('hidden', canal !== 'chatbot');
+  document.getElementById('rtTextoWrap').classList.toggle('hidden', canal === 'chatbot');
+  if (canal === 'chatbot') rtRenderWaSelect();
   document.getElementById('rtCuponPersonal').style.display = modo === 'personal' ? 'grid' : 'none';
   document.getElementById('rtCuponExistenteWrap').classList.toggle('hidden', modo !== 'existente');
   const sel = rtSeleccionados();
   const validos = sel.filter(d => canal === 'email' ? d.email : d.telefono);
   document.getElementById('rtSelCount').textContent = `(${sel.length} clientes seleccionados${sel.length !== validos.length ? `, ${sel.length - validos.length} sin ${canal === 'email' ? 'correo' : 'teléfono'}` : ''})`;
   const btn = document.getElementById('rtEnviarBtn');
-  btn.textContent = canal === 'email' ? `Enviar correo a ${validos.length} cliente${validos.length === 1 ? '' : 's'}` : `Preparar WhatsApp para ${validos.length} cliente${validos.length === 1 ? '' : 's'}`;
-  btn.disabled = validos.length === 0;
+  const n = `${validos.length} cliente${validos.length === 1 ? '' : 's'}`;
+  btn.textContent = canal === 'email' ? `Enviar correo a ${n}` : canal === 'chatbot' ? `Mandar WhatsApp a ${n}` : `Preparar WhatsApp para ${n}`;
+  const pw = canal === 'chatbot' ? rtPlantillaElegida() : null;
+  btn.disabled = validos.length === 0 || (canal === 'chatbot' && (!pw || rtWaVariablesElegidas(pw).some(v => !v)));
   rtRenderPreview();
 }
 
@@ -10593,6 +10680,18 @@ function rtRenderPreview() {
   const c = rtCuponPreview();
   const nombre = d ? (String(d.nombre || '').trim().split(/\s+/)[0] || '') : 'Cliente';
   const liga = 'https://www.mifiestashop.com/?carrito=…' + (c ? `&cupon=${c.codigo}` : '');
+  if (rtCanal() === 'chatbot') {
+    const p = rtPlantillaElegida();
+    if (!p) { el.textContent = rtBotConectado ? 'Elige una plantilla aprobada.' : 'Conecta chatbotproia en la pestaña Plantillas WhatsApp.'; return; }
+    const vars = rtWaVariablesElegidas(p);
+    const datos = { nombre: nombre || 'cliente', cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: c ? c.vence : '', liga, total: d ? fmtMoney(d.total || 0) : '' };
+    const texto = String(p.texto || '').replace(/\{\{(\d+)\}\}/g, (m, n) => { const v = vars[Number(n) - 1]; return v ? (datos[v] || '—') : m; });
+    const avisos = [];
+    if (!c && vars.some(v => ['cupon', 'descuento', 'vence'].includes(v))) avisos.push('⚠ La plantilla lleva cupón pero no elegiste ninguno.');
+    if (vars.length < p.parametros || vars.some(v => !v)) avisos.push('⚠ Falta indicar qué va en cada {{n}}.');
+    el.innerHTML = escapeHtml(texto) + (avisos.length ? `\n\n<span style="color:#b45309;">${avisos.map(escapeHtml).join('\n')}</span>` : '');
+    return;
+  }
   const fill = t => String(t || '')
     .replace(/\{nombre\}/g, nombre).replace(/\{cupon\}/g, c ? c.codigo : '')
     .replace(/\{descuento\}/g, c ? c.descuento : '').replace(/\{vence\}/g, c ? c.vence : '').replace(/\{liga\}/g, liga);
@@ -10617,7 +10716,19 @@ async function rtEnviar() {
     horas: Number(document.getElementById('rtCuponHoras').value), minimo: Number(document.getElementById('rtCuponMinimo').value) || 0, prefijo: 'VUELVE'
   } : modo === 'existente' ? { modo, codigo: document.getElementById('rtCuponExistente').value } : { modo: 'ninguno' };
   const c = rtCuponPreview();
-  const accionTxt = canal === 'email' ? `mandar un correo a ${destinos.length} cliente(s)` : `preparar el WhatsApp de ${destinos.length} cliente(s)`;
+  let plantilla = null;
+  if (canal === 'chatbot') {
+    const p = rtPlantillaElegida();
+    const variables = p ? rtWaVariablesElegidas(p) : [];
+    if (!p || variables.length < p.parametros || variables.some(v => !v)) { alert('Elige la plantilla y qué va en cada {{n}}.'); return; }
+    plantilla = { nombre: p.nombre, idioma: p.idioma, variables, texto: p.texto };
+    // Se recuerda lo que se eligió para la próxima vez.
+    if (JSON.stringify(p.variablesGuardadas || []) !== JSON.stringify(variables)) {
+      p.variables = p.variablesGuardadas = variables;
+      rtApi('mapear_plantilla', { nombre: p.nombre, idioma: p.idioma, variables }).catch(() => {});
+    }
+  }
+  const accionTxt = canal === 'email' ? `mandar un correo a ${destinos.length} cliente(s)` : canal === 'chatbot' ? `mandar el WhatsApp "${plantilla.nombre}" a ${destinos.length} cliente(s) desde el número del bot` : `preparar el WhatsApp de ${destinos.length} cliente(s)`;
   if (!confirm(`¿${accionTxt[0].toUpperCase() + accionTxt.slice(1)}${c ? ` con cupón de ${c.descuento}${modo === 'personal' ? ` (uno personal por cliente, válido ${document.getElementById('rtCuponHoras').selectedOptions[0].text})` : ` (${c.codigo})`}` : ' sin cupón'}?`)) return;
 
   const btn = document.getElementById('rtEnviarBtn');
@@ -10628,7 +10739,7 @@ async function rtEnviar() {
     for (let i = 0; i < destinos.length; i += 20) {
       btn.textContent = `Enviando… ${Math.min(i + 20, destinos.length)}/${destinos.length}`;
       const data = await rtApi('enviar', {
-        canal, asunto: document.getElementById('rtAsunto').value, mensaje: document.getElementById('rtMensaje').value, cupon,
+        canal, asunto: document.getElementById('rtAsunto').value, mensaje: document.getElementById('rtMensaje').value, cupon, plantilla,
         destinatarios: destinos.slice(i, i + 20).map(d => ({ tipo: d.tipo, referencia: d.referencia }))
       });
       resultados.push(...(data.resultados || []));
@@ -10641,7 +10752,7 @@ async function rtEnviar() {
   }
   const porRef = Object.fromEntries(rtAudiencia.map(d => [d.referencia, d]));
   const okN = resultados.filter(r => r.ok).length;
-  out.innerHTML = `<div style="margin-top:14px; font-weight:700;">${canal === 'email' ? `Correos enviados: ${okN} de ${resultados.length}` : `WhatsApp listos: ${okN} de ${resultados.length}. Dale clic a cada uno para abrirlo y enviarlo.`}</div>` +
+  out.innerHTML = `<div style="margin-top:14px; font-weight:700;">${canal === 'email' ? `Correos enviados: ${okN} de ${resultados.length}` : canal === 'chatbot' ? `WhatsApp enviados por el bot: ${okN} de ${resultados.length}` : `WhatsApp listos: ${okN} de ${resultados.length}. Dale clic a cada uno para abrirlo y enviarlo.`}</div>` +
     resultados.map(r => {
       const d = porRef[r.referencia] || {};
       return `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;">
@@ -10736,6 +10847,165 @@ async function rtCrearCupon() {
   } catch (e) { show(e.message, false); }
 }
 
+// ---- chatbotproia: conexión y plantillas de WhatsApp ----
+async function loadRtBotEstado() {
+  const el = document.getElementById('rtBotEstado');
+  try {
+    const d = await rtApi('chatbot_estado');
+    rtBotConectado = !!d.conectado;
+    document.getElementById('rtBotUrl').value = d.url || '';
+    document.getElementById('rtBotQuitar').classList.toggle('hidden', !d.conectado);
+    el.innerHTML = !d.conectado ? '<span class="pill warn">Sin conectar</span>'
+      : d.cuenta ? `<span class="pill ok">Conectado</span> Cuenta <b>${escapeHtml(d.cuenta.nombre || '')}</b> · ${Number(d.cuenta.contactos || 0).toLocaleString('es-MX')} contactos · llave …${escapeHtml(d.tokenFinal || '')}`
+      : `<span class="pill bad">Error</span> ${escapeHtml(d.error || 'No responde')} · llave …${escapeHtml(d.tokenFinal || '')}`;
+  } catch (e) { el.innerHTML = `<span class="pill bad">Error</span> ${escapeHtml(e.message)}`; }
+}
+
+async function rtBotGuardar() {
+  const el = document.getElementById('rtBotEstado');
+  el.textContent = 'Probando la conexión…';
+  try {
+    await rtApi('chatbot_guardar', { url: document.getElementById('rtBotUrl').value, token: document.getElementById('rtBotToken').value });
+    document.getElementById('rtBotToken').value = '';
+    await loadRtBotEstado();
+    await loadRtPlantillas();
+  } catch (e) { el.innerHTML = `<span class="pill bad">No se guardó</span> ${escapeHtml(e.message)}`; }
+}
+
+async function rtBotQuitar() {
+  if (!confirm('¿Desconectar chatbotproia? Ya no se podrán mandar WhatsApp automáticos hasta volver a poner la llave.')) return;
+  try { await rtApi('chatbot_quitar'); } catch (e) { alert(e.message); }
+  rtPlantillasWa = [];
+  await loadRtBotEstado();
+  renderRtPlantillas();
+}
+
+async function loadRtPlantillas(soloSelect) {
+  const body = document.getElementById('rtPlantillasBody');
+  if (!soloSelect && body) body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    const d = await rtApi('plantillas');
+    rtBotConectado = !!d.conectado;
+    rtPlantillasWa = (d.plantillas || []).map(p => ({ ...p, variablesGuardadas: p.variables }));
+    if (!soloSelect) renderRtPlantillas();
+  } catch (e) {
+    rtPlantillasWa = [];
+    if (!soloSelect && body) body.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:#dc2626;">${escapeHtml(e.message)}</td></tr>`;
+  }
+  rtRenderCompose();
+}
+
+function rtEstadoPlantilla(estado) {
+  return estado === 'APPROVED' ? ['Aprobada', 'ok'] : estado === 'REJECTED' ? ['Rechazada', 'bad']
+    : ['PENDING', 'IN_APPEAL'].includes(estado) ? ['En revisión', 'warn'] : [estado || '—', ''];
+}
+
+function rtMapeoSelects(p, idPrefix, onchange) {
+  const vars = p.variables || [];
+  return Array.from({ length: p.parametros }, (_, i) => `
+    <label class="rt-muted" style="display:block;">{{${i + 1}}}
+      <select id="${idPrefix}${i}" class="rt-input" onchange="${onchange}" style="padding:5px 8px; font-size:12px;">
+        <option value="">Elegir…</option>
+        ${Object.entries(RT_VARIABLES).map(([k, label]) => `<option value="${k}" ${vars[i] === k ? 'selected' : ''}>${label}</option>`).join('')}
+      </select>
+    </label>`).join('');
+}
+
+function renderRtPlantillas() {
+  const body = document.getElementById('rtPlantillasBody');
+  if (!body) return;
+  if (!rtBotConectado) { body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Conecta chatbotproia arriba para ver y crear plantillas.</td></tr>'; return; }
+  if (!rtPlantillasWa.length) { body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">El bot todavía no tiene plantillas.</td></tr>'; return; }
+  body.innerHTML = rtPlantillasWa.map((p, i) => {
+    const [txt, cls] = rtEstadoPlantilla(p.estado);
+    return `<tr>
+      <td><b>${escapeHtml(p.nombre)}</b><div class="rt-muted">${escapeHtml(p.idioma)}</div></td>
+      <td>${p.categoria === 'MARKETING' ? 'Promoción' : p.categoria === 'UTILITY' ? 'Aviso' : escapeHtml(p.categoria || '')}</td>
+      <td><span class="pill ${cls}">${txt}</span>${p.motivoRechazo ? `<div class="rt-muted">${escapeHtml(p.motivoRechazo)}</div>` : ''}</td>
+      <td style="max-width:360px; white-space:pre-wrap; font-size:12px;">${escapeHtml(p.texto)}</td>
+      <td>${p.parametros ? `<div style="display:grid; gap:4px;">${rtMapeoSelects(p, `rtMap${i}_`, `rtGuardarMapeo(${i})`)}</div>` : '<span class="rt-muted">Sin variables</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function rtGuardarMapeo(i) {
+  const p = rtPlantillasWa[i];
+  const variables = Array.from({ length: p.parametros }, (_, k) => document.getElementById(`rtMap${i}_${k}`).value);
+  if (variables.some(v => !v)) return;
+  p.variables = p.variablesGuardadas = variables;
+  try { await rtApi('mapear_plantilla', { nombre: p.nombre, idioma: p.idioma, variables }); } catch (e) { alert(e.message); }
+}
+
+function rtPlantillaElegida() {
+  const v = document.getElementById('rtWaPlantilla')?.value;
+  return rtPlantillasWa.find(p => `${p.nombre}|${p.idioma}` === v) || null;
+}
+
+function rtWaVariablesElegidas(p) {
+  return Array.from({ length: p.parametros }, (_, i) => document.getElementById(`rtWaVar${i}`)?.value ?? (p.variables || [])[i] ?? '');
+}
+
+function rtRenderWaSelect() {
+  const sel = document.getElementById('rtWaPlantilla');
+  const aviso = document.getElementById('rtChatbotAviso');
+  const aprobadas = rtPlantillasWa.filter(p => p.estado === 'APPROVED');
+  const prev = sel.value;
+  aviso.innerHTML = !rtBotConectado
+    ? '⚠ chatbotproia no está conectado: ve a la pestaña <b>Plantillas WhatsApp</b> y pon la llave.'
+    : 'Se manda desde el número de WhatsApp del bot. Como el cliente no te ha escrito en las últimas 24 horas, WhatsApp exige una plantilla aprobada.';
+  sel.innerHTML = aprobadas.length
+    ? aprobadas.map(p => `<option value="${escapeHtml(p.nombre + '|' + p.idioma)}">${escapeHtml(p.nombre)} (${escapeHtml(p.idioma)})</option>`).join('')
+    : '<option value="">No hay plantillas aprobadas todavía</option>';
+  if (prev && aprobadas.some(p => `${p.nombre}|${p.idioma}` === prev)) sel.value = prev;
+  rtRenderWaMapeo(true);
+}
+
+function rtRenderWaMapeo(sinRecalcular) {
+  const p = rtPlantillaElegida();
+  const wrap = document.getElementById('rtWaMapeo');
+  wrap.innerHTML = p && p.parametros ? rtMapeoSelects(p, 'rtWaVar', 'rtWaVarCambio()') : '';
+  if (!sinRecalcular) rtRenderCompose(); else rtRenderPreview();
+}
+
+// Lo elegido en cada {{n}} se queda en la plantilla (en memoria) para que
+// no se pierda cuando la pantalla se vuelve a dibujar.
+function rtWaVarCambio() {
+  const p = rtPlantillaElegida();
+  if (p) p.variables = Array.from({ length: p.parametros }, (_, i) => document.getElementById('rtWaVar' + i)?.value || '');
+  rtRenderCompose();
+}
+
+function rtNpInsertar(v) {
+  const t = document.getElementById('rtNpTexto');
+  const i = t.selectionStart ?? t.value.length;
+  t.value = t.value.slice(0, i) + v + t.value.slice(t.selectionEnd ?? i);
+  t.focus();
+  t.selectionStart = t.selectionEnd = i + v.length;
+  rtNpPreview();
+}
+
+function rtNpPreview() {
+  const el = document.getElementById('rtNpPreview');
+  if (!el) return;
+  const t = document.getElementById('rtNpTexto').value;
+  el.textContent = t.replace(/\{([a-z_]+)\}/gi, (m, v) => RT_EJEMPLOS[v.toLowerCase()] || m);
+}
+
+async function rtCrearPlantilla() {
+  const msg = document.getElementById('rtNpMsg');
+  const show = (t, ok) => { msg.textContent = t; msg.style.color = ok ? '#15803d' : '#dc2626'; msg.classList.remove('hidden'); };
+  try {
+    const d = await rtApi('crear_plantilla', {
+      nombre: document.getElementById('rtNpNombre').value,
+      categoria: document.getElementById('rtNpCategoria').value,
+      texto: document.getElementById('rtNpTexto').value
+    });
+    show(`Plantilla "${d.plantilla.nombre}" enviada a revisión de Meta. Cuando la aprueben aparecerá como "Aprobada" y ya se podrá usar.`, true);
+    document.getElementById('rtNpNombre').value = '';
+    await loadRtPlantillas();
+  } catch (e) { show(e.message, false); }
+}
+
 async function loadRtHistorial() {
   const body = document.getElementById('rtHistorialBody');
   body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
@@ -10744,8 +11014,8 @@ async function loadRtHistorial() {
     const rows = data.historial || [];
     body.innerHTML = rows.length ? rows.map(h => `<tr title="${escapeHtml(h.mensaje || '')}">
       <td>${escapeHtml(new Date(h.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }))}</td>
-      <td>${h.canal === 'whatsapp' ? 'WhatsApp' : 'Correo'}</td>
-      <td><b>${escapeHtml(h.nombre || '')}</b><div class="rt-muted">${escapeHtml(h.canal === 'whatsapp' ? (h.telefono || '') : (h.email || ''))}</div></td>
+      <td>${h.canal === 'whatsapp' ? 'WhatsApp manual' : h.canal === 'chatbot' ? 'WhatsApp (bot)' : 'Correo'}</td>
+      <td><b>${escapeHtml(h.nombre || '')}</b><div class="rt-muted">${escapeHtml(h.canal === 'email' ? (h.email || '') : (h.telefono || ''))}</div></td>
       <td>${escapeHtml(h.referencia || '')}</td>
       <td>${h.cupon_codigo ? `<code>${escapeHtml(h.cupon_codigo)}</code>` : '—'}</td>
       <td><span class="pill ${h.estado === 'error' ? 'bad' : h.estado === 'enviado' ? 'ok' : 'warn'}">${h.estado === 'preparado' ? 'WhatsApp preparado' : h.estado === 'enviado' ? 'Enviado' : 'Error'}</span>${h.error ? `<div class="rt-muted" style="color:#dc2626;">${escapeHtml(h.error)}</div>` : ''}</td>
