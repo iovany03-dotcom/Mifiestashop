@@ -17,6 +17,19 @@
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
+// Genera la "liga corta" (link_rewrite) de la que depende la URL pública
+// real del producto — ver lib/url-producto.js. Sin esto, un producto
+// creado aquí (sin PrestaShop) se queda con link_rewrite null y la tienda
+// no puede construirle una URL propia, así que cae al modal de vista
+// rápida en vez de abrir su propia página.
+function slugify(str) {
+  return String(str || '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function sbRpcServer(fnName, params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
     method: 'POST',
@@ -112,13 +125,30 @@ module.exports = async function handler(req, res) {
     row.meta_title = null;
     row.meta_description = null;
     row.meta_keywords = null;
-    row.link_rewrite = null;
+    row.link_rewrite = slugify(name);
     // Un producto real de PrestaShop no debe dejar de sincronizarse solo
     // porque se editó aquí una vez — el próximo ciclo de
     // lib/sync-prestashop.js (cada 10 min) lo pisaría de cualquier forma,
     // volviendo su "source" a 'prestashop'. "manual" es correcto solo para
     // uno creado aquí desde cero, que PrestaShop nunca va a traer.
     row.source = 'manual';
+  } else {
+    // Productos manuales guardados antes de este arreglo se quedaron con
+    // link_rewrite null (ver arriba) — sin liga, la tienda los abre en el
+    // modal de vista rápida en vez de su propia página. Se rellena aquí
+    // una sola vez, sin tocar nunca un link_rewrite real de PrestaShop.
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_productos?id=eq.${id}&select=source,link_rewrite`, {
+        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+      });
+      if (r.ok) {
+        const rows = await r.json();
+        const current = rows && rows[0];
+        if (current && current.source === 'manual' && !current.link_rewrite) {
+          row.link_rewrite = slugify(name);
+        }
+      }
+    } catch (e) { /* si falla la consulta, se deja el link_rewrite como está */ }
   }
 
   try {
