@@ -2781,9 +2781,7 @@
         <a class="submenu-link" data-view="resenas-clientes">Reseñas de Clientes</a>
         <a class="submenu-link" data-view="param-avanzados-rendimiento">Rendimiento</a>
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
-        <a class="submenu-link" data-view="plantillas-correo">Plantillas de Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
-        <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
         <a class="submenu-link" data-view="api-desarrolladores">API para Desarrolladores</a>
         <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
       </div>
@@ -4504,27 +4502,57 @@
     <!-- 8. RENDIMIENTO -->
     <section id="view-param-avanzados-rendimiento" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Rendimiento del Sistema & Caché</h2>
-          <button class="btn primary" onclick="alert('Caché del sistema vaciado y optimizado.')">Limpiar Caché General</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="rendTabBtn-cache" onclick="switchRendimientoTab('cache')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Rendimiento & Caché</button>
+          <button class="btn" id="rendTabBtn-registros" onclick="switchRendimientoTab('registros')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Registros (Logs)</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Caché de Plantillas & Assets</h3>
-            <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Caché de plantillas Smarty activo</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Minificación y compresión de CSS/JS</label>
-              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Compresión GZIP / Brotli habilitada</label>
+
+        <div id="rendTab-cache">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Rendimiento del Sistema & Caché</h2>
+            <button class="btn primary" onclick="alert('Caché del sistema vaciado y optimizado.')">Limpiar Caché General</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Caché de Plantillas & Assets</h3>
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:13px;">
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Caché de plantillas Smarty activo</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Minificación y compresión de CSS/JS</label>
+                <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked> Compresión GZIP / Brotli habilitada</label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Servidor & Memoria</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <div>Límite de Memoria PHP: <b>512 MB</b></div>
+                <div>Versión de Ejecución: <b>Node v20.x / PHP 8.2</b></div>
+                <div>Servidor de Base de Datos: <span class="pill ok">Supabase PostgreSQL 15</span></div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Servidor & Memoria</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <div>Límite de Memoria PHP: <b>512 MB</b></div>
-              <div>Versión de Ejecución: <b>Node v20.x / PHP 8.2</b></div>
-              <div>Servidor de Base de Datos: <span class="pill ok">Supabase PostgreSQL 15</span></div>
+        <div id="rendTab-registros" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Registros del Sistema (Logs)</h2>
+            <div>
+              <button class="btn secondary" onclick="alert('Descargando archivo de log completo...')">Descargar Log</button>
+              <button class="btn danger" onclick="alert('Historial de logs limpiado.')"> Limpiar Logs</button>
             </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
+                <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
+                <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
+                <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -4533,49 +4561,53 @@
     <!-- 9. CORREO -->
     <section id="view-param-avanzados-correo" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2> Configuración del Servidor de Correo (SMTP)</h2>
-          <div>
-            <button class="btn secondary" onclick="alert('Enviando correo de prueba a admin@mifiestashop.com...')">Probar Correo</button>
-            <button class="btn primary" onclick="alert('Parámetros SMTP guardados.')">Guardar SMTP</button>
-          </div>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="correoTabBtn-smtp" onclick="switchCorreoTab('smtp')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Configuración SMTP</button>
+          <button class="btn" id="correoTabBtn-plantillas" onclick="switchCorreoTab('plantillas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Plantillas</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Servidor SMTP</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Servidor de Salida (Host):</b> <input type="text" value="smtp.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Puerto SMTP:</b> <input type="number" value="587" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Encriptación:</b> 
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-                  <option selected>TLS / STARTTLS</option>
-                  <option>SSL</option>
-                  <option>Ninguna</option>
-                </select>
-              </label>
+
+        <div id="correoTab-smtp">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2> Configuración del Servidor de Correo (SMTP)</h2>
+            <div>
+              <button class="btn secondary" onclick="alert('Enviando correo de prueba a admin@mifiestashop.com...')">Probar Correo</button>
+              <button class="btn primary" onclick="alert('Parámetros SMTP guardados.')">Guardar SMTP</button>
             </div>
           </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Servidor SMTP</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Servidor de Salida (Host):</b> <input type="text" value="smtp.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Puerto SMTP:</b> <input type="number" value="587" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Encriptación:</b>
+                  <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                    <option selected>TLS / STARTTLS</option>
+                    <option>SSL</option>
+                    <option>Ninguna</option>
+                  </select>
+                </label>
+              </div>
+            </div>
 
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Autenticación</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Usuario SMTP:</b> <input type="email" value="notificaciones@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Contraseña SMTP:</b> <input type="password" value="••••••••••••" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-1);">Autenticación</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Usuario SMTP:</b> <input type="email" value="notificaciones@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Contraseña SMTP:</b> <input type="password" value="••••••••••••" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- 9b. PLANTILLAS DE CORREO -->
-    <section id="view-plantillas-correo" class="view-panel hidden">
-      <div class="card">
-        <h2 style="margin-top:0;">Plantillas de Correo Transaccional</h2>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
-          Estas son las plantillas reales que se envían a los clientes (mismo diseño y contenido que recibirán). Se envían automáticamente en el momento indicado en cada tarjeta; usa "Vista previa" para verlas como las recibe el cliente, o "Enviar prueba" para mandarte una copia a un correo tuyo.
-        </p>
-        <div id="emailTemplatesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
-          <!-- Dynamically populated by renderEmailTemplatesGrid() -->
+        <div id="correoTab-plantillas" class="hidden">
+          <h2 style="margin-top:0;">Plantillas de Correo Transaccional</h2>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+            Estas son las plantillas reales que se envían a los clientes (mismo diseño y contenido que recibirán). Se envían automáticamente en el momento indicado en cada tarjeta; usa "Vista previa" para verlas como las recibe el cliente, o "Enviar prueba" para mandarte una copia a un correo tuyo.
+          </p>
+          <div id="emailTemplatesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+            <!-- Dynamically populated by renderEmailTemplatesGrid() -->
+          </div>
         </div>
       </div>
     </section>
@@ -4638,31 +4670,6 @@
       </div>
     </section>
 
-    <!-- 12. REGISTROS -->
-    <section id="view-param-avanzados-registros" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Registros del Sistema (Logs)</h2>
-          <div>
-            <button class="btn secondary" onclick="alert('Descargando archivo de log completo...')">Descargar Log</button>
-            <button class="btn danger" onclick="alert('Historial de logs limpiado.')"> Limpiar Logs</button>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
-              <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
-              <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
-              <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
     <!-- 13b. META PIXEL -->
     <section id="view-param-avanzados-pixel" class="view-panel hidden">
@@ -6040,10 +6047,8 @@ const PERMISSION_GROUPS = [
   { group: 'Parámetros Avanzados', items: [
     { key: 'param-avanzados-rendimiento', label: 'Rendimiento' },
     { key: 'param-avanzados-correo', label: 'Correo' },
-    { key: 'plantillas-correo', label: 'Plantillas de Correo' },
     { key: 'param-avanzados-importar', label: 'Importar' },
     { key: 'param-avanzados-equipo', label: 'Equipo' },
-    { key: 'param-avanzados-registros', label: 'Registros' },
     { key: 'api-desarrolladores', label: 'API para Desarrolladores' }
   ]},
   { group: 'Otros', items: [
@@ -7323,12 +7328,10 @@ function switchView(viewName) {
     'param-tienda-clientes': ['Parámetros de la Tienda', 'Ajustes sobre Clientes'],
     'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
-    'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento & Caché'],
-    'param-avanzados-correo': ['Parámetros Avanzados', 'Configuración SMTP de Correo'],
-    'plantillas-correo': ['Parámetros Avanzados', 'Plantillas de Correo Transaccional'],
+    'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento, caché y registros'],
+    'param-avanzados-correo': ['Parámetros Avanzados', 'SMTP y plantillas de correo'],
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
-    'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
     'api-desarrolladores': ['API para Desarrolladores', 'Llaves y documentación para integraciones externas'],
     'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
   };
@@ -7353,7 +7356,8 @@ function switchView(viewName) {
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
-  if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
+  if (viewName === 'param-avanzados-correo') switchCorreoTab('smtp');
+  if (viewName === 'param-avanzados-rendimiento') switchRendimientoTab('cache');
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
   if (viewName === 'param-tienda-general') switchGeneralTab('general');
   if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
@@ -16325,6 +16329,30 @@ async function generateBranchQr(key) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generar QR'; }
   }
+}
+
+// --- Back office: Parámetros Avanzados → Rendimiento (pestañas:
+// Rendimiento & Caché, Registros — antes 2 vistas separadas).
+function switchRendimientoTab(tab) {
+  ['cache', 'registros'].forEach(key => {
+    const panel = document.getElementById(`rendTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`rendTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+}
+
+// --- Back office: Parámetros Avanzados → Correo (pestañas: SMTP,
+// Plantillas — antes 2 vistas separadas).
+let correoTabLoaded = false;
+function switchCorreoTab(tab) {
+  ['smtp', 'plantillas'].forEach(key => {
+    const panel = document.getElementById(`correoTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`correoTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'plantillas' && !correoTabLoaded) { correoTabLoaded = true; renderEmailTemplatesGrid(); }
 }
 
 // --- Back office: Parámetros de la Tienda → General (pestañas: General,
