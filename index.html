@@ -12715,6 +12715,47 @@ function sendTestNotification() {
   notifyEvent('test', 'Notificación de prueba', 'Así se verán tus notificaciones de Mi Fiestashop.');
 }
 
+// ================= AVISO DE PEDIDO NUEVO =================
+// pedidos_online junta el checkout público (tienda + Mercado Pago) y los
+// pedidos creados a mano desde "+ Crear Pedido" — no los tickets del POS
+// (esos los ve el cajero en el momento, en su propia pantalla). Mientras el
+// panel esté abierto, se revisa cada cierto tiempo si hay un folio nuevo que
+// antes no estaba y se avisa con notifyEvent('newSale', ...) — reusa el
+// mismo tipo que ya tenía su checkbox listo en Notificaciones, solo le
+// faltaba quién lo disparara.
+let newOrderPollInterval = null;
+let seenOrderFolios = null;
+
+async function pollForNewOrders() {
+  let orders;
+  try {
+    const r = await fetch('/api/pedidos-online');
+    if (!r.ok) return;
+    const data = await r.json();
+    orders = Array.isArray(data.orders) ? data.orders : [];
+  } catch (e) {
+    return; // sin conexión momentánea: se reintenta en la siguiente corrida
+  }
+
+  if (!seenOrderFolios) {
+    // Primera corrida: solo se registra lo que ya existe, sin avisar de
+    // pedidos viejos cada vez que se abre el panel.
+    seenOrderFolios = new Set(orders.map(o => o.id));
+    return;
+  }
+
+  orders.filter(o => !seenOrderFolios.has(o.id)).forEach(o => {
+    notifyEvent('newSale', '🛒 Nuevo pedido', `Pedido ${o.id} de ${o.customer || 'cliente'} por ${fmtMoney(o.total)}.`);
+  });
+  orders.forEach(o => seenOrderFolios.add(o.id));
+}
+
+function startNewOrderPolling() {
+  if (newOrderPollInterval) return; // ya está corriendo (re-entrar a /admin ya logueado)
+  pollForNewOrders();
+  newOrderPollInterval = setInterval(pollForNewOrders, 45000);
+}
+
 // Los productos con existencia en 0/negativo ya no se ocultan del POS (el
 // cajero puede seguir vendiéndolos si físicamente los tiene en mano) — esto
 // mantiene la advertencia visible en el Dashboard en su lugar, por
@@ -13143,6 +13184,7 @@ function showAdminDashboard() {
     : 'dashboard';
   switchView(landingView);
   window.scrollTo(0, 0);
+  startNewOrderPolling();
 }
 
 function resetStorefrontSeoTags() {
