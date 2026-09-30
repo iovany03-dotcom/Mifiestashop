@@ -142,3 +142,92 @@ test('api/crear-pedido: aplica el cupón con el subtotal del servidor y lo guard
     assert.match(res3.data.error, /personal/);
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
+
+test('chatbotproia: el texto con {variables} se convierte a {{n}} con ejemplos y reglas de Meta', () => {
+  const { convertirTexto, nombrePlantilla, limpiarUrl } = require('../lib/chatbotproia.js');
+  const r = convertirTexto('Hola {nombre}, usa {cupon} ({descuento}) antes del {vence}, {nombre}. Termina aquí: {liga} ¡Te esperamos!');
+  assert.equal(r.cuerpo, 'Hola {{1}}, usa {{2}} ({{3}}) antes del {{4}}, {{1}}. Termina aquí: {{5}} ¡Te esperamos!');
+  assert.deepEqual(r.variables, ['nombre', 'cupon', 'descuento', 'vence', 'liga']);
+  assert.equal(r.ejemplos.length, 5);
+  assert.throws(() => convertirTexto('{nombre}, hola'), /empiezan o terminan/);
+  assert.throws(() => convertirTexto('Tu liga: {liga}'), /empiezan o terminan/);
+  assert.throws(() => convertirTexto('Hola {apellido} x'), /no reconocida/);
+  assert.equal(nombrePlantilla('Carrito con Cupón 10%'), 'carrito_con_cupon_10');
+  assert.equal(limpiarUrl(''), 'https://panel.chatbotproia.com/api');
+  assert.equal(limpiarUrl('https://panel.chatbotproia.com/'), 'https://panel.chatbotproia.com/api');
+  assert.throws(() => limpiarUrl('http://x.com'), /https/);
+});
+
+test('api/retransmisiones: WhatsApp por chatbotproia manda la plantilla con los parámetros llenos', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  const enviados = [], logs = [];
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = (d, status = 200) => ({ ok: status < 400, status, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    if (u.includes('/integraciones?clave=eq.chatbotproia')) return ok([{ config: { url: 'https://panel.chatbotproia.com/api', token: 'tok123' } }]);
+    if (u.includes('/pedidos_online?folio=eq.WEB-1')) return ok([{ folio: 'WEB-1', customer_name: 'Cinthya Durán', customer_email: 'c@x.com', customer_phone: '844 494 0974', total: 3439, items: [{ id: 83591, qty: 1, name: 'Promo Boda VIP' }] }]);
+    if (u.endsWith('/cupones') && opts.method === 'POST') { const row = JSON.parse(opts.body)[0]; return ok([row]); }
+    if (u === 'https://panel.chatbotproia.com/api/whatsapp/send-to-phone') { enviados.push({ headers: opts.headers, body: JSON.parse(opts.body) }); return ok({ ok: true, messageIds: ['wamid.1'], contact_created: true }); }
+    if (u.endsWith('/retransmisiones') && opts.method === 'POST') { logs.push(JSON.parse(opts.body)[0]); return ok(null); }
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'enviar', canal: 'chatbot',
+      destinatarios: [{ tipo: 'pedido', referencia: 'WEB-1' }],
+      plantilla: { nombre: 'carrito_cupon', idioma: 'es_MX', variables: ['nombre', 'cupon', 'vence', 'liga'], texto: 'Hola {{1}}, usa {{2}} antes del {{3}}: {{4}} ¡Te esperamos!' },
+      cupon: { modo: 'personal', tipo: 'porcentaje', valor: 10, horas: 48 }
+    } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.resultados[0].ok, true, JSON.stringify(res.data));
+    const e = enviados[0];
+    assert.equal(e.headers['X-ACCESS-TOKEN'], 'tok123');
+    assert.equal(e.body.phone, '528444940974');
+    assert.equal(e.body.template.name, 'carrito_cupon');
+    const [nombre, cupon, vence, liga] = e.body.template.parameters;
+    assert.equal(nombre, 'Cinthya');
+    assert.match(cupon, /^VUELVE-/);
+    assert.ok(vence.length > 5);
+    assert.match(liga, /carrito=83591x1&cupon=VUELVE-/);
+    assert.equal(logs[0].canal, 'chatbot'); assert.equal(logs[0].estado, 'enviado');
+    assert.match(logs[0].mensaje, /^Hola Cinthya, usa VUELVE-/);
+
+    // Plantilla con cupón pero sin cupón elegido: no manda nada.
+    const res2 = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'enviar', canal: 'chatbot', destinatarios: [{ tipo: 'pedido', referencia: 'WEB-1' }],
+      plantilla: { nombre: 'carrito_cupon', variables: ['nombre', 'cupon'] }, cupon: { modo: 'ninguno' }
+    } }, res2);
+    assert.equal(res2.code, 400); assert.match(res2.data.error, /lleva cupón/);
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/retransmisiones: la llave de chatbotproia se prueba antes de guardarse', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  let guardado = null;
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = (d, status = 200) => ({ ok: status < 400, status, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    if (u.includes('/integraciones?clave=eq.chatbotproia')) return ok([]);
+    if (u.includes('/integraciones?on_conflict=clave')) { guardado = JSON.parse(opts.body)[0]; return ok(null); }
+    if (u.endsWith('/api/accounts/me')) return opts.headers['X-ACCESS-TOKEN'] === 'buena' ? ok({ name: 'Mi Fiesta Shop', total_users: 1200, active: true }) : ok({ error: 'Token de acceso inválido' }, 401);
+    return ok([]);
+  };
+  try {
+    const mal = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: { p_admin_password: 'x', accion: 'chatbot_guardar', token: 'mala' } }, mal);
+    assert.equal(mal.code, 400); assert.match(mal.data.error, /no es válida/); assert.equal(guardado, null);
+    const bien = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: { p_admin_password: 'x', accion: 'chatbot_guardar', token: 'buena' } }, bien);
+    assert.equal(bien.code, 200, JSON.stringify(bien.data));
+    assert.equal(bien.data.cuenta.nombre, 'Mi Fiesta Shop');
+    assert.equal(bien.data.tokenFinal, 'uena');
+    assert.equal(guardado.config.token, 'buena'); assert.equal(guardado.config.url, 'https://panel.chatbotproia.com/api');
+    assert.ok(!JSON.stringify(bien.data).includes('"buena"'));
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
