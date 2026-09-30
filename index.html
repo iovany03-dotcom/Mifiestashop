@@ -2745,7 +2745,6 @@
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
         <a class="submenu-link" data-view="clientes">Clientes</a>
         <a class="submenu-link" data-view="proveedores">Proveedores</a>
-        <a class="submenu-link" data-view="personal">Direcciones</a>
       </div>
     </div>
 
@@ -2762,10 +2761,8 @@
       <div class="submenu">
         <a class="submenu-link" data-view="param-tienda-general">General</a>
         <a class="submenu-link" data-view="param-tienda-pedidos">Configuración de Pedidos</a>
-        <a class="submenu-link" data-view="param-tienda-pagos">Pagos por transferencia</a>
         <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
         <a class="submenu-link" data-view="param-tienda-clientes">Ajustes sobre clientes</a>
-        <a class="submenu-link" data-view="param-tienda-contacto">Contacto</a>
         <a class="submenu-link" data-view="param-tienda-seo">Tráfico & SEO</a>
         <a class="submenu-link" data-view="param-tienda-buscar">Buscar</a>
       </div>
@@ -2787,7 +2784,6 @@
         <a class="submenu-link" data-view="plantillas-correo">Plantillas de Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
         <a class="submenu-link" data-view="param-avanzados-registros">Registros</a>
-        <a class="submenu-link" data-view="param-avanzados-webservice">Webservice</a>
         <a class="submenu-link" data-view="api-desarrolladores">API para Desarrolladores</a>
         <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
       </div>
@@ -2802,11 +2798,16 @@
       </div>
     </div>
 
-    <div class="menu-item" data-view="configuracion">
-      <div class="menu-link">
+    <!-- SISTEMA -->
+    <div class="menu-item" id="menu-sistema">
+      <div class="menu-link" onclick="toggleSubmenu('menu-sistema')">
         <div class="menu-left">
-          <span>Ajustes del Sistema</span>
+          <span>Sistema</span>
         </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="submenu">
+        <a class="submenu-link" data-view="configuracion">Ajustes del Sistema</a>
       </div>
     </div>
 
@@ -4219,33 +4220,109 @@
     <!-- 1. GENERAL -->
     <section id="view-param-tienda-general" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2> Parámetros de la Tienda — General</h2>
-          <button class="btn primary" onclick="alert('Configuración General guardada con éxito.')">Guardar Cambios</button>
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn primary" id="genTabBtn-general" onclick="switchGeneralTab('general')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">General</button>
+          <button class="btn" id="genTabBtn-pagos" onclick="switchGeneralTab('pagos')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Pagos por transferencia</button>
+          <button class="btn" id="genTabBtn-contacto" onclick="switchGeneralTab('contacto')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Contacto & Sucursales</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Identificación & Estado</h3>
+
+        <div id="genTab-general">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2> Parámetros de la Tienda — General</h2>
+            <button class="btn primary" onclick="alert('Configuración General guardada con éxito.')">Guardar Cambios</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Identificación & Estado</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Nombre de la Tienda:</b> <input type="text" value="Mi Fiestashop" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Estado de la Tienda:</b>
+                  <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                    <option selected>Tienda Activa en Línea</option>
+                    <option>Modo Mantenimiento</option>
+                    <option>Modo Catálogo (Sin ventas)</option>
+                  </select>
+                </label>
+                <label><b>Correo Principal de Notificaciones:</b> <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Región & Moneda</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Moneda Predeterminada:</b> <input type="text" value="Peso Mexicano (MXN $)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+                <label><b>Zona Horaria:</b> <input type="text" value="America/Mexico_City (UTC-6)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+                <label><b>Idioma Predeterminado:</b> <input type="text" value="Español (México)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="genTab-pagos" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+            <h2>Cuenta para pagos por transferencia</h2>
+            <button class="btn primary" onclick="saveTransferenciaConfig()">Guardar</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
+            Cuando un cliente elige <b>Transferencia bancaria</b> en el checkout, al confirmar su pedido ve estos datos (con el monto y su número de pedido como concepto) y también le llegan en el correo de confirmación.
+          </p>
+          <div class="card" style="margin:0; background:var(--plane); max-width:640px;">
             <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Nombre de la Tienda:</b> <input type="text" value="Mi Fiestashop" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Estado de la Tienda:</b> 
-                <select style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-                  <option selected>Tienda Activa en Línea</option>
-                  <option>Modo Mantenimiento</option>
-                  <option>Modo Catálogo (Sin ventas)</option>
-                </select>
-              </label>
-              <label><b>Correo Principal de Notificaciones:</b> <input type="email" value="contacto@mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Leyenda:</b>
+                  <input type="text" id="cfgTransLeyenda" placeholder="Ej. Cuenta para reservaciones" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Titular de la cuenta:</b>
+                  <input type="text" id="cfgTransTitular" placeholder="Razón social o nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Banco:</b>
+                  <input type="text" id="cfgTransBanco" placeholder="Ej. Bancomer" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Número de cuenta:</b>
+                  <input type="text" id="cfgTransCuenta" placeholder="Solo dígitos" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Cuenta CLABE (18 dígitos):</b>
+                  <input type="text" id="cfgTransClabe" placeholder="012180001191093312" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                </label>
+                <label><b>Instrucciones para el cliente:</b>
+                  <textarea id="cfgTransInstrucciones" rows="3" placeholder="Ej. Envíanos tu comprobante por WhatsApp…" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
+                </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                  <input type="checkbox" id="cfgTransActiva"> Mostrar estos datos al cliente
+                </label>
+                <div id="cfgTransMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+              </div>
+          </div>
+        </div>
+
+        <div id="genTab-contacto" class="hidden">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+            <h2>Información de Contacto & Tiendas</h2>
+            <button class="btn primary" onclick="alert('Datos de contacto actualizados.')">Guardar Contacto</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Datos Fiscales & Legales</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Razón Social:</b> <input type="text" value="Mi Fiestashop S.A. de C.V." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>RFC de la Empresa:</b> <input type="text" value="MFI200815XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Dirección Matriz:</b> <input type="text" value="Av. Juárez 102, Col. Centro, Puebla, Pue." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
+            </div>
+
+            <div class="card" style="margin:0; background:var(--plane);">
+              <h3 style="margin-top:0; color:var(--series-2);">Atención al Cliente</h3>
+              <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+                <label><b>Teléfono Directo:</b> <input type="text" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>WhatsApp Oficial:</b> <input type="text" value="+52 55 9876 5432" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+                <label><b>Horario de Atención:</b> <input type="text" value="Lun - Sáb: 9:00 AM - 7:00 PM" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+              </div>
             </div>
           </div>
 
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Región & Moneda</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Moneda Predeterminada:</b> <input type="text" value="Peso Mexicano (MXN $)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-              <label><b>Zona Horaria:</b> <input type="text" value="America/Mexico_City (UTC-6)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-              <label><b>Idioma Predeterminado:</b> <input type="text" value="Español (México)" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-            </div>
+          <div class="card" style="margin:20px 0 0;">
+            <h3 style="margin-top:0; color:var(--series-2);">Códigos QR — Página de reseña por sucursal</h3>
+            <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Para imprimir y pegar en caja: el cliente escanea, deja correo/teléfono/tipo de evento (se guarda en <code>leads_tienda</code>) y lo mandamos directo a dejar su reseña en Google.</p>
+            <div id="qrBranchesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;"></div>
           </div>
         </div>
       </div>
@@ -4338,41 +4415,6 @@
               </label>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 5. CONTACTO -->
-    <section id="view-param-tienda-contacto" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Información de Contacto & Tiendas</h2>
-          <button class="btn primary" onclick="alert('Datos de contacto actualizados.')">Guardar Contacto</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Datos Fiscales & Legales</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Razón Social:</b> <input type="text" value="Mi Fiestashop S.A. de C.V." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>RFC de la Empresa:</b> <input type="text" value="MFI200815XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Dirección Matriz:</b> <input type="text" value="Av. Juárez 102, Col. Centro, Puebla, Pue." style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Atención al Cliente</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Teléfono Directo:</b> <input type="text" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>WhatsApp Oficial:</b> <input type="text" value="+52 55 9876 5432" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Horario de Atención:</b> <input type="text" value="Lun - Sáb: 9:00 AM - 7:00 PM" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin:20px 0 0;">
-          <h3 style="margin-top:0; color:var(--series-2);">Códigos QR — Página de reseña por sucursal</h3>
-          <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Para imprimir y pegar en caja: el cliente escanea, deja correo/teléfono/tipo de evento (se guarda en <code>leads_tienda</code>) y lo mandamos directo a dejar su reseña en Google.</p>
-          <div id="qrBranchesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px;"></div>
         </div>
       </div>
     </section>
@@ -4618,79 +4660,6 @@
               <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- 13. WEBSERVICE -->
-    <section id="view-param-avanzados-webservice" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Conexión API Webservice PrestaShop</h2>
-          <div>
-            <button class="btn secondary" onclick="alert('Probando respuesta de API webservice...')">Probar API</button>
-            <button class="btn primary" onclick="alert('Configuración webservice actualizada.')">Guardar Clave</button>
-          </div>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Parámetros de la API</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Estado del Webservice:</b> <span class="pill ok">Habilitado y Conectado</span></label>
-              <label><b>URL Base:</b> <input type="text" value="https://www.mifiestashop.com/api" disabled style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); opacity:0.8;"></label>
-              <label><b>Clave API (Webservice Key):</b> <input type="text" value="PS_API_KEY_CONFIGURED_IN_ENV" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
-          </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Permisos Activos de Endpoints</h3>
-            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
-              <div> <code>GET/POST /api/products</code> (Catálogo & Imágenes)</div>
-              <div> <code>GET/POST /api/orders</code> (Pedidos & Ventas)</div>
-              <div> <code>GET/POST /api/customers</code> (Clientes)</div>
-              <div> <code>GET/POST /api/categories</code> (Categorías)</div>
-              <div> <code>GET/POST /api/stock_availables</code> (Inventario)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PAGOS POR TRANSFERENCIA -->
-    <section id="view-param-tienda-pagos" class="view-panel hidden">
-      <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-          <h2>Cuenta para pagos por transferencia</h2>
-          <button class="btn primary" onclick="saveTransferenciaConfig()">Guardar</button>
-        </div>
-        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
-          Cuando un cliente elige <b>Transferencia bancaria</b> en el checkout, al confirmar su pedido ve estos datos (con el monto y su número de pedido como concepto) y también le llegan en el correo de confirmación.
-        </p>
-        <div class="card" style="margin:0; background:var(--plane); max-width:640px;">
-          <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Leyenda:</b>
-                <input type="text" id="cfgTransLeyenda" placeholder="Ej. Cuenta para reservaciones" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Titular de la cuenta:</b>
-                <input type="text" id="cfgTransTitular" placeholder="Razón social o nombre" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Banco:</b>
-                <input type="text" id="cfgTransBanco" placeholder="Ej. Bancomer" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Número de cuenta:</b>
-                <input type="text" id="cfgTransCuenta" placeholder="Solo dígitos" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Cuenta CLABE (18 dígitos):</b>
-                <input type="text" id="cfgTransClabe" placeholder="012180001191093312" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-              </label>
-              <label><b>Instrucciones para el cliente:</b>
-                <textarea id="cfgTransInstrucciones" rows="3" placeholder="Ej. Envíanos tu comprobante por WhatsApp…" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></textarea>
-              </label>
-              <label style="display:flex; align-items:center; gap:8px;">
-                <input type="checkbox" id="cfgTransActiva"> Mostrar estos datos al cliente
-              </label>
-              <div id="cfgTransMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
-            </div>
         </div>
       </div>
     </section>
@@ -6063,10 +6032,8 @@ const PERMISSION_GROUPS = [
   { group: 'Parámetros de la Tienda', items: [
     { key: 'param-tienda-general', label: 'General' },
     { key: 'param-tienda-pedidos', label: 'Config. Pedidos' },
-    { key: 'param-tienda-pagos', label: 'Pagos por transferencia' },
     { key: 'param-tienda-productos', label: 'Config. Productos' },
     { key: 'param-tienda-clientes', label: 'Ajustes de Clientes' },
-    { key: 'param-tienda-contacto', label: 'Contacto' },
     { key: 'param-tienda-seo', label: 'Tráfico & SEO' },
     { key: 'param-tienda-buscar', label: 'Buscar' }
   ]},
@@ -6077,7 +6044,6 @@ const PERMISSION_GROUPS = [
     { key: 'param-avanzados-importar', label: 'Importar' },
     { key: 'param-avanzados-equipo', label: 'Equipo' },
     { key: 'param-avanzados-registros', label: 'Registros' },
-    { key: 'param-avanzados-webservice', label: 'Webservice' },
     { key: 'api-desarrolladores', label: 'API para Desarrolladores' }
   ]},
   { group: 'Otros', items: [
@@ -7351,21 +7317,18 @@ function switchView(viewName) {
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
     costos: ['Costos & Gastos', 'Control de Gastos'],
     configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
-    'param-tienda-general': ['Parámetros de la Tienda', 'General & Identificación'],
+    'param-tienda-general': ['Parámetros de la Tienda', 'General, pagos por transferencia y contacto'],
     'param-tienda-pedidos': ['Parámetros de la Tienda', 'Configuración de Pedidos'],
     'param-tienda-productos': ['Parámetros de la Tienda', 'Configuración de Productos'],
     'param-tienda-clientes': ['Parámetros de la Tienda', 'Ajustes sobre Clientes'],
-    'param-tienda-contacto': ['Parámetros de la Tienda', 'Contacto & Sucursales'],
     'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
-    'param-tienda-pagos': ['Parámetros de la Tienda', 'Pagos por transferencia'],
     'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento & Caché'],
     'param-avanzados-correo': ['Parámetros Avanzados', 'Configuración SMTP de Correo'],
     'plantillas-correo': ['Parámetros Avanzados', 'Plantillas de Correo Transaccional'],
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'param-avanzados-registros': ['Parámetros Avanzados', 'Registros del Sistema (Logs)'],
-    'param-avanzados-webservice': ['Parámetros Avanzados', 'Conexión con PrestaShop'],
     'api-desarrolladores': ['API para Desarrolladores', 'Llaves y documentación para integraciones externas'],
     'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
   };
@@ -7392,8 +7355,7 @@ function switchView(viewName) {
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'plantillas-correo') renderEmailTemplatesGrid();
   if (viewName === 'param-avanzados-pixel') renderMetaPixelAdminForm();
-  if (viewName === 'param-tienda-pagos') renderTransferenciaAdminForm();
-  if (viewName === 'param-tienda-contacto') renderQrBranchesGrid();
+  if (viewName === 'param-tienda-general') switchGeneralTab('general');
   if (viewName === 'param-tienda-buscar') loadSearchHistoryAdmin();
 
   if (window.innerWidth <= 900 && typeof closeMobileSidebar === 'function') closeMobileSidebar();
@@ -16363,6 +16325,23 @@ async function generateBranchQr(key) {
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = 'Generar QR'; }
   }
+}
+
+// --- Back office: Parámetros de la Tienda → General (pestañas: General,
+// Pagos por transferencia, Contacto & Sucursales — antes 3 vistas
+// separadas). Los datos de cada pestaña se cargan la primera vez que se abre,
+// no todos de entrada.
+const GENERAL_TABS = ['general', 'pagos', 'contacto'];
+let generalTabsLoaded = { pagos: false, contacto: false };
+function switchGeneralTab(tab) {
+  GENERAL_TABS.forEach(key => {
+    const panel = document.getElementById(`genTab-${key}`);
+    if (panel) panel.classList.toggle('hidden', key !== tab);
+    const btn = document.getElementById(`genTabBtn-${key}`);
+    if (btn) btn.classList.toggle('primary', key === tab);
+  });
+  if (tab === 'pagos' && !generalTabsLoaded.pagos) { generalTabsLoaded.pagos = true; renderTransferenciaAdminForm(); }
+  if (tab === 'contacto' && !generalTabsLoaded.contacto) { generalTabsLoaded.contacto = true; renderQrBranchesGrid(); }
 }
 
 // --- Back office: Parámetros de la Tienda → Pagos por transferencia ---
