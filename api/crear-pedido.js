@@ -15,14 +15,16 @@
 //   items: [{ id, qty }],           // solo id + cantidad; el precio se ignora
 //   customer_name, customer_email, customer_phone,
 //   address, colonia, municipio, estado, cp,
-//   shipping_cost, shipping_carrier, payment_method
+//   shipping_cost, shipping_carrier, payment_method,
+//   coupon_code                     // opcional (cupones de "Retransmisiones")
 // }
-// -> { folio, subtotal, total, items: [{id,name,sku,price,qty}] }
+// -> { folio, subtotal, descuento, total, items: [{id,name,sku,price,qty}] }
 //
 // Con PrestaShop desconectado (default) el precio sale de catalogo_productos;
 // con PRESTASHOP_CONECTADO=1 vuelve a consultarse en vivo (PS_BASE_URL, PS_API_KEY).
 
 const { prestashopConectado, fetchPreciosActivos } = require('../lib/prestashop.js');
+const { validarCupon, normalizarCodigo } = require('../lib/cupones.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -62,7 +64,7 @@ module.exports = async function handler(req, res) {
   const {
     items, customer_name, customer_email, customer_phone,
     address, colonia, municipio, estado, cp,
-    shipping_cost, shipping_carrier, payment_method
+    shipping_cost, shipping_carrier, payment_method, coupon_code
   } = body;
 
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_LINES) {
@@ -140,7 +142,21 @@ module.exports = async function handler(req, res) {
     }
 
     const subtotal = resolved.reduce((s, it) => s + it.price * it.qty, 0);
-    const total = subtotal + shippingCostNum;
+
+    // Cupón: se valida y calcula aquí con el subtotal real (lo que haya
+    // calculado el navegador se ignora). Si no aplica, se avisa en vez de
+    // cobrar sin el descuento que el cliente esperaba.
+    let descuento = 0, cuponCodigo = null, cuponEtiqueta = null;
+    if (coupon_code && String(coupon_code).trim()) {
+      const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      if (!serviceRoleKey) { res.status(400).json({ error: 'Los cupones no están disponibles en este momento. Quita el cupón para continuar.' }); return; }
+      const c = await validarCupon(serviceRoleKey, coupon_code, { email: customer_email, subtotal });
+      if (!c.ok) { res.status(400).json({ error: c.error, cuponInvalido: true }); return; }
+      descuento = c.descuento;
+      cuponCodigo = normalizarCodigo(coupon_code);
+      cuponEtiqueta = `Cupón ${cuponCodigo} (${c.etiqueta})`;
+    }
+    const total = Math.round((subtotal - descuento + shippingCostNum) * 100) / 100;
     const folio = 'WEB-' + Date.now().toString().slice(-6);
     const fullAddress = `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
 
@@ -157,7 +173,8 @@ module.exports = async function handler(req, res) {
       items: resolved.map(({ id, name, sku, price, qty }) => ({ id, name, sku, price, qty })),
       subtotal,
       total,
-      status: 'Pendiente'
+      status: 'Pendiente',
+      ...(cuponCodigo ? { discount_amount: descuento, discount_label: cuponEtiqueta, cupon_codigo: cuponCodigo } : {})
     };
 
     try {
@@ -174,7 +191,7 @@ module.exports = async function handler(req, res) {
       // checkout no debe romperse por esto, igual que el resto del sitio.
     }
 
-    res.status(200).json({ folio, subtotal, total, items: orderPayload.items });
+    res.status(200).json({ folio, subtotal, descuento, cupon: cuponCodigo, total, items: orderPayload.items });
   } catch (err) {
     res.status(502).json({ error: 'No se pudo validar el pedido', detail: String(err) });
   }

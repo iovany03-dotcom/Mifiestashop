@@ -529,6 +529,18 @@
     border-bottom: 1px solid var(--grid);
     vertical-align: middle;
   }
+  .checkout-cupon { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #f0e6ef; }
+  .rt-tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 14px; flex-wrap: wrap; }
+  .rt-tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 8px 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; font-size: 14px; }
+  .rt-tab.active { color: var(--text-primary); border-bottom-color: #e85d04; }
+  .rt-label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary); }
+  .rt-input { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card-bg); color: var(--text-primary); font-size: 14px; box-sizing: border-box; }
+  .rt-compose { margin-top: 16px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
+  .rt-cupon-box { padding: 12px; border: 1px dashed rgba(211,0,123,0.45); border-radius: 10px; }
+  .rt-preview-wrap { margin-top: 12px; }
+  .rt-preview { white-space: pre-wrap; font-size: 13px; line-height: 1.5; padding: 12px; border-radius: 10px; background: rgba(148,163,184,0.10); border: 1px solid var(--border); max-height: 260px; overflow: auto; }
+  .rt-muted { font-size: 11px; color: var(--text-muted); }
+  @media (max-width: 720px) { .rt-grid { grid-template-columns: 1fr 1fr !important; } }
   .table-wrap { max-height: 520px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
 
   .pill {
@@ -2040,15 +2052,15 @@
         <div style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Nombre completo *</label>
-            <input type="text" id="checkoutName" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
+            <input type="text" id="checkoutName" onchange="scheduleCartSave()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Correo electrónico *</label>
-            <input type="email" id="checkoutEmail" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
+            <input type="email" id="checkoutEmail" onchange="scheduleCartSave()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Teléfono / WhatsApp *</label>
-            <input type="tel" id="checkoutPhone" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
+            <input type="tel" id="checkoutPhone" onchange="scheduleCartSave()" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;">
           </div>
           <div id="checkoutErrorMsg" class="hidden" style="color:#dc2626; font-size:13px; font-weight:600;"></div>
           <button style="padding:14px; font-size:15px; font-weight:700; justify-content:center; display:flex; align-items:center; border-radius:10px; margin-top:8px; background:var(--mf-pink); color:#fff; border:none; cursor:pointer;" id="checkoutSubmitBtn" onclick="submitStorefrontOrder()">💳 Pagar con Mercado Pago</button>
@@ -2057,6 +2069,16 @@
       <div style="background:#fff; border:1px solid #f0e6ef; padding:20px; border-radius:12px;">
         <h3 style="margin-top:0; color:#2e1065;">Resumen del Pedido</h3>
         <div id="checkoutOrderSummary"></div>
+        <div class="checkout-cupon">
+          <label for="checkoutCouponInput" style="font-size:13px; font-weight:700; color:#2e1065; display:block; margin-bottom:6px;">¿Tienes un cupón?</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="checkoutCouponInput" placeholder="Código del cupón" autocomplete="off" autocapitalize="characters"
+              onkeydown="if (event.key === 'Enter') { event.preventDefault(); applyCheckoutCoupon(); }"
+              style="flex:1; min-width:0; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065; text-transform:uppercase;">
+            <button type="button" id="checkoutCouponBtn" onclick="applyCheckoutCoupon()" style="border-radius:8px; font-weight:700; background:#2e1065; color:#fff; border:none; padding:0 16px; cursor:pointer;">Aplicar</button>
+          </div>
+          <div id="checkoutCouponMsg" class="hidden" style="font-size:12px; margin-top:6px;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -2713,6 +2735,7 @@
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
         <a class="submenu-link" data-view="embudo">Embudo de compra</a>
+        <a class="submenu-link" data-view="retransmisiones">Retransmisiones</a>
       </div>
     </div>
 
@@ -3650,6 +3673,201 @@
             <thead><tr><th>Última actividad</th><th>Origen</th><th>Dispositivo</th><th>Llegó hasta</th><th>Valor</th><th>Pasos</th><th></th></tr></thead>
             <tbody id="embSesionesBody"></tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RETRANSMISIONES ================= -->
+    <section id="view-retransmisiones" class="view-panel hidden">
+      <div class="card">
+        <div style="margin-bottom:12px;">
+          <h2 style="margin:0 0 4px;">Retransmisiones</h2>
+          <div style="font-size:13px; color:var(--text-muted);">Mensajes y cupones para los clientes que dejaron su carrito o no terminaron de pagar su pedido. Solo aparecen los que dejaron correo o teléfono y todavía no han comprado.</div>
+        </div>
+        <div class="rt-tabs">
+          <button type="button" class="rt-tab active" data-tab="clientes" onclick="rtSetTab('clientes')">Clientes por recuperar</button>
+          <button type="button" class="rt-tab" data-tab="cupones" onclick="rtSetTab('cupones')">Cupones</button>
+          <button type="button" class="rt-tab" data-tab="historial" onclick="rtSetTab('historial')">Historial</button>
+        </div>
+
+        <!-- Clientes por recuperar -->
+        <div id="rtTab-clientes">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
+            <div>
+              <label class="rt-label" for="rtDias">Periodo</label>
+              <select id="rtDias" class="rt-input" onchange="loadRtAudiencia()">
+                <option value="3">Últimos 3 días</option>
+                <option value="7">Últimos 7 días</option>
+                <option value="14" selected>Últimos 14 días</option>
+                <option value="30">Últimos 30 días</option>
+                <option value="90">Últimos 90 días</option>
+              </select>
+            </div>
+            <div>
+              <label class="rt-label" for="rtFiltroTipo">Qué dejaron</label>
+              <select id="rtFiltroTipo" class="rt-input" onchange="renderRtAudiencia()">
+                <option value="">Todo</option>
+                <option value="pedido">Pedido sin pagar</option>
+                <option value="carrito">Carrito abandonado</option>
+              </select>
+            </div>
+            <div>
+              <label class="rt-label" for="rtFiltroContacto">Contacto</label>
+              <select id="rtFiltroContacto" class="rt-input" onchange="renderRtAudiencia()">
+                <option value="">Todos</option>
+                <option value="email">Con correo</option>
+                <option value="whatsapp">Con teléfono</option>
+                <option value="nuevo">Sin mensaje todavía</option>
+              </select>
+            </div>
+            <button type="button" class="btn" onclick="loadRtAudiencia()">Actualizar</button>
+          </div>
+          <div id="rtResumen" style="font-size:13px; color:var(--text-secondary); margin-bottom:8px;"></div>
+          <div class="table-wrap" style="max-height:380px;">
+            <table>
+              <thead><tr>
+                <th style="width:30px;"><input type="checkbox" id="rtSelAll" onchange="rtToggleAll(this.checked)" aria-label="Seleccionar todos"></th>
+                <th>Cliente</th><th>Qué dejó</th><th style="text-align:right;">Valor</th><th>Cuándo</th><th>Último mensaje</th>
+              </tr></thead>
+              <tbody id="rtAudienciaBody"><tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="rt-compose">
+            <h3 style="margin:0 0 10px; font-size:15px;">Mensaje <span id="rtSelCount" style="font-weight:400; color:var(--text-muted);">(0 clientes seleccionados)</span></h3>
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:10px; font-size:14px;">
+              <label><input type="radio" name="rtCanal" value="email" checked onchange="rtRenderCompose()"> Correo (se manda solo)</label>
+              <label><input type="radio" name="rtCanal" value="whatsapp" onchange="rtRenderCompose()"> WhatsApp (te preparamos el mensaje)</label>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;" class="rt-grid">
+              <div>
+                <label class="rt-label" for="rtPlantilla">Plantilla</label>
+                <select id="rtPlantilla" class="rt-input" onchange="rtAplicarPlantilla()">
+                  <option value="cupon">Cupón para que regrese</option>
+                  <option value="recordatorio">Recordatorio (sin cupón)</option>
+                  <option value="rechazado">Pago rechazado</option>
+                </select>
+              </div>
+              <div id="rtAsuntoWrap">
+                <label class="rt-label" for="rtAsunto">Asunto del correo</label>
+                <input type="text" id="rtAsunto" class="rt-input" maxlength="150" oninput="rtRenderPreview()">
+              </div>
+            </div>
+            <label class="rt-label" for="rtMensaje" style="margin-top:10px;">Mensaje</label>
+            <textarea id="rtMensaje" class="rt-input" rows="6" maxlength="3000" oninput="rtRenderPreview()" style="width:100%; resize:vertical;"></textarea>
+            <div style="font-size:12px; color:var(--text-muted); margin:4px 0 12px;">Se reemplazan solos: <code>{nombre}</code> <code>{cupon}</code> <code>{descuento}</code> <code>{vence}</code> <code>{liga}</code> (la liga le vuelve a llenar su carrito y le aplica el cupón).</div>
+
+            <div class="rt-cupon-box">
+              <label class="rt-label" for="rtCuponModo">Cupón</label>
+              <select id="rtCuponModo" class="rt-input" onchange="rtRenderCompose()">
+                <option value="personal">Crear un cupón personal para cada cliente (1 uso, con vigencia)</option>
+                <option value="existente">Usar un cupón que ya existe</option>
+                <option value="ninguno">Sin cupón</option>
+              </select>
+              <div id="rtCuponPersonal" class="rt-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-top:10px;">
+                <div>
+                  <label class="rt-label" for="rtCuponTipo">Tipo</label>
+                  <select id="rtCuponTipo" class="rt-input" onchange="rtRenderPreview()">
+                    <option value="porcentaje">% de descuento</option>
+                    <option value="monto">$ de descuento</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="rt-label" for="rtCuponValor">Valor</label>
+                  <input type="number" id="rtCuponValor" class="rt-input" min="1" step="1" value="10" oninput="rtRenderPreview()">
+                </div>
+                <div>
+                  <label class="rt-label" for="rtCuponHoras">Vigencia</label>
+                  <select id="rtCuponHoras" class="rt-input" onchange="rtRenderPreview()">
+                    <option value="6">6 horas</option>
+                    <option value="24">24 horas</option>
+                    <option value="48" selected>48 horas</option>
+                    <option value="72">3 días</option>
+                    <option value="168">7 días</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="rt-label" for="rtCuponMinimo">Compra mínima</label>
+                  <input type="number" id="rtCuponMinimo" class="rt-input" min="0" step="1" value="0" oninput="rtRenderPreview()">
+                </div>
+              </div>
+              <div id="rtCuponExistenteWrap" class="hidden" style="margin-top:10px;">
+                <select id="rtCuponExistente" class="rt-input" onchange="rtRenderPreview()"></select>
+              </div>
+            </div>
+
+            <div class="rt-preview-wrap">
+              <div class="rt-label">Vista previa (con el primer cliente seleccionado)</div>
+              <div id="rtPreview" class="rt-preview"></div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
+              <button type="button" class="btn primary" id="rtEnviarBtn" onclick="rtEnviar()">Enviar</button>
+            </div>
+            <div id="rtResultados"></div>
+          </div>
+        </div>
+
+        <!-- Cupones -->
+        <div id="rtTab-cupones" class="hidden">
+          <div class="rt-compose" style="margin-top:0;">
+            <h3 style="margin:0 0 10px; font-size:15px;">Crear cupón con vigencia</h3>
+            <div class="rt-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px;">
+              <div>
+                <label class="rt-label" for="rtNcCodigo">Código (opcional)</label>
+                <input type="text" id="rtNcCodigo" class="rt-input" placeholder="Se genera solo" maxlength="30" style="text-transform:uppercase;">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcTipo">Tipo</label>
+                <select id="rtNcTipo" class="rt-input"><option value="porcentaje">% de descuento</option><option value="monto">$ de descuento</option></select>
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcValor">Valor</label>
+                <input type="number" id="rtNcValor" class="rt-input" min="1" step="1" value="10">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcMinimo">Compra mínima</label>
+                <input type="number" id="rtNcMinimo" class="rt-input" min="0" step="1" value="0">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcInicia">Empieza</label>
+                <input type="datetime-local" id="rtNcInicia" class="rt-input">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcVence">Vence</label>
+                <input type="datetime-local" id="rtNcVence" class="rt-input">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcUsos">Usos máximos</label>
+                <input type="number" id="rtNcUsos" class="rt-input" min="1" step="1" placeholder="Sin límite">
+              </div>
+              <div>
+                <label class="rt-label" for="rtNcEmail">Solo para el correo</label>
+                <input type="email" id="rtNcEmail" class="rt-input" placeholder="Cualquier cliente">
+              </div>
+            </div>
+            <label class="rt-label" for="rtNcDesc" style="margin-top:10px;">Nota interna</label>
+            <input type="text" id="rtNcDesc" class="rt-input" maxlength="200" placeholder="Ej. Buen Fin, clientes de Saltillo…" style="width:100%;">
+            <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+              <button type="button" class="btn primary" onclick="rtCrearCupon()">Crear cupón</button>
+            </div>
+            <div id="rtNcMsg" class="hidden" style="font-size:13px; margin-top:8px;"></div>
+          </div>
+          <div class="table-wrap" style="margin-top:14px;">
+            <table>
+              <thead><tr><th>Código</th><th>Descuento</th><th>Vigencia</th><th>Usos</th><th>Para</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="rtCuponesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Historial -->
+        <div id="rtTab-historial" class="hidden">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha</th><th>Canal</th><th>Cliente</th><th>Referencia</th><th>Cupón</th><th>Estado</th><th>Envió</th></tr></thead>
+              <tbody id="rtHistorialBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </section>
@@ -6017,7 +6235,8 @@ const PERMISSION_GROUPS = [
     { key: 'facturacion', label: 'Facturación' },
     { key: 'costos', label: 'Costos y Gastos' },
     { key: 'carritos', label: 'Carritos de Compra' },
-    { key: 'embudo', label: 'Embudo de compra' }
+    { key: 'embudo', label: 'Embudo de compra' },
+    { key: 'retransmisiones', label: 'Retransmisiones (mensajes y cupones)' }
   ]},
   { group: 'Caja (dentro de Sistema POS)', items: [
     { key: 'caja-puebla', label: 'Acceso a caja: Puebla' },
@@ -7312,6 +7531,7 @@ function switchView(viewName) {
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
+    retransmisiones: ['Retransmisiones', 'Mensajes y cupones para recuperar ventas'],
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
@@ -7344,6 +7564,7 @@ function switchView(viewName) {
   if (viewName === 'productos') switchProductosTab('catalogo');
   if (viewName === 'movimientos') initKardexView();
   if (viewName === 'embudo') loadEmbudo();
+  if (viewName === 'retransmisiones') loadRetransmisiones();
   if (viewName === 'paginas-cms') switchCmsTab('paginas');
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
   if (viewName === 'notificaciones') markNotificationsRead();
@@ -10163,6 +10384,357 @@ function exportKardexCsv() {
   a.download = `movimientos${kardexProduct ? '-' + kardexProduct.id : ''}-${kardexFmtDate(new Date())}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// ================= RETRANSMISIONES (mensajes y cupones) =================
+// Clientes que dejaron su carrito o no terminaron de pagar (api/retransmisiones.js):
+// se les manda un correo (sale solo, por SMTP) o un WhatsApp (se prepara el
+// texto y la liga wa.me para abrirla, porque no hay API de WhatsApp
+// Business), con o sin cupón. Los cupones tienen vigencia y el checkout los
+// valida en el servidor (api/cupon-validar.js / api/crear-pedido.js).
+let rtAudiencia = [];
+let rtSeleccion = new Set();
+let rtCupones = [];
+let rtTab = 'clientes';
+
+const RT_PLANTILLAS = {
+  cupon: {
+    asunto: '{nombre}, tu carrito te está esperando 🎁',
+    mensaje: 'Hola {nombre} 🎉\n\nVimos que dejaste artículos en tu carrito de Mi Fiestashop. Para que no te quedes sin ellos, te regalamos {descuento} de descuento con el código {cupon}, válido hasta el {vence}.\n\nTermina tu compra aquí: {liga}\n\nSi tuviste algún problema para pagar, respóndenos y te ayudamos.'
+  },
+  recordatorio: {
+    asunto: '{nombre}, guardamos tu carrito',
+    mensaje: 'Hola {nombre} 👋\n\nVimos que dejaste artículos en tu carrito de Mi Fiestashop. ¡Te los guardamos! Puedes terminar tu compra aquí: {liga}\n\nSi tuviste algún problema para pagar, respóndenos y te ayudamos.'
+  },
+  rechazado: {
+    asunto: '{nombre}, tu pago no se completó',
+    mensaje: 'Hola {nombre}, vimos que tu pago no se pudo completar. Puedes intentarlo con otra tarjeta, con tu cuenta de Mercado Pago o pagar por transferencia.\n\nTu pedido sigue aquí: {liga}\n\n¿Te ayudamos? Respóndenos este mensaje.'
+  }
+};
+
+async function rtApi(accion, extra) {
+  const r = await fetch('/api/retransmisiones', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), enviado_por: nombreSesionActual(), accion, ...(extra || {}) })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (data.error || `Error ${r.status}`));
+  return data;
+}
+
+function rtFecha(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const horas = (Date.now() - d.getTime()) / 36e5;
+  const rel = horas < 1 ? 'hace menos de 1 h' : horas < 48 ? `hace ${Math.round(horas)} h` : `hace ${Math.round(horas / 24)} días`;
+  return `${d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}<div class="rt-muted">${rel}</div>`;
+}
+
+function loadRetransmisiones() {
+  if (!document.getElementById('rtMensaje').value) rtAplicarPlantilla();
+  rtSetTab(rtTab);
+}
+
+function rtSetTab(tab) {
+  rtTab = tab;
+  document.querySelectorAll('#view-retransmisiones .rt-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['clientes', 'cupones', 'historial'].forEach(t => document.getElementById('rtTab-' + t)?.classList.toggle('hidden', t !== tab));
+  if (tab === 'clientes') { loadRtAudiencia(); loadRtCupones(true); }
+  if (tab === 'cupones') loadRtCupones();
+  if (tab === 'historial') loadRtHistorial();
+}
+
+async function loadRtAudiencia() {
+  const body = document.getElementById('rtAudienciaBody');
+  body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    const data = await rtApi('audiencia', { dias: document.getElementById('rtDias').value });
+    rtAudiencia = data.destinatarios || [];
+    const refs = new Set(rtAudiencia.map(d => d.referencia));
+    rtSeleccion = new Set([...rtSeleccion].filter(r => refs.has(r)));
+  } catch (e) {
+    rtAudiencia = [];
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#dc2626;">${escapeHtml(e.message)}</td></tr>`;
+    return;
+  }
+  renderRtAudiencia();
+}
+
+function rtFiltrados() {
+  const tipo = document.getElementById('rtFiltroTipo').value;
+  const contacto = document.getElementById('rtFiltroContacto').value;
+  return rtAudiencia.filter(d =>
+    (!tipo || d.tipo === tipo) &&
+    (!contacto || (contacto === 'email' && d.email) || (contacto === 'whatsapp' && d.telefono) || (contacto === 'nuevo' && !d.ultimoContacto))
+  );
+}
+
+function renderRtAudiencia() {
+  const body = document.getElementById('rtAudienciaBody');
+  const lista = rtFiltrados();
+  const total = lista.reduce((s, d) => s + (d.total || 0), 0);
+  document.getElementById('rtResumen').textContent = `${lista.length} clientes · ${fmtMoney(total)} en ventas por recuperar`;
+  if (!lista.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">No hay clientes por recuperar en este periodo. Los carritos solo aparecen cuando el cliente dejó su correo o teléfono.</td></tr>';
+  } else {
+    body.innerHTML = lista.map(d => {
+      const estado = d.tipo === 'pedido'
+        ? `<span class="pill ${d.estado === 'Error en el pago' ? 'bad' : 'warn'}">${escapeHtml(d.estado === 'Pendiente' ? 'No pagó' : d.estado)}</span> <span class="rt-muted">${escapeHtml(d.referencia)}</span>${d.motivo ? `<div class="rt-muted">${escapeHtml(mpStatusDetailText(d.motivo))}</div>` : ''}`
+        : '<span class="pill">Carrito abandonado</span>';
+      const productos = (d.productos || []).slice(0, 3).map(escapeHtml).join(', ') + ((d.productos || []).length > 3 ? '…' : '');
+      const uc = d.ultimoContacto
+        ? `${d.ultimoContacto.canal === 'whatsapp' ? 'WhatsApp' : 'Correo'} ${rtFecha(d.ultimoContacto.fecha)}${d.ultimoContacto.cupon ? `<div class="rt-muted">Cupón ${escapeHtml(d.ultimoContacto.cupon)}</div>` : ''}`
+        : '<span class="rt-muted">Nunca</span>';
+      return `<tr>
+        <td><input type="checkbox" ${rtSeleccion.has(d.referencia) ? 'checked' : ''} onchange="rtToggle('${escapeHtml(d.referencia)}', this.checked)" aria-label="Seleccionar ${escapeHtml(d.nombre || d.email || d.telefono)}"></td>
+        <td><b>${escapeHtml(d.nombre || 'Sin nombre')}</b><div class="rt-muted">${escapeHtml(d.email || '')}${d.email && d.telefono ? ' · ' : ''}${escapeHtml(d.telefono || '')}</div></td>
+        <td>${estado}<div class="rt-muted">${d.piezas} pzas · ${productos}</div></td>
+        <td style="text-align:right; font-weight:700;">${fmtMoney(d.total || 0)}</td>
+        <td>${rtFecha(d.fecha)}</td>
+        <td>${uc}</td>
+      </tr>`;
+    }).join('');
+  }
+  const all = document.getElementById('rtSelAll');
+  if (all) all.checked = lista.length > 0 && lista.every(d => rtSeleccion.has(d.referencia));
+  rtRenderCompose();
+}
+
+function rtToggle(ref, on) {
+  if (on) rtSeleccion.add(ref); else rtSeleccion.delete(ref);
+  rtRenderCompose();
+}
+
+function rtToggleAll(on) {
+  rtFiltrados().forEach(d => { if (on) rtSeleccion.add(d.referencia); else rtSeleccion.delete(d.referencia); });
+  renderRtAudiencia();
+}
+
+function rtCanal() {
+  return document.querySelector('input[name="rtCanal"]:checked')?.value || 'email';
+}
+
+function rtAplicarPlantilla() {
+  const p = RT_PLANTILLAS[document.getElementById('rtPlantilla').value] || RT_PLANTILLAS.cupon;
+  document.getElementById('rtAsunto').value = p.asunto;
+  document.getElementById('rtMensaje').value = p.mensaje;
+  const modo = document.getElementById('rtCuponModo');
+  if (document.getElementById('rtPlantilla').value === 'cupon' && modo.value === 'ninguno') modo.value = 'personal';
+  if (document.getElementById('rtPlantilla').value === 'recordatorio') modo.value = 'ninguno';
+  rtRenderCompose();
+}
+
+function rtSeleccionados() {
+  return rtAudiencia.filter(d => rtSeleccion.has(d.referencia));
+}
+
+function rtRenderCompose() {
+  const canal = rtCanal();
+  const modo = document.getElementById('rtCuponModo').value;
+  document.getElementById('rtAsuntoWrap').style.visibility = canal === 'email' ? 'visible' : 'hidden';
+  document.getElementById('rtCuponPersonal').style.display = modo === 'personal' ? 'grid' : 'none';
+  document.getElementById('rtCuponExistenteWrap').classList.toggle('hidden', modo !== 'existente');
+  const sel = rtSeleccionados();
+  const validos = sel.filter(d => canal === 'email' ? d.email : d.telefono);
+  document.getElementById('rtSelCount').textContent = `(${sel.length} clientes seleccionados${sel.length !== validos.length ? `, ${sel.length - validos.length} sin ${canal === 'email' ? 'correo' : 'teléfono'}` : ''})`;
+  const btn = document.getElementById('rtEnviarBtn');
+  btn.textContent = canal === 'email' ? `Enviar correo a ${validos.length} cliente${validos.length === 1 ? '' : 's'}` : `Preparar WhatsApp para ${validos.length} cliente${validos.length === 1 ? '' : 's'}`;
+  btn.disabled = validos.length === 0;
+  rtRenderPreview();
+}
+
+// Datos del cupón que se va a mandar, para la vista previa.
+function rtCuponPreview() {
+  const modo = document.getElementById('rtCuponModo').value;
+  if (modo === 'ninguno') return null;
+  if (modo === 'existente') {
+    const c = rtCupones.find(x => x.codigo === document.getElementById('rtCuponExistente').value);
+    if (!c) return null;
+    return { codigo: c.codigo, descuento: rtDescuentoTexto(c.tipo, c.valor), vence: c.vence_at ? rtVenceTexto(new Date(c.vence_at)) : 'sin fecha de vencimiento' };
+  }
+  const tipo = document.getElementById('rtCuponTipo').value;
+  const valor = Number(document.getElementById('rtCuponValor').value) || 0;
+  const horas = Number(document.getElementById('rtCuponHoras').value) || 48;
+  return { codigo: 'VUELVE-XXXXXX', descuento: rtDescuentoTexto(tipo, valor), vence: rtVenceTexto(new Date(Date.now() + horas * 36e5)) };
+}
+
+function rtDescuentoTexto(tipo, valor) {
+  return tipo === 'porcentaje' ? `${Number(valor)}%` : `$${Number(valor).toFixed(2)}`;
+}
+
+function rtVenceTexto(d) {
+  return d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' });
+}
+
+function rtRenderPreview() {
+  const el = document.getElementById('rtPreview');
+  if (!el) return;
+  const d = rtSeleccionados()[0] || rtFiltrados()[0];
+  const c = rtCuponPreview();
+  const nombre = d ? (String(d.nombre || '').trim().split(/\s+/)[0] || '') : 'Cliente';
+  const liga = 'https://www.mifiestashop.com/?carrito=…' + (c ? `&cupon=${c.codigo}` : '');
+  const fill = t => String(t || '')
+    .replace(/\{nombre\}/g, nombre).replace(/\{cupon\}/g, c ? c.codigo : '')
+    .replace(/\{descuento\}/g, c ? c.descuento : '').replace(/\{vence\}/g, c ? c.vence : '').replace(/\{liga\}/g, liga);
+  const canal = rtCanal();
+  const mensaje = fill(document.getElementById('rtMensaje').value);
+  const avisos = [];
+  if (!c && /\{(cupon|descuento|vence)\}/.test(document.getElementById('rtMensaje').value)) avisos.push('⚠ El mensaje menciona un cupón pero no elegiste ninguno.');
+  if (c && !/\{cupon\}/.test(document.getElementById('rtMensaje').value) && canal === 'whatsapp') avisos.push('⚠ El mensaje de WhatsApp no incluye {cupon}: el cliente no verá el código (solo irá en la liga).');
+  el.innerHTML = (canal === 'email' ? `<b>Asunto:</b> ${escapeHtml(fill(document.getElementById('rtAsunto').value))}\n\n` : '') +
+    escapeHtml(mensaje) +
+    (canal === 'email' ? `\n\n${c ? `[Caja del cupón: ${escapeHtml(c.codigo)} · ${escapeHtml(c.descuento)} · válido hasta el ${escapeHtml(c.vence)}]\n` : ''}[Lista de productos que dejó]\n[Botón: Terminar mi compra]` : '') +
+    (avisos.length ? `\n\n<span style="color:#b45309;">${avisos.map(escapeHtml).join('\n')}</span>` : '');
+}
+
+async function rtEnviar() {
+  const canal = rtCanal();
+  const destinos = rtSeleccionados().filter(d => canal === 'email' ? d.email : d.telefono);
+  if (!destinos.length) return;
+  const modo = document.getElementById('rtCuponModo').value;
+  const cupon = modo === 'personal' ? {
+    modo, tipo: document.getElementById('rtCuponTipo').value, valor: Number(document.getElementById('rtCuponValor').value),
+    horas: Number(document.getElementById('rtCuponHoras').value), minimo: Number(document.getElementById('rtCuponMinimo').value) || 0, prefijo: 'VUELVE'
+  } : modo === 'existente' ? { modo, codigo: document.getElementById('rtCuponExistente').value } : { modo: 'ninguno' };
+  const c = rtCuponPreview();
+  const accionTxt = canal === 'email' ? `mandar un correo a ${destinos.length} cliente(s)` : `preparar el WhatsApp de ${destinos.length} cliente(s)`;
+  if (!confirm(`¿${accionTxt[0].toUpperCase() + accionTxt.slice(1)}${c ? ` con cupón de ${c.descuento}${modo === 'personal' ? ` (uno personal por cliente, válido ${document.getElementById('rtCuponHoras').selectedOptions[0].text})` : ` (${c.codigo})`}` : ' sin cupón'}?`)) return;
+
+  const btn = document.getElementById('rtEnviarBtn');
+  const out = document.getElementById('rtResultados');
+  btn.disabled = true;
+  const resultados = [];
+  try {
+    for (let i = 0; i < destinos.length; i += 20) {
+      btn.textContent = `Enviando… ${Math.min(i + 20, destinos.length)}/${destinos.length}`;
+      const data = await rtApi('enviar', {
+        canal, asunto: document.getElementById('rtAsunto').value, mensaje: document.getElementById('rtMensaje').value, cupon,
+        destinatarios: destinos.slice(i, i + 20).map(d => ({ tipo: d.tipo, referencia: d.referencia }))
+      });
+      resultados.push(...(data.resultados || []));
+    }
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    rtRenderCompose();
+  }
+  const porRef = Object.fromEntries(rtAudiencia.map(d => [d.referencia, d]));
+  const okN = resultados.filter(r => r.ok).length;
+  out.innerHTML = `<div style="margin-top:14px; font-weight:700;">${canal === 'email' ? `Correos enviados: ${okN} de ${resultados.length}` : `WhatsApp listos: ${okN} de ${resultados.length}. Dale clic a cada uno para abrirlo y enviarlo.`}</div>` +
+    resultados.map(r => {
+      const d = porRef[r.referencia] || {};
+      return `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <div><b>${escapeHtml(d.nombre || d.email || d.telefono || r.referencia)}</b>${r.codigo ? ` · cupón <code>${escapeHtml(r.codigo)}</code>` : ''}${r.error ? `<div style="color:#dc2626;">${escapeHtml(r.error)}</div>` : ''}</div>
+        <div>${r.whatsapp ? `<a class="btn small primary" href="${escapeHtml(r.whatsapp)}" target="_blank" rel="noopener" onclick="this.textContent='Abierto ✓'">Abrir WhatsApp</a>` : (r.ok ? '<span class="pill ok">Enviado</span>' : '<span class="pill bad">Error</span>')}</div>
+      </div>`;
+    }).join('');
+  rtSeleccion.clear();
+  loadRtAudiencia();
+}
+
+async function loadRtCupones(soloSelect) {
+  try {
+    const data = await rtApi('cupones');
+    rtCupones = data.cupones || [];
+  } catch (e) {
+    rtCupones = [];
+    if (!soloSelect) document.getElementById('rtCuponesBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">${escapeHtml(e.message)}</td></tr>`;
+  }
+  const ahora = new Date();
+  const vigentes = rtCupones.filter(c => c.activo && (!c.vence_at || new Date(c.vence_at) > ahora) && !c.email && (c.usos_max == null || c.usos < c.usos_max));
+  const sel = document.getElementById('rtCuponExistente');
+  if (sel) {
+    const prev = sel.value;
+    sel.innerHTML = vigentes.length
+      ? vigentes.map(c => `<option value="${escapeHtml(c.codigo)}">${escapeHtml(c.codigo)} — ${escapeHtml(rtDescuentoTexto(c.tipo, c.valor))}${c.vence_at ? ' · vence ' + escapeHtml(new Date(c.vence_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })) : ''}</option>`).join('')
+      : '<option value="">No hay cupones generales vigentes (créalos en la pestaña Cupones)</option>';
+    if (prev && vigentes.some(c => c.codigo === prev)) sel.value = prev;
+  }
+  if (!soloSelect) renderRtCupones();
+  else rtRenderPreview();
+}
+
+function rtEstadoCupon(c) {
+  const ahora = new Date();
+  if (!c.activo) return ['Desactivado', ''];
+  if (c.inicia_at && new Date(c.inicia_at) > ahora) return ['Programado', 'warn'];
+  if (c.vence_at && new Date(c.vence_at) <= ahora) return ['Vencido', 'bad'];
+  if (c.usos_max != null && c.usos >= c.usos_max) return ['Usado', ''];
+  return ['Vigente', 'ok'];
+}
+
+function renderRtCupones() {
+  const body = document.getElementById('rtCuponesBody');
+  if (!rtCupones.length) {
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Todavía no hay cupones.</td></tr>';
+    return;
+  }
+  const f = iso => iso ? new Date(iso).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  body.innerHTML = rtCupones.map(c => {
+    const [estado, cls] = rtEstadoCupon(c);
+    return `<tr>
+      <td><code style="font-weight:800;">${escapeHtml(c.codigo)}</code>${c.descripcion ? `<div class="rt-muted">${escapeHtml(c.descripcion)}</div>` : ''}</td>
+      <td>${escapeHtml(rtDescuentoTexto(c.tipo, c.valor))}${Number(c.minimo_compra) > 0 ? `<div class="rt-muted">desde ${fmtMoney(Number(c.minimo_compra))}</div>` : ''}</td>
+      <td>${escapeHtml(f(c.inicia_at))}<div class="rt-muted">${c.vence_at ? 'hasta ' + escapeHtml(f(c.vence_at)) : 'sin vencimiento'}</div></td>
+      <td>${c.usos}${c.usos_max != null ? ' / ' + c.usos_max : ''}</td>
+      <td>${c.email ? escapeHtml(c.email) : '<span class="rt-muted">Cualquiera</span>'}<div class="rt-muted">${c.origen === 'retransmision' ? 'Retransmisión' : 'Manual'}</div></td>
+      <td><span class="pill ${cls}">${estado}</span></td>
+      <td style="white-space:nowrap;">
+        <button type="button" class="btn small" onclick="navigator.clipboard.writeText('${escapeHtml(c.codigo)}'); this.textContent='Copiado ✓'">Copiar</button>
+        <button type="button" class="btn small" onclick="rtCuponActivo('${escapeHtml(c.codigo)}', ${!c.activo})">${c.activo ? 'Desactivar' : 'Activar'}</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function rtCuponActivo(codigo, activo) {
+  if (!activo && !confirm(`¿Desactivar el cupón ${codigo}? Ya no se podrá usar en el checkout.`)) return;
+  try {
+    await rtApi('cupon_activo', { codigo, activo });
+    await loadRtCupones();
+  } catch (e) { alert(e.message); }
+}
+
+async function rtCrearCupon() {
+  const msg = document.getElementById('rtNcMsg');
+  const val = id => document.getElementById(id).value;
+  const show = (t, ok) => { msg.textContent = t; msg.style.color = ok ? '#15803d' : '#dc2626'; msg.classList.remove('hidden'); };
+  if (!val('rtNcVence') && !confirm('El cupón no tiene fecha de vencimiento. ¿Crearlo así?')) return;
+  try {
+    const data = await rtApi('crear_cupon', {
+      codigo: val('rtNcCodigo').trim() || undefined, prefijo: 'FIESTA', tipo: val('rtNcTipo'), valor: Number(val('rtNcValor')),
+      minimo: Number(val('rtNcMinimo')) || 0,
+      inicia: val('rtNcInicia') ? new Date(val('rtNcInicia')).toISOString() : undefined,
+      vence: val('rtNcVence') ? new Date(val('rtNcVence')).toISOString() : undefined,
+      usos_max: val('rtNcUsos') ? Number(val('rtNcUsos')) : undefined,
+      email: val('rtNcEmail').trim() || undefined, descripcion: val('rtNcDesc').trim() || undefined
+    });
+    show(`Cupón ${data.cupon.codigo} creado.`, true);
+    ['rtNcCodigo', 'rtNcInicia', 'rtNcVence', 'rtNcUsos', 'rtNcEmail', 'rtNcDesc'].forEach(id => { document.getElementById(id).value = ''; });
+    await loadRtCupones();
+  } catch (e) { show(e.message, false); }
+}
+
+async function loadRtHistorial() {
+  const body = document.getElementById('rtHistorialBody');
+  body.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  try {
+    const data = await rtApi('historial');
+    const rows = data.historial || [];
+    body.innerHTML = rows.length ? rows.map(h => `<tr title="${escapeHtml(h.mensaje || '')}">
+      <td>${escapeHtml(new Date(h.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }))}</td>
+      <td>${h.canal === 'whatsapp' ? 'WhatsApp' : 'Correo'}</td>
+      <td><b>${escapeHtml(h.nombre || '')}</b><div class="rt-muted">${escapeHtml(h.canal === 'whatsapp' ? (h.telefono || '') : (h.email || ''))}</div></td>
+      <td>${escapeHtml(h.referencia || '')}</td>
+      <td>${h.cupon_codigo ? `<code>${escapeHtml(h.cupon_codigo)}</code>` : '—'}</td>
+      <td><span class="pill ${h.estado === 'error' ? 'bad' : h.estado === 'enviado' ? 'ok' : 'warn'}">${h.estado === 'preparado' ? 'WhatsApp preparado' : h.estado === 'enviado' ? 'Enviado' : 'Error'}</span>${h.error ? `<div class="rt-muted" style="color:#dc2626;">${escapeHtml(h.error)}</div>` : ''}</td>
+      <td class="rt-muted">${escapeHtml(h.enviado_por || '')}</td>
+    </tr>`).join('') : '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Todavía no se ha mandado ningún mensaje.</td></tr>';
+  } catch (e) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:#dc2626;">${escapeHtml(e.message)}</td></tr>`;
+  }
 }
 
 // ================= MODULO DE MOVIMIENTOS E HISTORIAL DE INVENTARIO =================
@@ -16124,12 +16696,77 @@ async function onCheckoutShippingFieldsInput() {
   }
 }
 
+// ---- Cupón en el checkout (cupones con vigencia de "Retransmisiones") ----
+// checkoutCoupon: el cupón ya revisado por api/cupon-validar.js. El
+// descuento de aquí es solo la vista previa: el real lo vuelve a calcular
+// api/crear-pedido.js con los precios del servidor.
+let checkoutCoupon = null;
+// Código que llegó en la liga (?cupon=...) y se aplica al abrir el checkout.
+let pendingCouponCode = '';
+
+function checkoutCouponDiscount(subtotal) {
+  if (!checkoutCoupon) return 0;
+  if (subtotal < (checkoutCoupon.minimo || 0)) return 0;
+  const d = checkoutCoupon.tipo === 'porcentaje' ? subtotal * Math.min(checkoutCoupon.valor, 100) / 100 : checkoutCoupon.valor;
+  return Math.round(Math.min(d, subtotal) * 100) / 100;
+}
+
+function showCheckoutCouponMsg(text, ok) {
+  const el = document.getElementById('checkoutCouponMsg');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = ok ? '#15803d' : '#dc2626';
+  el.classList.toggle('hidden', !text);
+}
+
+async function applyCheckoutCoupon(codeArg) {
+  const input = document.getElementById('checkoutCouponInput');
+  const btn = document.getElementById('checkoutCouponBtn');
+  const code = String(codeArg || (input ? input.value : '')).trim().toUpperCase();
+  if (checkoutCoupon && !codeArg && (!code || code === checkoutCoupon.codigo)) {
+    // Con un cupón aplicado el botón sirve para quitarlo.
+    checkoutCoupon = null;
+    if (input) { input.value = ''; input.disabled = false; }
+    if (btn) btn.textContent = 'Aplicar';
+    showCheckoutCouponMsg('', true);
+    renderCheckoutSummary();
+    return;
+  }
+  if (!code) { showCheckoutCouponMsg('Escribe el código de tu cupón.', false); return; }
+  if (input) input.value = code;
+  const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch('/api/cupon-validar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ codigo: code, subtotal, email: document.getElementById('checkoutEmail')?.value.trim() || '' })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!data.ok) {
+      checkoutCoupon = null;
+      showCheckoutCouponMsg(data.error || 'No se pudo aplicar el cupón.', false);
+    } else {
+      checkoutCoupon = { codigo: data.codigo, tipo: data.tipo, valor: data.valor, minimo: data.minimo, etiqueta: data.etiqueta, vence: data.vence };
+      if (input) input.disabled = true;
+      if (btn) btn.textContent = 'Quitar';
+      const vence = data.vence ? ` · válido hasta el ${new Date(data.vence).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' })}` : '';
+      showCheckoutCouponMsg(`✓ Cupón ${data.codigo} aplicado: ${data.etiqueta}${vence}${data.personal ? ' · Es personal: usa el mismo correo al que te llegó.' : ''}`, true);
+    }
+  } catch (e) {
+    showCheckoutCouponMsg('No se pudo revisar el cupón. Intenta de nuevo.', false);
+  } finally {
+    if (btn) btn.disabled = false;
+    renderCheckoutSummary();
+  }
+}
+
 function renderCheckoutSummary(){
   const el = document.getElementById('checkoutOrderSummary');
   if (!el) return;
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const shippingKnown = checkoutShippingCost !== null;
-  const total = subtotal + (checkoutShippingCost || 0);
+  const descuento = checkoutCouponDiscount(subtotal);
+  const total = subtotal - descuento + (checkoutShippingCost || 0);
   el.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px; max-height:260px; overflow-y:auto;">
       ${cart.map(i => `
@@ -16143,6 +16780,9 @@ function renderCheckoutSummary(){
       <div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
         <span>Subtotal:</span><span>${fmtMoney(subtotal)}</span>
       </div>
+      ${descuento > 0 ? `<div style="display:flex; justify-content:space-between; font-size:13px; color:#15803d; font-weight:700;">
+        <span>Cupón ${escapeHtml(checkoutCoupon.codigo)}:</span><span>−${fmtMoney(descuento)}</span>
+      </div>` : ''}
       <div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
         <span>Envío:</span><span>${!shippingKnown ? 'Ingresa tu C.P.' : (checkoutShippingCost === 0 ? 'Gratis' : fmtMoney(checkoutShippingCost))}</span>
       </div>
@@ -16183,6 +16823,15 @@ function goToStorefrontCheckout(){
   prefillCheckoutFromCliente();
   renderCheckoutSummary();
   showStorefrontPage('storefrontCheckoutPage');
+  // Cupón que venía en la liga de un mensaje (Retransmisiones).
+  const code = pendingCouponCode || (checkoutCoupon && checkoutCoupon.codigo);
+  if (code) {
+    const input = document.getElementById('checkoutCouponInput');
+    if (input) input.value = code;
+    pendingCouponCode = '';
+    checkoutCoupon = null;
+    applyCheckoutCoupon(code);
+  }
 }
 
 // Con sesión iniciada, el checkout se llena con los datos de la cuenta
@@ -16569,11 +17218,23 @@ async function submitStorefrontOrderInner(){
         address, colonia, municipio, estado, cp,
         shipping_cost: checkoutShippingCost,
         shipping_carrier: checkoutShippingCarrier || '',
-        payment_method: checkoutPayMethod
+        payment_method: checkoutPayMethod,
+        coupon_code: checkoutCoupon ? checkoutCoupon.codigo : undefined
       })
     });
     const data = await r.json();
     if (!r.ok || data.error) {
+      if (data.cuponInvalido) {
+        // El cupón dejó de aplicar (venció, correo distinto…): se quita para
+        // que el cliente vea el total real antes de volver a intentar.
+        checkoutCoupon = null;
+        const input = document.getElementById('checkoutCouponInput');
+        if (input) input.disabled = false;
+        const btn = document.getElementById('checkoutCouponBtn');
+        if (btn) btn.textContent = 'Aplicar';
+        showCheckoutCouponMsg(data.error, false);
+        renderCheckoutSummary();
+      }
       fail(data.error || 'No se pudo procesar tu pedido. Intenta de nuevo.');
       return;
     }
@@ -16591,8 +17252,11 @@ async function submitStorefrontOrderInner(){
   // intermedio de "gracias por tu pedido" — eso ya lo maneja
   // handleMercadoPagoReturn() cuando el cliente vuelve del pago).
   try {
-    const mpItems = verifiedItems.map(i => ({ name: i.name, qty: i.qty, price: i.price }));
+    let mpItems = verifiedItems.map(i => ({ name: i.name, qty: i.qty, price: i.price }));
     if (checkoutShippingCost > 0) mpItems.push({ name: 'Envío (' + (checkoutShippingCarrier || 'paquetería') + ')', qty: 1, price: checkoutShippingCost });
+    // Mercado Pago no acepta renglones negativos: con cupón se cobra el
+    // pedido en un solo renglón por el total ya con descuento.
+    if (order.descuento > 0) mpItems = [{ name: `Pedido ${folio} Mi Fiestashop (con cupón ${order.cupon})`, qty: 1, price: total }];
     const mpRes = await fetch('/api/mp-crear-preferencia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -17637,7 +18301,55 @@ function openProductDeepLinkIfPresent() {
 // productDeepLinkMatch primero (ver más abajo).
 const categoryDeepLinkMatch = window.location.pathname.match(/^\/(\d+)-[^\/]+$/);
 
+// Liga de los mensajes de "Retransmisiones": /?carrito=83277x20.83591x1
+// &cupon=VUELVE-ABC234 vuelve a llenar el carrito del cliente (en el
+// dispositivo que sea) y deja el cupón listo para aplicarse en el checkout.
+function handleRecuperarCarrito() {
+  const params = new URLSearchParams(window.location.search);
+  // (?recuperar= ya es el token de "olvidé mi contraseña", ver handleEmailLink)
+  const rec = params.get('carrito');
+  const cupon = params.get('cupon');
+  if (!rec && !cupon) return false;
+  if (cupon && /^[A-Za-z0-9-]{3,30}$/.test(cupon)) pendingCouponCode = cupon.toUpperCase();
+  let agregados = 0, faltantes = 0;
+  if (rec) {
+    rec.split('.').slice(0, 50).forEach(par => {
+      const [id, q] = par.split('x');
+      const qty = Math.min(999, Math.max(1, parseInt(q, 10) || 1));
+      const p = liveProducts.find(pr => String(pr.id) === String(id));
+      if (!p) { faltantes++; return; }
+      const existing = cart.find(i => String(i.id) === String(p.id));
+      if (existing) {
+        existing.qty = Math.max(existing.qty, qty);
+        applyWholesalePricing(existing);
+      } else {
+        const item = { id: p.id, name: p.name, sku: p.sku, price: p.price, cat: p.cat || 'general', img: p.img, qty, basePrice: p.price };
+        applyWholesalePricing(item);
+        cart.push(item);
+      }
+      agregados++;
+    });
+    saveCartToStorage();
+    scheduleCartSave();
+    updateStoreCartBadge();
+  }
+  history.replaceState({}, '', '/');
+  if (cart.length === 0) return false;
+  openStorefrontCart();
+  const body = document.getElementById('storefrontCartBody');
+  if (body) {
+    const aviso = document.createElement('div');
+    aviso.style.cssText = 'background:#fff5fa; border:1px solid #f7c6e0; color:#2e1065; border-radius:12px; padding:12px 14px; margin-bottom:12px; font-size:14px;';
+    aviso.textContent = (agregados ? '¡Recuperamos tu carrito! ' : '') +
+      (faltantes ? `${faltantes} producto(s) ya no están disponibles. ` : '') +
+      (pendingCouponCode ? `Tu cupón ${pendingCouponCode} se aplicará al proceder al pago.` : '');
+    body.prepend(aviso);
+  }
+  return true;
+}
+
 syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
+  if (window.location.pathname === '/' && handleRecuperarCarrito()) return;
   const category = new URLSearchParams(window.location.search).get('categoria');
   if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
   const query = new URLSearchParams(window.location.search).get('buscar');

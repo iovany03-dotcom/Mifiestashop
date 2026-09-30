@@ -6,7 +6,7 @@
   "scripts": {
     "build:cms": "node scripts/build-cms.cjs",
     "test:cms": "node --test tests/cms.test.cjs",
-    "test:api": "node --test tests/api-v1.test.cjs tests/ventas.test.cjs tests/productos-ids.test.cjs tests/promo-paquetes.test.cjs tests/desconectado.test.cjs tests/sync-historico.test.cjs tests/cuenta-cliente.test.cjs tests/clientes-web.test.cjs tests/cliente-admin.test.cjs tests/ajustes-pago.test.cjs tests/pedido-admin.test.cjs tests/admin-page.test.cjs tests/ps-http.test.cjs tests/ajustes-tienda.test.cjs tests/mp-pago.test.cjs tests/producto-activo.test.cjs tests/guardar-producto.test.cjs tests/sync-fotos.test.cjs tests/embudo.test.cjs"
+    "test:api": "node --test tests/api-v1.test.cjs tests/ventas.test.cjs tests/productos-ids.test.cjs tests/promo-paquetes.test.cjs tests/desconectado.test.cjs tests/sync-historico.test.cjs tests/cuenta-cliente.test.cjs tests/clientes-web.test.cjs tests/cliente-admin.test.cjs tests/ajustes-pago.test.cjs tests/pedido-admin.test.cjs tests/admin-page.test.cjs tests/ps-http.test.cjs tests/ajustes-tienda.test.cjs tests/mp-pago.test.cjs tests/producto-activo.test.cjs tests/guardar-producto.test.cjs tests/sync-fotos.test.cjs tests/embudo.test.cjs tests/retransmisiones.test.cjs"
   },
   "repository": {
     "type": "git",
