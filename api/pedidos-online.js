@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
     const orders = rows.map(o => ({
       id: o.folio,
       reference: o.folio,
-      date: o.created_at ? new Date(o.created_at).toLocaleString('es-MX') : '—',
+      date: o.created_at ? new Date(o.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }) : '—',
       deliveryDate: o.delivery_date || null,
       customer: o.customer_name || 'Cliente',
       channel: o.source === 'manual' ? 'Pedido Manual' : 'Tienda Online',
