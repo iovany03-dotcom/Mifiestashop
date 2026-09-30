@@ -8068,7 +8068,11 @@ function buildTicketItemsHTML(items) {
   return items.map(i => {
     const lineTotal = fmtMoney(i.price * i.qty);
     const name = escapeHtml(i.name || '');
-    const cod = escapeHtml(i.sku || i.id || '');
+    // El "SKU" de este catálogo suele ser una lista de palabras clave
+    // ("sombrero, bombín, neón, batucada, boda") que alargaba cada renglón
+    // del ticket a 3–4 líneas: si no es un código corto, se usa el ID.
+    const sku = String(i.sku || '').trim();
+    const cod = escapeHtml(sku && sku.length <= 14 && !/[,\s]/.test(sku) ? sku : String(i.id || sku));
     return `
     <tr>
       <td class="t-cod">${cod}</td>
@@ -8080,16 +8084,57 @@ function buildTicketItemsHTML(items) {
   }).join('');
 }
 
+// El ticket se imprimía con window.print() sobre toda la página: el ticket
+// quedaba "position: fixed" dentro del modal (que tiene scroll) y el
+// navegador mandaba una sola hoja de tamaño normal, así que en ventas con
+// muchos productos el final (totales, pago) salía cortado. Ahora se imprime
+// SOLO el ticket en un iframe oculto, con una hoja del ancho del rollo y
+// exactamente del largo del ticket, para que la impresora térmica lo
+// imprima completo sin importar cuántos productos tenga.
 function printTicket() {
-  const width = ticketConfig.width === '58mm' ? 58 : 80;
-  let pageStyle = document.getElementById('printPageSize');
-  if (!pageStyle) {
-    pageStyle = document.createElement('style');
-    pageStyle.id = 'printPageSize';
-    document.head.appendChild(pageStyle);
-  }
-  pageStyle.textContent = `@media print { @page { size: ${width}mm auto; margin: 3mm; } }`;
-  window.print();
+  const widthMm = ticketConfig.width === '58mm' ? 58 : 80;
+  const ticket = document.getElementById('printableTicket');
+  if (!ticket) return;
+  const css = [...document.querySelectorAll('style')].map(st => st.textContent).join('\n');
+  const pxPerMm = 96 / 25.4;
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
+    <base href="${location.origin}/">
+    <style>${css}</style>
+    <style>
+      html, body { margin: 0; padding: 0; background: #fff; }
+      body * { visibility: visible !important; }
+      #printableTicket {
+        position: static !important; width: auto !important; max-width: none !important;
+        margin: 0 !important; padding: 3mm 3mm 6mm !important;
+        box-shadow: none !important; border: none !important; border-radius: 0 !important;
+      }
+      #printableTicket .ticket-brand-bar { margin: -3mm -3mm 3mm; border-radius: 0; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    </style></head><body>${ticket.outerHTML}</body></html>`;
+
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.style.cssText = `position:fixed; left:-10000px; top:0; width:${Math.round(widthMm * pxPerMm)}px; height:1000px; border:0; visibility:hidden;`;
+  document.body.appendChild(frame);
+  const doc = frame.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+
+  let printed = false;
+  const go = () => {
+    if (printed) return;
+    printed = true;
+    const el = doc.getElementById('printableTicket');
+    const heightMm = Math.ceil(((el ? el.scrollHeight : 1000) / pxPerMm) + 4);
+    const page = doc.createElement('style');
+    page.textContent = `@page { size: ${widthMm}mm ${heightMm}mm; margin: 0; }`;
+    doc.head.appendChild(page);
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(() => frame.remove(), 2000);
+  };
+  // Espera a que cargue el logo (si no, el alto medido sale corto).
+  const img = doc.querySelector('img');
+  if (img && !img.complete) { img.onload = img.onerror = go; setTimeout(go, 1500); }
+  else setTimeout(go, 50);
 }
 
 function reprintTicket(folio, total) {
