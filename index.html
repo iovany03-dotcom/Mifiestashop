@@ -10654,13 +10654,21 @@ function rtRenderPlantillaWaMapeo() {
   if (!t) return;
   document.getElementById('rtPlantillaWaTexto').textContent = t.body_text || '(esta plantilla no trae texto)';
   const mapeo = document.getElementById('rtPlantillaWaMapeo');
-  mapeo.innerHTML = Array.from({ length: t.param_count || 0 }, (_, i) => `
+  // Si el servidor no pudo leer el texto de la plantilla, tampoco sabe cuántas variables {{n}}
+  // lleva: se deja indicarlo a mano (Meta rechaza el envío si no coincide el número).
+  const manual = t.body_text ? '' : `
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:6px;">
+      <span style="flex:1;">No pude leer el texto de esta plantilla. ¿Cuántas variables {{n}} tiene en Meta?</span>
+      <input type="number" min="0" max="10" class="rt-input" style="width:70px;" value="${t.param_count || 0}"
+        onchange="rtPlantillasWa[document.getElementById('rtPlantillaWa').value].param_count = Math.max(0, Math.min(10, parseInt(this.value, 10) || 0)); rtRenderPlantillaWaMapeo();">
+    </label>`;
+  mapeo.innerHTML = manual + Array.from({ length: t.param_count || 0 }, (_, i) => `
     <label style="display:flex; align-items:center; gap:8px; font-size:12.5px;">
       <span style="min-width:80px;">Variable {{${i + 1}}}:</span>
       <select class="rt-input" id="rtWaParam${i}" style="flex:1;" onchange="rtRenderCompose()">
         ${RT_WA_CAMPOS.map(([k, l]) => `<option value="${k}" ${k === (RT_WA_CAMPOS[i] || [])[0] ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}
       </select>
-    </label>`).join('') || '<div style="font-size:12.5px; color:var(--text-muted);">Esta plantilla no tiene variables.</div>';
+    </label>`).join('') || (t.body_text ? '<div style="font-size:12.5px; color:var(--text-muted);">Esta plantilla no tiene variables.</div>' : '');
   rtRenderCompose();
 }
 
