@@ -360,6 +360,7 @@ async function enviar(db, body, enviadoPor) {
           } catch (e) {
             log.estado = 'error';
             log.error = String(e.message).slice(0, 300);
+            if (/132000/.test(log.error)) log.error = 'La plantilla espera otro número de variables ({{n}}) del que se mandó: revisa cuántas tiene en Meta y ajústalas en "Variable" arriba. ' + log.error.slice(0, 150);
           }
         } else {
           log.estado = 'preparado';

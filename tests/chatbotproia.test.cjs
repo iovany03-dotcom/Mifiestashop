@@ -104,3 +104,13 @@ test('api/retransmisiones: chatbotproia_estado nunca regresa el token, solo si y
     assert.deepEqual(res.data, { configurado: true });
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
+
+test('lib/chatbotproia: normalizarPlantilla saca texto y # de variables del formato "components" de Meta', () => {
+  const { normalizarPlantilla } = require('../lib/chatbotproia.js');
+  const a = normalizarPlantilla({ name: 'carrito_per', components: [{ type: 'HEADER', text: 'Hola' }, { type: 'BODY', text: 'Hola {{1}}, tu cupón {{2}}' }] });
+  assert.equal(a.body_text, 'Hola {{1}}, tu cupón {{2}}');
+  assert.equal(a.param_count, 2);
+  assert.equal(normalizarPlantilla({ components: [{ type: 'BODY', text: 'x', example: { body_text: [['a', 'b', 'c']] } }] }).param_count, 3);
+  assert.equal(normalizarPlantilla({ body_text: 'Hola {{1}}', param_count: 1 }).param_count, 1);
+  assert.equal(normalizarPlantilla({ name: 'sin_datos' }).param_count, 0);
+});
