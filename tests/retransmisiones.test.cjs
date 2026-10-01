@@ -268,6 +268,76 @@ test('api/cron-retransmision-auto: manda solo a quien ya cumplió las horas de e
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
 });
 
+test('api/retransmisiones: auto_config_guardar con "existente" exige y guarda el código del cupón', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  let guardado = null;
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    if (u.includes('/ajustes_retransmision_auto') && opts.method === 'POST') { guardado = JSON.parse(opts.body)[0]; return ok(null); }
+    return ok([]);
+  };
+  try {
+    const sinCodigo = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'auto_config_guardar', activo: false, plantilla_nombre: 'x', plantilla_idioma: 'es_MX', cupon_tipo: 'existente'
+    } }, sinCodigo);
+    assert.equal(sinCodigo.code, 400);
+    assert.match(sinCodigo.data.error, /Elige un cupón/);
+
+    const res = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'auto_config_guardar', activo: true, plantilla_nombre: 'cupon_carrito', plantilla_idioma: 'es_MX',
+      cupon_tipo: 'existente', cupon_codigo: ' fiesta-zfgz35 '
+    } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(guardado.cupon_tipo, 'existente');
+    assert.equal(guardado.cupon_codigo, 'FIESTA-ZFGZ35');
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/cron-retransmision-auto: con cupón "existente" usa el mismo código para todos, sin crear uno nuevo', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  process.env.CHATBOTPROIA_TOKEN = 'cpt_test';
+  const hace = h => new Date(Date.now() - h * 36e5).toISOString();
+  const enviosWa = [];
+  const cuponesCreados = [];
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('/ajustes_retransmision_auto')) return ok([{
+      id: 1, activo: true, horas_espera: 24, dias_buscar: 14,
+      plantilla_nombre: 'cupon_carrito', plantilla_idioma: 'es_MX', plantilla_mapping: ['nombre', 'cupon'],
+      cupon_tipo: 'existente', cupon_codigo: 'FIESTA-ZFGZ35', cupon_minimo: 0
+    }]);
+    if (u.includes('pedidos_online') && u.includes('Error en el pago')) return ok([
+      { folio: 'WEB-1', created_at: hace(30), customer_name: 'Ana', customer_email: 'ana@x.com', customer_phone: '5511112222', total: 500, items: [{ id: 1, qty: 2, name: 'Globo' }], status: 'Pendiente' }
+    ]);
+    if (u.includes('pedidos_online') && !u.includes('folio=eq')) return ok([]);
+    if (u.includes('/pedidos_online?folio=eq.WEB-1')) return ok([{ folio: 'WEB-1', customer_name: 'Ana', customer_email: 'ana@x.com', customer_phone: '5511112222', items: [{ id: 1, qty: 2, name: 'Globo' }] }]);
+    if (u.includes('carritos_web')) return ok([]);
+    if (u.includes('/cupones?codigo=eq.FIESTA-ZFGZ35')) return ok([{ codigo: 'FIESTA-ZFGZ35', tipo: 'porcentaje', valor: 10, minimo_compra: 0, usos: 0, usos_max: null, email: null, activo: true, vence_at: null }]);
+    if (u.endsWith('/cupones') && opts.method === 'POST') { cuponesCreados.push(JSON.parse(opts.body)[0]); return ok([JSON.parse(opts.body)[0]]); }
+    if (u.includes('retransmisiones') && opts.method !== 'POST') return ok([]);
+    if (u.includes('retransmisiones') && opts.method === 'POST') return ok(null);
+    if (u.includes('panel.chatbotproia.com/api/contacts/find_by_custom_field')) return ok({ data: [] });
+    if (u.includes('panel.chatbotproia.com/api/contacts') && opts.method === 'POST' && !u.includes('/send/whatsapp')) return ok({ success: true, id: 'contact-uuid-1' });
+    if (u.includes('panel.chatbotproia.com/api/contacts/contact-uuid-1/send/whatsapp')) { enviosWa.push(JSON.parse(opts.body)); return ok({ ok: true, messageIds: ['wamid.1'] }); }
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/cron-retransmision-auto.js')({ headers: {} }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.enviados, 1, JSON.stringify(res.data));
+    assert.equal(cuponesCreados.length, 0); // "existente" nunca crea un cupón nuevo
+    assert.equal(enviosWa[0].template.parameters[1], 'FIESTA-ZFGZ35');
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
+});
+
 test('api/crear-pedido: aplica el cupón con el subtotal del servidor y lo guarda en el pedido', async () => {
   const prev = global.fetch;
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';

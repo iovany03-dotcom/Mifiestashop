@@ -58,9 +58,11 @@ module.exports = async function handler(req, res) {
       canal: 'whatsapp',
       destinatarios: listos.map(d => ({ tipo: d.tipo, referencia: d.referencia })),
       mensaje: 'Hola {nombre}, vimos que dejaste artículos en tu carrito de Mi Fiestashop.', // solo queda en el historial; lo que de verdad se manda es la plantilla.
-      cupon: config.cupon_tipo
-        ? { modo: 'personal', tipo: config.cupon_tipo, valor: config.cupon_valor, minimo: config.cupon_minimo, horas: config.cupon_vigencia_horas, prefijo: config.cupon_prefijo }
-        : { modo: 'ninguno' },
+      cupon: config.cupon_tipo === 'existente'
+        ? { modo: 'existente', codigo: config.cupon_codigo }
+        : config.cupon_tipo
+          ? { modo: 'personal', tipo: config.cupon_tipo, valor: config.cupon_valor, minimo: config.cupon_minimo, horas: config.cupon_vigencia_horas, prefijo: config.cupon_prefijo }
+          : { modo: 'ninguno' },
       plantillaWa: { name: config.plantilla_nombre, language: config.plantilla_idioma, mapping: config.plantilla_mapping || [] }
     }, 'Automático (programado)');
 

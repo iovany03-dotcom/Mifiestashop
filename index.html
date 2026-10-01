@@ -3957,8 +3957,9 @@
               <label class="rt-label" for="rtAutoCuponTipo">Cupón que se le regala</label>
               <select id="rtAutoCuponTipo" class="rt-input" onchange="rtAutoToggleCupon()">
                 <option value="ninguno">Sin cupón (solo recordatorio)</option>
-                <option value="porcentaje">% de descuento</option>
-                <option value="monto">$ de descuento</option>
+                <option value="porcentaje">Crear un cupón personal (% de descuento)</option>
+                <option value="monto">Crear un cupón personal ($ de descuento)</option>
+                <option value="existente">Usar un cupón que ya existe</option>
               </select>
               <div id="rtAutoCuponCampos" class="rt-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-top:10px;">
                 <div>
@@ -3982,6 +3983,10 @@
                   <label class="rt-label" for="rtAutoCuponPrefijo">Prefijo del código</label>
                   <input type="text" id="rtAutoCuponPrefijo" class="rt-input" maxlength="12" value="AUTO" style="text-transform:uppercase;">
                 </div>
+              </div>
+              <div id="rtAutoCuponExistenteWrap" class="hidden" style="margin-top:10px;">
+                <label class="rt-label" for="rtAutoCuponExistente">Cupón a usar (el mismo código para todos)</label>
+                <select id="rtAutoCuponExistente" class="rt-input"></select>
               </div>
             </div>
 
@@ -10792,6 +10797,10 @@ async function rtAutoCargarConfig() {
   document.getElementById('rtAutoCuponMinimo').value = (config && config.cupon_minimo) || 0;
   document.getElementById('rtAutoCuponVigencia').value = (config && config.cupon_vigencia_horas) || 48;
   document.getElementById('rtAutoCuponPrefijo').value = (config && config.cupon_prefijo) || 'AUTO';
+  await loadRtCupones(true);
+  if (config && config.cupon_tipo === 'existente' && config.cupon_codigo) {
+    document.getElementById('rtAutoCuponExistente').value = config.cupon_codigo;
+  }
   rtAutoToggleCupon();
   rtAutoMappingGuardado = config && Array.isArray(config.plantilla_mapping) ? config.plantilla_mapping : null;
 
@@ -10816,7 +10825,9 @@ async function rtAutoCargarConfig() {
 }
 
 function rtAutoToggleCupon() {
-  document.getElementById('rtAutoCuponCampos').style.display = document.getElementById('rtAutoCuponTipo').value === 'ninguno' ? 'none' : 'grid';
+  const tipo = document.getElementById('rtAutoCuponTipo').value;
+  document.getElementById('rtAutoCuponCampos').style.display = (tipo === 'porcentaje' || tipo === 'monto') ? 'grid' : 'none';
+  document.getElementById('rtAutoCuponExistenteWrap').classList.toggle('hidden', tipo !== 'existente');
 }
 
 function rtAutoRenderMapeo() {
@@ -10848,6 +10859,10 @@ async function rtAutoGuardarConfig() {
   const activo = document.getElementById('rtAutoActivo').checked;
   if (activo && !t) { show('Elige una plantilla aprobada antes de activar el envío automático.', false); return; }
   const cuponTipo = document.getElementById('rtAutoCuponTipo').value;
+  if (cuponTipo === 'existente' && !document.getElementById('rtAutoCuponExistente').value) {
+    show('Elige un cupón ya existente, o crea uno primero en la pestaña "Cupones".', false);
+    return;
+  }
   const payload = {
     activo,
     horas_espera: Math.max(1, parseInt(document.getElementById('rtAutoHoras').value, 10) || 24),
@@ -10856,6 +10871,7 @@ async function rtAutoGuardarConfig() {
     plantilla_idioma: t ? t.language : null,
     plantilla_mapping: t ? Array.from({ length: t.param_count || 0 }, (_, i) => document.getElementById('rtAutoParam' + i)?.value || '') : null,
     cupon_tipo: cuponTipo === 'ninguno' ? null : cuponTipo,
+    cupon_codigo: cuponTipo === 'existente' ? document.getElementById('rtAutoCuponExistente').value : null,
     cupon_valor: Number(document.getElementById('rtAutoCuponValor').value) || 0,
     cupon_minimo: Number(document.getElementById('rtAutoCuponMinimo').value) || 0,
     cupon_vigencia_horas: Number(document.getElementById('rtAutoCuponVigencia').value) || 48,
@@ -11020,14 +11036,15 @@ async function loadRtCupones(soloSelect) {
   }
   const ahora = new Date();
   const vigentes = rtCupones.filter(c => c.activo && (!c.vence_at || new Date(c.vence_at) > ahora) && !c.email && (c.usos_max == null || c.usos < c.usos_max));
-  const sel = document.getElementById('rtCuponExistente');
-  if (sel) {
+  ['rtCuponExistente', 'rtAutoCuponExistente'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
     const prev = sel.value;
     sel.innerHTML = vigentes.length
       ? vigentes.map(c => `<option value="${escapeHtml(c.codigo)}">${escapeHtml(c.codigo)} — ${escapeHtml(rtDescuentoTexto(c.tipo, c.valor))}${c.vence_at ? ' · vence ' + escapeHtml(new Date(c.vence_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })) : ''}</option>`).join('')
       : '<option value="">No hay cupones generales vigentes (créalos en la pestaña Cupones)</option>';
     if (prev && vigentes.some(c => c.codigo === prev)) sel.value = prev;
-  }
+  });
   if (!soloSelect) renderRtCupones();
   else rtRenderPreview();
 }

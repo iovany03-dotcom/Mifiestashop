@@ -32,8 +32,9 @@
 //   'historial'  -> { historial: [...] }
 //   'auto_config_leer' -> { config: {...} | null } — ver tabla ajustes_retransmision_auto.
 //   'auto_config_guardar' { activo, horas_espera, dias_buscar, plantilla_nombre, plantilla_idioma,
-//                           plantilla_mapping, cupon_tipo, cupon_valor, cupon_minimo,
-//                           cupon_vigencia_horas, cupon_prefijo } -> { ok: true }
+//                           plantilla_mapping, cupon_tipo: null|'porcentaje'|'monto'|'existente',
+//                           cupon_codigo (solo si cupon_tipo es 'existente'), cupon_valor,
+//                           cupon_minimo, cupon_vigencia_horas, cupon_prefijo } -> { ok: true }
 //       Config leída y aplicada por api/cron-retransmision-auto.js (corre cada hora, ver
 //       vercel.json): a quien pasó "horas_espera" desde que abandonó (dentro de los últimos
 //       "dias_buscar" días) y nunca se le mandó WhatsApp antes (manual o automático), se le
@@ -467,7 +468,8 @@ module.exports = async function handler(req, res) {
           plantilla_nombre: body.plantilla_nombre ? String(body.plantilla_nombre).slice(0, 200) : null,
           plantilla_idioma: body.plantilla_idioma ? String(body.plantilla_idioma).slice(0, 20) : null,
           plantilla_mapping: Array.isArray(body.plantilla_mapping) ? body.plantilla_mapping : null,
-          cupon_tipo: body.cupon_tipo === 'monto' ? 'monto' : body.cupon_tipo === 'porcentaje' ? 'porcentaje' : null,
+          cupon_tipo: ['monto', 'porcentaje', 'existente'].includes(body.cupon_tipo) ? body.cupon_tipo : null,
+          cupon_codigo: body.cupon_tipo === 'existente' ? normalizarCodigo(body.cupon_codigo) : null,
           cupon_valor: Number(body.cupon_valor) || 0,
           cupon_minimo: Math.max(0, Number(body.cupon_minimo) || 0),
           cupon_vigencia_horas: Math.max(1, parseInt(body.cupon_vigencia_horas, 10) || 48),
@@ -476,6 +478,9 @@ module.exports = async function handler(req, res) {
         };
         if (row.activo && (!row.plantilla_nombre || !row.plantilla_idioma)) {
           throw new Error('Elige una plantilla aprobada antes de activar el envío automático.');
+        }
+        if (row.cupon_tipo === 'existente' && !row.cupon_codigo) {
+          throw new Error('Elige un cupón ya existente, o crea uno primero.');
         }
         await db.post('ajustes_retransmision_auto', [row], 'return=minimal');
         res.status(200).json({ ok: true });
