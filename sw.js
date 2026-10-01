@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Notificaciones push (a futuro: requiere un backend con VAPID que envíe el push).
+// Notificaciones push: las envía el servidor con Web Push + VAPID (lib/push.js).
 self.addEventListener('push', (event) => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (e) { data = { title: 'Mi Fiestashop', body: event.data ? event.data.text() : '' }; }
@@ -38,6 +38,7 @@ self.addEventListener('push', (event) => {
     body: data.body || '',
     icon: '/img/icons/icon-192.png',
     badge: '/img/icons/icon-192.png',
+    tag: data.tag || undefined,
     data: { url: data.url || '/' }
   };
   event.waitUntil(self.registration.showNotification(title, options));

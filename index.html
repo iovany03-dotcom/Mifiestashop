@@ -6652,13 +6652,15 @@ function trackSearchDebounced(q) {
 }
 
 // Contacto: clic en cualquier enlace de WhatsApp / teléfono / correo (botón
-// flotante, pie de página, promociones, FAQ...). No se manda el número ni
+// flotante, pie de página, promociones, FAQ...) o de ubicación de la tienda
+// ("Cómo llegar", mapas, "Visita nuestra tienda"). No se manda el número ni
 // el correo, solo el canal.
 document.addEventListener('click', (e) => {
-  const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"]') : null;
+  const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"], a[href*="google."][href*="/maps"], a[href*="maps.app.goo.gl"], a[href*="goo.gl/maps"], a[href*="waze.com"], a[href="#ubicacion"]') : null;
   if (!a) return;
   const href = a.getAttribute('href') || '';
-  trackPixelEvent('Contact', { content_name: href.indexOf('wa.me/') !== -1 ? 'WhatsApp' : (href.indexOf('tel:') === 0 ? 'Teléfono' : 'Correo') });
+  const canal = href.indexOf('wa.me/') !== -1 ? 'WhatsApp' : href.indexOf('tel:') === 0 ? 'Teléfono' : href.indexOf('mailto:') === 0 ? 'Correo' : 'Ubicación';
+  trackPixelEvent('Contact', { content_name: canal });
 }, true);
 
 async function saveMetaPixelConfig() {
@@ -10051,7 +10053,7 @@ const EMBUDO_EVENTOS = {
   ver_carrito: 'Vio su carrito', iniciar_checkout: 'Inició el pago', cotizar_envio: 'Cotizó envío',
   elegir_envio: 'Eligió paquetería', error_checkout: 'Le salió un error', pedido_creado: 'Creó su pedido',
   ir_a_pago: 'Se fue a Mercado Pago', compra: 'Compró', pago_pendiente: 'Pago pendiente',
-  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel.)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
+  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel./ubicación)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
 };
 let embudoData = null;
 
@@ -13440,7 +13442,41 @@ function updateNotifPermissionUI() {
 
 function requestNotificationPermission() {
   if (!('Notification' in window)) return;
-  Notification.requestPermission().then(() => updateNotifPermissionUI());
+  Notification.requestPermission().then(() => { updateNotifPermissionUI(); suscribirPush(true); });
+}
+
+// ---- Push con la app cerrada (Web Push): ver lib/push.js y docs/push-notificaciones.md
+function urlBase64ToUint8Array(b64) {
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// Suscribe este dispositivo y manda la suscripción al servidor. Con
+// avisar=true muestra el resultado (al activar manualmente); si no, corre en
+// silencio cada vez que entras al panel para mantener la suscripción al día.
+async function suscribirPush(avisar) {
+  try {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (avisar) alert('Este dispositivo no admite notificaciones push. En iPhone primero instala la app: Compartir → "Agregar a pantalla de inicio" y ábrela desde el ícono.');
+      return;
+    }
+    if (Notification.permission !== 'granted') return;
+    const cfg = await (await fetch('/api/push')).json();
+    if (!cfg.publicKey) { if (avisar) alert(cfg.error || 'Push sin configurar en el servidor.'); return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(cfg.publicKey) });
+    const r = await fetch('/api/push', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), accion: 'suscribir', subscription: sub.toJSON(), dispositivo: navigator.userAgent })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'No se pudo guardar la suscripción.');
+    if (avisar) alert('Listo: este dispositivo recibirá avisos de pedidos y pagos aunque la app esté cerrada.');
+  } catch (e) {
+    if (avisar) alert('No se pudo activar el push: ' + e.message);
+  }
 }
 
 function notifyEvent(type, title, body) {
@@ -13462,8 +13498,15 @@ function notifyEvent(type, title, body) {
   }
 }
 
-function sendTestNotification() {
+async function sendTestNotification() {
   notifyEvent('test', 'Notificación de prueba', 'Así se verán tus notificaciones de Mi Fiestashop.');
+  // También una de servidor, para comprobar que llegan con la app cerrada.
+  try {
+    const r = await fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...getSessionCredsParams(), accion: 'probar' }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) alert('Push del servidor: ' + (d.error || 'error'));
+    else if (!d.enviados) alert('El servidor no tiene dispositivos suscritos' + (d.motivo ? ' (' + d.motivo + ')' : '') + '. Activa las notificaciones en este dispositivo.');
+  } catch (e) { /* sin conexión */ }
 }
 
 // ================= AVISO DE PEDIDO NUEVO =================
@@ -13502,6 +13545,7 @@ async function pollForNewOrders() {
 }
 
 function startNewOrderPolling() {
+  suscribirPush(false);
   if (newOrderPollInterval) return; // ya está corriendo (re-entrar a /admin ya logueado)
   pollForNewOrders();
   newOrderPollInterval = setInterval(pollForNewOrders, 45000);

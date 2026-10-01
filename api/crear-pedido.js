@@ -25,6 +25,7 @@
 
 const { prestashopConectado, fetchPreciosActivos } = require('../lib/prestashop.js');
 const { validarCupon, normalizarCodigo } = require('../lib/cupones.js');
+const { enviarPushAdmins } = require('../lib/push.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -178,7 +179,7 @@ module.exports = async function handler(req, res) {
     };
 
     try {
-      await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online`, {
+      const ins = await fetch(`${SUPABASE_URL}/rest/v1/pedidos_online`, {
         method: 'POST',
         headers: {
           apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
@@ -186,6 +187,15 @@ module.exports = async function handler(req, res) {
         },
         body: JSON.stringify(orderPayload)
       });
+      // Aviso push al back office (con la app cerrada también); se espera
+      // porque la función se congela al responder.
+      if (ins.ok) {
+        await enviarPushAdmins({
+          title: '🛒 Nuevo pedido',
+          body: `Pedido ${folio} de ${orderPayload.customer_name} por $${Number(total).toFixed(2)}.`,
+          url: '/admin', tag: `pedido-${folio}`
+        });
+      }
     } catch (e) {
       // Si Supabase falla seguimos respondiendo con el pedido calculado: el
       // checkout no debe romperse por esto, igual que el resto del sitio.
