@@ -173,6 +173,101 @@ test('api/retransmisiones: plantillas_whatsapp solo regresa las aprobadas por Me
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
 });
 
+test('api/retransmisiones: auto_config_guardar exige plantilla si se activa, y auto_config_leer regresa lo último guardado', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  let guardado = null;
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    if (u.includes('/ajustes_retransmision_auto') && opts.method === 'POST') { guardado = JSON.parse(opts.body)[0]; return ok(null); }
+    if (u.includes('/ajustes_retransmision_auto')) return ok(guardado ? [guardado] : []);
+    return ok([]);
+  };
+  try {
+    const sinPlantilla = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: { p_admin_password: 'x', accion: 'auto_config_guardar', activo: true, horas_espera: 24 } }, sinPlantilla);
+    assert.equal(sinPlantilla.code, 400);
+    assert.match(sinPlantilla.data.error, /Elige una plantilla/);
+
+    const res = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'auto_config_guardar', activo: true, horas_espera: 36, dias_buscar: 20,
+      plantilla_nombre: 'cupon_carrito', plantilla_idioma: 'es_MX', plantilla_mapping: ['nombre', 'liga'],
+      cupon_tipo: 'porcentaje', cupon_valor: 15, cupon_minimo: 0, cupon_vigencia_horas: 72, cupon_prefijo: 'vuelve'
+    } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(guardado.horas_espera, 36);
+    assert.equal(guardado.cupon_prefijo, 'VUELVE');
+
+    const leer = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: { p_admin_password: 'x', accion: 'auto_config_leer' } }, leer);
+    assert.equal(leer.code, 200);
+    assert.equal(leer.data.config.plantilla_nombre, 'cupon_carrito');
+    assert.equal(leer.data.config.activo, true);
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/cron-retransmision-auto: sin config activa no manda nada', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  global.fetch = async (url) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('/ajustes_retransmision_auto')) return ok([]);
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/cron-retransmision-auto.js')({ headers: {} }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.activo, false);
+    assert.equal(res.data.enviados, 0);
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/cron-retransmision-auto: manda solo a quien ya cumplió las horas de espera y nunca se le había contactado', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  process.env.CHATBOTPROIA_TOKEN = 'cpt_test';
+  const hace = h => new Date(Date.now() - h * 36e5).toISOString();
+  const enviosWa = [];
+  const logs = [];
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('/ajustes_retransmision_auto')) return ok([{
+      id: 1, activo: true, horas_espera: 24, dias_buscar: 14,
+      plantilla_nombre: 'cupon_carrito', plantilla_idioma: 'es_MX', plantilla_mapping: ['nombre', 'liga'],
+      cupon_tipo: null, cupon_minimo: 0, cupon_vigencia_horas: 48, cupon_prefijo: 'AUTO'
+    }]);
+    if (u.includes('pedidos_online') && u.includes('Error en el pago')) return ok([
+      { folio: 'WEB-1', created_at: hace(30), customer_name: 'Ana', customer_email: 'ana@x.com', customer_phone: '5511112222', total: 500, items: [{ id: 1, qty: 2, name: 'Globo' }], status: 'Pendiente' },
+      { folio: 'WEB-2', created_at: hace(5), customer_name: 'Beto', customer_email: 'beto@x.com', customer_phone: '5522223333', total: 300, items: [{ id: 2, qty: 1, name: 'Vela' }], status: 'Pendiente' }
+    ]);
+    if (u.includes('pedidos_online') && !u.includes('folio=eq')) return ok([]);
+    if (u.includes('/pedidos_online?folio=eq.WEB-1')) return ok([{ folio: 'WEB-1', customer_name: 'Ana', customer_email: 'ana@x.com', customer_phone: '5511112222', items: [{ id: 1, qty: 2, name: 'Globo' }] }]);
+    if (u.includes('carritos_web')) return ok([]);
+    if (u.includes('retransmisiones') && opts.method === 'POST') { logs.push(JSON.parse(opts.body)[0]); return ok(null); }
+    if (u.includes('retransmisiones')) return ok([]); // sin contactos previos ni historial
+    if (u.includes('panel.chatbotproia.com/api/contacts/find_by_custom_field')) return ok({ data: [] });
+    if (u.includes('panel.chatbotproia.com/api/contacts') && opts.method === 'POST' && !u.includes('/send/whatsapp')) return ok({ success: true, id: 'contact-uuid-1' });
+    if (u.includes('panel.chatbotproia.com/api/contacts/contact-uuid-1/send/whatsapp')) { enviosWa.push(JSON.parse(opts.body)); return ok({ ok: true, messageIds: ['wamid.1'] }); }
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/cron-retransmision-auto.js')({ headers: {} }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.enviados, 1); // solo WEB-1 (30h) pasó las 24h de espera; WEB-2 (5h) no.
+    assert.equal(enviosWa.length, 1);
+    assert.equal(enviosWa[0].template.parameters[0], 'Ana');
+    assert.equal(logs[0].referencia, 'WEB-1');
+    assert.equal(logs[0].enviado_por, 'Automático (programado)');
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
+});
+
 test('api/crear-pedido: aplica el cupón con el subtotal del servidor y lo guarda en el pedido', async () => {
   const prev = global.fetch;
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';

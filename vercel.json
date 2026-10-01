@@ -23,6 +23,10 @@
     {
       "path": "/api/cron-sync-prestashop?domains=pedidos_historico,movimientos_nuevos,movimientos_2anios",
       "schedule": "5,15,25,35,45,55 * * * *"
+    },
+    {
+      "path": "/api/cron-retransmision-auto",
+      "schedule": "20 * * * *"
     }
   ],
   "functions": {
@@ -33,6 +37,9 @@
       "maxDuration": 60
     },
     "api/cron-conciliar-mp.js": {
+      "maxDuration": 60
+    },
+    "api/cron-retransmision-auto.js": {
       "maxDuration": 60
     },
     "api/ventas-productos.js": {

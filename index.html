@@ -3706,6 +3706,7 @@
           <button type="button" class="rt-tab active" data-tab="clientes" onclick="rtSetTab('clientes')">Clientes por recuperar</button>
           <button type="button" class="rt-tab" data-tab="cupones" onclick="rtSetTab('cupones')">Cupones</button>
           <button type="button" class="rt-tab" data-tab="historial" onclick="rtSetTab('historial')">Historial</button>
+          <button type="button" class="rt-tab" data-tab="automatico" onclick="rtSetTab('automatico')">Automático</button>
         </div>
 
         <!-- Clientes por recuperar -->
@@ -3916,6 +3917,78 @@
               <thead><tr><th>Fecha</th><th>Canal</th><th>Cliente</th><th>Referencia</th><th>Cupón</th><th>Estado</th><th>Envió</th></tr></thead>
               <tbody id="rtHistorialBody"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Automático -->
+        <div id="rtTab-automatico" class="hidden">
+          <div class="rt-compose" style="margin-top:0;">
+            <h3 style="margin:0 0 4px; font-size:15px;">Mandar WhatsApp solo, sin que nadie lo seleccione a mano</h3>
+            <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 14px;">
+              Cada hora se revisa quién dejó un carrito o pedido sin pagar; a quien ya pasó el tiempo de espera configurado (y nunca se le había contactado por WhatsApp antes) se le manda la plantilla con su cupón, sin que nadie tenga que entrar aquí.
+            </p>
+
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; margin-bottom:14px;">
+              <input type="checkbox" id="rtAutoActivo"> Activar el envío automático
+            </label>
+
+            <div class="rt-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; margin-bottom:14px;">
+              <div>
+                <label class="rt-label" for="rtAutoHoras">Horas de espera desde que se abandonó</label>
+                <input type="number" id="rtAutoHoras" class="rt-input" min="1" step="1" value="24">
+              </div>
+              <div>
+                <label class="rt-label" for="rtAutoDias">No busques más atrás de (días)</label>
+                <input type="number" id="rtAutoDias" class="rt-input" min="1" max="90" step="1" value="14">
+              </div>
+            </div>
+
+            <div id="rtAutoCpAviso" class="hidden" style="font-size:12.5px; color:#b45309; background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:8px 10px; margin-bottom:14px;"></div>
+
+            <div id="rtAutoPlantillaMsg" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;">Cargando plantillas…</div>
+            <div id="rtAutoPlantillaBody" class="hidden" style="margin-bottom:14px;">
+              <label class="rt-label" for="rtAutoPlantilla">Plantilla aprobada</label>
+              <select id="rtAutoPlantilla" class="rt-input" onchange="rtAutoRenderMapeo()"></select>
+              <div id="rtAutoPlantillaTexto" style="font-size:12.5px; color:var(--text-secondary); background:var(--plane); border-radius:8px; padding:8px 10px; margin:8px 0;"></div>
+              <div id="rtAutoPlantillaMapeo" style="display:flex; flex-direction:column; gap:6px;"></div>
+            </div>
+
+            <div class="rt-cupon-box">
+              <label class="rt-label" for="rtAutoCuponTipo">Cupón que se le regala</label>
+              <select id="rtAutoCuponTipo" class="rt-input" onchange="rtAutoToggleCupon()">
+                <option value="ninguno">Sin cupón (solo recordatorio)</option>
+                <option value="porcentaje">% de descuento</option>
+                <option value="monto">$ de descuento</option>
+              </select>
+              <div id="rtAutoCuponCampos" class="rt-grid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-top:10px;">
+                <div>
+                  <label class="rt-label" for="rtAutoCuponValor">Valor</label>
+                  <input type="number" id="rtAutoCuponValor" class="rt-input" min="1" step="1" value="10">
+                </div>
+                <div>
+                  <label class="rt-label" for="rtAutoCuponMinimo">Compra mínima</label>
+                  <input type="number" id="rtAutoCuponMinimo" class="rt-input" min="0" step="1" value="0">
+                </div>
+                <div>
+                  <label class="rt-label" for="rtAutoCuponVigencia">Vigencia del cupón</label>
+                  <select id="rtAutoCuponVigencia" class="rt-input">
+                    <option value="24">24 horas</option>
+                    <option value="48" selected>48 horas</option>
+                    <option value="72">3 días</option>
+                    <option value="168">7 días</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="rt-label" for="rtAutoCuponPrefijo">Prefijo del código</label>
+                  <input type="text" id="rtAutoCuponPrefijo" class="rt-input" maxlength="12" value="AUTO" style="text-transform:uppercase;">
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+              <button type="button" class="btn primary" onclick="rtAutoGuardarConfig()">Guardar configuración</button>
+            </div>
+            <div id="rtAutoMsg" class="hidden" style="font-size:13px; margin-top:8px;"></div>
           </div>
         </div>
       </div>
@@ -10491,10 +10564,11 @@ function loadRetransmisiones() {
 function rtSetTab(tab) {
   rtTab = tab;
   document.querySelectorAll('#view-retransmisiones .rt-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  ['clientes', 'cupones', 'historial'].forEach(t => document.getElementById('rtTab-' + t)?.classList.toggle('hidden', t !== tab));
+  ['clientes', 'cupones', 'historial', 'automatico'].forEach(t => document.getElementById('rtTab-' + t)?.classList.toggle('hidden', t !== tab));
   if (tab === 'clientes') { loadRtAudiencia(); loadRtCupones(true); }
   if (tab === 'cupones') loadRtCupones();
   if (tab === 'historial') loadRtHistorial();
+  if (tab === 'automatico') rtAutoCargarConfig();
 }
 
 async function loadRtAudiencia() {
@@ -10680,6 +10754,119 @@ function rtPlantillaWaSeleccionada() {
   if (!t) return null;
   const mapping = Array.from({ length: t.param_count || 0 }, (_, i) => document.getElementById('rtWaParam' + i)?.value || '');
   return { name: t.name, language: t.language, mapping };
+}
+
+// ================= WhatsApp automático (programado, sin elegir clientes a mano) =================
+// Corre cada hora en api/cron-retransmision-auto.js: a quien lleva más de "horas de espera" sin
+// comprar desde que abandonó, y nunca se le había mandado un WhatsApp (manual o automático), se
+// le manda la plantilla con su cupón — reusa exactamente audiencia()/enviar() de
+// api/retransmisiones.js, solo que disparado por cron en vez de por un clic del staff.
+let rtAutoMappingGuardado = null; // mapping ya guardado, para preseleccionar la primera vez que se dibuja.
+
+async function rtAutoCargarConfig() {
+  const msg = document.getElementById('rtAutoMsg');
+  msg.classList.add('hidden');
+  if (rtCpEstadoCache === null) await rtActualizarEstadoCp();
+  const aviso = document.getElementById('rtAutoCpAviso');
+  if (!rtCpEstadoCache) {
+    aviso.textContent = '⚠ Todavía no configuras el token de chatbotproia (pestaña "Clientes por recuperar" → WhatsApp → Automático → "Configurar token") — sin eso, el envío automático no puede mandar nada aunque lo actives aquí.';
+    aviso.classList.remove('hidden');
+  } else {
+    aviso.classList.add('hidden');
+  }
+
+  let config = null;
+  try {
+    const data = await rtApi('auto_config_leer');
+    config = data.config;
+  } catch (e) {
+    msg.textContent = 'No se pudo cargar la configuración: ' + e.message;
+    msg.style.color = '#dc2626';
+    msg.classList.remove('hidden');
+  }
+  document.getElementById('rtAutoActivo').checked = !!(config && config.activo);
+  document.getElementById('rtAutoHoras').value = (config && config.horas_espera) || 24;
+  document.getElementById('rtAutoDias').value = (config && config.dias_buscar) || 14;
+  document.getElementById('rtAutoCuponTipo').value = (config && config.cupon_tipo) || 'ninguno';
+  document.getElementById('rtAutoCuponValor').value = (config && config.cupon_valor) || 10;
+  document.getElementById('rtAutoCuponMinimo').value = (config && config.cupon_minimo) || 0;
+  document.getElementById('rtAutoCuponVigencia').value = (config && config.cupon_vigencia_horas) || 48;
+  document.getElementById('rtAutoCuponPrefijo').value = (config && config.cupon_prefijo) || 'AUTO';
+  rtAutoToggleCupon();
+  rtAutoMappingGuardado = config && Array.isArray(config.plantilla_mapping) ? config.plantilla_mapping : null;
+
+  await loadRtPlantillasWa();
+  const msgP = document.getElementById('rtAutoPlantillaMsg');
+  const bodyP = document.getElementById('rtAutoPlantillaBody');
+  if (!rtPlantillasWa || rtPlantillasWa.length === 0) {
+    msgP.textContent = 'Todavía no tienes ninguna plantilla aprobada por Meta para este número de WhatsApp.';
+    msgP.classList.remove('hidden');
+    bodyP.classList.add('hidden');
+    return;
+  }
+  msgP.classList.add('hidden');
+  bodyP.classList.remove('hidden');
+  const sel = document.getElementById('rtAutoPlantilla');
+  sel.innerHTML = rtPlantillasWa.map((t, i) => `<option value="${i}">${escapeHtml(t.name)} (${escapeHtml(t.language)})</option>`).join('');
+  const idxGuardado = config && config.plantilla_nombre
+    ? rtPlantillasWa.findIndex(t => t.name === config.plantilla_nombre && t.language === config.plantilla_idioma)
+    : -1;
+  if (idxGuardado >= 0) sel.value = idxGuardado;
+  rtAutoRenderMapeo();
+}
+
+function rtAutoToggleCupon() {
+  document.getElementById('rtAutoCuponCampos').style.display = document.getElementById('rtAutoCuponTipo').value === 'ninguno' ? 'none' : 'grid';
+}
+
+function rtAutoRenderMapeo() {
+  const t = rtPlantillasWa[document.getElementById('rtAutoPlantilla').value] || rtPlantillasWa[0];
+  if (!t) return;
+  document.getElementById('rtAutoPlantillaTexto').textContent = t.body_text || '(esta plantilla no trae texto)';
+  const mapeo = document.getElementById('rtAutoPlantillaMapeo');
+  const manual = t.body_text ? '' : `
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; margin-bottom:6px;">
+      <span style="flex:1;">No pude leer el texto de esta plantilla. ¿Cuántas variables {{n}} tiene en Meta?</span>
+      <input type="number" min="0" max="10" class="rt-input" style="width:70px;" value="${t.param_count || 0}"
+        onchange="rtPlantillasWa[document.getElementById('rtAutoPlantilla').value].param_count = Math.max(0, Math.min(10, parseInt(this.value, 10) || 0)); rtAutoRenderMapeo();">
+    </label>`;
+  const guardado = rtAutoMappingGuardado;
+  mapeo.innerHTML = manual + Array.from({ length: t.param_count || 0 }, (_, i) => `
+    <label style="display:flex; align-items:center; gap:8px; font-size:12.5px;">
+      <span style="min-width:80px;">Variable {{${i + 1}}}:</span>
+      <select class="rt-input" id="rtAutoParam${i}" style="flex:1;">
+        ${RT_WA_CAMPOS.map(([k, l]) => `<option value="${k}" ${k === (guardado ? guardado[i] : (RT_WA_CAMPOS[i] || [])[0]) ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}
+      </select>
+    </label>`).join('') || (t.body_text ? '<div style="font-size:12.5px; color:var(--text-muted);">Esta plantilla no tiene variables.</div>' : '');
+  rtAutoMappingGuardado = null; // ya se usó para preseleccionar; de aquí en adelante manda lo que el admin elija.
+}
+
+async function rtAutoGuardarConfig() {
+  const msg = document.getElementById('rtAutoMsg');
+  const show = (t, ok) => { msg.textContent = t; msg.style.color = ok ? '#15803d' : '#dc2626'; msg.classList.remove('hidden'); };
+  const t = rtPlantillasWa && rtPlantillasWa[document.getElementById('rtAutoPlantilla')?.value];
+  const activo = document.getElementById('rtAutoActivo').checked;
+  if (activo && !t) { show('Elige una plantilla aprobada antes de activar el envío automático.', false); return; }
+  const cuponTipo = document.getElementById('rtAutoCuponTipo').value;
+  const payload = {
+    activo,
+    horas_espera: Math.max(1, parseInt(document.getElementById('rtAutoHoras').value, 10) || 24),
+    dias_buscar: Math.max(1, Math.min(90, parseInt(document.getElementById('rtAutoDias').value, 10) || 14)),
+    plantilla_nombre: t ? t.name : null,
+    plantilla_idioma: t ? t.language : null,
+    plantilla_mapping: t ? Array.from({ length: t.param_count || 0 }, (_, i) => document.getElementById('rtAutoParam' + i)?.value || '') : null,
+    cupon_tipo: cuponTipo === 'ninguno' ? null : cuponTipo,
+    cupon_valor: Number(document.getElementById('rtAutoCuponValor').value) || 0,
+    cupon_minimo: Number(document.getElementById('rtAutoCuponMinimo').value) || 0,
+    cupon_vigencia_horas: Number(document.getElementById('rtAutoCuponVigencia').value) || 48,
+    cupon_prefijo: document.getElementById('rtAutoCuponPrefijo').value.trim().toUpperCase() || 'AUTO'
+  };
+  try {
+    await rtApi('auto_config_guardar', payload);
+    show('Configuración guardada ✓' + (activo ? ' El envío automático ya está activo.' : ''), true);
+  } catch (e) {
+    show(e.message, false);
+  }
 }
 
 function rtAplicarPlantilla() {
