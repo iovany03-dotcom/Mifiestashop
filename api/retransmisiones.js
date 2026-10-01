@@ -20,14 +20,19 @@
 //       el staff la abra y la mande a mano (no hay otra forma de que Meta lo entregue solo).
 //   'plantillas_whatsapp' -> { plantillas: [{ name, language, status, category, body_text,
 //                              param_count }] } — las aprobadas en Meta para el bot de
-//                              chatbotproia conectado (CHATBOTPROIA_TOKEN en Vercel).
+//                              chatbotproia conectado (ver 'chatbotproia_estado'/
+//                              'chatbotproia_guardar_token').
+//   'chatbotproia_estado' -> { configurado: bool } — nunca regresa el token en sí.
+//   'chatbotproia_guardar_token' { token } -> { ok: true } | { ok: false, error } — guarda el
+//       token y de una vez prueba la conexión real contra chatbotproia (se guarda aunque la
+//       prueba falle, para no perder lo que se tecleó).
 //   'cupones'    -> { cupones: [...] }
 //   'crear_cupon' { codigo?, prefijo?, tipo, valor, minimo, inicia, vence, usos_max, email, descripcion }
 //   'cupon_activo' { codigo, activo }
 //   'historial'  -> { historial: [...] }
 const { layout, escapeHtml, sendHtml, smtpConfigured } = require('../lib/correo.js');
 const { CODIGO_RE, normalizarCodigo, generarCodigo, etiquetaCupon } = require('../lib/cupones.js');
-const { cpListarPlantillas, cpBuscarOCrearContacto, cpEnviarPlantilla } = require('../lib/chatbotproia.js');
+const { cpListarPlantillas, cpBuscarOCrearContacto, cpEnviarPlantilla, chatbotproiaConfigured, guardarToken } = require('../lib/chatbotproia.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -401,6 +406,21 @@ module.exports = async function handler(req, res) {
       case 'plantillas_whatsapp':
         res.status(200).json({ plantillas: await cpListarPlantillas() });
         return;
+      case 'chatbotproia_estado':
+        res.status(200).json({ configurado: await chatbotproiaConfigured() });
+        return;
+      case 'chatbotproia_guardar_token': {
+        await guardarToken(body.token);
+        try {
+          const plantillas = await cpListarPlantillas();
+          res.status(200).json({ ok: true, plantillas });
+        } catch (e) {
+          // El token ya quedó guardado (es lo que se pidió); se avisa del error de conexión
+          // aparte para no hacer parecer que no se guardó nada.
+          res.status(200).json({ ok: false, error: e.message });
+        }
+        return;
+      }
       case 'cupones':
         res.status(200).json({ cupones: await db.get('cupones?select=*&order=created_at.desc&limit=300') });
         return;

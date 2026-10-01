@@ -3764,6 +3764,19 @@
                 <label><input type="radio" name="rtWaModo" value="automatico" onchange="rtRenderCompose()"> Automático (mandar directo con una plantilla aprobada por Meta)</label>
               </div>
               <div id="rtWaAutoWrap" class="hidden" style="margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border);">
+                  <div id="rtCpEstadoTexto" style="font-size:12.5px;">Revisando la conexión con chatbotproia…</div>
+                  <button type="button" class="btn small" onclick="rtToggleCpConfig()">Configurar token</button>
+                </div>
+                <div id="rtCpConfigBox" class="hidden" style="margin-bottom:12px;">
+                  <label class="rt-label" for="rtCpToken">Token de acceso de chatbotproia (X-ACCESS-TOKEN)</label>
+                  <div style="display:flex; gap:8px;">
+                    <input type="password" id="rtCpToken" class="rt-input" placeholder="cpt_live_…" style="flex:1;" autocomplete="off">
+                    <button type="button" class="btn primary small" onclick="rtGuardarCpToken()">Guardar y probar</button>
+                  </div>
+                  <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">Lo generas en chatbotproia → Ajustes → Integraciones (dale clic a "Guardar Cambios" ahí también, o aquí nunca lo vamos a recibir).</div>
+                  <div id="rtCpConfigMsg" class="hidden" style="font-size:12.5px; margin-top:8px;"></div>
+                </div>
                 <div id="rtWaAutoMsg" style="font-size:12.5px; color:var(--text-muted);">Cargando plantillas…</div>
                 <div id="rtWaAutoBody" class="hidden">
                   <label class="rt-label" for="rtPlantillaWa">Plantilla aprobada</label>
@@ -10564,6 +10577,48 @@ const RT_WA_CAMPOS = [
 ];
 
 let rtPlantillasWa = null; // null = no cargadas todavía; [] = cargadas, ninguna aprobada.
+let rtCpEstadoCache = null; // null = no revisado todavía; true/false = si ya hay token guardado.
+
+// Estado de la conexión con chatbotproia — nunca pide ni muestra el token guardado, solo si ya
+// hay uno (lib/chatbotproia.js lo guarda en Supabase, solo tocable con la llave de servicio).
+async function rtActualizarEstadoCp() {
+  const el = document.getElementById('rtCpEstadoTexto');
+  try {
+    const data = await rtApi('chatbotproia_estado');
+    rtCpEstadoCache = !!data.configurado;
+  } catch (e) {
+    rtCpEstadoCache = false;
+  }
+  el.innerHTML = rtCpEstadoCache
+    ? '<span style="color:#15803d;">✓ Token de chatbotproia configurado</span>'
+    : '<span style="color:#b45309;">⚠ Todavía no configuras el token de chatbotproia</span>';
+  if (!rtCpEstadoCache) document.getElementById('rtCpConfigBox').classList.remove('hidden');
+}
+
+function rtToggleCpConfig() {
+  document.getElementById('rtCpConfigBox').classList.toggle('hidden');
+}
+
+async function rtGuardarCpToken() {
+  const token = document.getElementById('rtCpToken').value.trim();
+  const msg = document.getElementById('rtCpConfigMsg');
+  const show = (t, ok) => { msg.textContent = t; msg.style.color = ok ? '#15803d' : '#dc2626'; msg.classList.remove('hidden'); };
+  if (!token) { show('Escribe el token primero.', false); return; }
+  try {
+    const data = await rtApi('chatbotproia_guardar_token', { token });
+    if (data.ok) {
+      show('Token guardado y conexión probada con éxito ✓', true);
+      document.getElementById('rtCpToken').value = '';
+      rtPlantillasWa = null; // para que loadRtPlantillasWa() lo vuelva a cargar con el token nuevo
+      await rtActualizarEstadoCp();
+      await loadRtPlantillasWa();
+    } else {
+      show('El token se guardó, pero la prueba de conexión falló: ' + data.error, false);
+    }
+  } catch (e) {
+    show(e.message, false);
+  }
+}
 
 async function loadRtPlantillasWa() {
   if (rtPlantillasWa !== null) return;
@@ -10641,7 +10696,10 @@ function rtRenderCompose() {
   const waAuto = canal === 'whatsapp' && rtWaModo() === 'automatico';
   document.getElementById('rtWaAutoWrap').classList.toggle('hidden', !waAuto);
   document.getElementById('rtMensajeLibreWrap').classList.toggle('hidden', waAuto);
-  if (waAuto) loadRtPlantillasWa();
+  if (waAuto) {
+    if (rtCpEstadoCache === null) rtActualizarEstadoCp();
+    loadRtPlantillasWa();
+  }
   const sel = rtSeleccionados();
   const validos = sel.filter(d => canal === 'email' ? d.email : d.telefono);
   document.getElementById('rtSelCount').textContent = `(${sel.length} clientes seleccionados${sel.length !== validos.length ? `, ${sel.length - validos.length} sin ${canal === 'email' ? 'correo' : 'teléfono'}` : ''})`;
