@@ -1,7 +1,7 @@
 (()=>{'use strict';
 // Meta Pixel + embudo propio para las páginas CMS (estáticas). La tienda
 // principal (index.html) ya hace esto mismo: aquí se repite lo que ocurre
-// DENTRO de la página CMS — visita, agregar al carrito y contacto. Lo que pasa
+// DENTRO de la página CMS — visita, agregar al carrito y contacto (incluye ubicación de la tienda). Lo que pasa
 // después de salir a la tienda (ver producto, buscar, checkout, compra) lo
 // sigue registrando la tienda, así no se cuenta doble.
 // El ID del píxel sale de ajustes_marketing (Backoffice → Meta Pixel).
@@ -73,10 +73,11 @@ addEventListener('cms-add-to-cart',ev=>{
   funnel('agregar_carrito',{productId:String(d.id),valor:d.price,datos:{nombre:String(d.name||''),cantidad:1}});
 });
 
-// Contacto: clic en WhatsApp / teléfono / correo (solo el canal, nunca el dato).
+// Contacto: clic en WhatsApp / teléfono / correo o en la ubicación de la tienda
+// ("Visita nuestra tienda", mapas, "Cómo llegar"); solo el canal, nunca el dato.
 document.addEventListener('click',e=>{
-  const a=e.target&&e.target.closest?e.target.closest('a[href*="wa.me/"],a[href^="tel:"],a[href^="mailto:"]'):null;if(!a)return;
-  const h=a.getAttribute('href')||'',canal=h.indexOf('wa.me/')!==-1?'WhatsApp':h.indexOf('tel:')===0?'Teléfono':'Correo';
+  const a=e.target&&e.target.closest?e.target.closest('a[href*="wa.me/"],a[href^="tel:"],a[href^="mailto:"],a[href*="google."][href*="/maps"],a[href*="maps.app.goo.gl"],a[href*="goo.gl/maps"],a[href*="waze.com"],a[href="#ubicacion"]'):null;if(!a)return;
+  const h=a.getAttribute('href')||'',canal=h.indexOf('wa.me/')!==-1?'WhatsApp':h.indexOf('tel:')===0?'Teléfono':h.indexOf('mailto:')===0?'Correo':'Ubicación';
   track('Contact',{content_name:canal});funnel('contacto',{datos:{nombre:canal}});
 },true);
 

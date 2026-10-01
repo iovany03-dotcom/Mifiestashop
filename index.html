@@ -6652,13 +6652,15 @@ function trackSearchDebounced(q) {
 }
 
 // Contacto: clic en cualquier enlace de WhatsApp / teléfono / correo (botón
-// flotante, pie de página, promociones, FAQ...). No se manda el número ni
+// flotante, pie de página, promociones, FAQ...) o de ubicación de la tienda
+// ("Cómo llegar", mapas, "Visita nuestra tienda"). No se manda el número ni
 // el correo, solo el canal.
 document.addEventListener('click', (e) => {
-  const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"]') : null;
+  const a = e.target && e.target.closest ? e.target.closest('a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"], a[href*="google."][href*="/maps"], a[href*="maps.app.goo.gl"], a[href*="goo.gl/maps"], a[href*="waze.com"], a[href="#ubicacion"]') : null;
   if (!a) return;
   const href = a.getAttribute('href') || '';
-  trackPixelEvent('Contact', { content_name: href.indexOf('wa.me/') !== -1 ? 'WhatsApp' : (href.indexOf('tel:') === 0 ? 'Teléfono' : 'Correo') });
+  const canal = href.indexOf('wa.me/') !== -1 ? 'WhatsApp' : href.indexOf('tel:') === 0 ? 'Teléfono' : href.indexOf('mailto:') === 0 ? 'Correo' : 'Ubicación';
+  trackPixelEvent('Contact', { content_name: canal });
 }, true);
 
 async function saveMetaPixelConfig() {
@@ -10051,7 +10053,7 @@ const EMBUDO_EVENTOS = {
   ver_carrito: 'Vio su carrito', iniciar_checkout: 'Inició el pago', cotizar_envio: 'Cotizó envío',
   elegir_envio: 'Eligió paquetería', error_checkout: 'Le salió un error', pedido_creado: 'Creó su pedido',
   ir_a_pago: 'Se fue a Mercado Pago', compra: 'Compró', pago_pendiente: 'Pago pendiente',
-  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel.)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
+  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel./ubicación)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
 };
 let embudoData = null;
 
