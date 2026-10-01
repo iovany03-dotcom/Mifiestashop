@@ -10,6 +10,7 @@
  const item={id:current.id,name:current.name||product.name,sku:current.sku||'PS-'+current.id,price:Number(current.price),cat:'general',img:product.img};
  if(existing){Object.assign(existing,item,{qty:(Number(existing.qty)||0)+1});}else cart.push({...item,qty:1});
  localStorage.setItem('mf_cart',JSON.stringify(cart));window.dispatchEvent(new Event('cms-cart-updated'));
+ window.dispatchEvent(new CustomEvent('cms-add-to-cart',{detail:{id:item.id,name:item.name,price:item.price}}));
  status.textContent='Agregado al carrito';button.textContent='Agregar otro';
  }catch{status.textContent='No pudimos agregarlo. Intenta de nuevo o consulta su ficha.';button.textContent=label;}
  finally{button.disabled=false;}
