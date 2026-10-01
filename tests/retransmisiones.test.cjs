@@ -338,6 +338,41 @@ test('api/cron-retransmision-auto: con cupón "existente" usa el mismo código p
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
 });
 
+test('api/retransmisiones: nunca manda un parámetro {{n}} vacío a Meta (#131008) — cupón sin vencimiento ni nombre guardado', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  process.env.CHATBOTPROIA_TOKEN = 'cpt_test';
+  let enviado = null;
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    const ok = d => ({ ok: true, json: async () => d, text: async () => '' });
+    if (u.includes('rpc_check_session')) return ok(true);
+    // Carrito sin nombre de cliente guardado.
+    if (u.includes('carritos_web?id=eq.9')) return ok([{ id: 9, customer_name: '', customer_email: 'x@y.com', customer_phone: '5511112222', items: [{ id: 1, qty: 1, name: 'Globo' }] }]);
+    if (u.includes('/cupones?codigo=eq.FIESTA-ZFGZ35')) return ok([{ codigo: 'FIESTA-ZFGZ35', tipo: 'porcentaje', valor: 10, minimo_compra: 0, usos: 0, usos_max: null, email: null, activo: true, vence_at: null }]);
+    if (u.includes('/retransmisiones') && opts.method === 'POST') return ok(null);
+    if (u.includes('panel.chatbotproia.com/api/contacts/find_by_custom_field')) return ok({ data: [] });
+    if (u.includes('panel.chatbotproia.com/api/contacts') && opts.method === 'POST' && !u.includes('/send/whatsapp')) return ok({ success: true, id: 'contact-uuid-1' });
+    if (u.includes('panel.chatbotproia.com/api/contacts/contact-uuid-1/send/whatsapp')) { enviado = JSON.parse(opts.body); return ok({ ok: true, messageIds: ['wamid.1'] }); }
+    return ok([]);
+  };
+  try {
+    const res = response();
+    await require('../api/retransmisiones.js')({ method: 'POST', body: {
+      p_admin_password: 'x', accion: 'enviar', canal: 'whatsapp',
+      destinatarios: [{ tipo: 'carrito', referencia: 'CRW-9' }],
+      cupon: { modo: 'existente', codigo: 'FIESTA-ZFGZ35' },
+      plantillaWa: { name: 'cupon_carrito', language: 'es_MX', mapping: ['nombre', 'cupon', 'vence', 'liga'] }
+    } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.resultados[0].ok, true, JSON.stringify(res.data.resultados[0]));
+    const params = enviado.template.parameters;
+    assert.ok(params.every(p => p && p.trim().length > 0), 'ningún parámetro debe quedar vacío: ' + JSON.stringify(params));
+    assert.equal(params[0], 'Cliente'); // sin nombre guardado
+    assert.equal(params[2], 'sin fecha límite'); // cupón sin vence_at
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
+});
+
 test('api/crear-pedido: aplica el cupón con el subtotal del servidor y lo guarda en el pedido', async () => {
   const prev = global.fetch;
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';

@@ -362,8 +362,18 @@ async function enviar(db, body, enviadoPor) {
         // lo abra y lo mande a mano (no hay otra forma de que Meta lo entregue solo).
         if (plantillaWa) {
           try {
-            const campos = { nombre, cupon: tc ? tc.codigo : '', descuento: tc ? tc.descuento : '', vence: tc ? tc.vence : '', liga };
-            const parametros = (Array.isArray(plantillaWa.mapping) ? plantillaWa.mapping : []).map(k => campos[k] || '');
+            // Meta rechaza con (#131008) "Required parameter is missing" cualquier variable
+            // {{n}} mandada como cadena vacía — pasa, por ejemplo, con un cupón sin fecha de
+            // vencimiento (fechaMx(null) -> '') o un pedido/carrito sin nombre de cliente
+            // guardado. Nunca se manda "" como parámetro; se rellena con algo real.
+            const campos = {
+              nombre: nombre || 'Cliente',
+              cupon: tc ? tc.codigo : '',
+              descuento: tc ? tc.descuento : '',
+              vence: (tc && tc.vence) || 'sin fecha límite',
+              liga
+            };
+            const parametros = (Array.isArray(plantillaWa.mapping) ? plantillaWa.mapping : []).map(k => campos[k] || '-');
             const contactId = await cpBuscarOCrearContacto(wa, dest.nombre);
             await cpEnviarPlantilla(contactId, { name: plantillaWa.name, language: plantillaWa.language, parametros });
             log.estado = 'enviado';
@@ -371,6 +381,7 @@ async function enviar(db, body, enviadoPor) {
             log.estado = 'error';
             log.error = String(e.message).slice(0, 300);
             if (/132000/.test(log.error)) log.error = 'La plantilla espera otro número de variables ({{n}}) del que se mandó: revisa cuántas tiene en Meta y ajústalas en "Variable" arriba. ' + log.error.slice(0, 150);
+            if (/131008/.test(log.error)) log.error = 'A la plantilla le falta una variable (Meta no acepta una vacía): revisa que cada "Variable {{n}}" esté mapeada a un dato real (si mapeaste "Código de cupón" o "Descuento", confirma que sí elegiste un cupón). ' + log.error.slice(0, 150);
           }
         } else {
           log.estado = 'preparado';

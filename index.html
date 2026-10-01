@@ -10953,9 +10953,12 @@ function rtRenderPreview() {
   if (!el) return;
   const d = rtSeleccionados()[0] || rtFiltrados()[0];
   const c = rtCuponPreview();
-  const nombre = d ? (String(d.nombre || '').trim().split(/\s+/)[0] || '') : 'Cliente';
+  // Mismo "Cliente" de respaldo que usa el servidor (api/retransmisiones.js) cuando no hay
+  // nombre guardado — Meta rechaza con (#131008) cualquier variable {{n}} vacía, así que la
+  // vista previa nunca debe mostrar lo que de verdad no se puede mandar.
+  const nombre = (d && String(d.nombre || '').trim().split(/\s+/)[0]) || 'Cliente';
   const liga = 'https://www.mifiestashop.com/?carrito=…' + (c ? `&cupon=${c.codigo}` : '');
-  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: c ? c.vence : '', liga };
+  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: (c && c.vence) || 'sin fecha límite', liga };
   const fill = t => String(t || '').replace(/\{(nombre|cupon|descuento|vence|liga)\}/g, (_, k) => campos[k]);
   const canal = rtCanal();
 
