@@ -63,8 +63,64 @@ test('api/guardar-producto: al crear uno nuevo sí fija esos campos (nada que pe
     assert.equal(res.data.ok, true, JSON.stringify(res.data));
     assert.equal(posted.source, 'manual');
     assert.equal(posted.category_id, null);
-    assert.equal(posted.link_rewrite, null);
+    // link_rewrite se genera a partir del nombre (ver api/guardar-producto.js)
+    // para que el producto tenga URL propia en la tienda, no null como antes.
+    assert.equal(posted.link_rewrite, 'producto-nuevo');
     assert.ok(posted.id > 9000000000000);
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/guardar-producto: al editar un manual sin link_rewrite se lo rellena (no se queda sin URL propia)', async () => {
+  let posted = null;
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr-key';
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    if (u.includes('/rpc/rpc_check_session')) return { ok: true, json: async () => ({ ok: true }) };
+    if (u.includes('/rest/v1/catalogo_productos') && opts.method === 'POST') {
+      posted = JSON.parse(opts.body)[0];
+      return { ok: true, json: async () => null, text: async () => '' };
+    }
+    if (u.includes('/rest/v1/catalogo_productos') && u.includes('select=source,link_rewrite')) {
+      return { ok: true, json: async () => ([{ source: 'manual', link_rewrite: null }]) };
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+  try {
+    const res = response();
+    await require('../api/guardar-producto.js')({
+      method: 'POST',
+      body: { p_admin_password: 'x', producto: { id: 9000000000123, sku: 'MAN-1', name: 'Globo Kinder', price: 20 } }
+    }, res);
+    assert.equal(res.data.ok, true, JSON.stringify(res.data));
+    assert.equal(posted.link_rewrite, 'globo-kinder');
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/guardar-producto: al editar un producto de PrestaShop nunca le toca el link_rewrite real', async () => {
+  let posted = null;
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr-key';
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    if (u.includes('/rpc/rpc_check_session')) return { ok: true, json: async () => ({ ok: true }) };
+    if (u.includes('/rest/v1/catalogo_productos') && opts.method === 'POST') {
+      posted = JSON.parse(opts.body)[0];
+      return { ok: true, json: async () => null, text: async () => '' };
+    }
+    if (u.includes('/rest/v1/catalogo_productos') && u.includes('select=source,link_rewrite')) {
+      return { ok: true, json: async () => ([{ source: 'prestashop', link_rewrite: 'pantuflas-xv-anios' }]) };
+    }
+    return { ok: true, json: async () => ({}) };
+  };
+  try {
+    const res = response();
+    await require('../api/guardar-producto.js')({
+      method: 'POST',
+      body: { p_admin_password: 'x', producto: { id: 84650, sku: 'BND-1', name: 'Pantuflas para xv años', price: 42 } }
+    }, res);
+    assert.equal(res.data.ok, true, JSON.stringify(res.data));
+    assert.equal('link_rewrite' in posted, false);
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 
