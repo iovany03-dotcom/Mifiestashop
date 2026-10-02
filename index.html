@@ -8106,7 +8106,8 @@ async function confirmPOSSale() {
   const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
   const almacenSelect = document.getElementById('posWarehouseSelect');
   const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
-  const cartSnapshot = cart.map(i => ({ name: i.name, sku: i.sku || i.id, qty: i.qty, price: i.price }));
+  // product_id: permite sumar esta venta en las ventas por producto (api/ventas-productos.js).
+  const cartSnapshot = cart.map(i => ({ product_id: i.id, name: i.name, sku: i.sku || i.id, qty: i.qty, price: i.price }));
 
   // Populate Ticket Modal
   document.getElementById('tFolio').textContent = folio;
@@ -19162,14 +19163,40 @@ function transferCartToPOS(cId) {
   alert(` ¡Éxito! Los ${cartObj.items.length} productos del Carrito ${cartObj.id} han sido cargados en el Sistema POS.`);
 }
 
+// "Ventas Mensuales Históricas": antes salía de una tabla fija (HIST) que se quedó
+// en septiembre. Ahora se calcula en vivo con /api/ventas (PrestaShop + POS propio +
+// pedidos de la tienda), por mes desde marzo de 2026; si falla, se queda con la tabla fija.
+function drawHistVentasCharts() {
+  renderHistKPIs();
+  drawBarChart('revChart','revTip', HIST.monthly_sales, 'revenue', '#37b6b9', fmtMoney, 'month', fmtMonth);
+  drawBarChart('ordChart','ordTip', HIST.monthly_sales, 'orders', '#37b6b9', v=>fmtNum(v)+' pedidos', 'month', fmtMonth);
+  renderMonthlyTable();
+}
+
+async function loadHistVentasLive() {
+  try {
+    const hoy = toISO(new Date());
+    const r = await fetch(`/api/ventas?from=2026-03-01&to=${hoy}`);
+    const data = await r.json();
+    if (!r.ok || data.granularity !== 'month' || !Array.isArray(data.breakdown)) throw new Error(data.error || 'respuesta inesperada');
+    const byMonth = Object.fromEntries(data.breakdown.map(b => [b.label, b]));
+    const meses = [];
+    for (let d = new Date(2026, 2, 1); toISO(d).slice(0, 7) <= hoy.slice(0, 7); d.setMonth(d.getMonth() + 1)) meses.push(toISO(d).slice(0, 7));
+    HIST.monthly_sales = meses.map(m => ({ month: m, revenue: byMonth[m] ? byMonth[m].revenue : 0, orders: byMonth[m] ? byMonth[m].orders : 0 }));
+    HIST.total_revenue_mxn = data.revenue;
+    HIST.total_valid_orders_mxn = data.orders;
+    drawHistVentasCharts();
+  } catch (e) {
+    console.warn('Ventas mensuales en vivo no disponibles, se muestra la tabla fija:', e.message);
+  }
+}
+
 // INITIALIZE ALL
 applyPeriod('dia');
-renderHistKPIs();
-drawBarChart('revChart','revTip', HIST.monthly_sales, 'revenue', '#37b6b9', fmtMoney, 'month', fmtMonth);
-drawBarChart('ordChart','ordTip', HIST.monthly_sales, 'orders', '#37b6b9', v=>fmtNum(v)+' pedidos', 'month', fmtMonth);
+drawHistVentasCharts();
+loadHistVentasLive();
 drawStateChart();
 drawStockChart();
-renderMonthlyTable();
 renderStockTable();
 renderTopProductsTable();
 

@@ -20,6 +20,30 @@ async function countValidOrders() {
   return parseInt(range.split('/')[1], 10) || 0;
 }
 
+// Vista privada pos_ventas_producto_mes (ventas por producto y mes de los tickets
+// del POS propio): solo se lee con la llave de servicio. Si falta la llave o
+// falla, el resto de las ventas se sigue entregando y se avisa en la respuesta.
+async function posVentasPorProducto() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return { ok: false, rows: [], error: 'Falta SUPABASE_SERVICE_ROLE_KEY: no se suman las ventas del POS propio.' };
+  const PAGE = 1000, rows = [];
+  try {
+    for (let offset = 0; ; offset += PAGE) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/pos_ventas_producto_mes?select=product_id,month,product_name,product_reference,units,revenue,lines&order=product_id.asc,month.asc&limit=${PAGE}&offset=${offset}`, {
+        headers: { apikey: key, Authorization: `Bearer ${key}` }
+      });
+      if (!r.ok) throw new Error(`pos_ventas_producto_mes -> HTTP ${r.status}`);
+      const page = await r.json();
+      if (!Array.isArray(page)) break;
+      rows.push(...page);
+      if (page.length < PAGE) break;
+    }
+    return { ok: true, rows };
+  } catch (e) {
+    return { ok: false, rows: [], error: String(e.message || e) };
+  }
+}
+
 // La key va en la URL (?ws_key=), no en el header Authorization: Basic —
 // Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese header
 // antes de llegar al webservice, así que siempre daba 401 aunque la key
@@ -43,10 +67,15 @@ module.exports = async function handler(req, res) {
   // pesos, ya agregadas por producto y mes en la base de datos).
   if (!prestashopConectado()) {
     try {
-      const [rows, ordersProcessed] = await Promise.all([
+      const [psRows, ordersProcessed, pos] = await Promise.all([
         sbGetAll('ps_ventas_producto_mes?select=product_id,month,product_name,product_reference,units,revenue,lines&order=product_id.asc,month.asc'),
-        countValidOrders()
+        countValidOrders(),
+        posVentasPorProducto()
       ]);
+      // Ventas del POS propio (pos_tickets): no pasan por PrestaShop, así que
+      // se suman aparte a las de ps_pedidos (los tickets que ya tienen pedido
+      // en PrestaShop quedan fuera de la vista para no contarlos dos veces).
+      const rows = psRows.concat(pos.rows);
       const products = {};
       let lineItemsProcessed = 0;
       rows.forEach(r => {
@@ -58,7 +87,9 @@ module.exports = async function handler(req, res) {
         const units = Number(r.units) || 0, revenue = Number(r.revenue) || 0;
         p.totalUnits += units;
         p.totalRevenue += revenue;
-        p.byMonth[r.month || 'sin-fecha'] = { units, revenue };
+        const mes = r.month || 'sin-fecha';
+        const prev = p.byMonth[mes] || { units: 0, revenue: 0 };
+        p.byMonth[mes] = { units: prev.units + units, revenue: prev.revenue + revenue };
         lineItemsProcessed += Number(r.lines) || 0;
       });
       res.status(200).json({
@@ -66,7 +97,9 @@ module.exports = async function handler(req, res) {
         ordersProcessed,
         lineItemsProcessed,
         generatedAt: new Date().toISOString(),
-        source: 'supabase'
+        source: 'supabase',
+        posIncluido: pos.ok,
+        ...(pos.error ? { posError: pos.error } : {})
       });
     } catch (err) {
       res.status(502).json({ error: 'Fallo al calcular ventas por producto', detail: String(err.message || err) });
