@@ -30,6 +30,16 @@
 //   'crear_cupon' { codigo?, prefijo?, tipo, valor, minimo, inicia, vence, usos_max, email, descripcion }
 //   'cupon_activo' { codigo, activo }
 //   'historial'  -> { historial: [...] }
+//   'auto_config_leer' -> { config: {...} | null } — ver tabla ajustes_retransmision_auto.
+//   'auto_config_guardar' { activo, horas_espera, dias_buscar, plantilla_nombre, plantilla_idioma,
+//                           plantilla_mapping, cupon_tipo: null|'porcentaje'|'monto'|'existente',
+//                           cupon_codigo (solo si cupon_tipo es 'existente'), cupon_valor,
+//                           cupon_minimo, cupon_vigencia_horas, cupon_prefijo } -> { ok: true }
+//       Config leída y aplicada por api/cron-retransmision-auto.js (corre cada hora, ver
+//       vercel.json): a quien pasó "horas_espera" desde que abandonó (dentro de los últimos
+//       "dias_buscar" días) y nunca se le mandó WhatsApp antes (manual o automático), se le
+//       manda la plantilla con el cupón configurado — mismo "enviar()" de abajo, disparado por
+//       cron en vez de por un clic del staff.
 const { layout, escapeHtml, sendHtml, smtpConfigured } = require('../lib/correo.js');
 const { CODIGO_RE, normalizarCodigo, generarCodigo, etiquetaCupon } = require('../lib/cupones.js');
 const { cpListarPlantillas, cpBuscarOCrearContacto, cpEnviarPlantilla, chatbotproiaConfigured, guardarToken } = require('../lib/chatbotproia.js');
@@ -352,8 +362,18 @@ async function enviar(db, body, enviadoPor) {
         // lo abra y lo mande a mano (no hay otra forma de que Meta lo entregue solo).
         if (plantillaWa) {
           try {
-            const campos = { nombre, cupon: tc ? tc.codigo : '', descuento: tc ? tc.descuento : '', vence: tc ? tc.vence : '', liga };
-            const parametros = (Array.isArray(plantillaWa.mapping) ? plantillaWa.mapping : []).map(k => campos[k] || '');
+            // Meta rechaza con (#131008) "Required parameter is missing" cualquier variable
+            // {{n}} mandada como cadena vacía — pasa, por ejemplo, con un cupón sin fecha de
+            // vencimiento (fechaMx(null) -> '') o un pedido/carrito sin nombre de cliente
+            // guardado. Nunca se manda "" como parámetro; se rellena con algo real.
+            const campos = {
+              nombre: nombre || 'Cliente',
+              cupon: tc ? tc.codigo : '',
+              descuento: tc ? tc.descuento : '',
+              vence: (tc && tc.vence) || 'sin fecha límite',
+              liga
+            };
+            const parametros = (Array.isArray(plantillaWa.mapping) ? plantillaWa.mapping : []).map(k => campos[k] || '-');
             const contactId = await cpBuscarOCrearContacto(wa, dest.nombre);
             await cpEnviarPlantilla(contactId, { name: plantillaWa.name, language: plantillaWa.language, parametros });
             log.estado = 'enviado';
@@ -361,6 +381,7 @@ async function enviar(db, body, enviadoPor) {
             log.estado = 'error';
             log.error = String(e.message).slice(0, 300);
             if (/132000/.test(log.error)) log.error = 'La plantilla espera otro número de variables ({{n}}) del que se mandó: revisa cuántas tiene en Meta y ajústalas en "Variable" arriba. ' + log.error.slice(0, 150);
+            if (/131008/.test(log.error)) log.error = 'A la plantilla le falta una variable (Meta no acepta una vacía): revisa que cada "Variable {{n}}" esté mapeada a un dato real (si mapeaste "Código de cupón" o "Descuento", confirma que sí elegiste un cupón). ' + log.error.slice(0, 150);
           }
         } else {
           log.estado = 'preparado';
@@ -445,6 +466,37 @@ module.exports = async function handler(req, res) {
       case 'historial':
         res.status(200).json({ historial: await db.get('retransmisiones?select=*&order=created_at.desc&limit=300') });
         return;
+      case 'auto_config_leer': {
+        const rows = await db.get('ajustes_retransmision_auto?select=*&order=id.desc&limit=1');
+        res.status(200).json({ config: rows[0] || null });
+        return;
+      }
+      case 'auto_config_guardar': {
+        const row = {
+          activo: !!body.activo,
+          horas_espera: Math.max(1, parseInt(body.horas_espera, 10) || 24),
+          dias_buscar: Math.max(1, Math.min(90, parseInt(body.dias_buscar, 10) || 14)),
+          plantilla_nombre: body.plantilla_nombre ? String(body.plantilla_nombre).slice(0, 200) : null,
+          plantilla_idioma: body.plantilla_idioma ? String(body.plantilla_idioma).slice(0, 20) : null,
+          plantilla_mapping: Array.isArray(body.plantilla_mapping) ? body.plantilla_mapping : null,
+          cupon_tipo: ['monto', 'porcentaje', 'existente'].includes(body.cupon_tipo) ? body.cupon_tipo : null,
+          cupon_codigo: body.cupon_tipo === 'existente' ? normalizarCodigo(body.cupon_codigo) : null,
+          cupon_valor: Number(body.cupon_valor) || 0,
+          cupon_minimo: Math.max(0, Number(body.cupon_minimo) || 0),
+          cupon_vigencia_horas: Math.max(1, parseInt(body.cupon_vigencia_horas, 10) || 48),
+          cupon_prefijo: String(body.cupon_prefijo || 'AUTO').trim().toUpperCase().slice(0, 12) || 'AUTO',
+          updated_at: new Date().toISOString()
+        };
+        if (row.activo && (!row.plantilla_nombre || !row.plantilla_idioma)) {
+          throw new Error('Elige una plantilla aprobada antes de activar el envío automático.');
+        }
+        if (row.cupon_tipo === 'existente' && !row.cupon_codigo) {
+          throw new Error('Elige un cupón ya existente, o crea uno primero.');
+        }
+        await db.post('ajustes_retransmision_auto', [row], 'return=minimal');
+        res.status(200).json({ ok: true });
+        return;
+      }
       default:
         res.status(400).json({ error: 'Acción inválida' });
     }
@@ -456,3 +508,6 @@ module.exports = async function handler(req, res) {
 module.exports.telefonoWhatsApp = telefonoWhatsApp;
 module.exports.ligaRecuperar = ligaRecuperar;
 module.exports.rellenar = rellenar;
+module.exports.audiencia = audiencia;
+module.exports.enviar = enviar;
+module.exports.sb = sb;
