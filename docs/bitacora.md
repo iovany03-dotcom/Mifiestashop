@@ -13,6 +13,14 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 - La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`). La constante `serviceKey` de `api/cron-sync-prestashop.js` es en realidad la llave anónima.
 - Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `PS_API_KEY`, `PS_BASE_URL`, `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`. Las variables nuevas solo aplican a despliegues nuevos.
 
+## 2026-10-02
+
+- **Informe de Ventas (admin):** tarjetas nuevas Total, Efectivo, Tarjeta y Salidas arriba de las gráficas. Las ventas siguen todos los filtros; las salidas de caja solo fechas y tienda/punto de venta (no tienen método de pago ni empleado de venta). Tarjeta suma "Débito / Crédito" con y sin acentos; la nota del Total avisa cuánto es transferencia/otros para que cuadre.
+- **Estadísticas:** tarjeta "Ventas por tienda" (api/ventas.js devuelve `byStore`; la tienda es la caja/empleado del pedido: 225 CDMX Rumania, 226 Querétaro, 230 Puebla, 227 Atizapán; sin empleado = tienda en línea). (`81fd126`)
+- **POS:** botón "Sacar como cotización" (PDF con jsPDF desde cdnjs; no genera ticket ni mueve inventario/caja). (`281899d`)
+- **Páginas CMS:** tarjetas de producto como las de la tienda (SKU, precio en vivo con `/api/productos?ids=`, "Ver producto"). (`01c451d`)
+- **Paquetes de batucada** (Estándar 83553 y **Promo Batucada VIP** id 10790464092173, $1,700 = $2,000 con 15% de descuento, 30 productos más vendidos) en las 94 páginas que no son boda/XV/neón/informativas/VIP; el VIP vive en `catalogo_productos` y las APIs lo completan cuando PrestaShop no lo tiene. Bloque en `scripts/batucada-packages.cjs`. (`d2a1ddc`)
+
 ## 2026-09-26
 
 - **Redirección por nombre en páginas CMS:** como hacía PrestaShop, `/content/<id>-<slug>` con un id que no existe redirige (301) a la primera página con ese slug; si el slug tampoco existe, 404. Los ids reales no se tocan (rutas exactas en `vercel.json`; la regla va al final). Función `api/cms-redirect.js`; pruebas en `tests/cms.test.cjs`. Auditoría previa: en la tienda vieja las 139 páginas redirigen por nombre, y 12 (slugs repetidos: 327, 328, 354, 367, 369, 370, 385, 395, 396, 397, 408, 409) mandan a otra página; en Vercel esas 12 abren su propia página.

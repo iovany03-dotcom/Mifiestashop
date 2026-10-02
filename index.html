@@ -2986,6 +2986,13 @@
         </div>
       </div>
 
+      <div class="kpis" id="ivKpis" style="margin-top:16px;">
+        <div class="kpi-card"><div class="label">Total ventas</div><div class="value" id="ivKpiTotal">$0.00</div><div class="sub" id="ivKpiTotalSub">0 ventas</div></div>
+        <div class="kpi-card"><div class="label">Efectivo</div><div class="value" id="ivKpiEfectivo">$0.00</div><div class="sub" id="ivKpiEfectivoSub">0 ventas</div></div>
+        <div class="kpi-card"><div class="label">Tarjeta</div><div class="value" id="ivKpiTarjeta">$0.00</div><div class="sub" id="ivKpiTarjetaSub">0 ventas</div></div>
+        <div class="kpi-card"><div class="label">Salidas</div><div class="value" id="ivKpiSalidas" style="color:var(--danger, #dc2626);">$0.00</div><div class="sub" id="ivKpiSalidasSub">Salidas de caja (fecha y tienda)</div></div>
+      </div>
+
       <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:16px; margin-top:16px;" class="iv-charts-grid">
         <div class="card">
           <h3 style="margin-top:0;">Tendencia de Ventas</h3>
@@ -8762,6 +8769,34 @@ function viewPosTicketFromHistorial(id) {
 // se deriva sucursal/tienda/puntoVenta/paymentMethodDetail de cada pedido.
 let informePedidosCache = [];
 let informeVentasVisible = [];
+let informeSalidasCache = [];
+
+// Sin acentos, minúsculas y solo letras/números, para comparar nombres de
+// tienda ("Querétaro" / "Queretaro") y de método de pago ("Débito / Crédito").
+function informeNorm(v) {
+  return String(v || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+}
+
+// La sucursal de una salida de caja viene del texto del selector del POS
+// ("Bodega Principal (Rumania)", "Puebla", "Querétaro"); la de un pedido, del
+// nombre de la caja ("CDMX", "Queretaro", "Puebla"). Se comparan por clave.
+function informeSucursalKey(name) {
+  const n = informeNorm(name);
+  if (!n) return '';
+  if (n.includes('rumania') || n.includes('cdmx') || n.includes('popocatepetl')) return 'cdmx';
+  if (n.includes('queretaro')) return 'queretaro';
+  if (n.includes('puebla')) return 'puebla';
+  if (n.includes('atizapan')) return 'atizapan';
+  return n;
+}
+
+function informeMetodoTipo(detail) {
+  const n = informeNorm(detail);
+  if (n.includes('efectivo')) return 'efectivo';
+  if (n.includes('debito') || n.includes('credito') || n.includes('tarjeta')) return 'tarjeta';
+  if (n.includes('transferencia')) return 'transferencia';
+  return 'otro';
+}
 
 async function loadInformeVentas() {
   try {
@@ -8771,6 +8806,12 @@ async function loadInformeVentas() {
     informePedidosCache = orders.filter(o => o.paymentMethod === 'POS');
   } catch (e) {
     informePedidosCache = [];
+  }
+  try {
+    const rows = await sbRpc('rpc_salida_list', getSessionCredsParams());
+    informeSalidasCache = Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    informeSalidasCache = null;
   }
 
   const sucursales = [...new Set(informePedidosCache.map(o => o.sucursal).filter(Boolean))].sort();
@@ -8843,12 +8884,53 @@ function renderInformeVentas() {
   drawInformeDonutChart(byMethod);
 
   const totalRevenue = filtered.reduce((s, o) => s + (o.total || 0), 0);
+  renderInformeKpis(filtered, totalRevenue, { fi, ff, tienda, puntoVenta });
   const summary = document.getElementById('ivSummary');
   if (summary) {
     summary.innerHTML = `<div>Resultados: total (<b>${filtered.length}</b>) - <b>${fmtMoney(totalRevenue)}</b> MXN</div>`;
   }
 
   renderInformeVentasTable(filtered);
+}
+
+// Total, efectivo, tarjeta y salidas del período filtrado. Las ventas siguen
+// todos los filtros; las salidas de caja (dinero que sale de la caja, sin
+// método de pago ni empleado de venta) solo siguen fechas y tienda/punto de venta.
+function renderInformeKpis(orders, totalRevenue, f) {
+  const sum = { efectivo: 0, tarjeta: 0, transferencia: 0, otro: 0 };
+  const cnt = { efectivo: 0, tarjeta: 0, transferencia: 0, otro: 0 };
+  orders.forEach(o => {
+    const t = informeMetodoTipo(o.paymentMethodDetail);
+    sum[t] += o.total || 0; cnt[t]++;
+  });
+  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  const ventas = n => `${fmtNum(n)} venta${n === 1 ? '' : 's'}`;
+  setText('ivKpiTotal', fmtMoney(totalRevenue));
+  const rest = sum.transferencia + sum.otro;
+  setText('ivKpiTotalSub', ventas(orders.length) + (rest > 0 ? ` · incluye ${fmtMoney(rest)} en transferencia/otros` : ''));
+  setText('ivKpiEfectivo', fmtMoney(sum.efectivo));
+  setText('ivKpiEfectivoSub', ventas(cnt.efectivo));
+  setText('ivKpiTarjeta', fmtMoney(sum.tarjeta));
+  setText('ivKpiTarjetaSub', ventas(cnt.tarjeta));
+
+  if (informeSalidasCache === null) {
+    setText('ivKpiSalidas', '—');
+    setText('ivKpiSalidasSub', 'No se pudieron cargar las salidas');
+    return;
+  }
+  const storeFilter = f.tienda !== 'all' ? f.tienda : (f.puntoVenta !== 'all' ? f.puntoVenta : null);
+  const storeKey = storeFilter ? informeSucursalKey(storeFilter) : null;
+  const salidas = informeSalidasCache.filter(s => {
+    const d = new Date(s.created_at);
+    const day = isNaN(d) ? '' : toISO(d);
+    if (f.fi && day < f.fi) return false;
+    if (f.ff && day > f.ff) return false;
+    if (storeKey && informeSucursalKey(s.almacen) !== storeKey) return false;
+    return true;
+  });
+  const totalSalidas = salidas.reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
+  setText('ivKpiSalidas', fmtMoney(totalSalidas));
+  setText('ivKpiSalidasSub', `${fmtNum(salidas.length)} salida${salidas.length === 1 ? '' : 's'} de caja · efectivo neto ${fmtMoney(sum.efectivo - totalSalidas)}`);
 }
 
 function renderInformeVentasTable(orders) {
