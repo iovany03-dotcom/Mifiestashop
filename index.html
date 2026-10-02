@@ -871,6 +871,8 @@
     font-size: 1.05rem;
     font-weight: 600;
   }
+  .store-topbar-notice { background:#2e1065; color:#fff; text-align:center; padding:11px 18px; font-size:1.05rem; font-weight:700; }
+  .store-topbar-notice[hidden] { display:none; }
   .store-topbar-yellow {
     background: var(--mf-yellow);
     color: #2e1065;
@@ -1418,6 +1420,7 @@
   <div class="store-topbar-yellow">
     Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊
   </div>
+  <div class="store-topbar-notice" data-fecha="2026-10-02" hidden>📍 Hoy 2 de octubre la sucursal de Querétaro permanece cerrada.</div>
 
   <!-- Header -->
   <header class="store-header">
@@ -2360,6 +2363,8 @@
   </script>
 
   <script>
+    // Aviso temporal de la barra superior: solo se muestra en la fecha indicada (data-fecha).
+    (()=>{try{const hoy=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});document.querySelectorAll('.store-topbar-notice[data-fecha]').forEach(el=>{el.hidden=el.dataset.fecha!==hoy;});}catch{}})();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -2646,6 +2651,7 @@
 <div id="view-boda-page" class="hidden" style="min-height:100vh; background:#fff; color:#2e1065;">
   <div class="store-topbar">🎉 Envío GRATIS en compras mayores a $1,500 MXN</div>
   <div class="store-topbar-yellow">Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊</div>
+  <div class="store-topbar-notice" data-fecha="2026-10-02" hidden>📍 Hoy 2 de octubre la sucursal de Querétaro permanece cerrada.</div>
   <header class="store-header">
     <div class="store-header-left">
       <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">

@@ -1,3 +1,5 @@
+.store-topbar-notice{background:#2e1065;color:#fff;text-align:center;padding:11px 18px;font-size:1.05rem;font-weight:700}
+.store-topbar-notice[hidden]{display:none}
   .store-topbar {
     background: var(--mf-pink);
     color: #fff;
