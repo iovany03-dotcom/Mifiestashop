@@ -8301,7 +8301,8 @@ async function loadTicketHistorial() {
   let posTickets = [];
   try {
     const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
-    posTickets = (Array.isArray(rows) ? rows : []).map(t => ({
+    // Los que ya tienen pedido en PrestaShop (ps_order_id) salen en realOrders: no se duplican.
+    posTickets = (Array.isArray(rows) ? rows : []).filter(t => !t.ps_order_id).map(t => ({
       id: `pt-${t.id}`, folio: t.folio, created_at: t.created_at, cliente: t.cliente || 'Cliente POS',
       almacen: t.almacen || '', items: Array.isArray(t.items) ? t.items : [],
       subtotal: t.subtotal, iva: t.iva, total: t.total, pago_recibido: t.pago_recibido, cambio: t.cambio,
@@ -8788,6 +8789,7 @@ function viewPosTicketFromHistorial(id) {
 let informePedidosCache = [];
 let informeVentasVisible = [];
 let informeSalidasCache = [];
+let informeTicketsError = '';
 
 // Sin acentos, minúsculas y solo letras/números, para comparar nombres de
 // tienda ("Querétaro" / "Queretaro") y de método de pago ("Débito / Crédito").
@@ -8816,7 +8818,28 @@ function informeMetodoTipo(detail) {
   return 'otro';
 }
 
+// Un ticket del POS propio (pos_tickets) con la forma de un pedido POS de
+// PrestaShop, para que el informe los trate igual: sucursal con el mismo
+// nombre que da la caja de PrestaShop y método de pago con la misma etiqueta.
+const INFORME_SUCURSAL_NOMBRE = { cdmx: 'CDMX', queretaro: 'Queretaro', puebla: 'Puebla', atizapan: 'Atizapan' };
+const INFORME_METODO_ETIQUETA = { cash: 'Pago En Efectivo', card: 'Debito / Credito', transfer: 'Pagos por transferencia bancaria' };
+
+function informeTicketComoPedido(t) {
+  const key = informeSucursalKey(t.almacen);
+  const sucursal = INFORME_SUCURSAL_NOMBRE[key] || t.almacen || '';
+  return {
+    id: t.folio, reference: t.folio,
+    date: new Date(t.created_at).toLocaleString('sv-SE', { timeZone: 'America/Mexico_City' }),
+    sucursal, tienda: sucursal ? `Mi Fiesta Shop ${sucursal}` : 'Mi Fiestashop',
+    puntoVenta: sucursal ? `Terminal ${sucursal}` : null,
+    customer: t.cliente || 'Cliente POS', createdBy: t.registrado_por || '',
+    total: Number(t.total) || 0, paymentMethod: 'POS',
+    paymentMethodDetail: INFORME_METODO_ETIQUETA[t.metodo] || t.metodo || 'Sin definir'
+  };
+}
+
 async function loadInformeVentas() {
+  informeTicketsError = '';
   try {
     const r = await fetch('/api/pedidos?limit=3000');
     const data = await r.json();
@@ -8824,6 +8847,15 @@ async function loadInformeVentas() {
     informePedidosCache = orders.filter(o => o.paymentMethod === 'POS');
   } catch (e) {
     informePedidosCache = [];
+  }
+  // Ventas hechas en este POS: se guardan en pos_tickets. Los que ya tienen
+  // pedido en PrestaShop (ps_order_id) ya están arriba y se omiten.
+  try {
+    const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
+    const propios = (Array.isArray(rows) ? rows : []).filter(t => !t.ps_order_id).map(informeTicketComoPedido);
+    informePedidosCache = [...informePedidosCache, ...propios].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  } catch (e) {
+    informeTicketsError = e && e.message === 'unauthorized' ? 'Tu sesión expiró: no se pudieron sumar las ventas del POS. Cierra sesión y vuelve a entrar.' : 'No se pudieron cargar las ventas del POS propio.';
   }
   try {
     const rows = await sbRpc('rpc_salida_list', getSessionCredsParams());
@@ -8905,7 +8937,8 @@ function renderInformeVentas() {
   renderInformeKpis(filtered, totalRevenue, { fi, ff, tienda, puntoVenta });
   const summary = document.getElementById('ivSummary');
   if (summary) {
-    summary.innerHTML = `<div>Resultados: total (<b>${filtered.length}</b>) - <b>${fmtMoney(totalRevenue)}</b> MXN</div>`;
+    summary.innerHTML = `<div>Resultados: total (<b>${filtered.length}</b>) - <b>${fmtMoney(totalRevenue)}</b> MXN</div>` +
+      (informeTicketsError ? `<div style="color:#dc2626;">${escapeHtml(informeTicketsError)}</div>` : '');
   }
 
   renderInformeVentasTable(filtered);
