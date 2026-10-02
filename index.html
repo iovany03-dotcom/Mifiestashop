@@ -8242,16 +8242,61 @@ function buildTicketItemsHTML(items) {
   }).join('');
 }
 
+// El ticket se imprime desde un iframe propio, no con window.print() sobre la página: la hoja de
+// impresión del sitio dejaba el ticket en position:fixed, que no se extiende a más páginas — un
+// ticket largo (varios productos) salía cortado justo después del total, sin pago, cambio,
+// cupón ni "gracias". En el iframe el ticket fluye normal y la hoja crece con su contenido.
 function printTicket() {
+  const ticket = document.getElementById('printableTicket');
+  if (!ticket) return;
   const width = ticketConfig.width === '58mm' ? 58 : 80;
-  let pageStyle = document.getElementById('printPageSize');
-  if (!pageStyle) {
-    pageStyle = document.createElement('style');
-    pageStyle.id = 'printPageSize';
-    document.head.appendChild(pageStyle);
+  // Solo las reglas del ticket (y las variables de color) de la hoja de estilos del sitio.
+  let css = '';
+  try {
+    for (const sheet of document.styleSheets) {
+      let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+      for (const r of rules) {
+        const sel = r.selectorText || '';
+        if (r.type === 1 && (/ticket|\.t-center|^:root$/.test(sel))) css += r.cssText + '\n';
+      }
+    }
+  } catch (e) { /* se imprime con el estilo base de abajo */ }
+  const clone = ticket.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.querySelectorAll('img').forEach(img => { img.src = new URL(img.getAttribute('src'), location.href).href; });
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ticket</title>
+    <style>
+      ${css}
+      @page { size: ${width}mm auto; margin: 3mm; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .hidden { display: none !important; }
+      .ticket-paper { width: 100% !important; margin: 0 !important; padding: 4px 6px 12px !important; box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+      .ticket-brand-bar { margin: 0 0 10px !important; border-radius: 0 !important; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .ticket-table { table-layout: auto; }
+      .ticket-table td, .ticket-table th { word-break: break-word; }
+      .ticket-table th:nth-child(n+3), .ticket-table td:nth-child(n+3) { white-space: nowrap; padding-left: 6px; }
+      .ticket-table .t-cod { max-width: 22mm; font-size: 9px; }
+      tr, .ticket-total-row, .ticket-coupon-box { break-inside: avoid; }
+    </style></head><body>${clone.outerHTML}</body></html>`;
+  const frame = document.createElement('iframe');
+  frame.style.cssText = 'position:fixed; right:0; bottom:0; width:0; height:0; border:0;';
+  document.body.appendChild(frame);
+  const doc = frame.contentWindow.document;
+  doc.open(); doc.write(html); doc.close();
+  const go = () => {
+    frame.contentWindow.focus();
+    frame.contentWindow.print();
+    setTimeout(() => frame.remove(), 1500);
+  };
+  // Espera a que cargue el logo para que salga en el ticket.
+  const imgs = [...doc.images];
+  let pending = imgs.filter(i => !i.complete).length;
+  if (!pending) setTimeout(go, 150);
+  else {
+    const done = () => { if (--pending <= 0) setTimeout(go, 100); };
+    imgs.filter(i => !i.complete).forEach(i => { i.onload = done; i.onerror = done; });
+    setTimeout(() => { if (pending > 0) { pending = 0; go(); } }, 2000);
   }
-  pageStyle.textContent = `@media print { @page { size: ${width}mm auto; margin: 3mm; } }`;
-  window.print();
 }
 
 function reprintTicket(folio, total) {
