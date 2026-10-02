@@ -17,6 +17,18 @@ const STORE_BY_EMPLOYEE = { 225: 'CDMX Rumania', 226: 'Querétaro', 230: 'Puebla
 const ONLINE_STORE = 'Tienda en línea';
 const OTHER_STORE = 'Otros';
 
+// Los tickets del POS propio (pos_tickets) guardan la sucursal como el texto del
+// selector del POS ("Bodega Principal (Rumania)", "Puebla", "Querétaro"); se
+// agrupan con el id de la caja de esa sucursal, igual que los pedidos de PrestaShop.
+function ticketEmployeeId(almacen) {
+  const n = String(almacen || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  if (/rumania|cdmx|popocatepetl/.test(n)) return 225;
+  if (/queretaro/.test(n)) return 226;
+  if (/puebla/.test(n)) return 230;
+  if (/atizapan/.test(n)) return 227;
+  return -1;
+}
+
 function storeOf(order) {
   const id = parseInt(order.id_employee, 10) || 0;
   if (!id) return ONLINE_STORE;
@@ -97,6 +109,20 @@ module.exports = async function handler(req, res) {
       rows.forEach(o => {
         const local = new Date(o.created_at).toLocaleString('sv-SE', { timeZone: 'America/Mexico_City' });
         orders.push({ id: o.folio, total_paid: o.total, date_add: local, id_employee: 0 });
+      });
+
+      // Ventas del POS propio (pos_tickets). Los tickets que ya tienen pedido en
+      // PrestaShop (ps_order_id) están contados arriba: se excluyen para no
+      // duplicarlos. Sin esto, las ventas hechas en este POS no aparecían nunca
+      // en las estadísticas cuando PrestaShop dejó de recibirlas.
+      const tUrl = `${SUPABASE_URL}/rest/v1/pos_tickets?select=folio,total,almacen,created_at&ps_order_id=is.null` +
+        `&created_at=gte.${encodeURIComponent(from + 'T00:00:00-06:00')}` +
+        `&created_at=lte.${encodeURIComponent(to + 'T23:59:59-06:00')}&order=created_at.asc&limit=10000`;
+      const tr = await fetch(tUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } });
+      if (!tr.ok) throw new Error(`pos_tickets error ${tr.status}`);
+      (await tr.json()).forEach(t => {
+        const local = new Date(t.created_at).toLocaleString('sv-SE', { timeZone: 'America/Mexico_City' });
+        orders.push({ id: t.folio, total_paid: t.total, date_add: local, id_employee: ticketEmployeeId(t.almacen) });
       });
     }
 
