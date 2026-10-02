@@ -10174,19 +10174,13 @@ let realStockData = {};     // { [idProducto]: { puebla, rumania, queretaro } } 
 let stockLedgerTotals = {}; // { "idProducto|almacen": delta } — Supabase (pos_stock_moves)
 let realStockLoaded = false;
 
-// Respaldo si todavía no cargó el stock real (primer render, o si falla la
-// consulta a PrestaShop): mismos valores deterministas que antes, para que
-// la tabla nunca se vea vacía mientras carga.
-function hashStockFallback(pId, whKey) {
-  if (whKey === 'puebla') return (pId * 137 + 450) % 800 + 30;
-  if (whKey === 'rumania') return (pId * 211 + 620) % 1200 + 50;
-  if (whKey === 'queretaro') return (pId * 97 + 310) % 650 + 20;
-  return 0;
-}
-
+// Producto sin fila de stock real (productos nuevos creados aquí, que solo tienen movimientos
+// en el kardex, o stock que aún no carga): base 0. Antes se inventaba un número a partir del id
+// del producto (una fórmula "hash" pensada como relleno de demo) y por eso un producto sin
+// ninguna existencia aparecía con cientos de piezas en el buscador del POS y en Inventario.
 function getStockFor(pId, whKey) {
   const real = realStockData[pId];
-  const base = real ? (real[whKey] || 0) : hashStockFallback(pId, whKey);
+  const base = real ? (real[whKey] || 0) : 0;
   const delta = stockLedgerTotals[`${pId}|${whKey}`] || 0;
   return Math.max(0, Math.round(base + delta));
 }
