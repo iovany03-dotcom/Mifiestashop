@@ -6157,11 +6157,14 @@
   <div class="modal" style="max-width: 760px;">
     <div class="modal-header">
       <h2>Movimientos de Inventario & Traspasos</h2>
-      <button class="btn small" onclick="closeTraspasoModal()">✕</button>
+      <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn small" id="btnMovHistorial" onclick="openMovHistory()">Historial</button>
+        <button class="btn small" onclick="closeTraspasoModal()">✕</button>
+      </div>
     </div>
 
     <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
-      Elige el tipo de movimiento y la bodega, agrega todos los productos que quieras con el buscador y revisa antes de aplicar.
+      Elige el tipo de movimiento y la bodega, agrega los productos con el buscador y guárdalo como borrador. El inventario no cambia hasta que un responsable lo apruebe en el Historial.
     </p>
 
     <!-- Movement Type Toggle Buttons -->
@@ -6216,6 +6219,7 @@
 
       <div style="display:flex; gap:10px; justify-content:flex-end;">
         <button type="button" class="btn" onclick="closeTraspasoModal()">Cancelar</button>
+        <button type="button" class="btn" id="btnGuardarBorradorForm" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700;">Guardar borrador</button>
         <button type="submit" class="btn primary" id="btnConfirmMovimiento" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">
            Revisar entrada
         </button>
@@ -6227,18 +6231,31 @@
       <div id="movReviewBody"></div>
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap;">
         <button type="button" class="btn" onclick="backToMovEditor()">← Regresar a editar</button>
-        <button type="button" class="btn primary" id="btnApplyMovimiento" onclick="confirmStockTransfer()" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">Confirmar y aplicar</button>
+        <button type="button" class="btn primary" id="btnSaveMovBorrador" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">Guardar borrador</button>
       </div>
     </div>
+  </div>
+</div>
 
-    <div style="margin-top:20px; padding-top:14px; border-top:1px solid var(--border);">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h4 style="margin:0; font-size:14px; color:var(--text-primary);">Histórico de Movimientos de Inventario</h4>
-        <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge">3 movimientos registrados</span>
-      </div>
-      <div id="traspasoHistoryList" style="max-height:260px; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;">
-      </div>
+<!-- ================= HISTORIAL DE MOVIMIENTOS (entradas, salidas y traspasos; con borradores y aprobación) ================= -->
+<div class="modal-overlay hidden" id="movHistoryModal">
+  <div class="modal" style="max-width: 820px;">
+    <div class="modal-header">
+      <h2>Historial de movimientos</h2>
+      <button class="btn small" onclick="closeMovHistory()">✕</button>
     </div>
+    <p style="font-size:12.5px; color:var(--text-secondary); margin-top:0; margin-bottom:12px;">
+      Entradas, salidas y traspasos. Cada uno se guarda como borrador y no afecta el inventario hasta que se aprueba; ahí queda registrado quién lo aprobó. Las ventas y los movimientos de las cajas se ven en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Movimientos de inventario</a>.
+    </p>
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      <div id="movHistFilters" style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button type="button" class="btn small primary" data-f="todos" onclick="setMovHistFilter('todos')">Todos</button>
+        <button type="button" class="btn small" data-f="borrador" onclick="setMovHistFilter('borrador')">Pendientes de aprobar</button>
+        <button type="button" class="btn small" data-f="aprobado" onclick="setMovHistFilter('aprobado')">Aprobados</button>
+      </div>
+      <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
+    </div>
+    <div id="traspasoHistoryList" style="max-height:60vh; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;"></div>
   </div>
 </div>
 
@@ -6393,6 +6410,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
+    { key: 'aprobar-movimientos', label: 'Aprobar movimientos de inventario (entradas, salidas y traspasos)' },
     { key: 'paginas-cms', label: 'Páginas CMS' }
   ]},
   { group: 'Contactos & Equipo', items: [
@@ -7950,7 +7968,7 @@ async function generateQuotePdf() {
     const now = new Date();
     const p2 = n => String(n).padStart(2, '0');
     const folio = `COT-${String(now.getFullYear()).slice(2)}${p2(now.getMonth() + 1)}${p2(now.getDate())}-${p2(now.getHours())}${p2(now.getMinutes())}`;
-    const fecha = now.toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' });
+    const fecha = now.toLocaleString('es-MX', { dateStyle: 'long', timeStyle: 'short' }).replace(/[  ]/g, ' ');
     const customerSelect = document.getElementById('posCustomerSelect');
     const cliente = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
     const almacenSelect = document.getElementById('posWarehouseSelect');
@@ -11224,9 +11242,14 @@ async function loadRtHistorial() {
 // ================= MODULO DE MOVIMIENTOS E HISTORIAL DE INVENTARIO =================
 let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
 
-// Histórico real de movimientos de inventario (pos_stock_moves en Supabase),
-// cargado por loadTraspasoHistory() cada vez que se abre el modal de Traspasos.
-let traspasosHistory = [];
+// Historial de movimientos: documentos (borradores y aprobados, mov_documentos)
+// y renglones manuales de pos_stock_moves, cargados por refreshMovHistoryData().
+let movDocs = [];            // documentos guardados (borradores y aprobados): mov_documentos
+let movManualRows = [];      // renglones de pos_stock_moves de entradas/salidas/traspasos (sin ventas)
+let movCanApprove = false;   // si esta sesión puede aprobar borradores
+let movEditingDocId = null;  // borrador que se está editando (se actualiza al guardar)
+let movHistFilter = 'todos';
+let movHistLoadError = '';
 const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro: 'Querétaro' };
 
 // Lote del movimiento que se está capturando: varios productos en un solo
@@ -11254,6 +11277,7 @@ function saveMovDraft() {
   try {
     if (movLote.length === 0) { localStorage.removeItem(MOV_DRAFT_KEY); return; }
     localStorage.setItem(MOV_DRAFT_KEY, JSON.stringify({
+      docId: movEditingDocId,
       tipo: currentMovType,
       origen: document.getElementById('traspasoOrigen').value,
       destino: document.getElementById('traspasoDestino').value,
@@ -11275,6 +11299,7 @@ function loadMovDraft() {
 // Carga un estado completo en el editor (borrador guardado o un movimiento
 // revertido para corregirlo).
 function applyMovState(d) {
+  movEditingDocId = d.docId || null;
   if (d.origen) document.getElementById('traspasoOrigen').value = d.origen;
   if (d.destino) document.getElementById('traspasoDestino').value = d.destino;
   document.getElementById('traspasoMotivo').value = d.motivo || '';
@@ -11323,13 +11348,13 @@ function openTraspasoModal() {
   setMovimientoType(currentMovType);
   const notice = document.getElementById('movLoteNotice');
   if (notice) {
-    notice.textContent = restored ? `Se recuperó un movimiento sin terminar (${movLote.length} productos). Revísalo y aplícalo, o usa "Vaciar lista".` : '';
+    notice.textContent = restored ? `Se recuperó un movimiento sin terminar (${movLote.length} productos). Revísalo y guárdalo como borrador, o usa "Vaciar lista".` : '';
     notice.classList.toggle('hidden', !restored);
   }
   const search = document.getElementById('movSearch');
   if (search) search.value = '';
   hideMovSearchResults();
-  loadTraspasoHistory();
+  refreshMovHistoryData().catch(() => {});
   modal.classList.remove('hidden');
   if (adminCatalogProducts.length === 0) loadAdminCatalogProducts().then(() => renderMovLote()).catch(() => {});
 }
@@ -11528,11 +11553,16 @@ function updateMovLoteSummary() {
 }
 
 // ---- Paso 2: revisión ----
-function movValidate() {
+// Para un borrador solo se exige lo básico: la existencia puede cambiar antes
+// de aprobarlo, así que ahí se vuelve a revisar (approveMovDoc).
+function movValidate(soloBasico) {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   if (movLote.length === 0) return 'Agrega al menos un producto con el buscador.';
   if (currentMovType === 'traspaso' && origen === destino) return 'En un traspaso, la bodega de origen y destino deben ser diferentes.';
+  if (soloBasico) {
+    return movLote.some(it => !(it.qty > 0)) ? 'Hay productos con cantidad inválida.' : '';
+  }
   const bad = movLote.filter(it => movRowError(it));
   if (bad.length) {
     return 'Revisa estos productos:\n' + bad.slice(0, 10).map(it => {
@@ -11544,7 +11574,7 @@ function movValidate() {
 }
 
 function reviewStockMovement() {
-  const err = movValidate();
+  const err = movValidate(true);
   if (err) { alert(err); renderMovLote(); return; }
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
@@ -11577,7 +11607,7 @@ function reviewStockMovement() {
     <div style="padding:12px 14px; border-radius:10px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.35); margin-bottom:12px;">
       <div style="font-size:15px; font-weight:800; color:var(--text-primary);">${MOV_TIPO_LABEL[currentMovType]} ${escapeHtml(ruta)}</div>
       <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades${motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Todavía no se ha guardado nada. Revisa las cantidades y la existencia que quedará; si algo está mal, regresa a editar.</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Todavía no se ha guardado nada. Al guardar queda como <b>borrador</b>: el inventario no cambia hasta que un responsable lo apruebe en el Historial. Revisa las cantidades y la existencia que quedaría; si algo está mal, regresa a editar.</div>
     </div>
     <div style="max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
       <table style="width:100%; font-size:13px; border-collapse:collapse;">
@@ -11595,112 +11625,202 @@ function backToMovEditor() {
   document.getElementById('movReviewPanel')?.classList.add('hidden');
 }
 
-// Folio único por movimiento (antes era un número al azar de 4 dígitos que
-// se podía repetir). Todas las partidas del lote comparten el folio, y con
-// él se revierte el movimiento completo.
-function newMovFolio(prefix) {
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 36).toString(36).toUpperCase()}`;
+// ---- Documentos de movimiento: borrador -> aprobado ----
+// Cada entrada, salida o traspaso se guarda primero como borrador
+// (mov_documentos) sin tocar el inventario. Al aprobarlo, el servidor aplica
+// los movimientos (pos_stock_moves) y deja registrado quién lo aprobó y
+// cuándo. El nombre de quien captura y de quien aprueba lo pone el servidor
+// a partir de la sesión, no el navegador.
+function movErrorMessage(e, fallback) {
+  const m = String((e && (e.detail || e.message)) || '');
+  if (/unauthorized/.test(m)) return 'Tu sesión expiró. Vuelve a iniciar sesión.';
+  if (/sin_permiso_aprobar/.test(m)) return 'No tienes permiso para aprobar movimientos. Solo el administrador, o quien tenga activado "Aprobar movimientos de inventario", puede hacerlo.';
+  if (/no_borrador/.test(m)) return 'Este movimiento ya no es un borrador (alguien más lo aprobó o lo descartó). Se actualizó la lista.';
+  if (/no_encontrado/.test(m)) return 'No se encontró el movimiento. Se actualizó la lista.';
+  if (/sin_productos/.test(m)) return 'Agrega al menos un producto.';
+  if (/partida_invalida/.test(m)) return 'Hay productos con cantidad inválida (deben ser números enteros mayores a 0).';
+  if (/bodega_invalida/.test(m)) return 'Revisa la bodega de origen y destino.';
+  return fallback;
 }
 
-async function loadTraspasoHistory() {
-  const container = document.getElementById('traspasoHistoryList');
-  if (container) container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:10px;">Cargando…</div>';
-  try {
-    const rows = await sbRpc('rpc_stock_move_list', getSessionCredsParams());
-    traspasosHistory = Array.isArray(rows) ? rows : [];
-  } catch (e) {
-    traspasosHistory = [];
-  }
-  renderTraspasoHistory();
+async function refreshMovHistoryData() {
+  const creds = getSessionCredsParams();
+  movHistLoadError = '';
+  const [docs, rows, can] = await Promise.all([
+    sbRpc('rpc_mov_doc_list', creds).catch(e => { movHistLoadError = movErrorMessage(e, 'No se pudieron cargar los borradores.'); return []; }),
+    sbRpc('rpc_stock_move_list_manual', creds).catch(() => []),
+    sbRpc('rpc_mov_can_approve', creds).catch(() => false)
+  ]);
+  movDocs = Array.isArray(docs) ? docs : [];
+  movManualRows = Array.isArray(rows) ? rows : [];
+  movCanApprove = can === true;
+  updateMovHistorialButton();
+}
+
+function updateMovHistorialButton() {
+  const btn = document.getElementById('btnMovHistorial');
+  if (!btn) return;
+  const pending = movDocs.filter(d => d.estado === 'borrador').length;
+  btn.textContent = pending ? `Historial (${pending} por aprobar)` : 'Historial';
 }
 
 const MOV_MANUAL_TAGS = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entrada'];
 
 function movRowTag(row) {
   const tagRaw = String(row.motivo || '').split(':')[0].trim();
-  return ['entrada', 'salida', 'traspaso_salida', 'traspaso_entrada', 'venta_pos'].includes(tagRaw) ? tagRaw : 'ajuste';
+  return [...MOV_MANUAL_TAGS, 'venta_pos'].includes(tagRaw) ? tagRaw : 'ajuste';
 }
 
-// El historial agrupa por folio: un lote (o un ticket del POS con varios
-// productos) se ve como UN movimiento con el detalle desplegable.
-function movHistoryGroups() {
-  const groups = [];
+function movItemName(it) {
+  if (it.name) return it.name;
+  const p = movFindProduct(it.id_product);
+  return p ? p.name : `Producto #${it.id_product}`;
+}
+
+function movFmtDate(value) {
+  if (!value) return '—';
+  const d = new Date(value);
+  return isNaN(d) ? '—' : d.toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }).replace(/[  ]/g, ' ');
+}
+
+// Lista unificada del historial: los documentos (borradores y aprobados) más
+// los movimientos manuales anteriores a este sistema, que no tienen documento.
+// Las ventas (venta_pos), pedidos manuales y cancelaciones no se incluyen:
+// se ven en "Movimientos de inventario".
+function movHistoryEntries() {
+  const docFolios = new Set(movDocs.map(d => d.folio));
+  const revertedFolios = new Set(movManualRows.filter(r => r.revierte_id && r.folio).map(r => String(r.folio).replace(/^REV-/, '')));
+
+  const entries = movDocs.map(d => ({
+    key: 'd:' + d.id, source: 'doc', doc: d, folio: d.folio, tipo: d.tipo, estado: d.estado,
+    reverted: d.estado === 'aprobado' && revertedFolios.has(d.folio),
+    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR)-/.test(d.folio),
+    isReversal: false, origen: d.origen || '', destino: d.destino || '', nota: d.motivo || '',
+    por: d.creado_por || '', date: d.creado_at, aprobadoPor: d.aprobado_por || '', aprobadoAt: d.aprobado_at || '',
+    items: (Array.isArray(d.items) ? d.items : []).map(it => ({ id_product: it.id_product, name: it.name || '', qty: Number(it.qty) || 0 }))
+  }));
+
   const byKey = new Map();
-  traspasosHistory.forEach(row => {
+  const groups = [];
+  movManualRows.forEach(row => {
+    if (row.folio && docFolios.has(row.folio)) return;
+    if (row.revierte_id && row.folio && docFolios.has(String(row.folio).replace(/^REV-/, ''))) return;
     const key = row.folio ? 'f:' + row.folio : 'id:' + row.id;
     let g = byKey.get(key);
     if (!g) { g = { key, folio: row.folio, rows: [] }; byKey.set(key, g); groups.push(g); }
     g.rows.push(row);
   });
-  const revertedFolios = new Set(traspasosHistory.filter(r => r.revierte_id && r.folio).map(r => String(r.folio).replace(/^REV-/, '')));
   groups.forEach(g => {
-    // En el orden en que se capturaron (la lista viene de más nuevo a más viejo).
     g.rows.sort((a, b) => (a.id || 0) - (b.id || 0));
     const tags = new Set(g.rows.map(movRowTag));
-    g.tipo = tags.has('traspaso_salida') || tags.has('traspaso_entrada') ? 'traspaso'
-      : tags.size === 1 ? [...tags][0] : 'ajuste';
-    g.isReversal = g.rows.some(r => r.revierte_id);
-    g.reverted = !!g.folio && revertedFolios.has(g.folio);
-    g.revertible = !!g.folio && /^(ENT|SAL|TR)-/.test(g.folio) && !g.isReversal && !g.reverted
-      && g.rows.every(r => MOV_MANUAL_TAGS.includes(movRowTag(r)));
-    g.date = g.rows[0].created_at;
-    g.nota = String(g.rows[0].motivo || '').split(':').slice(1).join(':').trim();
-    g.por = g.rows[0].registrado_por || '';
+    const isReversal = g.rows.some(r => r.revierte_id);
+    const tipo = isReversal ? 'reversa'
+      : (tags.has('traspaso_salida') || tags.has('traspaso_entrada')) ? 'traspaso'
+      : (tags.size === 1 ? [...tags][0] : 'ajuste');
+    if (!isReversal && !MOV_HIST_TIPOS.includes(tipo)) return;
+    const reverted = !!g.folio && revertedFolios.has(g.folio);
+    const pos = g.rows.filter(r => parseFloat(r.qty) > 0), neg = g.rows.filter(r => parseFloat(r.qty) < 0);
+    const itemRows = tipo === 'traspaso' ? pos : (isReversal ? g.rows : g.rows);
+    entries.push({
+      key: g.key, source: 'legacy', rows: g.rows, folio: g.folio || '', tipo, estado: 'aprobado', reverted, isReversal,
+      revertible: !!g.folio && /^(ENT|SAL|TR)-/.test(g.folio) && !isReversal && !reverted && g.rows.every(r => MOV_MANUAL_TAGS.includes(movRowTag(r))),
+      origen: neg[0] ? neg[0].almacen : '', destino: pos[0] ? pos[0].almacen : '',
+      nota: String(g.rows[0].motivo || '').split(':').slice(1).join(':').trim(),
+      por: g.rows[0].registrado_por || '', date: g.rows[0].created_at, aprobadoPor: '', aprobadoAt: '',
+      items: itemRows.map(r => ({ id_product: r.id_product, name: '', qty: isReversal ? parseFloat(r.qty) || 0 : Math.abs(parseFloat(r.qty) || 0), almacen: r.almacen }))
+    });
   });
-  return groups;
+
+  entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return entries;
 }
 
-function renderTraspasoHistory() {
+const MOV_HIST_TIPOS = ['entrada', 'salida', 'traspaso'];
+let movHistShown = [];
+
+function setMovHistFilter(f) {
+  movHistFilter = f;
+  renderMovHistory();
+}
+
+async function openMovHistory(filter) {
+  if (filter) movHistFilter = filter;
+  document.getElementById('movHistoryModal')?.classList.remove('hidden');
+  const list = document.getElementById('traspasoHistoryList');
+  if (list) list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:14px;">Cargando…</div>';
+  await refreshMovHistoryData();
+  renderMovHistory();
+}
+
+function closeMovHistory() {
+  document.getElementById('movHistoryModal')?.classList.add('hidden');
+}
+
+function openKardexFromMovHistory() {
+  if (!hasPermission('movimientos')) { alert('Tu usuario no tiene acceso a "Movimientos de inventario".'); return; }
+  closeMovHistory();
+  closeTraspasoModal();
+  switchView('movimientos');
+}
+
+function renderMovHistory() {
   const container = document.getElementById('traspasoHistoryList');
-  if(!container) return;
+  if (!container) return;
+  document.querySelectorAll('#movHistFilters button').forEach(b => b.classList.toggle('primary', b.dataset.f === movHistFilter));
 
-  const groups = movHistoryGroups();
-  const countBadge = document.getElementById('movCountBadge');
-  if (countBadge) countBadge.textContent = `${groups.length} movimientos recientes`;
+  const all = movHistoryEntries();
+  const shown = all.filter(e => movHistFilter === 'borrador' ? e.estado === 'borrador'
+    : movHistFilter === 'aprobado' ? (e.estado === 'aprobado' && !e.isReversal) : true);
+  movHistShown = shown;
+  const badge = document.getElementById('movCountBadge');
+  if (badge) badge.textContent = `${shown.length} movimiento${shown.length === 1 ? '' : 's'}`;
 
-  if (groups.length === 0) {
-    container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:10px;">Aún no hay movimientos registrados.</div>';
+  const warn = movHistLoadError ? `<div style="padding:8px 12px; border-radius:8px; background:rgba(239,68,68,0.10); color:#dc2626;">${escapeHtml(movHistLoadError)}</div>` : '';
+  if (shown.length === 0) {
+    container.innerHTML = warn + `<div style="text-align:center; color:var(--text-muted); padding:14px;">${movHistFilter === 'borrador' ? 'No hay borradores pendientes de aprobar.' : 'Aún no hay movimientos registrados.'}</div>`;
     return;
   }
 
-  const PILLS = {
+  const TIPO_PILL = {
     entrada: ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada'],
     salida: ['rgba(239,68,68,0.15)', '#dc2626', 'Salida'],
     traspaso: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso'],
-    traspaso_salida: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso (salida)'],
-    traspaso_entrada: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso (entrada)'],
-    venta_pos: ['rgba(236,72,153,0.15)', '#db2777', 'Venta POS'],
-    ajuste: ['rgba(148,163,184,0.15)', '#64748b', 'Ajuste']
+    reversa: ['rgba(148,163,184,0.15)', '#64748b', 'Reversa']
   };
+  const pill = ([bg, color, text]) => `<span style="padding:2px 8px; border-radius:12px; font-size:10px; background:${bg}; color:${color}; font-weight:700;">${text}</span>`;
 
-  container.innerHTML = groups.map((g, gi) => {
-    const [pillBg, pillColor, tipoText] = g.isReversal ? ['rgba(148,163,184,0.15)', '#64748b', 'Reversa'] : (PILLS[g.tipo] || PILLS.ajuste);
+  container.innerHTML = warn + shown.map((g, i) => {
+    const units = g.isReversal ? 0 : g.items.reduce((s, it) => s + (it.qty || 0), 0);
+    const nProductos = new Set(g.items.map(it => String(it.id_product))).size;
+    const first = g.items[0];
+    const resumen = nProductos === 1 ? escapeHtml(first ? movItemName(first) : '—') : `${nProductos} productos`;
+    const bodegaText = g.tipo === 'traspaso' ? `${movBodegaLabel(g.origen)} → ${movBodegaLabel(g.destino)}`
+      : g.tipo === 'entrada' ? movBodegaLabel(g.destino)
+      : g.tipo === 'salida' ? movBodegaLabel(g.origen)
+      : [...new Set(g.items.map(it => movBodegaLabel(it.almacen)))].join(', ');
     const folioLabel = g.folio ? (g.folio.startsWith('#') ? g.folio : '#' + g.folio) : '—';
-    const dateStr = g.date ? new Date(g.date).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—';
-    // En un traspaso cada producto tiene 2 renglones (salida y entrada): se
-    // cuentan los productos y unidades una sola vez.
-    const itemRows = g.tipo === 'traspaso' ? g.rows.filter(r => parseFloat(r.qty) > 0) : g.rows;
-    const nProductos = new Set(g.rows.map(r => String(r.id_product))).size;
-    const bodegas = [...new Set(g.rows.map(r => movBodegaLabel(r.almacen)))];
-    const bodegaText = g.tipo === 'traspaso'
-      ? `${movBodegaLabel((g.rows.find(r => parseFloat(r.qty) < 0) || g.rows[0]).almacen)} → ${movBodegaLabel((g.rows.find(r => parseFloat(r.qty) > 0) || g.rows[0]).almacen)}`
-      : bodegas.join(', ');
-    const units = itemRows.reduce((s, r) => s + (parseFloat(r.qty) || 0), 0);
-    const unitsLabel = g.tipo === 'traspaso' ? `${units} u.` : `${units > 0 ? '+' : ''}${units} u.`;
-    const first = movFindProduct(itemRows[0].id_product);
-    const resumen = nProductos === 1
-      ? escapeHtml(first ? first.name : `Producto #${itemRows[0].id_product}`)
-      : `${nProductos} productos`;
-    // Una reversa de traspaso mueve en las dos bodegas: se muestra cada
-    // renglón con su bodega en vez de un total que daría 0.
-    const detailRows = g.isReversal ? g.rows : itemRows;
-    const detail = detailRows.map(r => {
-      const p = movFindProduct(r.id_product);
-      const q = parseFloat(r.qty) || 0;
-      return `<div style="display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border);">
-        <span>${escapeHtml(p ? p.name : `Producto #${r.id_product}`)}${g.isReversal ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(r.almacen))})</span>` : ''}</span><b>${g.tipo === 'traspaso' ? q : (q > 0 ? '+' : '') + q} u.</b></div>`;
-    }).join('');
-    const folioArg = escapeHtml(JSON.stringify(g.folio || ''));
+    const estadoPill = g.isReversal ? '' : g.estado === 'borrador' ? pill(['rgba(245,158,11,0.18)', '#b45309', 'Borrador · pendiente de aprobar'])
+      : g.reverted ? pill(['rgba(148,163,184,0.2)', '#64748b', 'Revertido']) : pill(['rgba(34,197,94,0.15)', '#16a34a', 'Aprobado']);
+    const aprobacion = g.isReversal ? ''
+      : g.estado === 'borrador' ? '<span style="color:#b45309; font-weight:600;">Pendiente de aprobación</span>'
+      : g.source === 'doc' ? `Aprobado por <b style="color:var(--text-primary);">${escapeHtml(g.aprobadoPor)}</b> · ${escapeHtml(movFmtDate(g.aprobadoAt))}`
+      : '<i>Registrado antes de que existieran las aprobaciones</i>';
+    const detail = g.items.map(it => `<div style="display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border);">
+        <span>${escapeHtml(movItemName(it))}${g.isReversal ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(it.almacen))})</span>` : ''}</span><b>${g.isReversal ? (it.qty > 0 ? '+' : '') + it.qty : it.qty} u.</b></div>`).join('');
+
+    const btns = [];
+    if (g.items.length > 1) btns.push(`<button type="button" class="btn small" onclick="document.getElementById('movHistDet${i}').classList.toggle('hidden')">Ver productos</button>`);
+    if (!g.isReversal) btns.push(`<button type="button" class="btn small" onclick="movHistAction('pdf', ${i})">Descargar PDF</button>`);
+    if (g.estado === 'borrador') {
+      btns.push(`<button type="button" class="btn small" onclick="movHistAction('edit', ${i})">Editar</button>`);
+      btns.push(movCanApprove
+        ? `<button type="button" class="btn small primary" onclick="movHistAction('approve', ${i})">Aprobar</button>`
+        : '<span style="font-size:11px; color:var(--text-muted); align-self:center;">Solo el administrador puede aprobar</span>');
+      btns.push(`<button type="button" class="btn small" style="color:#dc2626;" onclick="movHistAction('discard', ${i})">Descartar</button>`);
+    } else if (g.revertible) {
+      btns.push(`<button type="button" class="btn small" onclick="movHistAction('fix', ${i})">Corregir</button>`);
+      btns.push(`<button type="button" class="btn small" style="color:#dc2626;" onclick="movHistAction('revert', ${i})">Revertir</button>`);
+    }
 
     return `
       <div style="padding:8px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border);">
@@ -11708,46 +11828,266 @@ function renderTraspasoHistory() {
           <div style="min-width:0;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
               <b style="color:var(--text-primary);">${escapeHtml(folioLabel)}</b>
-              <span style="padding:2px 8px; border-radius:12px; font-size:10px; background:${pillBg}; color:${pillColor}; font-weight:700;">${tipoText}</span>
-              ${g.reverted ? '<span style="padding:2px 8px; border-radius:12px; font-size:10px; background:rgba(148,163,184,0.2); color:#64748b; font-weight:700;">Revertido</span>' : ''}
+              ${pill(TIPO_PILL[g.tipo] || TIPO_PILL.reversa)}
+              ${estadoPill}
               <span style="font-weight:600; color:var(--text-primary);">${resumen}</span>
-              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${unitsLabel})</b>`}
+              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${units.toLocaleString('es-MX')} u.)</b>`}
             </div>
             <div style="font-size:11px; color:var(--text-muted);">
-              <b>Bodega:</b> ${escapeHtml(bodegaText)} ${g.nota ? '• <i>' + escapeHtml(g.nota) + '</i>' : ''} ${g.por ? '• ' + escapeHtml(g.por) : ''}
+              <b>Bodega:</b> ${escapeHtml(bodegaText)} ${g.nota ? '• <i>' + escapeHtml(g.nota) + '</i>' : ''} ${g.por ? '• Capturó: ' + escapeHtml(g.por) : ''}
             </div>
+            ${aprobacion ? `<div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${aprobacion}</div>` : ''}
           </div>
-          <div style="font-size:11px; color:var(--text-muted); text-align:right; min-width:110px;">${dateStr}</div>
+          <div style="font-size:11px; color:var(--text-muted); text-align:right; min-width:110px;">${escapeHtml(movFmtDate(g.date))}</div>
         </div>
-        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-          ${detailRows.length > 1 ? `<button type="button" class="btn small" onclick="document.getElementById('movHistDet${gi}').classList.toggle('hidden')">Ver productos</button>` : ''}
-          ${g.revertible ? `<button type="button" class="btn small" onclick="revertStockMovement(${folioArg}, true)">Corregir</button>
-          <button type="button" class="btn small" style="color:#dc2626;" onclick="revertStockMovement(${folioArg}, false)">Revertir</button>` : ''}
-        </div>
-        <div id="movHistDet${gi}" class="hidden" style="margin-top:6px; font-size:12px;">${detail}</div>
-      </div>
-    `;
+        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">${btns.join('')}</div>
+        <div id="movHistDet${i}" class="hidden" style="margin-top:6px; font-size:12px;">${detail}</div>
+      </div>`;
   }).join('');
 }
 
-// Revierte un movimiento manual completo (todas sus partidas) insertando
+function movHistAction(action, idx) {
+  const g = movHistShown[idx];
+  if (!g) return;
+  if (action === 'pdf') return downloadMovPdf(g);
+  if (action === 'edit') return editMovDoc(g.doc);
+  if (action === 'approve') return approveMovDoc(g.doc.id);
+  if (action === 'discard') return discardMovDoc(g.doc.id);
+  if (action === 'fix') return revertStockMovement(g.folio, true);
+  if (action === 'revert') return revertStockMovement(g.folio, false);
+}
+
+// ---- Guardar borrador ----
+async function saveMovAsDraft() {
+  const err = movValidate(true);
+  if (err) { alert(err); renderMovLote(); return; }
+  const origen = document.getElementById('traspasoOrigen').value;
+  const destino = document.getElementById('traspasoDestino').value;
+  const motivo = document.getElementById('traspasoMotivo').value.trim();
+  const items = movLote.map(it => {
+    const p = movFindProduct(it.id);
+    return { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
+  });
+  const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm'].map(id => document.getElementById(id)).filter(Boolean);
+  btns.forEach(b => { b.disabled = true; });
+  try {
+    const doc = await sbRpc('rpc_mov_doc_save', {
+      ...getSessionCredsParams(),
+      p_id: movEditingDocId, p_tipo: currentMovType,
+      p_origen: currentMovType === 'entrada' ? null : origen,
+      p_destino: currentMovType === 'salida' ? null : destino,
+      p_motivo: motivo, p_items: items
+    });
+    const editado = !!movEditingDocId;
+    const n = movLote.length;
+    const units = movLote.reduce((s, it) => s + it.qty, 0);
+    movLote = [];
+    movEditingDocId = null;
+    document.getElementById('traspasoMotivo').value = '';
+    document.getElementById('movLoteNotice')?.classList.add('hidden');
+    saveMovDraft();
+    backToMovEditor();
+    renderMovLote();
+    alert(`Borrador #${doc.folio} ${editado ? 'actualizado' : 'guardado'}.\n\n${MOV_TIPO_LABEL[doc.tipo]}: ${n} ${n === 1 ? 'producto' : 'productos'}, ${units.toLocaleString('es-MX')} unidades.\n\nTodavía NO cambia el inventario: debe aprobarse en el Historial.`);
+    await openMovHistory('borrador');
+  } catch (e) {
+    if (/no_borrador|no_encontrado/.test(String(e.detail || e.message))) movEditingDocId = null;
+    alert(movErrorMessage(e, 'No se pudo guardar el borrador (no se guardó nada). Intenta de nuevo.'));
+  } finally {
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+
+function editMovDoc(doc) {
+  if (!doc) return;
+  if (movLote.length > 0 && movEditingDocId !== doc.id && !confirm('Tienes productos en la lista del movimiento actual. Se reemplazarán por los de este borrador. ¿Continuar?')) return;
+  applyMovState({
+    docId: doc.id, tipo: doc.tipo, origen: doc.origen || undefined, destino: doc.destino || undefined, motivo: doc.motivo || '',
+    items: (Array.isArray(doc.items) ? doc.items : []).map(it => ({ id: String(it.id_product), qty: it.qty }))
+  });
+  saveMovDraft();
+  const notice = document.getElementById('movLoteNotice');
+  if (notice) { notice.textContent = `Editando el borrador #${doc.folio}. Al guardar se actualiza ese borrador.`; notice.classList.remove('hidden'); }
+  closeMovHistory();
+  document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function discardMovDoc(id) {
+  const doc = movDocs.find(d => d.id === id);
+  if (!doc) return;
+  if (!confirm(`¿Descartar el borrador #${doc.folio}? Se elimina y no afecta el inventario.`)) return;
+  try {
+    await sbRpc('rpc_mov_doc_delete', { ...getSessionCredsParams(), p_id: id });
+    if (movEditingDocId === id) { movEditingDocId = null; saveMovDraft(); }
+  } catch (e) {
+    alert(movErrorMessage(e, 'No se pudo descartar el borrador. Intenta de nuevo.'));
+  }
+  await refreshMovHistoryData();
+  renderMovHistory();
+}
+
+// Movimientos de existencia que produce un documento al aprobarse (mismos
+// que aplica el servidor), para actualizar la existencia que se ve en pantalla.
+function movDocLedgerMoves(doc) {
+  const moves = [];
+  (doc.items || []).forEach(it => {
+    const qty = Number(it.qty) || 0;
+    if (doc.tipo === 'entrada') moves.push({ id_product: it.id_product, almacen: doc.destino, qty });
+    else if (doc.tipo === 'salida') moves.push({ id_product: it.id_product, almacen: doc.origen, qty: -qty });
+    else { moves.push({ id_product: it.id_product, almacen: doc.origen, qty: -qty }); moves.push({ id_product: it.id_product, almacen: doc.destino, qty }); }
+  });
+  return moves;
+}
+
+async function approveMovDoc(id) {
+  const doc = movDocs.find(d => d.id === id);
+  if (!doc) return;
+  if (!movCanApprove) { alert(movErrorMessage({ message: 'sin_permiso_aprobar' })); return; }
+
+  if (!realStockLoaded) { try { await loadRealStockData(); } catch (e) { /* se revisa abajo */ } }
+  if (doc.tipo !== 'entrada') {
+    if (!realStockLoaded) { alert('No se pudo leer la existencia actual para comprobar el movimiento. Intenta de nuevo en unos segundos.'); return; }
+    const faltan = (doc.items || []).filter(it => (Number(it.qty) || 0) > getStockFor(it.id_product, doc.origen));
+    if (faltan.length) {
+      alert(`No se puede aprobar #${doc.folio}: ya no hay existencia suficiente en ${movBodegaLabel(doc.origen)} para:\n\n` +
+        faltan.slice(0, 10).map(it => `• ${movItemName(it)}: pide ${it.qty} u., hay ${getStockFor(it.id_product, doc.origen)} u.`).join('\n') +
+        (faltan.length > 10 ? `\n… y ${faltan.length - 10} más` : '') + '\n\nEdita el borrador o descártalo.');
+      return;
+    }
+  }
+  const units = (doc.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
+  const ruta = doc.tipo === 'entrada' ? `a ${movBodegaLabel(doc.destino)}` : doc.tipo === 'salida' ? `de ${movBodegaLabel(doc.origen)}` : `de ${movBodegaLabel(doc.origen)} a ${movBodegaLabel(doc.destino)}`;
+  if (!confirm(`Aprobar ${MOV_TIPO_LABEL[doc.tipo].toLowerCase()} #${doc.folio}\n${ruta}\n${doc.items.length} ${doc.items.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades\n\nAl aprobar se aplica al inventario y queda registrado que lo aprobó ${nombreSesionActual()}.\n\n¿Aprobar?`)) return;
+
+  try {
+    const aprobado = await sbRpc('rpc_mov_doc_approve', { ...getSessionCredsParams(), p_id: id });
+    movDocLedgerMoves(aprobado).forEach(m => {
+      const key = `${m.id_product}|${m.almacen}`;
+      stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
+    });
+    renderInventarioTable();
+    await refreshMovHistoryData();
+    renderMovHistory();
+    alert(`Movimiento #${aprobado.folio} aprobado por ${aprobado.aprobado_por}.\n\nYa se aplicó al inventario. Si algo quedó mal, en el Historial puedes usar "Corregir" o "Revertir".`);
+  } catch (e) {
+    alert(movErrorMessage(e, 'No se pudo aprobar el movimiento. Intenta de nuevo.'));
+    await refreshMovHistoryData();
+    renderMovHistory();
+  }
+}
+
+// ---- PDF de un movimiento (entrada, salida o traspaso) ----
+async function downloadMovPdf(g) {
+  let JsPDF;
+  try { JsPDF = await loadJsPdf(); } catch (e) { alert(e.message); return; }
+  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
+  const L = 15, R = 195, BOTTOM = 270;
+  const purple = [46, 16, 101], pink = [211, 0, 123], grey = [110, 100, 120], ink = [30, 20, 45];
+  const TITULO = { entrada: 'ENTRADA DE INVENTARIO', salida: 'SALIDA DE INVENTARIO', traspaso: 'TRASPASO ENTRE BODEGAS' };
+  const estadoTxt = g.estado === 'borrador' ? 'BORRADOR' : (g.reverted ? 'REVERTIDO' : 'APROBADO');
+  const estadoColor = g.estado === 'borrador' ? [217, 119, 6] : (g.reverted ? [100, 116, 139] : [22, 163, 74]);
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(...purple);
+  doc.text('MI FIESTA SHOP', L, 20);
+  doc.setFontSize(15); doc.setTextColor(...pink);
+  doc.text(TITULO[g.tipo] || 'MOVIMIENTO DE INVENTARIO', R, 19, { align: 'right' });
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...grey);
+  doc.text('www.mifiestashop.com', L, 26);
+  doc.text('Folio: ' + (g.folio || '-'), R, 26, { align: 'right' });
+  doc.text('Capturado: ' + movFmtDate(g.date), R, 31, { align: 'right' });
+  doc.setFillColor(...estadoColor); doc.roundedRect(R - 34, 34, 34, 7, 1.5, 1.5, 'F');
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+  doc.text(estadoTxt, R - 17, 38.8, { align: 'center' });
+  doc.setDrawColor(...purple); doc.setLineWidth(0.6); doc.line(L, 45, R, 45);
+
+  let y = 53;
+  const info = (label, value) => {
+    if (!value) return;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...ink); doc.text(label, L, y);
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(String(value), R - L - 32);
+    doc.text(lines, L + 32, y);
+    y += Math.max(1, lines.length) * 5 + 1;
+  };
+  if (g.tipo === 'traspaso') { info('Bodega origen:', movBodegaLabel(g.origen)); info('Bodega destino:', movBodegaLabel(g.destino)); }
+  else if (g.tipo === 'entrada') info('Bodega:', movBodegaLabel(g.destino));
+  else info('Bodega:', movBodegaLabel(g.origen));
+  info('Motivo:', g.nota);
+  info('Capturó:', g.por);
+  if (g.estado === 'borrador') {
+    y += 1; doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...estadoColor);
+    doc.text('Borrador: todavía no afecta el inventario hasta que se apruebe.', L, y); y += 6;
+  }
+
+  y += 4;
+  const COL = { n: L + 2, id: L + 12, name: L + 32, qty: R - 2 };
+  const tableHeader = () => {
+    doc.setFillColor(...purple); doc.rect(L, y - 5, R - L, 8, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(255, 255, 255);
+    doc.text('#', COL.n, y); doc.text('ID', COL.id, y); doc.text('Producto', COL.name, y); doc.text('Cantidad', COL.qty, y, { align: 'right' });
+    y += 8; doc.setFont('helvetica', 'normal'); doc.setTextColor(...ink);
+  };
+  tableHeader();
+  g.items.forEach((it, idx) => {
+    const lines = doc.splitTextToSize(movItemName(it), 112);
+    const rowH = lines.length * 4.4 + 3;
+    if (y + rowH > BOTTOM) { doc.addPage(); y = 20; tableHeader(); }
+    if (idx % 2 === 1) { doc.setFillColor(247, 243, 249); doc.rect(L, y - 4, R - L, rowH, 'F'); }
+    doc.setFontSize(9);
+    doc.text(String(idx + 1), COL.n, y); doc.text(String(it.id_product), COL.id, y); doc.text(lines, COL.name, y);
+    doc.text(String(it.qty), COL.qty, y, { align: 'right' });
+    y += rowH;
+  });
+
+  const nProductos = g.items.length;
+  const unidades = g.items.reduce((s, it) => s + (Number(it.qty) || 0), 0);
+  if (y + 52 > BOTTOM + 12) { doc.addPage(); y = 20; }
+  doc.setDrawColor(200, 190, 210); doc.setLineWidth(0.3); doc.line(L, y - 1, R, y - 1);
+  y += 6;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...pink);
+  doc.text(`Productos: ${nProductos}    Unidades: ${unidades.toLocaleString('es-MX')}`, R - 2, y, { align: 'right' });
+
+  y += 22;
+  doc.setDrawColor(...ink); doc.setLineWidth(0.3);
+  doc.line(L, y, L + 75, y); doc.line(R - 75, y, R, y);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...ink);
+  doc.text('Elaboró', L, y + 5); doc.text('Aprobó', R - 75, y + 5);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...grey);
+  doc.text(g.por || '-', L, y + 10);
+  const aprobo = g.estado === 'borrador' ? 'Pendiente de aprobación'
+    : g.source === 'doc' ? `${g.aprobadoPor}  (${movFmtDate(g.aprobadoAt)})`
+    : 'Sin registro de aprobación (movimiento anterior)';
+  doc.text(doc.splitTextToSize(aprobo, 75), R - 75, y + 10);
+
+  const pages = doc.getNumberOfPages();
+  for (let p = 1; p <= pages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...grey);
+    doc.text('Generado el ' + movFmtDate(new Date()), L, 285);
+    doc.text(`Página ${p} de ${pages}`, R, 285, { align: 'right' });
+  }
+  doc.save(`Movimiento-${String(g.folio || 'sin-folio').replace(/[^A-Za-z0-9-]/g, '')}.pdf`);
+}
+
+// Revierte un movimiento aprobado completo (todas sus partidas) insertando
 // el movimiento contrario. Con "Corregir", además carga esas partidas en el
-// editor para arreglarlas y volver a aplicarlas.
+// editor para arreglarlas y guardarlas de nuevo como borrador.
 async function revertStockMovement(folio, corregir) {
-  const g = movHistoryGroups().find(x => x.folio === folio);
+  const g = movHistoryEntries().find(x => x.folio === folio && !x.isReversal);
   if (!g || !g.revertible) return;
   if (corregir && movLote.length > 0 && !confirm('Tienes productos en la lista del movimiento actual. Se reemplazarán por los del movimiento a corregir. ¿Continuar?')) return;
 
-  const itemRows = g.tipo === 'traspaso' ? g.rows.filter(r => parseFloat(r.qty) > 0) : g.rows;
+  const folioRows = movManualRows.filter(r => r.folio === folio);
+  const itemRows = g.tipo === 'traspaso' ? folioRows.filter(r => parseFloat(r.qty) > 0) : folioRows;
   // Al revertir una entrada (o la parte de entrada de un traspaso) se quita
   // existencia: se avisa si alguna bodega quedaría en negativo.
-  const faltantes = g.rows.filter(r => parseFloat(r.qty) > 0 && getStockFor(r.id_product, r.almacen) < parseFloat(r.qty));
+  const faltantes = folioRows.filter(r => parseFloat(r.qty) > 0 && getStockFor(r.id_product, r.almacen) < parseFloat(r.qty));
   const aviso = faltantes.length
     ? `\n\n⚠ ${faltantes.length} producto(s) ya no tienen suficiente existencia en ${movBodegaLabel(faltantes[0].almacen)} para regresarla (quizá ya se vendieron).`
     : '';
   const msg = `${corregir ? 'Corregir' : 'Revertir'} el movimiento #${folio} (${MOV_TIPO_LABEL[g.tipo] || 'Movimiento'}, ${itemRows.length} ${itemRows.length === 1 ? 'producto' : 'productos'}).\n\n` +
     'Se registrará el movimiento contrario para dejar la existencia como estaba antes.' +
-    (corregir ? ' Después se cargarán los mismos productos para que los corrijas y vuelvas a aplicar.' : '') + aviso + '\n\n¿Continuar?';
+    (corregir ? ' Después se cargarán los mismos productos para que los corrijas y los guardes como un borrador nuevo, que tendrá que aprobarse.' : '') + aviso + '\n\n¿Continuar?';
   if (!confirm(msg)) return;
 
   try {
@@ -11756,18 +12096,19 @@ async function revertStockMovement(folio, corregir) {
     alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.'
       : /ya_revertido/.test(e.detail || '') ? 'Este movimiento ya se había revertido.'
       : 'No se pudo revertir el movimiento. Intenta de nuevo.');
-    await loadTraspasoHistory();
+    await refreshMovHistoryData();
+    renderMovHistory();
     return;
   }
-  g.rows.forEach(r => {
+  folioRows.forEach(r => {
     const key = `${r.id_product}|${r.almacen}`;
     stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) - (parseFloat(r.qty) || 0);
   });
   renderInventarioTable();
 
   if (corregir) {
-    const salida = g.rows.find(r => parseFloat(r.qty) < 0);
-    const entrada = g.rows.find(r => parseFloat(r.qty) > 0);
+    const salida = folioRows.find(r => parseFloat(r.qty) < 0);
+    const entrada = folioRows.find(r => parseFloat(r.qty) > 0);
     applyMovState({
       tipo: g.tipo,
       origen: salida ? salida.almacen : undefined,
@@ -11777,66 +12118,12 @@ async function revertStockMovement(folio, corregir) {
     });
     saveMovDraft();
     const notice = document.getElementById('movLoteNotice');
-    if (notice) { notice.textContent = `Se revirtió #${folio}. Corrige los productos y cantidades y vuelve a aplicarlo.`; notice.classList.remove('hidden'); }
+    if (notice) { notice.textContent = `Se revirtió #${folio}. Corrige los productos y cantidades y guárdalo como borrador; tendrá que aprobarse.`; notice.classList.remove('hidden'); }
+    closeMovHistory();
     document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  await loadTraspasoHistory();
-}
-
-async function confirmStockTransfer() {
-  const err = movValidate();
-  if (err) { alert(err); backToMovEditor(); renderMovLote(); return; }
-
-  const origen = document.getElementById('traspasoOrigen').value;
-  const destino = document.getElementById('traspasoDestino').value;
-  const notaTexto = document.getElementById('traspasoMotivo').value.trim();
-  const registradoPor = nombreSesionActual();
-  const tag = t => notaTexto ? `${t}: ${notaTexto}` : t;
-
-  let folio;
-  const moves = [];
-  if (currentMovType === 'entrada') {
-    folio = newMovFolio('ENT');
-    movLote.forEach(it => moves.push({ id_product: parseInt(it.id, 10), almacen: destino, qty: it.qty, motivo: tag('entrada'), folio, registrado_por: registradoPor }));
-  } else if (currentMovType === 'salida') {
-    folio = newMovFolio('SAL');
-    movLote.forEach(it => moves.push({ id_product: parseInt(it.id, 10), almacen: origen, qty: -it.qty, motivo: tag('salida'), folio, registrado_por: registradoPor }));
-  } else {
-    folio = newMovFolio('TR');
-    movLote.forEach(it => {
-      moves.push({ id_product: parseInt(it.id, 10), almacen: origen, qty: -it.qty, motivo: tag('traspaso_salida'), folio, registrado_por: registradoPor });
-      moves.push({ id_product: parseInt(it.id, 10), almacen: destino, qty: it.qty, motivo: tag('traspaso_entrada'), folio, registrado_por: registradoPor });
-    });
-  }
-
-  const btnApply = document.getElementById('btnApplyMovimiento');
-  if (btnApply) { btnApply.disabled = true; btnApply.textContent = 'Aplicando…'; }
-
-  try {
-    // Una sola llamada: rpc_stock_move_insert_bulk guarda todas las partidas
-    // en una transacción (o todas o ninguna).
-    await sbRpc('rpc_stock_move_insert_bulk', { ...getSessionCredsParams(), p_moves: moves });
-
-    moves.forEach(m => {
-      const key = `${m.id_product}|${m.almacen}`;
-      stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
-    });
-    const n = movLote.length;
-    const units = movLote.reduce((s, it) => s + it.qty, 0);
-    movLote = [];
-    document.getElementById('traspasoMotivo').value = '';
-    saveMovDraft();
-    renderInventarioTable();
-    backToMovEditor();
-    renderMovLote();
-    await loadTraspasoHistory();
-
-    alert(`Movimiento #${folio} aplicado.\n\n${MOV_TIPO_LABEL[currentMovType]}: ${n} ${n === 1 ? 'producto' : 'productos'}, ${units.toLocaleString('es-MX')} unidades.\n\nSi algo quedó mal, en el historial puedes usar "Corregir" o "Revertir".`);
-  } catch (e) {
-    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo registrar el movimiento (no se guardó nada). Intenta de nuevo.');
-  } finally {
-    if (btnApply) { btnApply.disabled = false; btnApply.textContent = 'Confirmar y aplicar'; }
-  }
+  await refreshMovHistoryData();
+  renderMovHistory();
 }
 
 // ================= PORTAL DE CLIENTES: AUTENTICACIÓN REAL (Supabase Auth) =================
