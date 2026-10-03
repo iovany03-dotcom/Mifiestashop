@@ -2840,19 +2840,6 @@
       </div>
     </div>
 
-    <!-- SISTEMA -->
-    <div class="menu-item" id="menu-sistema">
-      <div class="menu-link" onclick="toggleSubmenu('menu-sistema')">
-        <div class="menu-left">
-          <span>Sistema</span>
-        </div>
-        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-      <div class="submenu">
-        <a class="submenu-link" data-view="configuracion">Ajustes del Sistema</a>
-      </div>
-    </div>
-
   </div>
 </aside>
 
@@ -2893,6 +2880,7 @@
             <button class="btn small" data-view="caja-salidas" onclick="openSalidasCajaModal()">Salidas de Caja</button>
             <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
             <button class="btn small" data-view="caja-historial-cierres" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
+            <button class="btn small" data-view="configuracion" onclick="openTicketConfigModal()">Configurar Ticket</button>
           </div>
           <div class="pos-search-bar">
             <input type="text" id="posSearchInput" placeholder="Buscar por producto, SKU o código de barras…">
@@ -4237,38 +4225,11 @@
 
     <!-- ================= VIEW 5: FACTURACIÓN ================= -->
     <section id="view-facturacion" class="view-panel hidden">
-      <div class="kpis">
-        <div class="kpi-card"><div class="label">Facturado este Mes</div><div class="value">$184,200.00</div><div class="sub">24 Facturas emitidas</div></div>
-        <div class="kpi-card"><div class="label">Pendientes de Emitir</div><div class="value">3 Ventas</div><div class="sub">Solicitudes de clientes</div></div>
-      </div>
       <div class="card">
         <h2>Comprobantes y Facturas CFDI 4.0</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Folio Fiscal / UUID</th><th>Cliente</th><th>RFC</th><th>Monto</th><th>Fecha</th><th>Estado</th><th>Acciones</th></tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><b>F-2026-0091</b></td>
-                <td>Distribuidora de Fiestas S.A.</td>
-                <td>DFI891012AB3</td>
-                <td>$12,450.00</td>
-                <td>2026-09-10</td>
-                <td><span class="pill ok">Timbrada / Pagada</span></td>
-                <td><button class="btn small">PDF / XML</button></td>
-              </tr>
-              <tr>
-                <td><b>F-2026-0092</b></td>
-                <td>María López</td>
-                <td>LOPM920405YYY</td>
-                <td>$1,850.00</td>
-                <td>2026-09-11</td>
-                <td><span class="pill ok">Timbrada</span></td>
-                <td><button class="btn small">PDF / XML</button></td>
-              </tr>
-            </tbody>
-          </table>
+        <div style="padding:28px 12px; text-align:center; color:var(--text-muted); font-size:13.5px; line-height:1.6;">
+          Todavía no hay facturación electrónica conectada, así que aquí no se muestran facturas.<br>
+          Cuando se conecte con un proveedor de timbrado, aquí aparecerán los comprobantes emitidos con su folio fiscal, RFC, monto y estado.
         </div>
       </div>
     </section>
@@ -4594,78 +4555,6 @@
       </div>
     </section>
 
-    <section id="view-configuracion" class="view-panel hidden">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-        <div class="card">
-          <h2> Configuración del Ticket de Venta POS</h2>
-          <p style="color:var(--text-secondary); font-size:12.5px; margin-bottom:16px;">
-            Personaliza la apariencia y los datos impresos en los comprobantes y tickets de caja.
-          </p>
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <div>
-              <label style="font-size:12px; color:var(--text-secondary);">Encabezado / Nombre de la Tienda:</label>
-              <input type="text" id="cfgTicketName" value="MI FIESTASHOP" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
-            </div>
-            <div>
-              <label style="font-size:12px; color:var(--text-secondary);">RFC Fiscal:</label>
-              <input type="text" id="cfgTicketRfc" value="MFS260101XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
-            </div>
-            <div>
-              <label style="font-size:12px; color:var(--text-secondary);">Dirección de Sucursal Emisora:</label>
-              <input type="text" id="cfgTicketAddress" value="Sucursal Puebla Principal — Av. Benito Juárez #402" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
-            </div>
-            <div>
-              <label style="font-size:12px; color:var(--text-secondary);">Teléfono / WhatsApp de Atención:</label>
-              <input type="text" id="cfgTicketPhone" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
-            </div>
-            <div>
-              <label style="font-size:12px; color:var(--text-secondary);">Pie de Ticket / Mensaje Final:</label>
-              <input type="text" id="cfgTicketFooter" value="¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
-            </div>
-            <div>
-              <label style="font-size:12px; color:var(--text-secondary);">Ancho de Impresora Térmica:</label>
-              <select id="cfgTicketWidth" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" onchange="updateTicketConfigPreview()">
-                <option value="80mm">80mm (Impresora de Caja Estándar)</option>
-                <option value="58mm">58mm (Impresora Térmica Portátil Bluetooth)</option>
-              </select>
-            </div>
-            <button class="btn primary" style="width:fit-content; margin-top:10px;" onclick="saveTicketConfig()">Guardar Configuración de Ticket</button>
-          </div>
-        </div>
-
-        <!-- TICKET LIVE PREVIEW -->
-        <div class="card" style="text-align:center;">
-          <h3>Vista Previa del Ticket Impreso</h3>
-          <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
-            <div class="ticket-brand-bar"></div>
-            <img class="ticket-icon" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
-            <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
-            <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
-            <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
-            <div class="t-center ticket-sub" id="prevTPhone">Tel: +52 222 123 4567</div>
-            <div class="ticket-divider"></div>
-            <div class="ticket-total-row"><span>Ticket #:</span><span>#POS-EXAMPLE</span></div>
-            <div class="ticket-total-row"><span>Fecha:</span><span>11/09/2026 15:15</span></div>
-            <div class="ticket-total-row"><span>Cliente:</span><span>Mostrador</span></div>
-            <div class="ticket-divider"></div>
-            <div class="ticket-item">
-              <div class="ticket-item-row"><span>Paquete Globos #9</span><span>$85.00</span></div>
-            </div>
-            <div class="ticket-item">
-              <div class="ticket-item-row"><span>Velas Chispero</span><span>$56.00</span></div>
-              <div class="ticket-item-sub"><span>2 x $28.00</span><span></span></div>
-            </div>
-            <div class="ticket-divider"></div>
-            <div class="ticket-total-row"><span>Subtotal:</span><span>$141.00</span></div>
-            <div class="ticket-total-row"><span>IVA (16%):</span><span>$22.56</span></div>
-            <div class="ticket-total-row grand"><span>TOTAL:</span><span>$163.56</span></div>
-            <div class="ticket-divider"></div>
-            <div class="t-center ticket-thanks" id="prevTFoot">¡Gracias por tu compra en Mi Fiestashop!</div>
-            <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <!-- ================= PARÁMETROS DE LA TIENDA ================= -->
 
@@ -6040,6 +5929,86 @@
   </div>
 </div>
 
+<!-- ================= CONFIGURACIÓN DEL TICKET POS (dentro del POS) ================= -->
+<div class="modal-overlay hidden" id="ticketConfigModal">
+  <div class="modal" style="max-width:1000px; width:96%; max-height:90vh; overflow-y:auto;">
+    <div class="modal-header">
+      <h2>Configuración del Ticket POS</h2>
+      <button class="btn small" onclick="closeTicketConfigModal()">✕</button>
+    </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:20px;">
+        <div class="card">
+          <h2> Configuración del Ticket de Venta POS</h2>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin-bottom:16px;">
+            Personaliza la apariencia y los datos impresos en los comprobantes y tickets de caja.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Encabezado / Nombre de la Tienda:</label>
+              <input type="text" id="cfgTicketName" value="MI FIESTASHOP" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">RFC Fiscal:</label>
+              <input type="text" id="cfgTicketRfc" value="MFS260101XXX" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Dirección de Sucursal Emisora:</label>
+              <input type="text" id="cfgTicketAddress" value="Sucursal Puebla Principal — Av. Benito Juárez #402" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Teléfono / WhatsApp de Atención:</label>
+              <input type="text" id="cfgTicketPhone" value="+52 222 123 4567" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Pie de Ticket / Mensaje Final:</label>
+              <input type="text" id="cfgTicketFooter" value="¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" oninput="updateTicketConfigPreview()">
+            </div>
+            <div>
+              <label style="font-size:12px; color:var(--text-secondary);">Ancho de Impresora Térmica:</label>
+              <select id="cfgTicketWidth" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border);" onchange="updateTicketConfigPreview()">
+                <option value="80mm">80mm (Impresora de Caja Estándar)</option>
+                <option value="58mm">58mm (Impresora Térmica Portátil Bluetooth)</option>
+              </select>
+            </div>
+            <button class="btn primary" style="width:fit-content; margin-top:10px;" onclick="saveTicketConfig()">Guardar Configuración de Ticket</button>
+          </div>
+        </div>
+
+        <!-- TICKET LIVE PREVIEW -->
+        <div class="card" style="text-align:center;">
+          <h3>Vista Previa del Ticket Impreso</h3>
+          <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
+            <div class="ticket-brand-bar"></div>
+            <img class="ticket-icon" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+            <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
+            <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
+            <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
+            <div class="t-center ticket-sub" id="prevTPhone">Tel: +52 222 123 4567</div>
+            <div class="ticket-divider"></div>
+            <div class="ticket-total-row"><span>Ticket #:</span><span>#POS-EXAMPLE</span></div>
+            <div class="ticket-total-row"><span>Fecha:</span><span>11/09/2026 15:15</span></div>
+            <div class="ticket-total-row"><span>Cliente:</span><span>Mostrador</span></div>
+            <div class="ticket-divider"></div>
+            <div class="ticket-item">
+              <div class="ticket-item-row"><span>Paquete Globos #9</span><span>$85.00</span></div>
+            </div>
+            <div class="ticket-item">
+              <div class="ticket-item-row"><span>Velas Chispero</span><span>$56.00</span></div>
+              <div class="ticket-item-sub"><span>2 x $28.00</span><span></span></div>
+            </div>
+            <div class="ticket-divider"></div>
+            <div class="ticket-total-row"><span>Subtotal:</span><span>$141.00</span></div>
+            <div class="ticket-total-row"><span>IVA (16%):</span><span>$22.56</span></div>
+            <div class="ticket-total-row grand"><span>TOTAL:</span><span>$163.56</span></div>
+            <div class="ticket-divider"></div>
+            <div class="t-center ticket-thanks" id="prevTFoot">¡Gracias por tu compra en Mi Fiestashop!</div>
+            <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
+          </div>
+        </div>
+      </div>
+  </div>
+</div>
+
 <!-- ================= HISTORIAL DE CIERRES DE CAJA MODAL ================= -->
 <div class="modal-overlay hidden" id="cajaHistorialModal">
   <div class="modal" style="max-width:900px; width:94%; max-height:88vh; overflow-y:auto;">
@@ -6536,7 +6505,7 @@ const PERMISSION_GROUPS = [
   { group: 'Otros', items: [
     { key: 'dashboard', label: 'Estadísticas' },
     { key: 'notificaciones', label: 'Notificaciones' },
-    { key: 'configuracion', label: 'Ajustes del Sistema (Ticket POS)' }
+    { key: 'configuracion', label: 'Configurar ticket del POS' }
   ]}
 ];
 
@@ -14288,6 +14257,16 @@ let ticketConfig = {
   footer: '¡Gracias por tu compra en Mi Fiestashop! www.mifiestashop.com',
   width: '80mm'
 };
+
+// La configuración del ticket vive dentro del POS (botón "Configurar Ticket"), ya no en un menú aparte.
+function openTicketConfigModal() {
+  loadSavedTicketConfig(); // descarta cambios sin guardar de una apertura anterior
+  updateTicketConfigPreview();
+  document.getElementById('ticketConfigModal')?.classList.remove('hidden');
+}
+function closeTicketConfigModal() {
+  document.getElementById('ticketConfigModal')?.classList.add('hidden');
+}
 
 function loadSavedTicketConfig(){
   try {
