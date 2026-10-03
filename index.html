@@ -4224,10 +4224,41 @@
     <!-- ================= VIEW 5: FACTURACIÓN ================= -->
     <section id="view-facturacion" class="view-panel hidden">
       <div class="card">
-        <h2>Comprobantes y Facturas CFDI 4.0</h2>
-        <div style="padding:28px 12px; text-align:center; color:var(--text-muted); font-size:13.5px; line-height:1.6;">
-          Todavía no hay facturación electrónica conectada, así que aquí no se muestran facturas.<br>
-          Cuando se conecte con un proveedor de timbrado, aquí aparecerán los comprobantes emitidos con su folio fiscal, RFC, monto y estado.
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+          <h2>Comprobantes y Facturas CFDI 4.0</h2>
+          <button class="btn primary" id="factNuevaBtn" onclick="abrirFacturaForm()">+ Nueva factura</button>
+        </div>
+        <div id="factEstado" style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Consultando Facturama…</div>
+        <div id="factForm" class="hidden" style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-bottom:10px;">
+            <label style="font-size:12px;">Cargar de un pedido (opcional)<br>
+              <input id="factPedidoFolio" placeholder="Folio, ej. WEB-123" style="padding:8px; width:170px;"></label>
+            <select id="factPedidoOrigen" style="padding:8px;"><option value="online">Tienda en línea</option><option value="pos">POS</option></select>
+            <button class="btn" onclick="cargarPedidoFactura()">Cargar</button>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; margin-bottom:10px;">
+            <input id="factRfc" placeholder="RFC del cliente" style="padding:8px; text-transform:uppercase;">
+            <input id="factNombre" placeholder="Nombre / razón social (como en su constancia)" style="padding:8px;">
+            <input id="factCp" placeholder="C.P. fiscal" maxlength="5" style="padding:8px;">
+            <input id="factRegimen" placeholder="Régimen fiscal (ej. 612)" maxlength="3" style="padding:8px;">
+            <input id="factUso" placeholder="Uso CFDI (ej. G03)" value="G03" style="padding:8px; text-transform:uppercase;">
+            <input id="factEmail" type="email" placeholder="Correo para enviarla (opcional)" style="padding:8px;">
+            <select id="factFormaPago" style="padding:8px;"><option value="01">01 Efectivo</option><option value="03">03 Transferencia</option><option value="04">04 Tarjeta de crédito</option><option value="28">28 Tarjeta de débito</option><option value="99">99 Por definir</option></select>
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Conceptos (el precio es unitario <b>con IVA</b>):</div>
+          <div id="factItems"></div>
+          <button class="btn" style="margin-top:6px;" onclick="agregarConceptoFactura()">+ Concepto</button>
+          <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn primary" id="factEmitirBtn" onclick="emitirFactura()">Emitir factura</button>
+            <button class="btn" onclick="document.getElementById('factForm').classList.add('hidden')">Cerrar</button>
+            <span id="factMsg" style="font-size:12.5px;"></span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Folio fiscal (UUID)</th><th>RFC</th><th>Cliente</th><th>Pedido</th><th>Total</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="factTableBody"><tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr></tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -7738,6 +7769,7 @@ function switchView(viewName) {
   document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
   const target = document.getElementById('view-' + viewName);
   if (target) target.classList.remove('hidden');
+  if (viewName === 'facturacion' && typeof cargarFacturas === 'function') cargarFacturas();
   if (viewName === 'envios' && typeof cargarSaldoSkydropx === 'function') { cargarSaldoSkydropx(); cargarEnviosSkydropx(); }
 
   // Update header text
@@ -19651,6 +19683,118 @@ let SK_RATES = [];
 let SK_QUOTATION_ID = null;
 let SK_RATE_SEL = null;
 const SK_FIELDS = ['skOrigNombre','skOrigEmpresa','skOrigTel','skOrigEmail','skOrigCalle','skCartaPorte','skTipoPaquete'];
+
+// ---- Facturación electrónica (Facturama, api/facturama.js) ----
+async function facturamaRequest(body) {
+  const r = await fetch('/api/facturama', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), ...body })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (data.error || 'Error de Facturama'));
+  return data;
+}
+
+async function cargarFacturas() {
+  const est = document.getElementById('factEstado'), body = document.getElementById('factTableBody');
+  if (!body) return;
+  try {
+    const e = await facturamaRequest({ accion: 'estado' });
+    est.innerHTML = !e.configurado
+      ? '<span style="color:#d97706;">Facturama no está configurado todavía (faltan las variables FACTURAMA_USER, FACTURAMA_PASSWORD y FACTURAMA_EXPEDITION_PLACE en Vercel).</span>'
+      : (e.entorno === 'production' ? 'Conectado a Facturama en <b>producción</b>: las facturas son reales y se timbran ante el SAT.' : '<span style="color:#d97706;">Conectado a Facturama en <b>modo de pruebas</b> (sandbox): las facturas no tienen validez fiscal.</span>');
+    document.getElementById('factNuevaBtn').disabled = !e.configurado;
+  } catch (err) { est.textContent = 'No se pudo consultar Facturama: ' + err.message; }
+  try {
+    const d = await facturamaRequest({ accion: 'listar' });
+    const rows = d.facturas || [];
+    body.innerHTML = rows.length ? rows.map(f => {
+      const est = { activa: 'Vigente', cancelada: 'Cancelada', pendiente_cancelacion: 'Cancelación pendiente' }[f.estado] || f.estado;
+      const fecha = new Date(f.fecha).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' });
+      const sb = f.entorno === 'sandbox' ? ' <span class="pill info" style="font-size:10px;">pruebas</span>' : '';
+      const id = escapeHtml(f.facturama_id);
+      return `<tr><td>${fecha}</td><td style="font-size:11px;">${escapeHtml(f.uuid || '—')}${sb}</td><td>${escapeHtml(f.rfc)}</td><td>${escapeHtml(f.nombre)}</td><td>${escapeHtml(f.pedido_folio || '—')}</td><td>${fmtMoney(f.total)}</td><td>${est}</td>
+        <td style="white-space:nowrap;"><button class="btn" onclick="descargarFactura('${id}','pdf')">PDF</button> <button class="btn" onclick="descargarFactura('${id}','xml')">XML</button>${f.estado === 'cancelada' ? '' : ` <button class="btn" onclick="cancelarFactura('${id}')">Cancelar</button>`}</td></tr>`;
+    }).join('') : '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Todavía no se ha emitido ninguna factura desde aquí.</td></tr>';
+  } catch (err) {
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:#dc2626;">No se pudieron cargar las facturas: ${escapeHtml(err.message)}</td></tr>`;
+  }
+}
+
+function agregarConceptoFactura(it) {
+  const div = document.createElement('div');
+  div.className = 'fact-item';
+  div.style.cssText = 'display:grid; grid-template-columns:3fr 1fr 1fr auto; gap:6px; margin-bottom:6px;';
+  div.innerHTML = '<input class="fi-name" placeholder="Descripción" style="padding:7px;"><input class="fi-qty" type="number" min="1" step="1" value="1" style="padding:7px;"><input class="fi-price" type="number" min="0" step="0.01" placeholder="Precio c/IVA" style="padding:7px;"><button class="btn" onclick="this.parentElement.remove()">✕</button>';
+  if (it) { div.querySelector('.fi-name').value = it.name || ''; div.querySelector('.fi-qty').value = it.qty || 1; div.querySelector('.fi-price').value = it.price || 0; div.dataset.sku = it.sku || ''; }
+  document.getElementById('factItems').appendChild(div);
+}
+
+function abrirFacturaForm() {
+  document.getElementById('factForm').classList.remove('hidden');
+  document.getElementById('factMsg').textContent = '';
+  if (!document.querySelector('#factItems .fact-item')) agregarConceptoFactura();
+}
+
+async function cargarPedidoFactura() {
+  const folio = document.getElementById('factPedidoFolio').value.trim(), msg = document.getElementById('factMsg');
+  if (!folio) { msg.textContent = 'Escribe el folio del pedido.'; return; }
+  msg.textContent = 'Buscando…';
+  try {
+    const d = await facturamaRequest({ accion: 'pedido', folio, origen: document.getElementById('factPedidoOrigen').value });
+    document.getElementById('factItems').innerHTML = '';
+    (d.pedido.items.length ? d.pedido.items : [null]).forEach(it => agregarConceptoFactura(it));
+    if (d.pedido.email) document.getElementById('factEmail').value = d.pedido.email;
+    if (d.pedido.nombre && !document.getElementById('factNombre').value) document.getElementById('factNombre').value = d.pedido.nombre;
+    msg.textContent = 'Pedido cargado. Completa los datos fiscales del cliente.';
+  } catch (e) { msg.textContent = e.message; }
+}
+
+async function emitirFactura() {
+  const msg = document.getElementById('factMsg'), btn = document.getElementById('factEmitirBtn');
+  const items = [...document.querySelectorAll('#factItems .fact-item')].map(d => ({
+    name: d.querySelector('.fi-name').value.trim(), qty: Number(d.querySelector('.fi-qty').value), price: Number(d.querySelector('.fi-price').value), sku: d.dataset.sku || ''
+  })).filter(i => i.name || i.price);
+  const v = id => document.getElementById(id).value.trim();
+  if (!confirm('¿Emitir esta factura? Una vez timbrada solo se puede cancelar con las reglas del SAT.')) return;
+  btn.disabled = true; msg.style.color = ''; msg.textContent = 'Timbrando…';
+  try {
+    const d = await facturamaRequest({
+      accion: 'emitir', origen: v('factPedidoFolio') ? document.getElementById('factPedidoOrigen').value : 'manual', pedidoFolio: v('factPedidoFolio'),
+      receptor: { rfc: v('factRfc'), nombre: v('factNombre'), cp: v('factCp'), regimen: v('factRegimen'), usoCfdi: v('factUso') },
+      email: v('factEmail'), formaPago: document.getElementById('factFormaPago').value, items,
+      registradoPor: (typeof currentStaffSession !== 'undefined' && currentStaffSession && currentStaffSession.name) || 'Admin'
+    });
+    msg.style.color = '#16a34a';
+    msg.textContent = 'Factura emitida' + (d.correoEnviado ? ' y enviada por correo.' : (d.correoEnviado === false ? ' (no se pudo enviar el correo).' : '.')) + (d.aviso ? ' ' + d.aviso : '');
+    cargarFacturas();
+  } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
+  btn.disabled = false;
+}
+
+async function descargarFactura(id, formato) {
+  try {
+    const d = await facturamaRequest({ accion: 'descargar', id, formato });
+    const bin = atob(d.content), arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([arr], { type: formato === 'pdf' ? 'application/pdf' : 'application/xml' }));
+    a.download = 'factura-' + id + '.' + formato; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) { alert(e.message); }
+}
+
+async function cancelarFactura(id) {
+  const motivo = prompt('Motivo de cancelación:\n01 Con errores, con factura sustituta\n02 Con errores, sin sustituta\n03 No se llevó a cabo la operación\n04 Operación nominativa en factura global', '02');
+  if (!motivo) return;
+  let sust = '';
+  if (motivo.trim() === '01') { sust = prompt('UUID de la factura que sustituye a esta:') || ''; if (!sust) return; }
+  try {
+    const d = await facturamaRequest({ accion: 'cancelar', id, motivo: motivo.trim(), uuidSustituto: sust.trim() });
+    alert(d.cancelacion && d.cancelacion.Message ? d.cancelacion.Message : 'Solicitud enviada.');
+    cargarFacturas();
+  } catch (e) { alert(e.message); }
+}
 
 async function skydropxAdminRequest(body) {
   const r = await fetch('/api/skydropx-envios', {
