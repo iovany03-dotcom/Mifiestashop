@@ -77,6 +77,15 @@ module.exports = async function handler(req, res) {
       const rows = await r.json();
       (Array.isArray(rows) && rows.length ? actualizados : omitidos).push(id);
     }
+    // Fecha del último cambio del costo de compra (solo admin, ver docs/supabase-producto-competencia.sql).
+    if (actualizados.length) {
+      const ahora = new Date().toISOString();
+      await fetch(`${SUPABASE_URL}/rest/v1/producto_privado?on_conflict=id`, {
+        method: 'POST',
+        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(actualizados.map(id => ({ id, costo_compra_actualizado_at: ahora, updated_at: ahora })))
+      }).catch(() => {});
+    }
     res.status(200).json({ ok: true, actualizados, omitidos });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message, actualizados, omitidos });
