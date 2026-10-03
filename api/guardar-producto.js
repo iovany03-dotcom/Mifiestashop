@@ -30,6 +30,25 @@ function slugify(str) {
     .replace(/^-+|-+$/g, '');
 }
 
+// Hasta 3 competidores { nombre, precio, enlace }; descarta los vacíos y solo acepta enlaces http(s).
+function sanitizeCompetencia(lista) {
+  if (!Array.isArray(lista)) return [];
+  const out = [];
+  for (const c of lista.slice(0, 3)) {
+    if (!c || typeof c !== 'object') continue;
+    const precio = Number(c.precio);
+    const enlace = String(c.enlace || '').trim().slice(0, 500);
+    const nombre = String(c.nombre || '').trim().slice(0, 80);
+    const item = {
+      nombre,
+      precio: Number.isFinite(precio) && precio > 0 ? Math.round(precio * 100) / 100 : null,
+      enlace: /^https?:\/\//i.test(enlace) ? enlace : ''
+    };
+    if (item.nombre || item.precio !== null || item.enlace) out.push(item);
+  }
+  return out;
+}
+
 async function sbRpcServer(fnName, params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
     method: 'POST',
@@ -151,6 +170,30 @@ module.exports = async function handler(req, res) {
     } catch (e) { /* si falla la consulta, se deja el link_rewrite como está */ }
   }
 
+  // Datos privados (solo admin): código de proveedor y hasta 3 competidores. Si el cliente no los manda
+  // (un navegador con la versión anterior del editor) no se tocan. La fecha del último cambio del costo
+  // de compra se fija aquí al detectar que el costo cambió respecto a lo guardado.
+  const privado = {};
+  if ('codigoProveedor' in producto) privado.codigo_proveedor = String(producto.codigoProveedor || '').trim().slice(0, 100) || null;
+  if ('competencia' in producto) privado.competencia = sanitizeCompetencia(producto.competencia);
+  const costoNuevo = row.costo_compra;
+  if (isNew) {
+    if (costoNuevo != null) privado.costo_compra_actualizado_at = new Date().toISOString();
+  } else {
+    try {
+      const rc = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_productos?id=eq.${id}&select=costo_compra`, {
+        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+      });
+      if (rc.ok) {
+        const cur = (await rc.json())[0];
+        const antes = cur && cur.costo_compra != null ? Number(cur.costo_compra) : null;
+        if (cur && (antes === null ? costoNuevo !== null : costoNuevo === null || Math.abs(antes - costoNuevo) > 1e-9)) {
+          privado.costo_compra_actualizado_at = new Date().toISOString();
+        }
+      }
+    } catch (e) { /* sin la fecha de cambio; el resto se guarda igual */ }
+  }
+
   try {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_productos?on_conflict=id`, {
       method: 'POST',
@@ -165,7 +208,18 @@ module.exports = async function handler(req, res) {
       res.status(502).json({ ok: false, error: `Supabase HTTP ${r.status}`, detail: text.slice(0, 400) });
       return;
     }
-    res.status(200).json({ ok: true, id });
+    let privadoGuardado = true;
+    if (Object.keys(privado).length) {
+      try {
+        const rp = await fetch(`${SUPABASE_URL}/rest/v1/producto_privado?on_conflict=id`, {
+          method: 'POST',
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify([{ id, ...privado, updated_at: new Date().toISOString() }])
+        });
+        privadoGuardado = rp.ok;
+      } catch (e) { privadoGuardado = false; }
+    }
+    res.status(200).json({ ok: true, id, ...(privadoGuardado ? {} : { aviso: 'El producto se guardó, pero no se pudieron guardar el código de proveedor / competencia (¿existe la tabla producto_privado? ver docs/supabase-producto-competencia.sql).' }) });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }

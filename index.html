@@ -5315,7 +5315,7 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; gap:10px;">
           <div>
             <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Precio Menudeo ($):</label>
-            <input type="number" id="editProdPrice" step="0.50" min="0" required placeholder="10.00" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; font-weight:700;">
+            <input type="number" id="editProdPrice" step="0.50" min="0" required placeholder="10.00" oninput="recalcUtilidad()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px; font-weight:700;">
           </div>
           <div>
             <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Mayoreo ($):</label>
@@ -5335,7 +5335,52 @@
           </div>
           <div>
             <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Costo Compra ($):</label>
-            <input type="number" id="editProdCosto" step="0.50" min="0" placeholder="4.50" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="number" id="editProdCosto" step="0.50" min="0" placeholder="4.50" oninput="recalcUtilidad()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+          </div>
+        </div>
+
+        <!-- Utilidad, proveedor, competencia y ventas estimadas (solo admin) -->
+        <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border);">
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1.2fr 1.2fr; gap:10px; margin-bottom:12px;">
+            <div>
+              <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">% utilidad (sobre el costo):</label>
+              <input type="number" id="editProdUtilidad" step="0.1" placeholder="Se calcula con el precio" oninput="onUtilidadInput()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Ganancia por pieza ($):</label>
+              <input type="text" id="editProdGanancia" readonly placeholder="—" style="width:100%; padding:8px; border-radius:6px; border:1px dashed var(--border); background:transparent; color:var(--text-secondary); font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Último cambio del costo de compra:</label>
+              <input type="text" id="editProdCostoFecha" readonly placeholder="Sin registro" style="width:100%; padding:8px; border-radius:6px; border:1px dashed var(--border); background:transparent; color:var(--text-secondary); font-size:12px;">
+            </div>
+            <div>
+              <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Código de proveedor:</label>
+              <input type="text" id="editProdCodProv" maxlength="100" placeholder="Código con el que lo surte el proveedor" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); margin:-6px 0 12px;">Escribe el precio de menudeo y el % de utilidad se llena solo; si prefieres, escribe el % y se calcula el precio.</div>
+
+          <label style="font-size:11px; font-weight:600; display:block; margin-bottom:4px;">Competencia (hasta 3): precio y enlace de cada una</label>
+          <div style="display:grid; grid-template-columns: 1.2fr 0.8fr 2fr; gap:8px; margin-bottom:6px;">
+            <input type="text" id="editProdComp1Nombre" placeholder="Competidor 1 (ej. Mercado Libre)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="number" id="editProdComp1Precio" step="0.01" min="0" placeholder="Precio $" oninput="actualizarComparaCompetencia()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="url" id="editProdComp1Enlace" placeholder="Enlace del producto del competidor (https://…)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+          </div>
+          <div style="display:grid; grid-template-columns: 1.2fr 0.8fr 2fr; gap:8px; margin-bottom:6px;">
+            <input type="text" id="editProdComp2Nombre" placeholder="Competidor 2 (ej. Mercado Libre)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="number" id="editProdComp2Precio" step="0.01" min="0" placeholder="Precio $" oninput="actualizarComparaCompetencia()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="url" id="editProdComp2Enlace" placeholder="Enlace del producto del competidor (https://…)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+          </div>
+          <div style="display:grid; grid-template-columns: 1.2fr 0.8fr 2fr; gap:8px; margin-bottom:6px;">
+            <input type="text" id="editProdComp3Nombre" placeholder="Competidor 3 (ej. Mercado Libre)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="number" id="editProdComp3Precio" step="0.01" min="0" placeholder="Precio $" oninput="actualizarComparaCompetencia()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+            <input type="url" id="editProdComp3Enlace" placeholder="Enlace del producto del competidor (https://…)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
+          </div>
+          <div id="editProdCompHint" style="font-size:11.5px; color:var(--text-muted); margin-bottom:12px;"></div>
+
+          <div id="editProdVentasBox" style="padding:10px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); font-size:12.5px; color:var(--text-secondary);">
+            <b style="color:var(--text-primary);">Ventas mensuales estimadas:</b> <span id="editProdVentasTxt">—</span>
           </div>
         </div>
       </div>
@@ -9953,6 +9998,7 @@ function openEditProductModal(pId) {
   const imgStatus = document.getElementById('editProdImgStatus');
   if (imgStatus) imgStatus.textContent = '';
   refreshProductPhotoPreview();
+  fillProductPrivadosForm(prod);
   if (document.getElementById('editProdUrl')) document.getElementById('editProdUrl').value = prod ? (prod.url || `https://mifiestashop.com/producto/${prod.sku || prod.id}`) : `https://mifiestashop.com/producto/nuevo`;
   if (document.getElementById('editProdDesc')) document.getElementById('editProdDesc').value = prod ? (prod.desc || '') : '';
 
@@ -9961,6 +10007,7 @@ function openEditProductModal(pId) {
   }
 
   modal.classList.remove('hidden');
+  cargarEstimadoVentas(prod);
 }
 
 function closeEditProductModal() {
@@ -10007,6 +10054,108 @@ async function uploadProductPhoto(input) {
   }
 }
 
+// ---- Utilidad, proveedor, competencia y ventas estimadas del producto (editor del admin) ----
+// % de utilidad sobre el costo (igual que la hoja de costos anterior: precio = costo × (1 + %)).
+function recalcUtilidad() {
+  const precio = parseFloat(document.getElementById('editProdPrice')?.value);
+  const costo = parseFloat(document.getElementById('editProdCosto')?.value);
+  const pct = document.getElementById('editProdUtilidad'), gan = document.getElementById('editProdGanancia');
+  if (!pct || !gan) return;
+  if (precio > 0 && costo > 0) {
+    pct.value = (Math.round(((precio - costo) / costo) * 1000) / 10).toString();
+    gan.value = '$' + (precio - costo).toFixed(2);
+  } else { pct.value = ''; gan.value = ''; }
+  actualizarComparaCompetencia();
+}
+
+function onUtilidadInput() {
+  const pct = parseFloat(document.getElementById('editProdUtilidad')?.value);
+  const costo = parseFloat(document.getElementById('editProdCosto')?.value);
+  if (!(costo > 0) || !Number.isFinite(pct)) return;
+  const precio = Math.round(costo * (1 + pct / 100) * 100) / 100;
+  document.getElementById('editProdPrice').value = precio;
+  document.getElementById('editProdGanancia').value = '$' + (precio - costo).toFixed(2);
+  actualizarComparaCompetencia();
+}
+
+// "Tu precio vs competencia": cuánto más barato o caro estás frente a cada competidor con precio.
+function actualizarComparaCompetencia() {
+  const hint = document.getElementById('editProdCompHint');
+  if (!hint) return;
+  const precio = parseFloat(document.getElementById('editProdPrice')?.value);
+  const partes = [];
+  [1, 2, 3].forEach(i => {
+    const cp = parseFloat(document.getElementById('editProdComp' + i + 'Precio')?.value);
+    if (!(cp > 0) || !(precio > 0)) return;
+    const diff = Math.round(((precio - cp) / cp) * 1000) / 10;
+    const nombre = (document.getElementById('editProdComp' + i + 'Nombre')?.value || '').trim() || ('Competidor ' + i);
+    partes.push(`${escapeHtml(nombre)}: ${diff === 0 ? 'mismo precio' : (diff < 0 ? 'estás ' + Math.abs(diff) + '% más barato' : 'estás ' + diff + '% más caro')}`);
+  });
+  hint.innerHTML = partes.join(' · ');
+}
+
+function fillProductPrivadosForm(prod) {
+  const comp = (prod && Array.isArray(prod.competencia)) ? prod.competencia : [];
+  [1, 2, 3].forEach(i => {
+    const c = comp[i - 1] || {};
+    document.getElementById('editProdComp' + i + 'Nombre').value = c.nombre || '';
+    document.getElementById('editProdComp' + i + 'Precio').value = c.precio != null ? c.precio : '';
+    document.getElementById('editProdComp' + i + 'Enlace').value = c.enlace || '';
+  });
+  document.getElementById('editProdCodProv').value = prod ? (prod.codigoProveedor || '') : '';
+  const f = prod && prod.costoCompraActualizado ? new Date(prod.costoCompraActualizado) : null;
+  document.getElementById('editProdCostoFecha').value = f ? f.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', year: 'numeric' }) : '';
+  recalcUtilidad();
+}
+
+function readProductCompetencia() {
+  const out = [];
+  [1, 2, 3].forEach(i => {
+    const nombre = (document.getElementById('editProdComp' + i + 'Nombre')?.value || '').trim();
+    const precio = parseFloat(document.getElementById('editProdComp' + i + 'Precio')?.value);
+    const enlace = (document.getElementById('editProdComp' + i + 'Enlace')?.value || '').trim();
+    if (nombre || precio > 0 || enlace) out.push({ nombre, precio: precio > 0 ? precio : null, enlace });
+  });
+  return out;
+}
+
+let editProdVentasProd = null;
+async function cargarEstimadoVentas(prod) {
+  editProdVentasProd = prod || null;
+  const txt = document.getElementById('editProdVentasTxt');
+  if (!txt) return;
+  txt.textContent = 'Calculando…';
+  try {
+    const r = await fetch('/api/producto-estimado', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...getSessionCredsParams(),
+        id: prod ? prod.id : null,
+        name: document.getElementById('editProdName')?.value || '',
+        categoryLabel: document.getElementById('editProdCat')?.value || '',
+        price: parseFloat(document.getElementById('editProdPrice')?.value) || 0
+      })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'sin respuesta');
+    const n = v => Number(v).toLocaleString('es-MX', { maximumFractionDigits: 1 });
+    const partes = [];
+    if (d.fuente === 'real') {
+      partes.push(`<b>~${n(d.real.promedio)} pzas/mes</b> con ventas reales (promedio de los últimos ${d.real.meses} meses; vendió en ${d.real.mesesConVenta} de ellos)`);
+    } else if (d.fuente === 'similares' && d.estimado) {
+      const sim = d.estimado.similares.slice(0, 3).map(x => `${escapeHtml(x.name)} (${n(x.promedio)}/mes)`).join(', ');
+      partes.push(`<b>~${n(d.estimado.promedio)} pzas/mes</b> <span class="pill info" style="font-size:10px;">estimado</span>: casi no tiene ventas propias, así que se calculó por parecido con ${sim}. Rango ${n(d.estimado.bajo)}–${n(d.estimado.alto)}, confianza ${escapeHtml(d.estimado.confianza)}`);
+    } else {
+      partes.push('Sin ventas registradas ni productos parecidos para estimar');
+    }
+    if (d.real && d.real.mesActual && d.real.mesActual.unidades > 0) partes.push(`Este mes lleva ${n(d.real.mesActual.unidades)} pzas`);
+    if (d.stock != null && d.mesesDeStock != null) partes.push(`Stock actual ${n(d.stock)} pzas: alcanza para ~${n(d.mesesDeStock)} meses a ese ritmo`);
+    txt.innerHTML = partes.join('. ') + '. <a href="#" onclick="event.preventDefault(); cargarEstimadoVentas(editProdVentasProd)">Recalcular</a>';
+  } catch (e) {
+    txt.textContent = 'No se pudo calcular (' + e.message + ').';
+  }
+}
+
 async function saveProductChanges() {
   if (productPhotoUploading) { alert('Espera a que termine de subir la foto.'); return; }
   const pIdVal = document.getElementById('editProdId').value;
@@ -10024,6 +10173,8 @@ async function saveProductChanges() {
   const img = (document.getElementById('editProdImg').value || '').trim() || 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
   const prodUrl = (document.getElementById('editProdUrl')?.value || '').trim() || `https://mifiestashop.com/producto/${sku}`;
   const desc = (document.getElementById('editProdDesc')?.value || '').trim();
+  const codigoProveedor = (document.getElementById('editProdCodProv')?.value || '').trim();
+  const competencia = readProductCompetencia();
 
   if (!name || !sku) {
     alert('Por favor complete el nombre y el código/SKU del producto.');
@@ -10047,6 +10198,8 @@ async function saveProductChanges() {
       targetProd.priceVolumen = priceVolumen;
       targetProd.priceDistribuidor = priceDistribuidor;
       targetProd.costoCompra = costoCompra;
+      targetProd.codigoProveedor = codigoProveedor;
+      targetProd.competencia = competencia;
       targetProd.status = status;
       targetProd.img = img;
       targetProd.url = prodUrl;
@@ -10067,6 +10220,8 @@ async function saveProductChanges() {
       priceVolumen: priceVolumen,
       priceDistribuidor: priceDistribuidor,
       costoCompra: costoCompra,
+      codigoProveedor: codigoProveedor,
+      competencia: competencia,
       status: status,
       img: img,
       url: prodUrl,
@@ -10125,6 +10280,7 @@ async function saveProductChanges() {
           id: wasNew ? null : targetProd.id,
           sku, barcode, name, description: desc,
           price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
+          codigoProveedor, competencia,
           categoryLabel: cat, active: status !== 'Inactivo', img,
           lowStockThreshold: targetProd.lowStockThreshold
         }

@@ -45,7 +45,34 @@ module.exports = async function handler(req, res) {
       fetchMigrated(),
       fetchCategoryNames().catch(() => ({}))
     ]);
-    const products = rows.map(r => toProduct(r, migrated[String(r.id)], categoryNames, baseUrl));
+    // Datos privados por producto (código de proveedor, competencia, fecha del último cambio de costo):
+    // viven en producto_privado, que solo se lee con la llave de servicio (ver
+    // docs/supabase-producto-competencia.sql). Si la tabla aún no existe, el catálogo sale sin ellos.
+    const privados = {};
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceKey) {
+      try {
+        for (let from = 0; ; from += 1000) {
+          const pr = await fetch(`${SUPABASE_URL}/rest/v1/producto_privado?select=id,codigo_proveedor,competencia,costo_compra_actualizado_at&order=id.asc`, {
+            headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Range: `${from}-${from + 999}` }
+          });
+          if (!pr.ok) break;
+          const batch = await pr.json();
+          batch.forEach(x => { privados[String(x.id)] = x; });
+          if (batch.length < 1000) break;
+        }
+      } catch (e) { /* sin datos privados */ }
+    }
+    const products = rows.map(r => {
+      const prod = toProduct(r, migrated[String(r.id)], categoryNames, baseUrl);
+      const priv = privados[String(r.id)];
+      if (priv) {
+        prod.codigoProveedor = priv.codigo_proveedor || '';
+        prod.competencia = Array.isArray(priv.competencia) ? priv.competencia : [];
+        prod.costoCompraActualizado = priv.costo_compra_actualizado_at || null;
+      }
+      return prod;
+    });
     res.status(200).json({ count: products.length, products });
   } catch (err) {
     res.status(500).json({ error: 'Fallo al consultar el catálogo completo', detail: String(err) });
