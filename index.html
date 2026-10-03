@@ -3068,28 +3068,6 @@
       </div>
 
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
-          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
-            <option value="all">Todas las sucursales</option>
-            <option value="puebla">Puebla</option>
-            <option value="rumania">CDMX Rumania</option>
-            <option value="queretaro">Querétaro</option>
-          </select>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
-            </thead>
-            <tbody id="lowStockByStoreTableBody">
-              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
         <h2>Panel de Ventas en Vivo & Estadísticas</h2>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px;">
           <div class="seg" id="periodSeg" style="display:inline-flex; border:1px solid var(--border); border-radius:8px; overflow:hidden;">
@@ -4141,6 +4119,31 @@
             </thead>
             <tbody id="inventarioTableBody">
               <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn secondary small" onclick="downloadLowStockCSV()">Descargar (CSV)</button>
+          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <option value="all">Todas las sucursales</option>
+            <option value="puebla">Puebla</option>
+            <option value="rumania">CDMX Rumania</option>
+            <option value="queretaro">Querétaro</option>
+          </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
+            </thead>
+            <tbody id="lowStockByStoreTableBody">
+              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -7833,8 +7836,8 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'direcciones') loadDirecciones(0);
-  if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
-  if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); loadStoreToggles(); }
+  if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
+  if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
   if (viewName === 'param-avanzados-correo') switchCorreoTab('smtp');
   if (viewName === 'param-avanzados-rendimiento') switchRendimientoTab('cache');
@@ -10403,7 +10406,7 @@ async function refreshStockAuto() {
       const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
       renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
     }
-    if (visible('view-bodegas')) renderInventarioTable();
+    if (visible('view-bodegas')) { renderInventarioTable(); renderLowStockByStoreCard(); }
   } finally { stockAutoRefreshBusy = false; }
 }
 setInterval(refreshStockAuto, 60000);
@@ -14504,20 +14507,14 @@ function checkNegativeStockWarning() {
   }
 }
 
-// Tarjeta del Dashboard: qué productos están en o por debajo de su umbral
+// Tarjeta de Almacenes / Bodegas (antes en Estadísticas): qué productos están en o por debajo de su umbral
 // real de stock bajo (low_stock_threshold de PrestaShop), por sucursal —
 // solo productos con umbral configurado (>0); los que tienen 0 casi nunca
 // fue un valor puesto a propósito, así que no se alertan igual que los que
 // sí tienen un umbral real (mismo criterio ya usado en checkLowStockNotifications).
-function renderLowStockByStoreCard() {
-  const tbody = document.getElementById('lowStockByStoreTableBody');
-  const countEl = document.getElementById('lowStockByStoreCount');
-  if (!tbody) return;
-
+function lowStockEntries(filterWh) {
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const branches = ['puebla', 'rumania', 'queretaro'];
-  const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
-
   const entries = [];
   dataset.forEach((p, index) => {
     const pId = p.id || index + 1;
@@ -14530,6 +14527,16 @@ function renderLowStockByStoreCard() {
     });
   });
   entries.sort((a, b) => a.qty - b.qty);
+  return entries;
+}
+
+function renderLowStockByStoreCard() {
+  const tbody = document.getElementById('lowStockByStoreTableBody');
+  const countEl = document.getElementById('lowStockByStoreCount');
+  if (!tbody) return;
+
+  const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
+  const entries = lowStockEntries(filterWh);
 
   if (countEl) countEl.textContent = entries.length;
 
@@ -14545,7 +14552,30 @@ function renderLowStockByStoreCard() {
       <td style="text-align:center; font-weight:700; color:${e.qty < 0 ? '#dc2626' : 'var(--series-2)'};">${e.qty}</td>
       <td style="text-align:center; color:var(--text-muted);">${e.threshold}</td>
     </tr>
-  `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más…</td></tr>` : '');
+  `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más… (la descarga trae todos)</td></tr>` : '');
+}
+
+// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla muestra solo los primeros 150).
+function downloadLowStockCSV() {
+  const sel = document.getElementById('lowStockStoreFilter');
+  const filterWh = sel?.value || 'all';
+  const entries = lowStockEntries(filterWh);
+  if (entries.length === 0) { alert('No hay productos en stock bajo para descargar.'); return; }
+  const headers = ['Producto', 'SKU', 'Sucursal', 'Stock', 'Umbral', 'Faltan para el umbral'];
+  const rows = entries.map(e => [e.name, e.sku || '', e.branch, e.qty, e.threshold, Math.max(0, e.threshold - e.qty)]);
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
+  // BOM al inicio para que Excel detecte UTF-8 y los acentos se vean bien.
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const stamp = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Mexico_City' });
+  const sucursal = filterWh === 'all' ? 'todas' : filterWh;
+  link.href = url;
+  link.download = `stock-bajo-${sucursal}-${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 // ================= DETALLE DEL PEDIDO: ESTADO / CANCELAR / BORRAR / IMPRIMIR =================
