@@ -9807,6 +9807,10 @@ let catalogSortDir = 'asc';
 function sortCatalogBy(key){
   if (catalogSortKey === key) catalogSortDir = catalogSortDir === 'asc' ? 'desc' : 'asc';
   else { catalogSortKey = key; catalogSortDir = 'asc'; }
+  // Con "Solo activos" (o "Solo desactivados") todas las filas tienen el mismo estado, así que
+  // ordenar por Estado no cambiaba nada y parecía que el botón no servía: se pasa a "Todos".
+  const filtro = document.getElementById('catalogStatusFilter');
+  if (key === 'estado' && filtro && filtro.value !== 'todos') filtro.value = 'todos';
   renderCatalogTable('all', document.getElementById('catalogSearchInput')?.value || '');
 }
 
@@ -9821,7 +9825,7 @@ function updateCatalogSortArrows(){
 const CATALOG_SORT_COMPARATORS = {
   nombre: (a, b) => a.name.localeCompare(b.name),
   precio: (a, b) => (a.price || 0) - (b.price || 0),
-  estado: (a, b) => (a.status === 'Inactivo' ? 1 : 0) - (b.status === 'Inactivo' ? 1 : 0)
+  estado: (a, b) => (a.status === 'Inactivo' ? 1 : 0) - (b.status === 'Inactivo' ? 1 : 0) || a.name.localeCompare(b.name)
 };
 
 function renderCatalogTable(category = 'all', query = ''){
