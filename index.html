@@ -17165,6 +17165,19 @@ function openStorefrontProductDetail(idx){
   renderProductDetailModal(p);
 }
 
+// Miniaturas debajo de la foto principal cuando el producto tiene varias fotos (diseños/colores,
+// como pantuflas y sandalias). Antes la página del producto solo mostraba images[0] y el resto
+// de las fotos migradas de PrestaShop no se veían en ningún lado.
+function buildProductThumbsHTML(p, mainImgId){
+  const imgs = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  if (imgs.length < 2) return '';
+  const alt = escapeHtml(p.name);
+  return `<div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">${imgs.map((src, i) => `
+    <img src="${escapeHtml(src)}" alt="${alt} - diseño ${i + 1}" loading="lazy" width="64" height="64"
+      style="width:64px; height:64px; object-fit:contain; background:#fff; border:2px solid ${i === 0 ? 'var(--mf-pink, #d3007b)' : '#eee'}; border-radius:8px; cursor:pointer; padding:2px; box-sizing:border-box;"
+      onclick="const m=document.getElementById('${mainImgId}'); if(m){m.src=this.src;} [...this.parentNode.children].forEach(t=>t.style.borderColor='#eee'); this.style.borderColor='var(--mf-pink, #d3007b)';">`).join('')}</div>`;
+}
+
 function buildProductDetailHTML(p, qtyId, onAddToCart){
   const desc = (p.desc && p.desc.trim() && p.desc.trim() !== p.name) ? p.desc : 'Sin descripción disponible para este producto.';
   const relatedGridId = 'relatedGrid_' + qtyId;
@@ -17172,7 +17185,8 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
       <div style="min-width:0;">
-        <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        <img id="pdMainImg_${qtyId}" src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        ${buildProductThumbsHTML(p, 'pdMainImg_' + qtyId)}
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>

@@ -299,7 +299,10 @@ module.exports = async function handler(req, res) {
       const publicUrl = linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : `${baseUrl}/index.php?id_product=${p.id}&controller=product`;
 
       const m = migrated[String(p.id)];
-      const images = ownImages[String(p.id)] || (m && Array.isArray(m.images) && m.images.length > 0 ? m.images : null);
+      // La lista con más fotos gana (igual que lib/productos-supabase.js).
+      const own = ownImages[String(p.id)] || [];
+      const mig = m && Array.isArray(m.images) ? m.images : [];
+      const images = mig.length > own.length ? mig : (own.length ? own : null);
       const basePrice = parseFloat(p.price || 0);
       const wholesale = computeWholesalePrice(basePrice, wholesaleRules[String(p.id)]);
 
