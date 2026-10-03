@@ -10223,21 +10223,49 @@ function getStockFor(pId, whKey) {
 }
 
 async function loadRealStockData() {
+  // Si una de las dos consultas falla (o /api/stock-all responde su "fallback" vacío) se conservan
+  // los datos que ya había: con el refresco automático de abajo, un tropiezo de red no debe dejar
+  // todos los productos en 0.
+  let stockOk = true, ledgerOk = true;
   try {
     const [stockRes, ledgerRows] = await Promise.all([
-      fetch('/api/stock-all').then(r => r.ok ? r.json() : { stock: {} }).catch(() => ({ stock: {} })),
-      sbRpc('rpc_stock_move_totals', getSessionCredsParams()).catch(() => [])
+      fetch('/api/stock-all').then(r => { if (!r.ok) throw new Error('stock'); return r.json(); }).catch(() => { stockOk = false; return null; }),
+      sbRpc('rpc_stock_move_totals', getSessionCredsParams()).catch(() => { ledgerOk = false; return null; })
     ]);
-    realStockData = (stockRes && stockRes.stock) || {};
-    stockLedgerTotals = {};
-    (Array.isArray(ledgerRows) ? ledgerRows : []).forEach(row => {
-      stockLedgerTotals[`${row.id_product}|${row.almacen}`] = parseFloat(row.delta) || 0;
-    });
-    realStockLoaded = true;
+    if (stockOk && stockRes && stockRes.stock && !stockRes.fallback) realStockData = stockRes.stock;
+    else stockOk = false;
+    if (ledgerOk && Array.isArray(ledgerRows)) {
+      stockLedgerTotals = {};
+      ledgerRows.forEach(row => {
+        stockLedgerTotals[`${row.id_product}|${row.almacen}`] = parseFloat(row.delta) || 0;
+      });
+    } else ledgerOk = false;
+    if (stockOk || ledgerOk) realStockLoaded = true;
   } catch (e) {
-    // Sin conexión a PrestaShop o Supabase: se sigue usando el respaldo hash.
+    // Sin conexión a PrestaShop o Supabase: se siguen usando los últimos datos cargados.
   }
 }
+
+// El stock se cargaba una sola vez al abrir el panel: una entrada, traspaso o venta hecha en otro
+// equipo (por ejemplo, una entrada aprobada en la oficina) no aparecía en el POS hasta recargar la
+// página. Ahora se actualiza solo cada minuto mientras la pestaña está a la vista, y al volver a ella.
+let stockAutoRefreshBusy = false;
+async function refreshStockAuto() {
+  if (stockAutoRefreshBusy || document.visibilityState !== 'visible') return;
+  if (!getAdminPassword() && !getStaffCreds()) return; // el kardex solo se lee con sesión
+  stockAutoRefreshBusy = true;
+  try {
+    await loadRealStockData();
+    const visible = id => { const el = document.getElementById(id); return el && !el.classList.contains('hidden'); };
+    if (visible('view-pos') && document.getElementById('posProductGrid')) {
+      const activeCat = document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all';
+      renderProducts(activeCat, document.getElementById('posSearchInput')?.value || '');
+    }
+    if (visible('view-bodegas')) renderInventarioTable();
+  } finally { stockAutoRefreshBusy = false; }
+}
+setInterval(refreshStockAuto, 60000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshStockAuto(); });
 
 // INVENTORY MATRIX RENDERER
 function renderInventarioTable() {
