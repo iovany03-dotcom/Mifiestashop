@@ -2775,6 +2775,7 @@
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
+        <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
       </div>
     </div>
 
@@ -4503,6 +4504,40 @@
       </div>
     </section>
 
+    <section id="view-competencia" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+          <h2 style="margin:0;">Competencia en Mercado Libre</h2>
+          <button class="btn primary" onclick="loadCompetenciaView(true)">Recargar</button>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">
+          Se busca cada producto en Mercado Libre y se compara <b>precio por pieza</b>: allá casi todo se vende por paquete, así que el precio de la publicación se divide entre las piezas que trae.
+          La búsqueda corre sola cada hora (unos 40 productos por vuelta); con "Buscar" la haces al momento. Revisa el enlace antes de decidir: la coincidencia es por nombre.
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+          <input type="search" id="compBuscar" placeholder="Buscar producto…" oninput="renderCompetenciaTable()"
+            style="flex:1; min-width:200px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          <select id="compFiltro" onchange="renderCompetenciaTable()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+            <option value="con">Con competencia encontrada</option>
+            <option value="caros">Donde estamos más caros</option>
+            <option value="baratos">Donde estamos más baratos</option>
+            <option value="sin">Sin buscar o sin resultados</option>
+            <option value="todos">Todos</option>
+          </select>
+        </div>
+        <div id="compMsg" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Producto</th><th>Nuestro precio</th><th>Mercado Libre (más barato por pieza)</th><th>Diferencia</th><th>Otras publicaciones</th><th></th></tr>
+            </thead>
+            <tbody id="competenciaTableBody"></tbody>
+          </table>
+        </div>
+        <div id="compPagInfo" style="font-size:12.5px; color:var(--text-muted); margin-top:10px;"></div>
+      </div>
+    </section>
+
     <section id="view-direcciones" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
@@ -5298,7 +5333,8 @@
             <input type="number" id="editProdComp3Precio" step="0.01" min="0" placeholder="Precio $" oninput="actualizarComparaCompetencia()" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
             <input type="url" id="editProdComp3Enlace" placeholder="Enlace del producto del competidor (https://…)" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
           </div>
-          <div id="editProdCompHint" style="font-size:11.5px; color:var(--text-muted); margin-bottom:12px;"></div>
+          <div id="editProdCompHint" style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;"></div>
+          <div id="editProdCompML" style="margin-bottom:12px;"></div>
 
           <div id="editProdVentasBox" style="padding:10px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); font-size:12.5px; color:var(--text-secondary);">
             <b style="color:var(--text-primary);">Ventas mensuales estimadas:</b> <span id="editProdVentasTxt">—</span>
@@ -6502,6 +6538,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
+    { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
     { key: 'aprobar-movimientos', label: 'Aprobar movimientos de inventario (entradas, salidas y traspasos)' },
     { key: 'paginas-cms', label: 'Páginas CMS' }
   ]},
@@ -7784,6 +7821,7 @@ function switchView(viewName) {
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
+    competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
@@ -7823,6 +7861,7 @@ function switchView(viewName) {
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'direcciones') loadDirecciones(0);
+  if (viewName === 'competencia') loadCompetenciaView();
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
@@ -10086,7 +10125,10 @@ function actualizarComparaCompetencia() {
 }
 
 function fillProductPrivadosForm(prod) {
-  const comp = (prod && Array.isArray(prod.competencia)) ? prod.competencia : [];
+  // Los 3 renglones del editor son solo los competidores capturados a mano; lo que encontró la
+  // búsqueda en Mercado Libre se muestra aparte (renderCompMLBox) y el servidor lo conserva al guardar.
+  const comp = (prod && Array.isArray(prod.competencia)) ? prod.competencia.filter(c => c && c.fuente !== 'mercadolibre') : [];
+  renderCompMLBox(prod);
   [1, 2, 3].forEach(i => {
     const c = comp[i - 1] || {};
     document.getElementById('editProdComp' + i + 'Nombre').value = c.nombre || '';
@@ -10190,7 +10232,7 @@ async function saveProductChanges() {
       targetProd.priceDistribuidor = priceDistribuidor;
       targetProd.costoCompra = costoCompra;
       targetProd.codigoProveedor = codigoProveedor;
-      targetProd.competencia = competencia;
+      targetProd.competencia = [...competencia, ...compDeML(targetProd)];
       targetProd.status = status;
       targetProd.img = img;
       targetProd.url = prodUrl;
@@ -14163,6 +14205,117 @@ async function confirmCrearPedido(){
   } catch (e) {
     alert('No se pudo crear el pedido: ' + e.message);
   }
+}
+
+// ---- Competencia en Mercado Libre (lib/competencia-ml.js, api/competencia-buscar.js) ----
+// Piezas de nuestro producto según su nombre ("Globo salchicha (200 pzas)" -> 200); mismo criterio
+// que piezasDeTexto en lib/competencia-ml.js.
+function compPiezasDeNombre(nombre) {
+  const t = String(nombre || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ');
+  const m = /(\d{1,5})\s*(?:pzas?|pzs|piezas?|pcs|unidades|uds?|pares)\b/.exec(t) || /(?:paquete|pack|kit|set|bolsa|caja)\s*(?:de|c|con)?\s*(\d{1,5})\b/.exec(t);
+  const n = m ? parseInt(m[1], 10) : 1;
+  return n >= 2 ? n : 1;
+}
+function compDeML(p) { return (Array.isArray(p && p.competencia) ? p.competencia : []).filter(c => c && c.fuente === 'mercadolibre' && c.precio_pieza > 0); }
+function compResumen(p) {
+  const ml = compDeML(p).slice().sort((a, b) => a.precio_pieza - b.precio_pieza);
+  const piezas = compPiezasDeNombre(p.name);
+  const nuestro = (Number(p.price) || 0) / piezas;
+  const mejor = ml[0] || null;
+  const diff = mejor && nuestro > 0 ? Math.round(((nuestro - mejor.precio_pieza) / mejor.precio_pieza) * 1000) / 10 : null;
+  return { ml, mejor, piezas, nuestro, diff, buscado: ml[0] ? ml[0].buscado_at : null };
+}
+function compDiffHTML(diff) {
+  if (diff === null) return '—';
+  if (Math.abs(diff) < 0.05) return '<span class="pill">mismo precio</span>';
+  return diff > 0 ? `<span class="pill bad">${diff}% más caro</span>` : `<span class="pill ok">${Math.abs(diff)}% más barato</span>`;
+}
+function compPubHTML(c) {
+  return `<a href="${escapeHtml(c.enlace)}" target="_blank" rel="noopener">${fmtMoney(c.precio_pieza)}/pza</a>
+    <div style="font-size:11px; color:var(--text-muted);">${fmtMoney(c.precio)} × ${c.piezas} pza${c.piezas === 1 ? '' : 's'} · ${escapeHtml((c.titulo || '').slice(0, 70))}</div>`;
+}
+
+function renderCompMLBox(prod) {
+  const box = document.getElementById('editProdCompML');
+  if (!box) return;
+  if (!prod || !prod.id) { box.innerHTML = ''; return; }
+  const r = compResumen(prod);
+  box.innerHTML = `
+    <div style="border:1px dashed var(--border); border-radius:8px; padding:10px; font-size:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+        <b>Mercado Libre (automático, por pieza)</b>
+        <button type="button" class="btn small" onclick="buscarCompetenciaML([${Number(prod.id)}], this)">Buscar en Mercado Libre</button>
+      </div>
+      ${r.ml.length ? r.ml.map(c => `<div style="margin-bottom:6px;">${compPubHTML(c)}</div>`).join('')
+        + `<div>Nuestro precio: ${fmtMoney(r.nuestro)}/pza${r.piezas > 1 ? ` (${fmtMoney(prod.price)} ÷ ${r.piezas})` : ''} · ${compDiffHTML(r.diff)}</div>`
+        : '<div style="color:var(--text-muted);">Todavía no hay resultados de Mercado Libre para este producto.</div>'}
+      ${r.buscado ? `<div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Buscado: ${new Date(r.buscado).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}</div>` : ''}
+    </div>`;
+}
+
+async function buscarCompetenciaML(ids, btn) {
+  const txt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Buscando…'; }
+  try {
+    const r = await fetch('/api/competencia-buscar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...getSessionCredsParams(), ids })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (d.error || 'No se pudo buscar en Mercado Libre.'));
+    (d.resultados || []).forEach(res => {
+      const p = adminCatalogProducts.find(x => String(x.id) === String(res.id));
+      if (p && Array.isArray(res.competencia)) {
+        p.competencia = [...(Array.isArray(p.competencia) ? p.competencia : []).filter(c => c && c.fuente !== 'mercadolibre'), ...res.competencia];
+        if (document.getElementById('editProdCompML') && ids.length === 1) renderCompMLBox(p);
+      }
+    });
+    const errores = (d.resultados || []).filter(x => x.error);
+    if (errores.length) alert('Algunos productos no se pudieron buscar: ' + errores.map(x => x.nombre + ' (' + x.error + ')').join('; '));
+    else if ((d.resultados || []).every(x => !(x.competencia || []).length)) alert('Mercado Libre no devolvió publicaciones parecidas a este producto.');
+    renderCompetenciaTable();
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = txt; }
+  }
+}
+
+async function loadCompetenciaView(forzar) {
+  const msg = document.getElementById('compMsg');
+  if (forzar || !adminCatalogProducts.length) {
+    if (msg) msg.textContent = 'Cargando productos…';
+    await loadAdminCatalogProducts();
+  }
+  if (msg) msg.textContent = adminCatalogProducts.length ? '' : 'No se pudo cargar el catálogo (¿sesión expirada?).';
+  renderCompetenciaTable();
+}
+
+function renderCompetenciaTable() {
+  const tbody = document.getElementById('competenciaTableBody');
+  if (!tbody) return;
+  const q = (document.getElementById('compBuscar')?.value || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const filtro = document.getElementById('compFiltro')?.value || 'con';
+  let rows = adminCatalogProducts.filter(p => p.active !== false).map(p => ({ p, r: compResumen(p) }));
+  if (q) rows = rows.filter(({ p }) => String(p.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').includes(q));
+  if (filtro === 'con') rows = rows.filter(x => x.r.mejor);
+  if (filtro === 'caros') rows = rows.filter(x => x.r.diff > 0);
+  if (filtro === 'baratos') rows = rows.filter(x => x.r.diff !== null && x.r.diff < 0);
+  if (filtro === 'sin') rows = rows.filter(x => !x.r.mejor);
+  rows.sort((a, b) => (b.r.diff ?? -1e9) - (a.r.diff ?? -1e9));
+  const total = rows.length;
+  rows = rows.slice(0, 300);
+  tbody.innerHTML = rows.length ? rows.map(({ p, r }) => `
+    <tr>
+      <td><b>${escapeHtml(p.name || '')}</b><div style="font-size:11px; color:var(--text-muted);">#${escapeHtml(String(p.id))}</div></td>
+      <td>${fmtMoney(r.nuestro)}/pza${r.piezas > 1 ? `<div style="font-size:11px; color:var(--text-muted);">${fmtMoney(p.price)} ÷ ${r.piezas}</div>` : ''}</td>
+      <td>${r.mejor ? compPubHTML(r.mejor) : '<span style="color:var(--text-muted);">—</span>'}</td>
+      <td>${compDiffHTML(r.diff)}</td>
+      <td style="font-size:12px;">${r.ml.slice(1).map(c => `<a href="${escapeHtml(c.enlace)}" target="_blank" rel="noopener">${fmtMoney(c.precio_pieza)}/pza</a>`).join('<br>') || '—'}</td>
+      <td><button class="btn small" onclick="buscarCompetenciaML([${Number(p.id)}], this)">Buscar</button></td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center; padding:28px; color:var(--text-muted);">No hay productos con este filtro todavía. La búsqueda automática va llenando la lista cada hora.</td></tr>';
+  const info = document.getElementById('compPagInfo');
+  if (info) info.textContent = total > rows.length ? `Mostrando ${rows.length} de ${total.toLocaleString('es-MX')} productos (usa el buscador para ver otros).` : `${total.toLocaleString('es-MX')} productos`;
 }
 
 // ---- Direcciones de clientes (ps_direcciones, copia de PrestaShop) ----
