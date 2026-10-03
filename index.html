@@ -2771,6 +2771,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
         <a class="submenu-link" data-view="clientes">Clientes</a>
+        <a class="submenu-link" data-view="direcciones">Direcciones</a>
         <a class="submenu-link" data-view="proveedores">Proveedores</a>
       </div>
     </div>
@@ -4487,6 +4488,39 @@
               <!-- Dynamically populated -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-direcciones" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+          <h2 style="margin:0;">Direcciones de clientes</h2>
+          <button class="btn primary" onclick="loadDirecciones(0)">Recargar</button>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">
+          Copia de las direcciones de PrestaShop, que se actualiza sola cada hora. <span id="dirSyncInfo"></span>
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+          <input type="search" id="dirBuscar" placeholder="Buscar por cliente, correo, calle, colonia, ciudad, C.P. o teléfono…"
+            oninput="dirBuscarDebounced()" style="flex:1; min-width:220px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="dirEliminadas" onchange="loadDirecciones(0)"> Incluir eliminadas</label>
+        </div>
+        <div id="dirMsg" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Cliente</th><th>Alias</th><th>Dirección</th><th>Colonia / Ciudad</th><th>C.P.</th><th>Estado · País</th><th>Teléfono</th><th>Alta</th></tr>
+            </thead>
+            <tbody id="direccionesTableBody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; gap:10px; flex-wrap:wrap;">
+          <span id="dirPagInfo" style="font-size:12.5px; color:var(--text-muted);"></span>
+          <div style="display:flex; gap:8px;">
+            <button class="btn small" id="dirPrev" onclick="loadDirecciones(dirOffset - DIR_PAGE)">← Anterior</button>
+            <button class="btn small" id="dirNext" onclick="loadDirecciones(dirOffset + DIR_PAGE)">Siguiente →</button>
+          </div>
         </div>
       </div>
     </section>
@@ -6416,6 +6450,7 @@ const PERMISSION_GROUPS = [
   { group: 'Contactos & Equipo', items: [
     { key: 'personal', label: 'Personal / Equipo' },
     { key: 'clientes', label: 'Clientes' },
+    { key: 'direcciones', label: 'Direcciones de clientes' },
     { key: 'proveedores', label: 'Proveedores' }
   ]},
   { group: 'Parámetros de la Tienda', items: [
@@ -7699,6 +7734,7 @@ function switchView(viewName) {
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
+    direcciones: ['Direcciones', 'Direcciones de clientes (PrestaShop)'],
     proveedores: ['Proveedores', 'Directorio de Insumos'],
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
@@ -7733,6 +7769,7 @@ function switchView(viewName) {
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
+  if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'bodegas') { renderInventarioTable(); if (!realStockLoaded) loadRealStockData().then(renderInventarioTable); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); renderLowStockByStoreCard(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
@@ -13993,6 +14030,52 @@ async function confirmCrearPedido(){
     loadOrdersFromAPI();
   } catch (e) {
     alert('No se pudo crear el pedido: ' + e.message);
+  }
+}
+
+// ---- Direcciones de clientes (ps_direcciones, copia de PrestaShop) ----
+const DIR_PAGE = 100;
+let dirOffset = 0;
+let dirTimer = null;
+function dirBuscarDebounced() { clearTimeout(dirTimer); dirTimer = setTimeout(() => loadDirecciones(0), 350); }
+
+async function loadDirecciones(offset) {
+  const tbody = document.getElementById('direccionesTableBody');
+  if (!tbody) return;
+  dirOffset = Math.max(0, offset || 0);
+  const msg = document.getElementById('dirMsg');
+  msg.textContent = 'Cargando…';
+  try {
+    const r = await fetch('/api/direcciones', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...getSessionCredsParams(), offset: dirOffset, limit: DIR_PAGE,
+        q: document.getElementById('dirBuscar')?.value || '', incluirEliminadas: !!document.getElementById('dirEliminadas')?.checked
+      })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (d.error || 'No se pudieron cargar las direcciones.'));
+    msg.textContent = '';
+    const info = document.getElementById('dirSyncInfo');
+    if (info) info.textContent = d.sincronizado && d.sincronizado.cuando ? `Última sincronización: ${new Date(d.sincronizado.cuando).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}${d.sincronizado.resultado ? ' (' + d.sincronizado.resultado + ')' : ''}.` : 'Todavía no se ha sincronizado ninguna dirección.';
+    tbody.innerHTML = d.rows.length ? d.rows.map(a => `
+      <tr${a.eliminada ? ' style="opacity:.55;"' : ''}>
+        <td><b>${escapeHtml(a.cliente_nombre || ('Cliente #' + a.id_customer))}</b><div style="font-size:11px; color:var(--text-muted);">${escapeHtml(a.cliente_email || '')}</div></td>
+        <td>${escapeHtml(a.alias || '—')}${a.eliminada ? ' <span class="pill bad" style="font-size:10px;">eliminada</span>' : ''}</td>
+        <td>${escapeHtml(a.direccion || '—')}${a.direccion2 ? '<div style="font-size:11px; color:var(--text-muted);">' + escapeHtml(a.direccion2) + '</div>' : ''}${a.referencia ? '<div style="font-size:11px; color:var(--text-muted);">' + escapeHtml(a.referencia) + '</div>' : ''}</td>
+        <td>${escapeHtml(a.ciudad || '—')}</td>
+        <td>${escapeHtml(a.cp || '—')}</td>
+        <td>${escapeHtml([a.estado || (a.id_state ? 'Estado #' + a.id_state : ''), a.pais].filter(Boolean).join(' · ') || '—')}</td>
+        <td>${escapeHtml(a.telefono || a.celular || '—')}</td>
+        <td>${a.date_add ? escapeHtml(new Date(a.date_add).toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City' })) : '—'}</td>
+      </tr>`).join('') : '<tr><td colspan="8" style="text-align:center; padding:28px; color:var(--text-muted);">No hay direcciones' + (document.getElementById('dirBuscar')?.value ? ' con esa búsqueda.' : ' sincronizadas todavía.') + '</td></tr>';
+    const desde = d.total ? dirOffset + 1 : 0, hasta = Math.min(dirOffset + d.rows.length, d.total);
+    document.getElementById('dirPagInfo').textContent = `${desde.toLocaleString('es-MX')}–${hasta.toLocaleString('es-MX')} de ${d.total.toLocaleString('es-MX')} direcciones`;
+    document.getElementById('dirPrev').disabled = dirOffset === 0;
+    document.getElementById('dirNext').disabled = dirOffset + DIR_PAGE >= d.total;
+  } catch (e) {
+    tbody.innerHTML = '';
+    msg.textContent = e.message;
   }
 }
 

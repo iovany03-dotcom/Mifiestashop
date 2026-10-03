@@ -5,7 +5,7 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron-sync-prestashop?domains=clientes,pedidos,carritos",
+      "path": "/api/cron-sync-prestashop?domains=clientes,direcciones,pedidos,carritos",
       "schedule": "30 * * * *"
     },
     {
