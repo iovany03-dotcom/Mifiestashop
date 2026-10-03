@@ -2920,8 +2920,6 @@
             <label style="font-size:11.5px; color:var(--text-muted); display:block; margin-bottom:4px;">CLIENTE</label>
             <select id="posCustomerSelect" style="width:100%; padding:6px; border-radius:6px; border:1px solid var(--border); font-size:12.5px;">
               <option value="mostrador">Cliente POS (General)</option>
-              <option value="juan">Juan Pérez — RFC: PERJ890101XXX</option>
-              <option value="maria">María López — RFC: LOPM920405YYY</option>
             </select>
           </div>
 
@@ -3423,22 +3421,22 @@
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">Carritos Activos Hoy</div>
-          <div class="value" id="cartKpiActive">14</div>
+          <div class="value" id="cartKpiActive">—</div>
           <div class="sub">Navegando / En proceso</div>
         </div>
         <div class="kpi-card">
           <div class="label"> Carritos Abandonados</div>
-          <div class="value" id="cartKpiAbandoned" style="color:var(--warning);">42</div>
+          <div class="value" id="cartKpiAbandoned" style="color:var(--warning);">—</div>
           <div class="sub">Sin finalizar (&gt;24 hrs)</div>
         </div>
         <div class="kpi-card">
           <div class="label">Valor Estimado en Carritos</div>
-          <div class="value" id="cartKpiTotalValue" style="color:#22c55e;">$68,450.00</div>
+          <div class="value" id="cartKpiTotalValue" style="color:#22c55e;">—</div>
           <div class="sub">Total en productos en espera</div>
         </div>
         <div class="kpi-card">
           <div class="label">Tasa de Conversión</div>
-          <div class="value" id="cartKpiConversion">34.8%</div>
+          <div class="value" id="cartKpiConversion">—</div>
           <div class="sub">Carritos convertidos en venta</div>
         </div>
       </div>
@@ -5732,12 +5730,6 @@
       </div>
     </div>
 
-    <div style="margin-bottom:20px;">
-      <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-        <input type="checkbox" id="requireInvoiceCheck"> Generar Factura (CFDI 4.0)
-      </label>
-    </div>
-
     <button class="btn success" style="width:100%; padding:12px; font-size:16px; justify-content:center;" onclick="confirmPOSSale()">
        Confirmar Venta e Imprimir Ticket
     </button>
@@ -7578,15 +7570,9 @@ document.getElementById('prodCat').addEventListener('change', ()=>{ prodPage=0; 
 document.getElementById('prodPrev').addEventListener('click', ()=>{ if(prodPage>0){ prodPage--; loadProductos(); } });
 document.getElementById('prodNext').addEventListener('click', ()=>{ prodPage++; loadProductos(); });
 
-// PRODUCTS DATASET FOR POS
-const PRODUCTS_DATA = [
-  { id: 1, name: 'Globo Metálico Número 40" Dorado', sku: 'GLO-DOR-40', price: 45.00, cat: 'globos', img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300' },
-  { id: 2, name: 'Paquete Globos Latex #9 Pastel (50 pzs)', sku: 'GLO-LAT-50', price: 85.00, cat: 'globos', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' },
-  { id: 3, name: 'Platos Desechables Biodegradables (20 pzs)', sku: 'DES-PLA-20', price: 62.00, cat: 'desechables', img: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=300' },
-  { id: 4, name: 'Vela de Cumpleaños Chispero Sparkler', sku: 'VEL-CHI-01', price: 28.00, cat: 'velas', img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300' },
-  { id: 5, name: 'Mantel Plástico Fiesta Neón 1.37x2.74m', sku: 'MAN-NEO-01', price: 49.00, cat: 'decoracion', img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300' },
-  { id: 6, name: 'Antifaz de Gala Misterio Neón (12 pzs)', sku: 'DIS-ANT-12', price: 110.00, cat: 'disfraces', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' }
-];
+// Sin productos de demostración: si el catálogo real no carga, se muestra un error (ver catalogLoadError).
+const PRODUCTS_DATA = [];
+let catalogLoadError = false;
 
 let cart = [];
 
@@ -9784,15 +9770,8 @@ async function syncProductsFromPrestaShopAPI(){
     }
   }
 
-  if (!loaded || liveProducts.length === 0) {
-    liveProducts = [
-      { id: '101', name: 'Antifaz Feliz Año Nuevo', sku: 'A-174', price: 6.29, cat: 'año nuevo', catLabel: 'Año Nuevo', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300', status: 'Activo' },
-      { id: '102', name: 'Globo Metálico 40" Dorado', sku: 'GLO-40-DOR', price: 45.00, cat: 'globos', catLabel: 'Globos', img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300', status: 'Activo' },
-      { id: '103', name: 'Paquete Globos Latex Pastel (50 pzs)', sku: 'GLO-LAT-50', price: 85.00, cat: 'globos', catLabel: 'Globos', img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300', status: 'Activo' },
-      { id: '104', name: 'Mantel Plástico Fiesta Neón', sku: 'MAN-NEO-01', price: 49.00, cat: 'decoracion', catLabel: 'Decoración', img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300', status: 'Activo' },
-      { id: '105', name: 'Vela Cumpleaños Sparkler', sku: 'VEL-SPK-01', price: 28.00, cat: 'velas', catLabel: 'Velas', img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300', status: 'Activo' }
-    ];
-  }
+  // Si no cargó nada real NO se inventan productos: se avisa con un error en el POS y en la tienda.
+  catalogLoadError = !loaded || liveProducts.length === 0;
 
   productsFirstLoadDone = true;
   renderDynamicCatPills();
@@ -9801,6 +9780,14 @@ async function syncProductsFromPrestaShopAPI(){
   renderInventarioTable();
   renderStorefrontProducts('all');
   renderTopProductsTable();
+}
+
+function catalogErrorHTML(pad) {
+  return `<div style="grid-column:1/-1; padding:${pad}px; text-align:center; color:var(--danger, #dc2626);">
+    <b>No se pudo cargar el catálogo de productos.</b><br>
+    <span style="color:var(--text-muted); font-size:13px;">Revisa tu conexión e inténtalo de nuevo.</span><br>
+    <button class="btn small primary" style="margin-top:10px;" onclick="syncProductsFromPrestaShopAPI()">Reintentar</button>
+  </div>`;
 }
 
 function renderDynamicCatPills(){
@@ -13089,7 +13076,7 @@ function renderProducts(category = 'all', query = '') {
   const filtered = matched.slice(0, limit);
 
   if(filtered.length === 0){
-    grid.innerHTML = `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>`;
+    grid.innerHTML = (catalogLoadError && liveProducts.length === 0) ? catalogErrorHTML(30) : `<div style="grid-column:1/-1; padding:30px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>`;
     return;
   }
 
@@ -13172,49 +13159,6 @@ const DEFAULT_CATEGORIES = [
   { id: 8, name: 'Artículos Generales de Fiesta', count: '150 SKUs' }
 ];
 
-const DEFAULT_CUSTOMERS = [
-  { id: 101, name: 'Juan Pérez', email: 'juan.perez@gmail.com', rfc: 'PERJ890101XXX', date: '2026-01-10' },
-  { id: 102, name: 'María López', email: 'maria.lopez@yahoo.com', rfc: 'LOPM920405YYY', date: '2026-02-14' },
-  { id: 103, name: 'Eventos & Banquetes Puebla S.A.', email: 'ventas@eventospuebla.com', rfc: 'EVP180312AAA', date: '2026-03-01' },
-  { id: 104, name: 'Roberto Gómez', email: 'roberto.g@gmail.com', rfc: 'GOMR850720ZZZ', date: '2026-04-18' }
-];
-
-const DEFAULT_ORDERS = [
-  { 
-    id: 'FOL-1004', date: '2026-09-11 15:18', customer: 'Juan Pérez', channel: 'Sistema POS', total: 1450, status: 'Pagado',
-    items: [
-      { sku: 'antifaz, cartón, metálico, carnaval', name: 'Antifaz carton metálico', qty: 25, price: 2.00 },
-      { sku: 'Manita, aplaudidora, fiesta', name: 'Manitas aplaudidoras', qty: 50, price: 9.00 },
-      { sku: 'GLO-DOR-40', name: 'Globo Metálico 40" Dorado', qty: 15, price: 45.00 },
-      { sku: 'VEL-CHI-01', name: 'Vela de Cumpleaños Chispero Sparkler', qty: 10, price: 28.00 }
-    ]
-  },
-  { 
-    id: 'FOL-1003', date: '2026-09-11 14:02', customer: 'Cliente POS', channel: 'Sistema POS', total: 380, status: 'Pagado',
-    items: [
-      { sku: 'parche, pirata, disfraz, fiesta', name: 'Parche Pirata', qty: 10, price: 20.00 },
-      { sku: 'Peluca, metálico, fiesta, batucada', name: 'Peluca Metalica', qty: 12, price: 15.00 }
-    ]
-  },
-  { 
-    id: 'FOL-1002', date: '2026-09-11 11:45', customer: 'María López', channel: 'Tienda PrestaShop', total: 2120, status: 'Enviado',
-    items: [
-      { sku: 'antifaz, cartón, metálico, carnaval', name: 'Antifaz carton metálico', qty: 100, price: 2.00 },
-      { sku: 'DIS-ANT-12', name: 'Antifaz de Gala Misterio Neón', qty: 10, price: 110.00 },
-      { sku: 'GLO-LAT-50', name: 'Paquete Globos Latex #9', qty: 6, price: 85.00 }
-    ]
-  },
-  { 
-    id: 'FOL-1001', date: '2026-09-10 18:30', customer: 'Eventos Puebla S.A.', channel: 'Tienda PrestaShop', total: 5890, status: 'Entregado',
-    items: [
-      { sku: 'Manita, aplaudidora, fiesta', name: 'Manitas aplaudidoras', qty: 200, price: 9.00 },
-      { sku: 'globo, salchicha, colores, látex', name: 'Globo salchicha (200 pzs)', qty: 20, price: 90.00 },
-      { sku: 'Peluca, metálico, fiesta, batucada', name: 'Peluca Metalica', qty: 80, price: 15.00 },
-      { sku: 'DES-PLA-20', name: 'Platos Desechables Biodegradables', qty: 15, price: 62.00 }
-    ]
-  }
-];
-
 const DEFAULT_SUPPLIERS = [
   { id: 1, name: 'Globos & Decoraciones México S.A.', contact: 'Ing. Carlos Fuentes', phone: '+52 55 1122 3344', email: 'ventas@globosmex.com', status: 'Activo' },
   { id: 2, name: 'Distribuidora Fiesta & Luces S.A.', contact: 'Lic. Sofía Ramos', phone: '+52 222 4455 6677', email: 'contacto@distribuidorafiesta.com', status: 'Activo' },
@@ -13270,13 +13214,15 @@ async function loadCustomersFromAPI(){
   if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   let list = [];
+  let clientesError = false;
   try {
     const r = await fetch('/api/clientes');
     if(r.ok) {
       const data = await r.json();
+      if (data.error) clientesError = true;
       if(Array.isArray(data.customers) && data.customers.length > 0) list = data.customers;
-    }
-  } catch(e) {}
+    } else clientesError = true;
+  } catch(e) { clientesError = true; }
 
   // Cuentas creadas en la tienda en línea (Supabase Auth) — no están en
   // ps_clientes (la copia de PrestaShop), así que se piden aparte con la
@@ -13299,8 +13245,12 @@ async function loadCustomersFromAPI(){
     }
   } catch(e) {}
 
-  if(list.length === 0) list = DEFAULT_CUSTOMERS;
   customersCache = list;
+  if (list.length === 0 && clientesError && tbody) {
+    // Sin clientes reales no se muestran clientes de ejemplo: se avisa del error.
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--danger, #dc2626);"><b>No se pudieron cargar los clientes.</b> Revisa tu conexión e inténtalo de nuevo.</td></tr>';
+    return;
+  }
   renderCustomersTable(list);
 
   if(select && list.length > 0) {
@@ -13486,18 +13436,21 @@ function filterCustomersTable(query){
 
 let loadedOrdersList = [];
 
+let ordersLoadError = false;
 async function loadOrdersFromAPI(){
   const tbody = document.getElementById('ordersTableBody');
   if(!tbody) return;
 
   let list = [];
+  let pedidosError = false;
   try {
     const r = await fetch('/api/pedidos');
     if(r.ok) {
       const data = await r.json();
+      if (data.error) pedidosError = true;
       if(Array.isArray(data.orders) && data.orders.length > 0) list = data.orders;
-    }
-  } catch(e) {}
+    } else pedidosError = true;
+  } catch(e) { pedidosError = true; }
 
   // Sin pedidos reales no se muestran pedidos de ejemplo.
 
@@ -13554,6 +13507,7 @@ async function loadOrdersFromAPI(){
   }
 
   loadedOrdersList = list;
+  ordersLoadError = pedidosError && list.length === 0;
 
   // Nota: las ventas reales por producto ya NO se sacan de aquí (esta lista de pedidos
   // no trae las líneas de producto). Se cargan aparte desde /api/ventas-productos,
@@ -13586,6 +13540,10 @@ function renderOrdersTableRows() {
   const list = !q ? loadedOrdersList : loadedOrdersList.filter(o => [
     o.id, o.reference, o.customer, o.status, o.paymentMethod, o.channel, o.createdBy, o.shop
   ].some(field => String(field || '').toLowerCase().includes(q)));
+  if (list.length === 0 && ordersLoadError) {
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--danger, #dc2626);"><b>No se pudieron cargar los pedidos.</b> Revisa tu conexión e inténtalo de nuevo.</td></tr>';
+    return;
+  }
   if (list.length === 0) {
     tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; padding:20px; color:var(--text-muted);">${q ? 'Sin pedidos que coincidan con la búsqueda.' : 'Sin pedidos todavía.'}</td></tr>`;
     return;
@@ -16963,7 +16921,7 @@ function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
   });
 
   if (filtered.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
+    grid.innerHTML = (catalogLoadError && liveProducts.length === 0) ? catalogErrorHTML(40) : '<div style="grid-column:1/-1; padding:40px; text-align:center; color:var(--text-muted);">No se encontraron productos en esta categoría.</div>';
     renderStorefrontLoadMore(0, 0);
     return;
   }
@@ -17294,7 +17252,7 @@ async function loadCatalogPage(){
         <div style="margin-top:16px;"><button class="btn secondary" style="border-radius:20px; font-weight:700;" onclick="openStorefrontCatalog('all')">Ver todos los productos</button></div>
       </div>`;
   } else if (products.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1; padding:40px; text-align:center; color:#8b7d97;">No se encontraron productos en esta categoría.</div>';
+    grid.innerHTML = (catalogLoadError && liveProducts.length === 0) ? catalogErrorHTML(40) : '<div style="grid-column:1/-1; padding:40px; text-align:center; color:#8b7d97;">No se encontraron productos en esta categoría.</div>';
   } else {
     grid.innerHTML = products.map((p, idx) => buildStorefrontProductCardHTML(p, idx)).join('');
   }
@@ -19166,6 +19124,7 @@ function goToProductAnalytics(prodId) {
 
 // ================= CARRITOS DE COMPRA API & ENGINE =================
 let liveCarts = [];
+let cartsLoadError = false;
 
 async function loadCartsFromAPI() {
   const tbody = document.getElementById('cartsTableBody');
@@ -19177,6 +19136,7 @@ async function loadCartsFromAPI() {
       const data = await r.json();
       if (data.carts && Array.isArray(data.carts)) {
         liveCarts = data.carts;
+        cartsLoadError = false;
         renderCartsTable();
         return;
       }
@@ -19185,69 +19145,9 @@ async function loadCartsFromAPI() {
     console.log('API /api/carritos no disponible, usando dataset local:', e.message);
   }
 
-  // Structured fallback dataset for Carritos de Compra
-  liveCarts = [
-    {
-      id: 'CR-89410',
-      date: '2026-09-12 08:35:10',
-      customer: 'Laura Gómez',
-      email: 'laura.gomez@gmail.com',
-      status: 'active',
-      statusText: 'Activo (En Proceso)',
-      items: [
-        { name: 'Globo Metálico Número 40" Dorado', sku: 'GLO-DOR-40', qty: 3, price: 45.00, img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300' },
-        { name: 'Mantel Plástico Fiesta Neón 1.37x2.74m', sku: 'MAN-NEO-01', qty: 2, price: 49.00, img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300' }
-      ]
-    },
-    {
-      id: 'CR-89408',
-      date: '2026-09-11 19:20:45',
-      customer: 'Invitado #93587',
-      email: 'cliente.mostrador@mifiestashop.com',
-      status: 'abandoned',
-      statusText: 'Abandonado (>24h)',
-      items: [
-        { name: 'Paquete Globos Latex #9 Pastel (50 pzs)', sku: 'GLO-LAT-50', qty: 5, price: 85.00, img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' },
-        { name: 'Vela de Cumpleaños Chispero Sparkler', sku: 'VEL-CHI-01', qty: 10, price: 28.00, img: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300' },
-        { name: 'Antifaz de Gala Misterio Neón (12 pzs)', sku: 'DIS-ANT-12', qty: 2, price: 110.00, img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' }
-      ]
-    },
-    {
-      id: 'CR-89405',
-      date: '2026-09-11 15:40:12',
-      customer: 'Carlos Gutiérrez',
-      email: 'carlos.g@hotmail.com',
-      status: 'converted',
-      statusText: 'Convertido (#PS-383626)',
-      items: [
-        { name: 'Platos Desechables Biodegradables (20 pzs)', sku: 'DES-PLA-20', qty: 4, price: 62.00, img: 'https://images.unsplash.com/photo-1610557892470-55d9e80c0bce?w=300' }
-      ]
-    },
-    {
-      id: 'CR-89401',
-      date: '2026-09-11 11:15:30',
-      customer: 'Adriana Silva',
-      email: 'adriana.silva@empresa.com',
-      status: 'abandoned',
-      statusText: 'Abandonado (>24h)',
-      items: [
-        { name: 'Globo Metálico Número 40" Dorado', sku: 'GLO-DOR-40', qty: 12, price: 45.00, img: 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300' },
-        { name: 'Antifaz de Gala Misterio Neón (12 pzs)', sku: 'DIS-ANT-12', qty: 6, price: 110.00, img: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300' }
-      ]
-    },
-    {
-      id: 'CR-89398',
-      date: '2026-09-10 18:50:00',
-      customer: 'Invitado #93592',
-      email: 'invitado.web@mifiestashop.com',
-      status: 'active',
-      statusText: 'Activo (En Proceso)',
-      items: [
-        { name: 'Mantel Plástico Fiesta Neón 1.37x2.74m', sku: 'MAN-NEO-01', qty: 4, price: 49.00, img: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=300' }
-      ]
-    }
-  ];
-
+  // Sin carritos reales NO se muestran carritos de ejemplo: se avisa con un error.
+  liveCarts = [];
+  cartsLoadError = true;
   renderCartsTable();
 }
 
@@ -19315,6 +19215,12 @@ function renderCartsTable() {
   if (document.getElementById('cartKpiAbandoned')) document.getElementById('cartKpiAbandoned').textContent = abandonedCount;
   if (document.getElementById('cartKpiTotalValue')) document.getElementById('cartKpiTotalValue').textContent = fmtMoney(totalVal);
   if (document.getElementById('cartKpiConversion')) document.getElementById('cartKpiConversion').textContent = conversionRate;
+
+  if (cartsLoadError && liveCarts.length === 0) {
+    ['cartKpiActive', 'cartKpiAbandoned', 'cartKpiTotalValue', 'cartKpiConversion'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--danger, #dc2626);"><b>No se pudieron cargar los carritos de compra.</b> Revisa tu conexión e inténtalo de nuevo.</td></tr>';
+    return;
+  }
 
   if (filtered.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Sin carritos de compra en el rango de fechas o filtro seleccionado.</td></tr>';
