@@ -15,11 +15,6 @@ function sucursalFromEmployee(employeeName) {
   return m ? m[1].trim() : null;
 }
 
-const FALLBACK_ORDERS = [
-  { id: 'POS-10492', reference: '', date: '2026-09-11 14:10', customer: 'Cliente POS', channel: 'Sistema POS', paymentMethod: 'POS', total: 1250.00, status: 'Pago Aceptado', createdBy: null, shop: 'Mi Fiestashop', deliveryDate: null },
-  { id: 'PS-89421', reference: 'CPFEGDOQY', date: '2026-09-11 11:32', customer: 'Carlos Gutiérrez', channel: 'Tienda Online', paymentMethod: 'Tarjeta', total: 3480.00, status: 'Entregado', createdBy: null, shop: 'Mi Fiestashop', deliveryDate: null }
-];
-
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -83,6 +78,7 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({ orders, source: 'supabase' });
   } catch (err) {
-    res.status(200).json({ fallback: true, error: err.message, orders: FALLBACK_ORDERS });
+    // Sin pedidos de ejemplo: si falla la consulta se avisa con el error y la lista queda vacía.
+    res.status(200).json({ error: err.message, orders: [] });
   }
 };

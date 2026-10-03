@@ -53,12 +53,7 @@ module.exports = async function handler(req, res) {
 
     res.status(200).json({ customers, count: customers.length, source: 'supabase' });
   } catch (err) {
-    res.status(200).json({
-      fallback: true,
-      error: err.message,
-      customers: [
-        { id: 1, name: 'Cliente Mostrador (General)', email: 'mostrador@mifiestashop.com', rfc: 'XAXX010101000', date: '2026-01-01' }
-      ]
-    });
+    // Sin clientes de ejemplo: si falla la consulta se avisa con el error y la lista queda vacía.
+    res.status(200).json({ error: err.message, customers: [] });
   }
 };
