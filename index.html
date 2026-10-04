@@ -4545,7 +4545,7 @@
           <button class="btn primary" onclick="loadDirecciones(0)">Recargar</button>
         </div>
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">
-          Copia de las direcciones de PrestaShop, que se actualiza sola cada hora. <span id="dirSyncInfo"></span>
+          Copia de las direcciones de PrestaShop (ya desconectado: no se actualiza). <span id="dirSyncInfo"></span>
         </p>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;">
           <input type="search" id="dirBuscar" placeholder="Buscar por cliente, correo, calle, colonia, ciudad, C.P. o teléfono…"
@@ -8331,22 +8331,8 @@ async function confirmPOSSale() {
     }).catch(() => {});
   }
 
-  // Crea el pedido real en PrestaShop (y descuenta su propio stock) para
-  // que la venta del POS también quede reflejada ahí, no solo en el ledger
-  // de Supabase. Best-effort y no bloqueante: el ticket ya se imprimió y el
-  // inventario de este sistema ya se descontó arriba pase lo que pase aquí;
-  // si falla, queda marcado en pos_tickets.ps_sync_status para revisarlo
-  // (ver api/pos-sync-prestashop.js).
-  fetch('/api/pos-sync-prestashop', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ...getSessionCredsParams(),
-      folio, almacen: almacenKey,
-      items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, price: i.price })),
-      subtotal, iva, total, paymentMethod: selectedPayMethod
-    })
-  }).catch(() => {});
+  // Ya no se manda la venta a PrestaShop (desconectado el 4 de octubre de 2026): el ticket y el
+  // inventario viven solo en este sistema (pos_tickets, pos_stock_moves).
 
   clearCart();
 }
@@ -10917,7 +10903,7 @@ function renderKardex() {
   }
   document.getElementById('kxFoot').textContent =
     (kardexRows.length >= KARDEX_LIMIT ? `Se muestran los ${KARDEX_LIMIT} movimientos más recientes; acota con fechas o bodega para ver más atrás. ` : '') +
-    'Los movimientos de las cajas de PrestaShop se copian cada 10 minutos (desde abril de 2026).' +
+    'Los movimientos de las cajas de PrestaShop son una copia histórica (abril–septiembre de 2026); PrestaShop ya está desconectado.' +
     (balances ? ' La existencia se calcula hacia atrás desde la existencia actual.' : '');
 }
 

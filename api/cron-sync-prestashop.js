@@ -7,9 +7,17 @@
 // modificación, así que el diseño es: clientes aditivo, pedidos/carritos
 // ventana reciente completa, el resto catálogos chicos completos.
 const { runFullSync } = require('../lib/sync-prestashop.js');
+const { prestashopConectado } = require('../lib/prestashop.js');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
+
+  // PrestaShop se desconectó el 4 de octubre de 2026 (crons quitados de vercel.json). Solo vuelve a
+  // copiar si se reactiva a propósito con PRESTASHOP_CONECTADO=1 (ver lib/prestashop.js).
+  if (!prestashopConectado()) {
+    res.status(200).json({ skipped: true, reason: 'PrestaShop desconectado (PRESTASHOP_CONECTADO no está activo)' });
+    return;
+  }
 
   // Si se configura CRON_SECRET en Vercel, solo se acepta la llamada real
   // de Vercel Cron (que manda ese secreto) o quien lo conozca. Si no está

@@ -1,28 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron-sync-prestashop?domains=stock,categorias,almacenes,empleados,paginas,proveedores",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=clientes,direcciones,pedidos,carritos",
-      "schedule": "30 * * * *"
-    },
-    {
       "path": "/api/cron-conciliar-mp",
       "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=productos",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=fotos",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=pedidos_historico,movimientos_nuevos,movimientos_2anios",
-      "schedule": "5,15,25,35,45,55 * * * *"
     },
     {
       "path": "/api/cron-retransmision-auto",
