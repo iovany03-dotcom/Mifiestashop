@@ -415,6 +415,7 @@
 
   /* ---------------- BACKOFFICE RESPONSIVE (MOBILE) ---------------- */
   @media (max-width: 900px) {
+    .blog-editor-grid { grid-template-columns: 1fr !important; }
     aside.sidebar {
       position: fixed; top: 0; left: 0; height: 100vh; z-index: 200;
       width: var(--sidebar-w) !important;
@@ -2776,6 +2777,7 @@
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
         <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
+        <a class="submenu-link" data-view="blog">Blog (SEO)</a>
       </div>
     </div>
 
@@ -4411,6 +4413,21 @@
           (productos, categorías, pedidos, clientes) — ver <a href="/desarrolladores" target="_blank" rel="noopener">la documentación</a> para el detalle de cada endpoint.
           La llave completa solo se muestra una vez, al crearla.
         </p>
+        <div style="border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin:0 0 16px; background:var(--card-bg);">
+          <b>Conectar ChatGPT o Claude (MCP)</b>
+          <p style="font-size:12.5px; color:var(--text-secondary); margin:6px 0 8px;">
+            Permite pedirle al asistente cosas como <i>"crea el producto Collar hawaiano neón a $7 con esta foto"</i> o <i>"escribe y publica un artículo sobre ideas para batucada de boda"</i>.
+            Herramientas: buscar y ver productos, listar categorías, crear y actualizar productos (quedan ocultos hasta que pidas publicarlos), y escribir o publicar artículos del blog.
+          </p>
+          <ol style="font-size:12.5px; color:var(--text-secondary); margin:0; padding-left:18px; line-height:1.7;">
+            <li>Genera una llave con los permisos que quieras darle: <b>Productos: leer</b>, <b>Productos: editar</b>, <b>Categorías: leer</b> y/o <b>Blog: escribir y publicar</b>.</li>
+            <li><b>ChatGPT</b>: Configuración → Aplicaciones y conectores → Configuración avanzada → activa el modo desarrollador → Crear conector. URL: <code>https://www.mifiestashop.com/mcp/TU_LLAVE</code>, autenticación: ninguna.</li>
+            <li><b>Claude</b> (claude.ai o la app): Configuración → Conectores → Agregar conector personalizado, con la misma URL.</li>
+            <li><b>Claude Code / API</b>: URL <code>https://www.mifiestashop.com/mcp</code> con el header <code>Authorization: Bearer TU_LLAVE</code>.</li>
+          </ol>
+          <p style="font-size:12px; color:var(--text-muted); margin:8px 0 0;">La URL con la llave equivale a una contraseña: no la compartas. Si se filtra, revoca la llave aquí abajo.</p>
+        </div>
+
         <div class="table-wrap">
           <table>
             <thead>
@@ -4500,6 +4517,98 @@
               <!-- Dynamically populated -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-blog" class="view-panel hidden">
+      <div class="card" id="blogListaCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+          <h2 style="margin:0;">Blog</h2>
+          <div style="display:flex; gap:8px;">
+            <a class="btn" href="/blog" target="_blank" rel="noopener">Ver blog</a>
+            <button class="btn primary" onclick="blogNuevo()">+ Nuevo artículo</button>
+          </div>
+        </div>
+        <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">Los artículos publicados aparecen en <b>mifiestashop.com/blog</b>, en el mapa del sitio para Google y con datos estructurados. Escribe sobre lo que la gente busca (ej. "ideas para batucada de boda") y enlaza a tus productos.</p>
+        <div id="blogMsg" style="font-size:12.5px; color:var(--text-muted); margin-bottom:8px;"></div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Artículo</th><th>Estado</th><th>Palabra clave</th><th>Actualizado</th><th></th></tr></thead>
+          <tbody id="blogTableBody"></tbody>
+        </table></div>
+      </div>
+
+      <div class="card hidden" id="blogEditorCard">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <h2 style="margin:0;" id="blogEditorTitulo">Nuevo artículo</h2>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn" onclick="blogMostrarLista()">← Volver</button>
+            <a class="btn hidden" id="blogVerLink" target="_blank" rel="noopener">Ver en el sitio</a>
+            <button class="btn" onclick="blogGuardar('borrador')">Guardar borrador</button>
+            <button class="btn primary" onclick="blogGuardar('publicado')">Publicar</button>
+          </div>
+        </div>
+        <div id="blogEditorMsg" style="font-size:12.5px; margin:8px 0;"></div>
+        <div style="display:grid; grid-template-columns:minmax(0,2fr) minmax(260px,1fr); gap:20px;" class="blog-editor-grid">
+          <div>
+            <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Título del artículo (H1)</label>
+            <input id="blogTitulo" maxlength="200" oninput="blogAutoSlug(); blogRevisarSeo()" placeholder="Ej. 10 ideas para una batucada de boda inolvidable" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box; font-size:16px; font-weight:600;">
+            <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Dirección (URL): mifiestashop.com/blog/<b id="blogSlugVista"></b></label>
+            <input id="blogSlug" maxlength="90" oninput="this.dataset.manual='1'; blogRevisarSeo()" placeholder="se genera del título" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+            <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Resumen (aparece en la lista del blog)</label>
+            <textarea id="blogResumen" maxlength="400" rows="2" oninput="blogRevisarSeo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;"></textarea>
+            <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Contenido</label>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+              <button type="button" class="btn small" onclick="blogCmd('formatBlock','P')">Párrafo</button>
+              <button type="button" class="btn small" onclick="blogCmd('formatBlock','H2')"><b>Título H2</b></button>
+              <button type="button" class="btn small" onclick="blogCmd('formatBlock','H3')">Subtítulo H3</button>
+              <button type="button" class="btn small" onclick="blogCmd('bold')"><b>N</b></button>
+              <button type="button" class="btn small" onclick="blogCmd('italic')"><i>K</i></button>
+              <button type="button" class="btn small" onclick="blogCmd('insertUnorderedList')">• Lista</button>
+              <button type="button" class="btn small" onclick="blogCmd('insertOrderedList')">1. Lista</button>
+              <button type="button" class="btn small" onclick="blogCmd('formatBlock','BLOCKQUOTE')">❝ Cita</button>
+              <button type="button" class="btn small" onclick="blogEnlace()">🔗 Enlace</button>
+              <button type="button" class="btn small" onclick="document.getElementById('blogImgCuerpo').click()">🖼 Imagen</button>
+              <button type="button" class="btn small" onclick="blogInsertarProducto()">🛍 Producto</button>
+              <button type="button" class="btn small" onclick="blogCmd('removeFormat')">Quitar formato</button>
+              <button type="button" class="btn small" onclick="blogToggleHtml()" id="blogHtmlBtn">&lt;/&gt; HTML</button>
+            </div>
+            <input type="file" id="blogImgCuerpo" accept="image/*" class="hidden" onchange="blogSubirImagen(this, 'cuerpo')">
+            <div id="blogContenido" contenteditable="true" oninput="blogRevisarSeo()" style="min-height:360px; max-height:70vh; overflow:auto; padding:14px 16px; border:1px solid var(--border); border-radius:10px; background:#fff; color:#222; line-height:1.7; font-size:15px;"></div>
+            <textarea id="blogContenidoHtml" class="hidden" rows="20" oninput="blogRevisarSeo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box; font-family:monospace; font-size:12px;"></textarea>
+          </div>
+          <div>
+            <div style="border:1px solid var(--border); border-radius:10px; padding:12px; margin-bottom:14px;">
+              <b style="font-size:13px;">Publicación</b>
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Fecha de publicación (puedes programarla)</label>
+              <input type="datetime-local" id="blogFecha" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Autor</label>
+              <input id="blogAutor" maxlength="80" placeholder="Ej. Equipo Mi Fiestashop" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Imagen de portada</label>
+              <input id="blogImagen" placeholder="https://…" oninput="blogVistaPortada(); blogRevisarSeo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+              <input type="file" accept="image/*" onchange="blogSubirImagen(this, 'portada')" style="font-size:12px; margin-top:6px;">
+              <img id="blogPortadaVista" class="hidden" alt="" style="width:100%; margin-top:8px; border-radius:8px; aspect-ratio:16/9; object-fit:cover;">
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Texto alternativo de la portada</label>
+              <input id="blogImagenAlt" maxlength="200" placeholder="Describe la imagen (ayuda a Google Imágenes)" oninput="blogRevisarSeo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Etiquetas (separadas por coma)</label>
+              <input id="blogEtiquetas" placeholder="batucada, boda, neón" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+            </div>
+            <div style="border:1px solid var(--border); border-radius:10px; padding:12px;">
+              <b style="font-size:13px;">SEO</b>
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Palabra clave principal</label>
+              <input id="blogPalabra" maxlength="80" oninput="blogRevisarSeo()" placeholder="Ej. batucada para boda" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Título para Google <span id="blogMetaTitleCnt" style="font-weight:400;"></span></label>
+              <input id="blogMetaTitle" maxlength="120" oninput="blogRevisarSeo()" placeholder="si lo dejas vacío se usa el título" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;">
+              <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">Descripción para Google <span id="blogMetaDescCnt" style="font-weight:400;"></span></label>
+              <textarea id="blogMetaDesc" maxlength="320" rows="3" oninput="blogRevisarSeo()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:100%; box-sizing:border-box;"></textarea>
+              <div style="margin-top:12px; padding:10px; border-radius:8px; background:#fff; border:1px solid #eee;">
+                <div style="font-size:11px; color:#5f6368;">mifiestashop.com › blog › <span id="blogSnipSlug"></span></div>
+                <div id="blogSnipTitle" style="color:#1a0dab; font-size:16px; line-height:1.3; margin:2px 0;"></div>
+                <div id="blogSnipDesc" style="color:#4d5156; font-size:12.5px; line-height:1.4;"></div>
+              </div>
+              <div style="font-size:12px; margin-top:12px;"><b>Revisión <span id="blogSeoScore"></span></b><ul id="blogSeoLista" style="margin:6px 0 0; padding-left:0; list-style:none; line-height:1.7;"></ul></div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -5201,6 +5310,7 @@
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="orders:read"> Pedidos: leer</label>
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="orders:write"> Pedidos: crear/editar</label>
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="customers:read"> Clientes: leer</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="blog:write"> Blog: escribir y publicar</label>
           </div>
         </div>
         <div id="apiKeyModalMsg" class="hidden" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; text-align:center;"></div>
@@ -5212,6 +5322,11 @@
       <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
         <code id="apiKeyRevealValue" style="flex:1; padding:12px 14px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); font-size:12.5px; word-break:break-all;"></code>
         <button type="button" class="btn small" onclick="copyRevealedApiKey()">Copiar</button>
+      </div>
+      <p style="font-size:12.5px; color:var(--text-secondary); margin:0 0 6px;">Para conectar ChatGPT o Claude (MCP), usa esta dirección como URL del conector:</p>
+      <div style="display:flex; gap:8px; align-items:center; margin-bottom:16px;">
+        <code id="apiKeyMcpUrl" style="flex:1; padding:10px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); font-size:12px; word-break:break-all;"></code>
+        <button type="button" class="btn small" onclick="navigator.clipboard.writeText(document.getElementById('apiKeyMcpUrl').textContent)">Copiar</button>
       </div>
       <button type="button" class="btn primary" style="width:100%; padding:12px; font-size:15px; font-weight:700; justify-content:center;" onclick="closeApiKeyModal()">Listo</button>
     </div>
@@ -6539,6 +6654,7 @@ const PERMISSION_GROUPS = [
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
     { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
+    { key: 'blog', label: 'Blog: escribir y administrar artículos (SEO)' },
     { key: 'aprobar-movimientos', label: 'Aprobar movimientos de inventario (entradas, salidas y traspasos)' },
     { key: 'paginas-cms', label: 'Páginas CMS' }
   ]},
@@ -7822,6 +7938,7 @@ function switchView(viewName) {
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
     competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
+    blog: ['Blog', 'Artículos para atraer visitas desde Google'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
     notificaciones: ['Notificaciones', 'Alertas del sistema'],
     clientes: ['Directorio de Clientes', 'Base de Clientes'],
@@ -7862,6 +7979,7 @@ function switchView(viewName) {
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'competencia') loadCompetenciaView();
+  if (viewName === 'blog') blogMostrarLista();
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
@@ -14193,6 +14311,219 @@ async function confirmCrearPedido(){
   }
 }
 
+// ---- Blog (api/blog-admin.js; páginas públicas en api/blog.js) ----
+let blogPosts = [];
+let blogActualId = null;
+
+async function blogApi(accion, extra) {
+  const r = await fetch('/api/blog-admin', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), accion, ...(extra || {}) })
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.ok) throw new Error(r.status === 401 ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : (d.error || 'Error del servidor'));
+  return d;
+}
+
+async function blogMostrarLista() {
+  document.getElementById('blogEditorCard').classList.add('hidden');
+  document.getElementById('blogListaCard').classList.remove('hidden');
+  const msg = document.getElementById('blogMsg');
+  const tbody = document.getElementById('blogTableBody');
+  msg.textContent = 'Cargando…';
+  try {
+    blogPosts = (await blogApi('listar')).posts || [];
+    msg.textContent = '';
+    const ahora = Date.now();
+    tbody.innerHTML = blogPosts.length ? blogPosts.map(p => {
+      const programado = p.estado === 'publicado' && p.publicado_at && new Date(p.publicado_at).getTime() > ahora;
+      const pill = p.estado !== 'publicado' ? '<span class="pill">Borrador</span>' : programado ? `<span class="pill warn">Programado ${new Date(p.publicado_at).toLocaleDateString('es-MX')}</span>` : '<span class="pill ok">Publicado</span>';
+      return `<tr>
+        <td><b>${escapeHtml(p.titulo)}</b><div style="font-size:11px; color:var(--text-muted);">/blog/${escapeHtml(p.slug)}</div></td>
+        <td>${pill}</td>
+        <td>${escapeHtml(p.palabra_clave || '—')}</td>
+        <td style="font-size:12px;">${new Date(p.updated_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn small" onclick="blogEditar(${Number(p.id)})">Editar</button>
+          ${p.estado === 'publicado' && !programado ? `<a class="btn small" href="/blog/${encodeURIComponent(p.slug)}" target="_blank" rel="noopener">Ver</a>` : ''}
+          <button class="btn small" onclick="blogBorrar(${Number(p.id)})">Borrar</button>
+        </td></tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:center; padding:28px; color:var(--text-muted);">Todavía no hay artículos. Crea el primero con "+ Nuevo artículo".</td></tr>';
+  } catch (e) { msg.textContent = e.message; tbody.innerHTML = ''; }
+}
+
+function blogFechaLocal(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  const off = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - off).toISOString().slice(0, 16);
+}
+
+function blogLlenar(p) {
+  blogActualId = p && p.id ? p.id : null;
+  const v = (id, val) => { document.getElementById(id).value = val || ''; };
+  v('blogTitulo', p && p.titulo); v('blogSlug', p && p.slug); v('blogResumen', p && p.resumen);
+  v('blogImagen', p && p.imagen); v('blogImagenAlt', p && p.imagen_alt); v('blogAutor', (p && p.autor) || 'Equipo Mi Fiestashop');
+  v('blogEtiquetas', p && (p.etiquetas || []).join(', ')); v('blogPalabra', p && p.palabra_clave);
+  v('blogMetaTitle', p && p.meta_title); v('blogMetaDesc', p && p.meta_description);
+  document.getElementById('blogFecha').value = blogFechaLocal(p && p.publicado_at);
+  document.getElementById('blogSlug').dataset.manual = p && p.id ? '1' : '';
+  document.getElementById('blogContenido').innerHTML = (p && p.contenido) || '<p>Escribe aquí la introducción. Usa "Título H2" para dividir el artículo en secciones.</p>';
+  document.getElementById('blogContenidoHtml').classList.add('hidden');
+  document.getElementById('blogContenido').classList.remove('hidden');
+  document.getElementById('blogEditorTitulo').textContent = p && p.id ? 'Editar artículo' : 'Nuevo artículo';
+  const ver = document.getElementById('blogVerLink');
+  ver.classList.toggle('hidden', !(p && p.estado === 'publicado'));
+  if (p && p.slug) ver.href = '/blog/' + encodeURIComponent(p.slug);
+  document.getElementById('blogEditorMsg').textContent = '';
+  blogVistaPortada(); blogRevisarSeo();
+  document.getElementById('blogListaCard').classList.add('hidden');
+  document.getElementById('blogEditorCard').classList.remove('hidden');
+}
+
+function blogNuevo() { blogLlenar(null); }
+async function blogEditar(id) {
+  try { blogLlenar((await blogApi('obtener', { id })).post); } catch (e) { alert(e.message); }
+}
+async function blogBorrar(id) {
+  const p = blogPosts.find(x => x.id === id);
+  if (!confirm(`¿Borrar el artículo "${p ? p.titulo : id}"? Esta acción no se puede deshacer.`)) return;
+  try { await blogApi('borrar', { id }); blogMostrarLista(); } catch (e) { alert(e.message); }
+}
+
+function blogSlugify(s) {
+  return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 90);
+}
+function blogAutoSlug() {
+  const slug = document.getElementById('blogSlug');
+  if (!slug.dataset.manual) slug.value = blogSlugify(document.getElementById('blogTitulo').value);
+}
+
+function blogHtmlActual() {
+  const ta = document.getElementById('blogContenidoHtml');
+  return ta.classList.contains('hidden') ? document.getElementById('blogContenido').innerHTML : ta.value;
+}
+function blogToggleHtml() {
+  const ed = document.getElementById('blogContenido'), ta = document.getElementById('blogContenidoHtml');
+  if (ta.classList.contains('hidden')) { ta.value = ed.innerHTML; ed.classList.add('hidden'); ta.classList.remove('hidden'); }
+  else { ed.innerHTML = ta.value; ta.classList.add('hidden'); ed.classList.remove('hidden'); }
+}
+function blogCmd(cmd, val) {
+  if (!document.getElementById('blogContenidoHtml').classList.contains('hidden')) blogToggleHtml();
+  document.getElementById('blogContenido').focus();
+  document.execCommand(cmd, false, val);
+  blogRevisarSeo();
+}
+function blogEnlace() {
+  const url = prompt('Dirección del enlace (ej. /266-productos o https://…):');
+  if (url) blogCmd('createLink', url.trim());
+}
+function blogInsertarProducto() {
+  const q = prompt('Busca el producto a enlazar (nombre):');
+  if (!q) return;
+  const n = normalizeEs(q);
+  const lista = (adminCatalogProducts.length ? adminCatalogProducts : liveProducts).filter(p => normalizeEs(p.name || '').includes(n)).slice(0, 8);
+  if (!lista.length) { alert('No encontré productos con ese nombre.'); return; }
+  const op = prompt('Elige el número:\n' + lista.map((p, i) => `${i + 1}. ${p.name} (${fmtMoney(p.price)})`).join('\n'), '1');
+  const p = lista[parseInt(op, 10) - 1];
+  if (!p) return;
+  const url = p.url || ('/?buscar=' + encodeURIComponent(p.name));
+  blogCmd('insertHTML', `<a href="${escapeHtml(url)}">${escapeHtml(p.name)}</a>&nbsp;`);
+}
+async function blogSubirImagen(input, destino) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const msg = document.getElementById('blogEditorMsg');
+  if (!/^image\//.test(file.type) || file.size > 10 * 1024 * 1024) { msg.textContent = 'Elige una imagen de menos de 10 MB.'; return; }
+  msg.textContent = 'Subiendo imagen…';
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const base = blogSlugify(document.getElementById('blogTitulo').value || file.name).slice(0, 50) || 'imagen';
+    const path = `blog/${base}-${Date.now().toString(36)}.${ext}`;
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${path}`, {
+      method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type || 'image/jpeg' }, body: file
+    });
+    if (!r.ok) throw new Error('el servidor rechazó la imagen (' + r.status + ')');
+    const url = `${SUPABASE_URL}/storage/v1/object/public/assets/${path}`;
+    if (destino === 'portada') { document.getElementById('blogImagen').value = url; blogVistaPortada(); }
+    else {
+      const alt = prompt('Describe la imagen en pocas palabras (texto alternativo para Google):', '') || '';
+      blogCmd('insertHTML', `<img src="${url}" alt="${escapeHtml(alt)}">`);
+    }
+    msg.textContent = 'Imagen subida.';
+    blogRevisarSeo();
+  } catch (e) { msg.textContent = 'No se pudo subir la imagen: ' + e.message; }
+}
+function blogVistaPortada() {
+  const url = document.getElementById('blogImagen').value.trim();
+  const img = document.getElementById('blogPortadaVista');
+  if (/^https:\/\//.test(url)) { img.src = url; img.classList.remove('hidden'); } else img.classList.add('hidden');
+}
+
+function blogRevisarSeo() {
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  const titulo = val('blogTitulo'), slug = val('blogSlug') || blogSlugify(titulo);
+  const metaT = val('blogMetaTitle') || titulo, metaD = val('blogMetaDesc') || val('blogResumen');
+  const html = blogHtmlActual();
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  const textoCuerpo = tmp.textContent.replace(/\s+/g, ' ').trim();
+  const nPal = textoCuerpo ? textoCuerpo.split(' ').length : 0;
+  const kw = normalizeEs(val('blogPalabra'));
+  const tiene = t => kw && normalizeEs(t).includes(kw);
+  const primerParrafo = (tmp.querySelector('p') || {}).textContent || textoCuerpo.slice(0, 300);
+  const enlaces = [...tmp.querySelectorAll('a')].map(a => a.getAttribute('href') || '');
+  const imgs = [...tmp.querySelectorAll('img')];
+  document.getElementById('blogSlugVista').textContent = slug;
+  document.getElementById('blogSnipSlug').textContent = slug;
+  document.getElementById('blogSnipTitle').textContent = (metaT || 'Título del artículo').slice(0, 60) + ((metaT.length > 60) ? '…' : '') + ' | Blog Mi Fiestashop';
+  document.getElementById('blogSnipDesc').textContent = (metaD || textoCuerpo).slice(0, 158) + ((metaD || textoCuerpo).length > 158 ? '…' : '');
+  document.getElementById('blogMetaTitleCnt').textContent = `(${metaT.length}/60)`;
+  document.getElementById('blogMetaDescCnt').textContent = `(${metaD.length}/160)`;
+  const checks = [
+    [!!kw, 'Tiene palabra clave principal'],
+    [tiene(titulo), 'La palabra clave está en el título'],
+    [tiene(primerParrafo), 'La palabra clave aparece al inicio del texto'],
+    [tiene(slug.replace(/-/g, ' ')), 'La palabra clave está en la URL'],
+    [tiene(metaD), 'La palabra clave está en la descripción para Google'],
+    [metaT.length >= 30 && metaT.length <= 60, 'Título para Google de 30 a 60 caracteres'],
+    [metaD.length >= 120 && metaD.length <= 160, 'Descripción para Google de 120 a 160 caracteres'],
+    [nPal >= 600, `Al menos 600 palabras (llevas ${nPal})`],
+    [tmp.querySelectorAll('h2').length >= 2, 'Dividido en secciones con al menos 2 títulos H2'],
+    [enlaces.some(h => h.startsWith('/') || /mifiestashop\.com/.test(h)), 'Enlaza a productos o páginas de la tienda'],
+    [!!val('blogImagen') && !!val('blogImagenAlt'), 'Imagen de portada con texto alternativo'],
+    [imgs.every(i => (i.getAttribute('alt') || '').trim()), 'Todas las imágenes del texto tienen texto alternativo']
+  ];
+  const ok = checks.filter(c => c[0]).length;
+  document.getElementById('blogSeoScore').textContent = `${ok}/${checks.length}`;
+  document.getElementById('blogSeoScore').style.color = ok >= 10 ? 'var(--success, #16a34a)' : ok >= 7 ? 'var(--warning, #d97706)' : 'var(--danger, #dc2626)';
+  document.getElementById('blogSeoLista').innerHTML = checks.map(([b, t]) => `<li>${b ? '✅' : '⬜'} ${escapeHtml(t)}</li>`).join('');
+}
+
+async function blogGuardar(estado) {
+  const msg = document.getElementById('blogEditorMsg');
+  const val = id => document.getElementById(id).value;
+  if (!val('blogTitulo').trim()) { msg.textContent = 'Escribe un título.'; return; }
+  const fecha = val('blogFecha');
+  const post = {
+    titulo: val('blogTitulo'), slug: val('blogSlug') || blogSlugify(val('blogTitulo')), resumen: val('blogResumen'),
+    contenido: blogHtmlActual(), imagen: val('blogImagen'), imagen_alt: val('blogImagenAlt'), autor: val('blogAutor'),
+    etiquetas: val('blogEtiquetas'), palabra_clave: val('blogPalabra'), meta_title: val('blogMetaTitle'), meta_description: val('blogMetaDesc'),
+    estado, publicado_at: fecha ? new Date(fecha).toISOString() : null
+  };
+  msg.textContent = 'Guardando…';
+  try {
+    const { post: g } = await blogApi('guardar', { id: blogActualId, post });
+    blogActualId = g.id;
+    document.getElementById('blogSlug').value = g.slug; document.getElementById('blogSlug').dataset.manual = '1';
+    const ver = document.getElementById('blogVerLink');
+    ver.href = '/blog/' + encodeURIComponent(g.slug);
+    ver.classList.toggle('hidden', g.estado !== 'publicado');
+    const programado = g.estado === 'publicado' && new Date(g.publicado_at) > new Date();
+    msg.textContent = g.estado === 'publicado' ? (programado ? `Programado para ${new Date(g.publicado_at).toLocaleString('es-MX')}.` : 'Publicado ✓ (puede tardar hasta 5 minutos en verse actualizado).') : 'Borrador guardado ✓ (no se ve en el sitio).';
+    blogRevisarSeo();
+  } catch (e) { msg.textContent = 'No se pudo guardar: ' + e.message; }
+}
+
 // ---- Competencia en Mercado Libre (lib/competencia-ml.js, api/competencia-buscar.js) ----
 // Piezas de nuestro producto según su nombre ("Globo salchicha (200 pzas)" -> 200); mismo criterio
 // que piezasDeTexto en lib/competencia-ml.js.
@@ -16643,7 +16974,8 @@ const API_KEY_SCOPE_LABELS = {
   'products:read': 'Productos: leer', 'products:write': 'Productos: editar',
   'categories:read': 'Categorías: leer',
   'orders:read': 'Pedidos: leer', 'orders:write': 'Pedidos: crear/editar',
-  'customers:read': 'Clientes: leer'
+  'customers:read': 'Clientes: leer',
+  'blog:write': 'Blog: escribir y publicar'
 };
 let apiKeysAdminCache = [];
 
@@ -16721,6 +17053,7 @@ async function saveApiKey() {
     const created = Array.isArray(rows) ? rows[0] : rows;
     lastRevealedApiKey = created.plain_key;
     document.getElementById('apiKeyRevealValue').textContent = created.plain_key;
+    document.getElementById('apiKeyMcpUrl').textContent = `${location.origin}/mcp/${created.plain_key}`;
     document.getElementById('apiKeyFormStep').classList.add('hidden');
     document.getElementById('apiKeyRevealStep').classList.remove('hidden');
     apiKeysAdminCache.unshift(created);
