@@ -59,6 +59,20 @@ async function getAccessToken(baseUrl, clientId, clientSecret) {
 
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max || 200);
 
+// Busca la liga del PDF de la guía en cualquier parte de la respuesta (el envío, sus paquetes
+// incluidos, relaciones…): cualquier clave que se llame label_url / labelUrl / label con https.
+function findLabelUrl(node, depth) {
+  if (!node || typeof node !== 'object' || (depth || 0) > 6) return null;
+  for (const [k, v] of Object.entries(node)) {
+    if (typeof v === 'string' && /^https:\/\//i.test(v) && /^(label_?url|label|pdf_?url|label_?pdf)$/i.test(k)) return v;
+  }
+  for (const v of Object.values(node)) {
+    const f = Array.isArray(v) ? v.map(x => findLabelUrl(x, (depth || 0) + 1)).find(Boolean) : findLabelUrl(v, (depth || 0) + 1);
+    if (f) return f;
+  }
+  return null;
+}
+
 // Normaliza la respuesta JSON:API de un envío a algo plano para el panel.
 function parseShipment(json) {
   const d = json && json.data;
@@ -73,7 +87,7 @@ function parseShipment(json) {
     paymentStatus: a.payment_status || '',
     total: a.total != null ? parseFloat(a.total) : null,
     trackingNumber: a.master_tracking_number || p.tracking_number || null,
-    labelUrl: p.label_url || a.label_url || null,
+    labelUrl: p.label_url || a.label_url || findLabelUrl(json) || null,
     trackingUrl: p.tracking_url_provider || null,
     trackingStatus: p.tracking_status || null,
     createdAt: a.created_at || null,
@@ -166,7 +180,13 @@ module.exports = async function handler(req, res) {
       const d = await call(`/api/v1/shipments/${encodeURIComponent(id)}`);
       if (!d.ok) { res.status(502).json({ error: `Skydropx envío error ${d.status}`, detail: d.text.slice(0, 300) }); return; }
       const sh = parseShipment(d.json);
-      if (!sh || !sh.labelUrl) { res.status(409).json({ error: 'La guía todavía no tiene PDF. Intenta de nuevo en unos segundos.' }); return; }
+      if (!sh || !sh.labelUrl) {
+        // Sin liga: se devuelve qué trae el envío para poder ver por qué (estado, claves, paquetes).
+        const at = (d.json && d.json.data && d.json.data.attributes) || {};
+        const inc = ((d.json && d.json.included) || []).map(x => `${x.type}:${Object.keys(x.attributes || {}).join('/')}`).join(' ; ');
+        res.status(409).json({ error: `La guía todavía no tiene PDF (estado: ${at.workflow_status || 'desconocido'}${sh && sh.error ? ', error: ' + sh.error : ''}). Si ya pasó un minuto, revisa la guía en pro.skydropx.com.`, detail: `atributos: ${Object.keys(at).join(', ')} | incluidos: ${inc || 'ninguno'}`.slice(0, 600) });
+        return;
+      }
       if (!/^https:\/\//i.test(sh.labelUrl)) { res.status(502).json({ error: 'Skydropx devolvió una liga de guía no válida.' }); return; }
       const f = await fetch(sh.labelUrl);
       if (!f.ok) { res.status(502).json({ error: `No se pudo bajar el PDF de la guía (HTTP ${f.status}).` }); return; }
