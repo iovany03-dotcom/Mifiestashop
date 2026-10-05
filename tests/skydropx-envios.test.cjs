@@ -87,3 +87,26 @@ test('skydropx: sin PDF, el error dice el estado y qué trae el envío', async (
   assert.match(r.data.error, /in_progress/);
   assert.match(r.data.detail, /carrier_name/);
 });
+
+test('skydropx: listar trae los envíos más recientes (últimas páginas) y los ordena de nuevo a viejo', async () => {
+  const visitadas = [];
+  const envio = (id, fecha) => ({ id, attributes: { created_at: fecha, workflow_status: 'success' } });
+  const paginas = { 1: [envio('a1', '2025-08-13'), envio('a2', '2025-08-14')], 2: [envio('b1', '2026-01-01')], 3: [envio('c1', '2026-09-01'), envio('c2', '2026-10-05')], 4: [envio('d1', '2026-10-06')] };
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('rpc_check_session')) return resp(200, true);
+    if (u.includes('/oauth/token')) return resp(200, { access_token: 't' });
+    const m = u.match(/shipments\?page=(\d+)/);
+    if (m) { visitadas.push(+m[1]); return resp(200, { data: paginas[m[1]], meta: { total_pages: 4 } }); }
+    return resp(404, {});
+  };
+  const r = await call({ accion: 'listar' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.deepEqual(r.data.shipments.map(x => x.id), ['d1', 'c2', 'c1', 'b1']);
+  assert.equal(r.data.totalPages, 4);
+  assert.equal(r.data.siguiente, 1);
+  assert.ok(visitadas.includes(4) && visitadas.includes(2) && !visitadas.includes(3) === false);
+  const r2 = await call({ accion: 'listar', hasta_pagina: 1 });
+  assert.deepEqual(r2.data.shipments.map(x => x.id), ['a2', 'a1']);
+  assert.equal(r2.data.siguiente, null);
+});

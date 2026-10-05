@@ -157,11 +157,27 @@ module.exports = async function handler(req, res) {
     }
 
     if (accion === 'listar') {
-      const r = await call('/api/v1/shipments');
-      if (!r.ok) { res.status(502).json({ error: `Skydropx envíos error ${r.status}`, detail: r.text.slice(0, 300) }); return; }
-      const list = (r.json && r.json.data) || [];
-      const shipments = list.map(x => parseShipment({ data: x })).filter(Boolean);
-      res.status(200).json({ shipments });
+      // Skydropx lista de 10 en 10 y desde los envíos MÁS ANTIGUOS (la página 1 son los de hace
+      // meses). Se lee la página 1 solo para saber cuántas hay y se trae el final: las últimas 3
+      // páginas (30 envíos) o, con `hasta_pagina`, las 3 que terminan en esa página. `siguiente` es
+      // la página desde la que se pueden pedir envíos más antiguos (null si ya no hay).
+      const pageOf = (q) => call(`/api/v1/shipments?page=${q}`);
+      const first = await pageOf(1);
+      if (!first.ok) { res.status(502).json({ error: `Skydropx envíos error ${first.status}`, detail: first.text.slice(0, 300) }); return; }
+      const meta = (first.json && first.json.meta) || {};
+      const lastLink = String((first.json && first.json.links && first.json.links.last) || '').match(/[?&]page=(\d+)/);
+      const totalPages = Math.max(1, parseInt(meta.total_pages, 10) || (lastLink ? parseInt(lastLink[1], 10) : 1));
+      const hasta = Math.min(totalPages, Math.max(1, parseInt(body.hasta_pagina, 10) || totalPages));
+      const desde = Math.max(1, hasta - 2);
+      let list = [];
+      for (let pg = hasta; pg >= desde; pg--) {
+        const r = pg === 1 ? first : await pageOf(pg);
+        if (!r.ok) { res.status(502).json({ error: `Skydropx envíos error ${r.status}`, detail: r.text.slice(0, 300) }); return; }
+        list = list.concat(((r.json && r.json.data) || []).slice().reverse());
+      }
+      const shipments = list.map(x => parseShipment({ data: x })).filter(Boolean)
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      res.status(200).json({ shipments, totalPages, siguiente: desde > 1 ? desde - 1 : null });
       return;
     }
 

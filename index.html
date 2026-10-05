@@ -3390,6 +3390,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
           <h3 style="margin:0; font-size:1.15rem; color:var(--text-primary);">Bitácora de Envíos & Rastreos Activos Skydropx</h3>
           <button class="btn small" onclick="cargarEnviosSkydropx()">Actualizar Rastreos</button>
+          <button class="btn small" id="skMasAntiguasBtn" style="display:none;" onclick="cargarEnviosSkydropx(SK_SIGUIENTE)">Cargar más antiguas</button>
         </div>
 
         <div class="table-wrap">
@@ -20569,15 +20570,24 @@ async function crearGuiaSkydropxReal() {
 
 let SKYDROPX_SHIPMENTS = [];
 
-async function cargarEnviosSkydropx() {
+let SK_SIGUIENTE = null;
+// Skydropx entrega los envíos de 10 en 10 desde los más viejos: el servidor trae los últimos 30 y,
+// con "Cargar más antiguas", los 30 anteriores (hasta_pagina).
+async function cargarEnviosSkydropx(hastaPagina) {
   try {
-    const d = await skydropxAdminRequest({ accion: 'listar' });
-    SKYDROPX_SHIPMENTS = d.shipments || [];
+    const d = await skydropxAdminRequest(hastaPagina ? { accion: 'listar', hasta_pagina: hastaPagina } : { accion: 'listar' });
+    SKYDROPX_SHIPMENTS = hastaPagina
+      ? SKYDROPX_SHIPMENTS.concat((d.shipments || []).filter(n => !SKYDROPX_SHIPMENTS.some(x => x.id === n.id)))
+      : (d.shipments || []);
+    SK_SIGUIENTE = d.siguiente || null;
   } catch (e) {
     SKYDROPX_SHIPMENTS = [];
+    SK_SIGUIENTE = null;
     const tbody = document.getElementById('skydropxShipmentsTableBody');
     if (tbody) { tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted); font-size:13px;">No se pudieron cargar los envíos: ${escapeHtml(e.message)}</td></tr>`; return; }
   }
+  const mas = document.getElementById('skMasAntiguasBtn');
+  if (mas) mas.style.display = SK_SIGUIENTE ? '' : 'none';
   renderSkydropxShipmentsTable();
 }
 
