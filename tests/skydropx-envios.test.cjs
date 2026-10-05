@@ -45,3 +45,18 @@ test('skydropx: si falla, el error mostrado es el del formato anidado, no el del
   assert.match(r.data.detail, /street1/);
   assert.ok(!/rate_id/.test(r.data.detail));
 });
+
+test('skydropx: etiqueta baja el PDF desde el servidor y lo devuelve en base64', async () => {
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('rpc_check_session')) return resp(200, true);
+    if (u.includes('/oauth/token')) return resp(200, { access_token: 't' });
+    if (u.includes('/api/v1/shipments/S1')) return resp(200, { data: { id: 'S1', attributes: { master_tracking_number: 'T1' } }, included: [{ attributes: { label_url: 'https://cdn.x/label.pdf', tracking_number: 'T1' } }] });
+    if (u === 'https://cdn.x/label.pdf') return { ok: true, status: 200, headers: { get: () => 'application/pdf' }, arrayBuffer: async () => Buffer.from('%PDF-1.4 hola') };
+    return resp(404, {});
+  };
+  const r = await call({ accion: 'etiqueta', shipment_id: 'S1' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.equal(Buffer.from(r.data.content, 'base64').toString(), '%PDF-1.4 hola');
+  assert.equal(r.data.filename, 'guia-T1.pdf');
+});
