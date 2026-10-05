@@ -97,6 +97,29 @@ test('crear-pedido: el precio sale de catalogo_productos, nunca del navegador', 
   assert.equal(res2.code, 400, 'un producto inactivo no se puede comprar');
 });
 
+test('crear-pedido: recoger en tienda no pide dirección, no cobra envío y guarda la sucursal', async () => {
+  let saved = null;
+  mockSupabase({
+    catalogo_productos: [{ id: 101, name: 'Globo rojo', sku: 'GLB-1', price: 10, active: true }],
+    pedidos_online: (u, opts) => { saved = JSON.parse(opts.body); return []; }
+  });
+  const body = { items: [{ id: 101, qty: 3 }], customer_name: 'Ana', customer_email: 'ana@test.mx', customer_phone: '5555', pickup_branch: 'queretaro', shipping_cost: 99 };
+  const res = response();
+  await require('../api/crear-pedido.js')({ method: 'POST', body }, res);
+  assert.equal(res.code, 200);
+  assert.equal(res.data.total, 30, 'el costo de envío mandado por el navegador se ignora');
+  assert.equal(saved.shipping_cost, 0);
+  assert.equal(saved.shipping_carrier, 'Recoger en tienda - Querétaro');
+  assert.match(saved.shipping_address, /^Recoger en tienda: Querétaro \(C\. Gral\. Lázaro Cárdenas 67/);
+
+  const bad = response();
+  await require('../api/crear-pedido.js')({ method: 'POST', body: { ...body, pickup_branch: 'luna' } }, bad);
+  assert.equal(bad.code, 400);
+  const sinDir = response();
+  await require('../api/crear-pedido.js')({ method: 'POST', body: { ...body, pickup_branch: undefined } }, sinDir);
+  assert.equal(sinDir.code, 400, 'a domicilio sigue exigiendo dirección');
+});
+
 test('stock-sucursal: existencias de ps_stock, sin las sucursales ocultas', async () => {
   const seen = mockSupabase({ ps_stock: [{ id_warehouse: 53, quantity: 12 }, { id_warehouse: 54, quantity: 7 }, { id_warehouse: 55, quantity: 3.4 }] });
   const res = response();
