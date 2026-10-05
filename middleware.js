@@ -22,6 +22,8 @@ export const config = {
   matcher: ['/:id(\\d+)-:slug*', '/:cat/:id(\\d+)-:slug*'],
 };
 
+import cmsManifest from './data/cms-manifest.json';
+
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
@@ -220,7 +222,22 @@ export default async function middleware(request) {
   const match = url.pathname.match(/^\/(?:([a-z0-9-]+)\/)?(\d+)-([^/]*?)(\.html)?$/i);
   if (!match) return; // deja que Vercel sirva la ruta normal, sin tocar nada
   const [, catPrefix, id, slug, htmlExt] = match;
-  if (catPrefix && !htmlExt) return; // p. ej. /content/329-... (páginas CMS): no es de aquí
+  if (catPrefix && !htmlExt) {
+    // Páginas CMS (/content/<id>-<slug>). Con un id que no existe y un slug que sí, se manda (301)
+    // a la primera página con ese slug, como hacía PrestaShop. Se resuelve aquí porque la regla
+    // de reescritura de vercel.json daba 502 ROUTER_CANNOT_MATCH en esos casos.
+    if (catPrefix.toLowerCase() === 'content') {
+      try {
+        const path = decodeURIComponent(url.pathname);
+        const exactos = new Set(cmsManifest.map(p => p.path).concat(['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos']));
+        if (!exactos.has(path)) {
+          const cms = cmsManifest.filter(p => p.slug === slug).sort((a, b) => a.id - b.id)[0];
+          if (cms) return redirectTo(url, cms.path);
+        }
+      } catch (e) { /* si algo falla, sigue el flujo normal */ }
+    }
+    return; // lo demás de /content/...: no es de aquí
+  }
 
   const isProduct = !!htmlExt;
   try {
