@@ -831,6 +831,7 @@
       margin: 0 !important; padding: 4px 6px 12px !important;
       box-shadow: none !important; border: none !important; border-radius: 0 !important;
     }
+    body.printing-ticket #printableTicket, body.printing-ticket #printableTicket * { font-family: 'Courier New', Courier, Consolas, monospace !important; color: #000 !important; }
     #printableTicket .ticket-brand-bar { margin: 0 0 10px !important; border-radius: 0 !important; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #printableTicket .ticket-table td, #printableTicket .ticket-table th { word-break: break-word; }
     #printableTicket .ticket-table th:nth-child(n+3), #printableTicket .ticket-table td:nth-child(n+3) { white-space: nowrap; padding-left: 6px; }
@@ -8510,6 +8511,16 @@ function printTicket() {
       .ticket-table th:nth-child(n+3), .ticket-table td:nth-child(n+3) { white-space: nowrap; padding-left: 6px; }
       .ticket-table .t-cod { max-width: 22mm; font-size: 9px; }
       tr, .ticket-total-row, .ticket-coupon-box { break-inside: avoid; }
+      /* Misma letra que /prueba-impresion.html (que sí imprime en las Epson): el controlador de la
+         impresora reemplaza Segoe UI/Arial por sus fuentes internas y el texto salía en blanco
+         (solo se imprimían las líneas). Todo en negro: los grises claros no salen en térmica. */
+      .ticket-paper, .ticket-paper * { font-family: 'Courier New', Courier, Consolas, monospace !important; color: #000 !important; }
+      .ticket-paper { font-size: 12px !important; padding: 2px 2px 10px !important; box-sizing: border-box; overflow-wrap: anywhere; }
+      .ticket-table { font-size: 10px !important; letter-spacing: -0.3px; }
+      .ticket-table th, .ticket-table td { padding-left: 2px !important; padding-right: 0 !important; }
+      .ticket-divider, .ticket-table th, .ticket-table tr + tr td { border-color: #000 !important; }
+      .ticket-coupon-box { border-color: #000 !important; }
+      .ticket-icon { filter: grayscale(1) contrast(1.4); }
       @media screen { body { width: ${width}mm; margin: 8px auto; } }
     </style></head><body>${clone.outerHTML}
     <script>
