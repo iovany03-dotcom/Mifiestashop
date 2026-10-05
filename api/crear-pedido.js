@@ -30,6 +30,13 @@ const { enviarPushAdmins } = require('../lib/push.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
+// Recoger en tienda: sin costo de envío ni dirección del cliente; se elige la sucursal.
+const PICKUP_BRANCHES = {
+  rumania: { name: 'CDMX Rumania', address: 'Rumania 613, Col. Portales, Benito Juárez' },
+  queretaro: { name: 'Querétaro', address: 'C. Gral. Lázaro Cárdenas 67, Casa Blanca' },
+  puebla: { name: 'Puebla', address: 'C. 35 Sur 2901, Sta. Cruz Los Ángeles' }
+};
+
 const MAX_LINES = 50;
 const MAX_QTY_PER_LINE = 999;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,7 +72,7 @@ module.exports = async function handler(req, res) {
   const {
     items, customer_name, customer_email, customer_phone,
     address, colonia, municipio, estado, cp,
-    shipping_cost, shipping_carrier, payment_method, coupon_code
+    shipping_cost, shipping_carrier, payment_method, coupon_code, pickup_branch
   } = body;
 
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_LINES) {
@@ -77,11 +84,16 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'Artículo o cantidad inválida en el carrito' });
     return;
   }
-  if (!customer_name || !customer_email || !EMAIL_RE.test(customer_email) || !customer_phone || !address || !colonia || !municipio || !estado || !cp) {
+  const pickup = pickup_branch ? PICKUP_BRANCHES[String(pickup_branch)] : null;
+  if (pickup_branch && !pickup) {
+    res.status(400).json({ error: 'Sucursal para recoger inválida' });
+    return;
+  }
+  if (!customer_name || !customer_email || !EMAIL_RE.test(customer_email) || !customer_phone || (!pickup && (!address || !colonia || !municipio || !estado || !cp))) {
     res.status(400).json({ error: 'Faltan datos de contacto o envío' });
     return;
   }
-  const shippingCostNum = Number(shipping_cost);
+  const shippingCostNum = pickup ? 0 : Number(shipping_cost);
   if (!Number.isFinite(shippingCostNum) || shippingCostNum < 0) {
     res.status(400).json({ error: 'Costo de envío inválido' });
     return;
@@ -159,7 +171,7 @@ module.exports = async function handler(req, res) {
     }
     const total = Math.round((subtotal - descuento + shippingCostNum) * 100) / 100;
     const folio = 'WEB-' + Date.now().toString().slice(-6);
-    const fullAddress = `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
+    const fullAddress = pickup ? `Recoger en tienda: ${pickup.name} (${pickup.address})` : `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
 
     const orderPayload = {
       folio,
@@ -167,9 +179,9 @@ module.exports = async function handler(req, res) {
       customer_email,
       customer_phone: String(customer_phone).slice(0, 40),
       shipping_address: fullAddress,
-      shipping_cp: String(cp).slice(0, 10),
+      shipping_cp: pickup ? '' : String(cp).slice(0, 10),
       shipping_cost: shippingCostNum,
-      shipping_carrier: shipping_carrier ? String(shipping_carrier).slice(0, 100) : '',
+      shipping_carrier: pickup ? `Recoger en tienda - ${pickup.name}` : (shipping_carrier ? String(shipping_carrier).slice(0, 100) : ''),
       payment_method: payment_method ? String(payment_method).slice(0, 40) : '',
       items: resolved.map(({ id, name, sku, price, qty }) => ({ id, name, sku, price, qty })),
       subtotal,

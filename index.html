@@ -2040,6 +2040,20 @@
     <h2 style="margin-bottom:16px; color:#2e1065;">📦 Finalizar Compra</h2>
     <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px; align-items:start;">
       <div style="background:#fff; border:1px solid #f0e6ef; padding:20px; border-radius:12px;">
+        <h3 style="margin-top:0; color:#2e1065;">🚚 Método de entrega</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px;">
+          <label id="deliveryOptEnvio" style="display:flex; align-items:center; gap:8px; padding:12px; border-radius:10px; border:2px solid var(--mf-pink); cursor:pointer; font-weight:700; font-size:13px; color:#2e1065;">
+            <input type="radio" name="checkoutDeliveryMethod" value="envio" checked onchange="setCheckoutDeliveryMethod('envio')"> 📦 Envío a domicilio
+          </label>
+          <label id="deliveryOptRecoger" style="display:flex; align-items:center; gap:8px; padding:12px; border-radius:10px; border:2px solid #e5dce6; cursor:pointer; font-weight:700; font-size:13px; color:#2e1065;">
+            <input type="radio" name="checkoutDeliveryMethod" value="recoger" onchange="setCheckoutDeliveryMethod('recoger')"> 🏬 Recoger en tienda
+          </label>
+        </div>
+        <div id="checkoutPickupBlock" class="hidden" style="margin-bottom:6px;">
+          <p style="margin:0 0 10px; font-size:12.5px; color:#8b7d97;">Sin costo de envío. Te avisamos cuando tu pedido esté listo para recoger. Elige la sucursal:</p>
+          <div id="checkoutPickupBranches" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+        <div id="checkoutDeliveryAddressBlock">
         <h3 style="margin-top:0; color:#2e1065;">📍 Dirección de Envío</h3>
         <p style="margin:0 0 14px; font-size:12.5px; color:#8b7d97;">Primero cotizamos tu envío con tu código postal.</p>
         <div style="display:flex; flex-direction:column; gap:12px;">
@@ -2068,6 +2082,8 @@
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Calle y número *</label>
             <textarea id="checkoutAddress" rows="2" placeholder="Calle, número, referencias" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;"></textarea>
           </div>
+        </div>
+
         </div>
 
         <h3 style="color:#2e1065; margin:22px 0 0;">Datos de Contacto</h3>
@@ -18284,6 +18300,69 @@ function estimateShippingGuideCost(cp) {
   return base + variacion;
 }
 
+// Método de entrega del checkout: 'envio' (a domicilio) o 'recoger' (en tienda, sin costo).
+const PICKUP_BRANCHES = [
+  { key: 'rumania', name: 'CDMX Rumania', address: 'Rumania 613, Col. Portales, Benito Juárez' },
+  { key: 'queretaro', name: 'Querétaro', address: 'C. Gral. Lázaro Cárdenas 67, Casa Blanca' },
+  { key: 'puebla', name: 'Puebla', address: 'C. 35 Sur 2901, Sta. Cruz Los Ángeles' }
+];
+let checkoutDeliveryMethod = 'envio';
+let checkoutPickupBranch = '';
+
+function renderCheckoutPickupBranches() {
+  const box = document.getElementById('checkoutPickupBranches');
+  if (!box) return;
+  box.innerHTML = PICKUP_BRANCHES.map(b => {
+    const sel = checkoutPickupBranch === b.key;
+    return `<label style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; border:2px solid ${sel ? 'var(--mf-pink)' : '#e5dce6'}; background:${sel ? '#fff' : '#fdfbfc'}; cursor:pointer;">
+      <input type="radio" name="checkoutPickupBranch" ${sel ? 'checked' : ''} onchange="selectCheckoutPickupBranch('${b.key}')">
+      <div><div style="font-weight:700; font-size:13px; color:#2e1065;">${b.name}</div><div style="font-size:11px; color:#8b7d97;">${b.address}</div></div>
+    </label>`;
+  }).join('');
+}
+
+function selectCheckoutPickupBranch(key) {
+  const b = PICKUP_BRANCHES.find(x => x.key === key);
+  if (!b) return;
+  checkoutPickupBranch = key;
+  checkoutShippingCost = 0;
+  checkoutShippingCarrier = 'Recoger en tienda - ' + b.name;
+  renderCheckoutPickupBranches();
+  renderCheckoutSummary();
+  trackFunnel('elegir_envio', { valor: 0, datos: { paqueteria: checkoutShippingCarrier, recoger: true } });
+}
+
+// Deja la pantalla en "envío a domicilio" sin recotizar (al abrir el checkout).
+function setCheckoutDeliveryMethodUi() {
+  document.getElementById('checkoutPickupBlock')?.classList.add('hidden');
+  document.getElementById('checkoutDeliveryAddressBlock')?.classList.remove('hidden');
+  const radio = document.querySelector('input[name="checkoutDeliveryMethod"][value="envio"]');
+  if (radio) radio.checked = true;
+  const e = document.getElementById('deliveryOptEnvio'), r = document.getElementById('deliveryOptRecoger');
+  if (e) e.style.borderColor = 'var(--mf-pink)';
+  if (r) r.style.borderColor = '#e5dce6';
+}
+
+function setCheckoutDeliveryMethod(method) {
+  checkoutDeliveryMethod = method === 'recoger' ? 'recoger' : 'envio';
+  const pickup = checkoutDeliveryMethod === 'recoger';
+  document.getElementById('checkoutPickupBlock')?.classList.toggle('hidden', !pickup);
+  document.getElementById('checkoutDeliveryAddressBlock')?.classList.toggle('hidden', pickup);
+  const on = el => { if (el) el.style.borderColor = 'var(--mf-pink)'; }, off = el => { if (el) el.style.borderColor = '#e5dce6'; };
+  const optEnvio = document.getElementById('deliveryOptEnvio'), optRecoger = document.getElementById('deliveryOptRecoger');
+  if (pickup) { off(optEnvio); on(optRecoger); } else { on(optEnvio); off(optRecoger); }
+  const radio = document.querySelector(`input[name="checkoutDeliveryMethod"][value="${checkoutDeliveryMethod}"]`);
+  if (radio) radio.checked = true;
+  if (pickup) {
+    checkoutShippingCost = null; checkoutShippingCarrier = null; checkoutPickupBranch = '';
+    renderCheckoutPickupBranches();
+    renderCheckoutSummary();
+  } else {
+    checkoutPickupBranch = '';
+    onCheckoutShippingFieldsInput();
+  }
+}
+
 let checkoutShippingCost = null;
 let checkoutShippingCarrier = null;
 let checkoutShippingOptions = [];
@@ -18496,7 +18575,7 @@ function renderCheckoutSummary(){
         <span>Cupón ${escapeHtml(checkoutCoupon.codigo)}:</span><span>−${fmtMoney(descuento)}</span>
       </div>` : ''}
       <div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
-        <span>Envío:</span><span>${!shippingKnown ? 'Ingresa tu C.P.' : (checkoutShippingCost === 0 ? 'Gratis' : fmtMoney(checkoutShippingCost))}</span>
+        <span>Envío:</span><span>${checkoutDeliveryMethod === 'recoger' ? (shippingKnown ? 'Gratis (recoger en tienda)' : 'Elige sucursal') : (!shippingKnown ? 'Ingresa tu C.P.' : (checkoutShippingCost === 0 ? 'Gratis' : fmtMoney(checkoutShippingCost)))}</span>
       </div>
       <div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.1rem; margin-top:4px;">
         <span>Total:</span><span style="color:#e85d04;">${fmtMoney(total)}</span>
@@ -18520,6 +18599,9 @@ function goToStorefrontCheckout(){
   checkoutShippingCarrier = null;
   checkoutShippingOptions = [];
   checkoutSelectedShippingIndex = null;
+  checkoutDeliveryMethod = 'envio';
+  checkoutPickupBranch = '';
+  setCheckoutDeliveryMethodUi();
   const errEl = document.getElementById('checkoutErrorMsg');
   if (errEl) errEl.classList.add('hidden');
   const cpInput = document.getElementById('checkoutCP');
@@ -18899,6 +18981,11 @@ async function submitStorefrontOrderInner(){
     trackFunnel('error_checkout', { datos: { mensaje: msg } });
   };
 
+  const recoger = checkoutDeliveryMethod === 'recoger';
+  if (recoger) {
+    if (!checkoutPickupBranch) { fail('Elige la sucursal donde vas a recoger tu pedido.'); return; }
+    if (!name || !email || !phone) { fail('Completa todos los campos para continuar.'); return; }
+  } else {
   if (cp.length !== 5 || !estado || !municipio || !colonia) {
     fail('Completa código postal, estado, municipio y colonia para ver tus opciones de envío.');
     return;
@@ -18910,6 +18997,7 @@ async function submitStorefrontOrderInner(){
   if (!name || !email || !phone || !address) {
     fail('Completa todos los campos para continuar.');
     return;
+  }
   }
   errEl.classList.add('hidden');
 
@@ -18927,7 +19015,7 @@ async function submitStorefrontOrderInner(){
         customer_name: name,
         customer_email: email,
         customer_phone: phone,
-        address, colonia, municipio, estado, cp,
+        ...(recoger ? { pickup_branch: checkoutPickupBranch } : { address, colonia, municipio, estado, cp }),
         shipping_cost: checkoutShippingCost,
         shipping_carrier: checkoutShippingCarrier || '',
         payment_method: checkoutPayMethod,
@@ -18951,7 +19039,7 @@ async function submitStorefrontOrderInner(){
       return;
     }
     order = data;
-    rememberClienteShipping({ name, phone, address, cp, estado, municipio, colonia });
+    if (!recoger) rememberClienteShipping({ name, phone, address, cp, estado, municipio, colonia });
   } catch (e) {
     fail('No se pudo procesar tu pedido. Verifica tu conexión e intenta de nuevo.');
     return;
