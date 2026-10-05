@@ -175,7 +175,24 @@ module.exports = async function handler(req, res) {
   // de compra se fija aquí al detectar que el costo cambió respecto a lo guardado.
   const privado = {};
   if ('codigoProveedor' in producto) privado.codigo_proveedor = String(producto.codigoProveedor || '').trim().slice(0, 100) || null;
-  if ('competencia' in producto) privado.competencia = sanitizeCompetencia(producto.competencia);
+  if ('competencia' in producto) {
+    // El editor solo manda los competidores capturados a mano; los que encontró la búsqueda
+    // automática en Mercado Libre (fuente 'mercadolibre', lib/competencia-ml.js) se conservan.
+    const manuales = sanitizeCompetencia((Array.isArray(producto.competencia) ? producto.competencia : []).filter(c => !c || c.fuente !== 'mercadolibre'));
+    let deML = [];
+    if (!isNew) {
+      try {
+        const rc = await fetch(`${SUPABASE_URL}/rest/v1/producto_privado?id=eq.${id}&select=competencia`, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
+        });
+        if (rc.ok) {
+          const cur = ((await rc.json())[0] || {}).competencia;
+          deML = (Array.isArray(cur) ? cur : []).filter(c => c && c.fuente === 'mercadolibre');
+        }
+      } catch (e) { /* sin los de Mercado Libre; se vuelven a llenar en la siguiente búsqueda */ }
+    }
+    privado.competencia = [...manuales, ...deML];
+  }
   const costoNuevo = row.costo_compra;
   if (isNew) {
     if (costoNuevo != null) privado.costo_compra_actualizado_at = new Date().toISOString();

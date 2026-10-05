@@ -57,10 +57,21 @@ module.exports = async function handler(req, res) {
     } catch (e) { /* fall back to just the homepage */ }
   }
 
+  // Blog: /blog y cada artículo publicado (lib/blog.js), con su fecha de última modificación.
+  try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (serviceKey) {
+      const { sbBlog } = require('../lib/blog.js');
+      const posts = await sbBlog(`select=slug,updated_at,publicado_at&estado=eq.publicado&publicado_at=lte.${encodeURIComponent(new Date().toISOString())}&order=publicado_at.desc&limit=5000`, serviceKey);
+      urls.push({ loc: `${siteOrigin}/blog`, priority: '0.7', lastmod: posts[0] && (posts[0].updated_at || posts[0].publicado_at) });
+      posts.forEach(p => urls.push({ loc: `${siteOrigin}/blog/${p.slug}`, priority: '0.7', lastmod: p.updated_at || p.publicado_at }));
+    }
+  } catch (e) { /* sin blog en el sitemap si falla la consulta */ }
+
   const escapeXml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(u => `  <url><loc>${escapeXml(u.loc)}</loc><priority>${u.priority}</priority></url>`).join('\n')}
+${urls.map(u => `  <url><loc>${escapeXml(u.loc)}</loc>${u.lastmod ? `<lastmod>${escapeXml(String(u.lastmod).slice(0, 10))}</lastmod>` : ''}<priority>${u.priority}</priority></url>`).join('\n')}
 </urlset>`;
 
   res.setHeader('Content-Type', 'application/xml');

@@ -22,6 +22,7 @@
 // Requiere PS_BASE_URL, PS_API_KEY (mismos que el resto de /api).
 
 const { prestashopFetch } = require('../lib/ps-http.js');
+const { prestashopConectado } = require('../lib/prestashop.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
@@ -59,6 +60,8 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   if (req.method !== 'POST') { res.status(405).json({ ok: false, error: 'Método no permitido' }); return; }
+  // PrestaShop desconectado (4 de octubre de 2026): las ventas del POS ya no se copian allá.
+  if (!prestashopConectado()) { res.status(200).json({ ok: false, skipped: true, error: 'PrestaShop desconectado' }); return; }
   let body = {};
   try { body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); }
   catch (e) { res.status(400).json({ ok: false, error: 'JSON inválido' }); return; }

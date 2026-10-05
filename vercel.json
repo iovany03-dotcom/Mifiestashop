@@ -1,32 +1,16 @@
 {
   "crons": [
     {
-      "path": "/api/cron-sync-prestashop?domains=stock,categorias,almacenes,empleados,paginas,proveedores",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=clientes,direcciones,pedidos,carritos",
-      "schedule": "30 * * * *"
-    },
-    {
       "path": "/api/cron-conciliar-mp",
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron-sync-prestashop?domains=productos",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=fotos",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/cron-sync-prestashop?domains=pedidos_historico,movimientos_nuevos,movimientos_2anios",
-      "schedule": "5,15,25,35,45,55 * * * *"
-    },
-    {
       "path": "/api/cron-retransmision-auto",
       "schedule": "20 * * * *"
+    },
+    {
+      "path": "/api/cron-competencia",
+      "schedule": "15 * * * *"
     }
   ],
   "functions": {
@@ -131,9 +115,36 @@
     },
     "api/ps-diagnostico.js": {
       "maxDuration": 60
+    },
+    "api/blog.js": {
+      "maxDuration": 15,
+      "includeFiles": "scripts/cms-*.html"
+    },
+    "api/mcp.js": {
+      "maxDuration": 60
     }
   },
   "rewrites": [
+    {
+      "source": "/mcp",
+      "destination": "/api/mcp"
+    },
+    {
+      "source": "/mcp/:key",
+      "destination": "/api/mcp?key=:key"
+    },
+    {
+      "source": "/blog",
+      "destination": "/api/blog"
+    },
+    {
+      "source": "/blog/rss.xml",
+      "destination": "/api/blog?rss=1"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/api/blog?slug=:slug"
+    },
     {
       "source": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
       "destination": "/paginas/articulos-para-fiesta-mayoreo.html"

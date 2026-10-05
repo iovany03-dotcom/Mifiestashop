@@ -113,7 +113,10 @@ async function resolveProduct(id) {
   const m = migr && migr[0];
   const name = (m && m.name) || p.name;
   if (!name) return { exists: true, canonicalPath, seo: null };
-  const images = (Array.isArray(p.images) && p.images.length ? p.images : null) || (m && Array.isArray(m.images) ? m.images : []);
+  // Igual que lib/productos-supabase.js: la lista con más fotos gana.
+  const catImgs = Array.isArray(p.images) ? p.images.filter(Boolean) : [];
+  const migImgs = m && Array.isArray(m.images) ? m.images.filter(Boolean) : [];
+  const images = migImgs.length > catImgs.length ? migImgs : catImgs;
   const desc = (stripHtml(p.meta_description) || stripHtml(m && m.description) || stripHtml(p.description_short) || stripHtml(p.description)
     || `Compra ${name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160);
   return {
