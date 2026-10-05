@@ -1,5 +1,9 @@
 # Notificaciones push (app cerrada)
 
+> Estado: configurado el 5 de octubre de 2026 (tabla `push_subscriptions` creada y llaves VAPID
+> `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` en Vercel, producción). Si se cambian las
+> llaves, cada dispositivo tiene que volver a activar las notificaciones.
+
 Antes las notificaciones solo salían con el panel abierto (un revisor cada 45 s
 en el navegador). Ahora el servidor manda Web Push cuando entra un pedido y
 cuando se acepta un pago.
