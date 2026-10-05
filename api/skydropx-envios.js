@@ -10,6 +10,8 @@
 //        (estado/municipio/colonia/CP se heredan de la cotización)
 //   accion "listar"  -> { shipments } últimos envíos de la cuenta (GET /api/v1/shipments)
 //   accion "detalle" -> { shipment }                         (GET /api/v1/shipments/:id)
+//   accion "etiqueta" -> { content (PDF en base64), contentType, filename }  { shipment_id } — el PDF se baja
+//        desde el servidor para poder descargarlo sin que el navegador lo bloquee (ventana emergente / CORS)
 //
 // Env vars: SKYDROPX_API_KEY, SKYDROPX_API_SECRET, SKYDROPX_BASE_URL (opcional).
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -71,7 +73,7 @@ function parseShipment(json) {
     paymentStatus: a.payment_status || '',
     total: a.total != null ? parseFloat(a.total) : null,
     trackingNumber: a.master_tracking_number || p.tracking_number || null,
-    labelUrl: p.label_url || null,
+    labelUrl: p.label_url || a.label_url || null,
     trackingUrl: p.tracking_url_provider || null,
     trackingStatus: p.tracking_status || null,
     createdAt: a.created_at || null,
@@ -155,6 +157,22 @@ module.exports = async function handler(req, res) {
       const r = await call(`/api/v1/shipments/${encodeURIComponent(id)}`);
       if (!r.ok) { res.status(502).json({ error: `Skydropx envío error ${r.status}`, detail: r.text.slice(0, 300) }); return; }
       res.status(200).json({ shipment: parseShipment(r.json) });
+      return;
+    }
+
+    if (accion === 'etiqueta') {
+      const id = str(body.shipment_id, 80);
+      if (!id) { res.status(400).json({ error: 'Falta shipment_id' }); return; }
+      const d = await call(`/api/v1/shipments/${encodeURIComponent(id)}`);
+      if (!d.ok) { res.status(502).json({ error: `Skydropx envío error ${d.status}`, detail: d.text.slice(0, 300) }); return; }
+      const sh = parseShipment(d.json);
+      if (!sh || !sh.labelUrl) { res.status(409).json({ error: 'La guía todavía no tiene PDF. Intenta de nuevo en unos segundos.' }); return; }
+      if (!/^https:\/\//i.test(sh.labelUrl)) { res.status(502).json({ error: 'Skydropx devolvió una liga de guía no válida.' }); return; }
+      const f = await fetch(sh.labelUrl);
+      if (!f.ok) { res.status(502).json({ error: `No se pudo bajar el PDF de la guía (HTTP ${f.status}).` }); return; }
+      const buf = Buffer.from(await f.arrayBuffer());
+      const tipo = (f.headers && f.headers.get && f.headers.get('content-type')) || 'application/pdf';
+      res.status(200).json({ content: buf.toString('base64'), contentType: tipo.split(';')[0], filename: `guia-${sh.trackingNumber || id}.pdf` });
       return;
     }
 

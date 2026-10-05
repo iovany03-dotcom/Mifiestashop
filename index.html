@@ -20555,7 +20555,10 @@ async function crearGuiaSkydropxReal() {
     await cargarEnviosSkydropx();
     cargarSaldoSkydropx();
     if (sh.error) alert('Skydropx reportó un problema con la guía: ' + sh.error);
-    else if (sh.labelUrl) { alert(`Guía creada (${sh.carrier || r.carrier}) para ${orderId}. Rastreo: ${sh.trackingNumber || 'pendiente'}.`); window.open(sh.labelUrl, '_blank', 'noopener'); }
+    else if (sh.labelUrl || sh.id) {
+      alert(`Guía creada (${sh.carrier || r.carrier}) para ${orderId}. Rastreo: ${sh.trackingNumber || 'pendiente'}. Se descargará el PDF; si no, usa "Descargar PDF" en la tabla de envíos.`);
+      descargarGuiaSkydropx(sh.id, sh.trackingNumber);
+    }
     else alert('La guía se está generando en Skydropx. Usa "Actualizar Rastreos" en unos segundos para obtener el PDF.');
   } catch (e) {
     alert('No se pudo generar la guía: ' + e.message);
@@ -20602,11 +20605,27 @@ function renderSkydropxShipmentsTable() {
       <td style="font-weight:700; color:var(--series-2);">${s.total != null ? fmtMoney(s.total) : '—'}</td>
       <td><span class="pill ${s.error ? 'bad' : 'ok'}" style="font-size:11px;">${escapeHtml(s.error || s.status || '—')}</span></td>
       <td style="text-align:center;">
-        ${s.labelUrl ? `<a class="btn small primary" href="${escapeHtml(s.labelUrl)}" target="_blank" rel="noopener">Imprimir PDF</a>` : `<button class="btn small" onclick="verDetalleEnvioSkydropx('${escapeHtml(s.id)}')">Buscar PDF</button>`}
+        ${s.labelUrl ? `<button class="btn small primary" onclick="descargarGuiaSkydropx('${escapeHtml(s.id)}', '${escapeHtml(s.trackingNumber || '')}')">Descargar PDF</button> <a class="btn small" href="${escapeHtml(s.labelUrl)}" target="_blank" rel="noopener">Abrir</a>` : `<button class="btn small" onclick="verDetalleEnvioSkydropx('${escapeHtml(s.id)}')">Buscar PDF</button>`}
         ${s.trackingUrl ? `<a class="btn small" href="${escapeHtml(s.trackingUrl)}" target="_blank" rel="noopener">Rastrear</a>` : ''}
       </td>
     </tr>
   `).join('');
+}
+
+// Baja el PDF de la guía desde el servidor y lo descarga como archivo (abrir la liga directo con
+// window.open después de generar la guía lo bloquea el navegador como ventana emergente).
+async function descargarGuiaSkydropx(id, tracking) {
+  if (!id) { alert('Falta el id del envío.'); return; }
+  try {
+    const d = await skydropxAdminRequest({ accion: 'etiqueta', shipment_id: id });
+    const bin = atob(d.content), arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([arr], { type: d.contentType || 'application/pdf' }));
+    a.download = d.filename || ('guia-' + (tracking || id) + '.pdf');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  } catch (e) { alert('No se pudo descargar la guía: ' + e.message); }
 }
 
 async function verDetalleEnvioSkydropx(id) {
