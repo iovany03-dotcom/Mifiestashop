@@ -79,12 +79,26 @@ function parseShipment(json) {
   };
 }
 
+// Skydropx rechaza un street1 de más de 45 caracteres (422 "Address from street1 es demasiado
+// largo"). Si la calle es más larga, se corta en el último espacio que quepa y el resto pasa a la
+// referencia (para que el repartidor lo vea en la guía) en vez de perderse.
+const STREET1_MAX = 45;
+function splitStreet(calle) {
+  const t = String(calle == null ? '' : calle).replace(/\s+/g, ' ').trim();
+  if (t.length <= STREET1_MAX) return { street1: t, resto: '' };
+  const corte = t.lastIndexOf(' ', STREET1_MAX);
+  const n = corte >= 20 ? corte : STREET1_MAX;
+  return { street1: t.slice(0, n).replace(/[,\s]+$/, ''), resto: t.slice(n).replace(/^[,\s]+/, '') };
+}
+
 function buildAddress(p, label) {
   const o = p || {};
+  const { street1, resto } = splitStreet(o.calle);
+  const ref = str(o.referencia || 'Sin referencia', 100);
   const a = {
-    street1: str(o.calle, 100), name: str(o.nombre, 80), company: str(o.empresa || o.nombre, 80),
+    street1, name: str(o.nombre, 80), company: str(o.empresa || o.nombre, 80),
     phone: str(o.telefono, 20).replace(/[^\d]/g, ''), email: str(o.email, 100),
-    reference: str(o.referencia || 'Sin referencia', 100)
+    reference: resto ? str(resto + (o.referencia ? ' · ' + ref : ''), 100) : ref
   };
   ['street1', 'name', 'phone', 'email'].forEach(k => { if (!a[k]) throw Object.assign(new Error(`Falta el dato "${k}" del ${label}.`), { status: 400 }); });
   return a;
@@ -167,9 +181,11 @@ module.exports = async function handler(req, res) {
       let r = await call('/api/v1/shipments', { method: 'POST', body: JSON.stringify({ shipment }) });
       if (!r.ok && (r.status === 400 || r.status === 422)) {
         const retry = await call('/api/v1/shipments', { method: 'POST', body: JSON.stringify(shipment) });
-        if (retry.ok) r = retry; else r = { ...retry, text: `${r.text.slice(0, 200)} | ${retry.text.slice(0, 200)}` };
+        // Si también falla, el error que importa es el del formato documentado (el anidado): el del
+        // reintento aplanado solo dice que faltan campos porque la API los espera bajo "shipment".
+        if (retry.ok) r = retry;
       }
-      if (!r.ok) { res.status(502).json({ error: `Skydropx no pudo crear la guía (HTTP ${r.status})`, detail: r.text.slice(0, 500) }); return; }
+      if (!r.ok) { res.status(502).json({ error: `Skydropx no pudo crear la guía (HTTP ${r.status})`, detail: r.text.slice(0, 700) }); return; }
 
       let parsed = parseShipment(r.json);
       const id = parsed && parsed.id;
@@ -189,3 +205,5 @@ module.exports = async function handler(req, res) {
     res.status(err.status || 500).json({ error: err.message });
   }
 };
+
+module.exports.splitStreet = splitStreet;
