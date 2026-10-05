@@ -163,10 +163,10 @@ test('neon redesign is isolated and imported icon/location banners cannot reappe
 });
 function redirectCall(slug){const r={statusCode:200,headers:{},body:'',setHeader(k,v){this.headers[k]=v},end(b){this.body=b||''}};require('../api/cms-redirect.js')({query:{slug}},r);return r;}
 test('/content/<id>-<slug> con un id que no existe redirige por nombre a la primera pagina con ese slug',()=>{
-  const r=redirectCall('articulos-pata-batucada-en-cdmx');assert.equal(r.statusCode,301);assert.equal(r.headers.Location,'/content/288-articulos-pata-batucada-en-cdmx');
+  const r=redirectCall('articulos-pata-batucada-en-cdmx');assert.equal(r.statusCode,200);assert.ok(r.body.includes('url=/content/288-articulos-pata-batucada-en-cdmx"'));
   const bySlug=new Map();for(const p of manifest){if(!bySlug.has(p.slug))bySlug.set(p.slug,[]);bySlug.get(p.slug).push(p.id);}
-  for(const [slug,ids] of bySlug){const res=redirectCall(slug);assert.equal(res.statusCode,301,slug);assert.equal(res.headers.Location,manifest.find(p=>p.id===Math.min(...ids)).path,slug);}
-  const missing=redirectCall('pagina-que-no-existe');assert.equal(missing.statusCode,404);assert.ok(!missing.headers.Location);
+  for(const [slug,ids] of bySlug){const res=redirectCall(slug);assert.equal(res.statusCode,200,slug);assert.ok(res.body.includes('url='+manifest.find(p=>p.id===Math.min(...ids)).path+'"'),slug);}
+  const missing=redirectCall('pagina-que-no-existe');assert.equal(missing.statusCode,404);assert.ok(!missing.body.includes('refresh'));
 });
 test('la regla de redireccion va al final y no pisa ninguna ruta exacta de las paginas CMS',()=>{
   const rewrites=config.rewrites;const fallback=rewrites.findIndex(r=>r.source==='/content/:id(\\d+)-:slug');

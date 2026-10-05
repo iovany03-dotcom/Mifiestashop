@@ -1,6 +1,6 @@
 // Redirección por nombre para las páginas CMS, como hacía PrestaShop: si el
 // número de /content/<id>-<slug> no existe, se ignora y se manda (301) a la
-// primera página que tenga ese slug. Solo llega aquí lo que no coincidió con
+// primera página que tenga ese slug (redirección inmediata del navegador). Solo llega aquí lo que no coincidió con
 // una ruta exacta de vercel.json, así que un id real nunca se redirige.
 const manifest = require('../data/cms-manifest.json');
 
@@ -17,7 +17,11 @@ module.exports = function handler(req, res) {
     res.end(NOT_FOUND_HTML);
     return;
   }
-  res.statusCode = 301;
-  res.setHeader('Location', match.path);
-  res.end();
+  // No se usa un 301 con Location: llegando por la regla de reescritura de vercel.json, Vercel lo
+  // convierte en un 502 ROUTER_CANNOT_MATCH (la función sí lo devuelve bien si se llama directo).
+  // Se responde 200 con redirección inmediata y canonical a la página real.
+  const dest = match.path.replace(/[^\w\-./]/g, '');
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.end('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Redirigiendo… | Mi Fiestashop</title><link rel="canonical" href="https://www.mifiestashop.com' + dest + '"><meta http-equiv="refresh" content="0;url=' + dest + '"><script>location.replace(' + JSON.stringify(dest) + ')</script></head><body><p><a href="' + dest + '">Continuar</a></p></body></html>');
 };
