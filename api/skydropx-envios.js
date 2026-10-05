@@ -10,6 +10,8 @@
 //        (estado/municipio/colonia/CP se heredan de la cotización)
 //   accion "listar"  -> { shipments } últimos envíos de la cuenta (GET /api/v1/shipments)
 //   accion "detalle" -> { shipment }                         (GET /api/v1/shipments/:id)
+//   accion "etiqueta" -> { content (PDF en base64), contentType, filename }  { shipment_id } — el PDF se baja
+//        desde el servidor para poder descargarlo sin que el navegador lo bloquee (ventana emergente / CORS)
 //
 // Env vars: SKYDROPX_API_KEY, SKYDROPX_API_SECRET, SKYDROPX_BASE_URL (opcional).
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -57,6 +59,20 @@ async function getAccessToken(baseUrl, clientId, clientSecret) {
 
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max || 200);
 
+// Busca la liga del PDF de la guía en cualquier parte de la respuesta (el envío, sus paquetes
+// incluidos, relaciones…): cualquier clave que se llame label_url / labelUrl / label con https.
+function findLabelUrl(node, depth) {
+  if (!node || typeof node !== 'object' || (depth || 0) > 6) return null;
+  for (const [k, v] of Object.entries(node)) {
+    if (typeof v === 'string' && /^https:\/\//i.test(v) && /^(label_?url|label|pdf_?url|label_?pdf)$/i.test(k)) return v;
+  }
+  for (const v of Object.values(node)) {
+    const f = Array.isArray(v) ? v.map(x => findLabelUrl(x, (depth || 0) + 1)).find(Boolean) : findLabelUrl(v, (depth || 0) + 1);
+    if (f) return f;
+  }
+  return null;
+}
+
 // Normaliza la respuesta JSON:API de un envío a algo plano para el panel.
 function parseShipment(json) {
   const d = json && json.data;
@@ -71,7 +87,7 @@ function parseShipment(json) {
     paymentStatus: a.payment_status || '',
     total: a.total != null ? parseFloat(a.total) : null,
     trackingNumber: a.master_tracking_number || p.tracking_number || null,
-    labelUrl: p.label_url || null,
+    labelUrl: p.label_url || a.label_url || findLabelUrl(json) || null,
     trackingUrl: p.tracking_url_provider || null,
     trackingStatus: p.tracking_status || null,
     createdAt: a.created_at || null,
@@ -79,12 +95,26 @@ function parseShipment(json) {
   };
 }
 
+// Skydropx rechaza un street1 de más de 45 caracteres (422 "Address from street1 es demasiado
+// largo"). Si la calle es más larga, se corta en el último espacio que quepa y el resto pasa a la
+// referencia (para que el repartidor lo vea en la guía) en vez de perderse.
+const STREET1_MAX = 45;
+function splitStreet(calle) {
+  const t = String(calle == null ? '' : calle).replace(/\s+/g, ' ').trim();
+  if (t.length <= STREET1_MAX) return { street1: t, resto: '' };
+  const corte = t.lastIndexOf(' ', STREET1_MAX);
+  const n = corte >= 20 ? corte : STREET1_MAX;
+  return { street1: t.slice(0, n).replace(/[,\s]+$/, ''), resto: t.slice(n).replace(/^[,\s]+/, '') };
+}
+
 function buildAddress(p, label) {
   const o = p || {};
+  const { street1, resto } = splitStreet(o.calle);
+  const ref = str(o.referencia || 'Sin referencia', 100);
   const a = {
-    street1: str(o.calle, 100), name: str(o.nombre, 80), company: str(o.empresa || o.nombre, 80),
+    street1, name: str(o.nombre, 80), company: str(o.empresa || o.nombre, 80),
     phone: str(o.telefono, 20).replace(/[^\d]/g, ''), email: str(o.email, 100),
-    reference: str(o.referencia || 'Sin referencia', 100)
+    reference: resto ? str(resto + (o.referencia ? ' · ' + ref : ''), 100) : ref
   };
   ['street1', 'name', 'phone', 'email'].forEach(k => { if (!a[k]) throw Object.assign(new Error(`Falta el dato "${k}" del ${label}.`), { status: 400 }); });
   return a;
@@ -127,11 +157,27 @@ module.exports = async function handler(req, res) {
     }
 
     if (accion === 'listar') {
-      const r = await call('/api/v1/shipments');
-      if (!r.ok) { res.status(502).json({ error: `Skydropx envíos error ${r.status}`, detail: r.text.slice(0, 300) }); return; }
-      const list = (r.json && r.json.data) || [];
-      const shipments = list.map(x => parseShipment({ data: x })).filter(Boolean);
-      res.status(200).json({ shipments });
+      // Skydropx lista de 10 en 10 y desde los envíos MÁS ANTIGUOS (la página 1 son los de hace
+      // meses). Se lee la página 1 solo para saber cuántas hay y se trae el final: las últimas 3
+      // páginas (30 envíos) o, con `hasta_pagina`, las 3 que terminan en esa página. `siguiente` es
+      // la página desde la que se pueden pedir envíos más antiguos (null si ya no hay).
+      const pageOf = (q) => call(`/api/v1/shipments?page=${q}`);
+      const first = await pageOf(1);
+      if (!first.ok) { res.status(502).json({ error: `Skydropx envíos error ${first.status}`, detail: first.text.slice(0, 300) }); return; }
+      const meta = (first.json && first.json.meta) || {};
+      const lastLink = String((first.json && first.json.links && first.json.links.last) || '').match(/[?&]page=(\d+)/);
+      const totalPages = Math.max(1, parseInt(meta.total_pages, 10) || (lastLink ? parseInt(lastLink[1], 10) : 1));
+      const hasta = Math.min(totalPages, Math.max(1, parseInt(body.hasta_pagina, 10) || totalPages));
+      const desde = Math.max(1, hasta - 2);
+      let list = [];
+      for (let pg = hasta; pg >= desde; pg--) {
+        const r = pg === 1 ? first : await pageOf(pg);
+        if (!r.ok) { res.status(502).json({ error: `Skydropx envíos error ${r.status}`, detail: r.text.slice(0, 300) }); return; }
+        list = list.concat(((r.json && r.json.data) || []).slice().reverse());
+      }
+      const shipments = list.map(x => parseShipment({ data: x })).filter(Boolean)
+        .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
+      res.status(200).json({ shipments, totalPages, siguiente: desde > 1 ? desde - 1 : null });
       return;
     }
 
@@ -141,6 +187,28 @@ module.exports = async function handler(req, res) {
       const r = await call(`/api/v1/shipments/${encodeURIComponent(id)}`);
       if (!r.ok) { res.status(502).json({ error: `Skydropx envío error ${r.status}`, detail: r.text.slice(0, 300) }); return; }
       res.status(200).json({ shipment: parseShipment(r.json) });
+      return;
+    }
+
+    if (accion === 'etiqueta') {
+      const id = str(body.shipment_id, 80);
+      if (!id) { res.status(400).json({ error: 'Falta shipment_id' }); return; }
+      const d = await call(`/api/v1/shipments/${encodeURIComponent(id)}`);
+      if (!d.ok) { res.status(502).json({ error: `Skydropx envío error ${d.status}`, detail: d.text.slice(0, 300) }); return; }
+      const sh = parseShipment(d.json);
+      if (!sh || !sh.labelUrl) {
+        // Sin liga: se devuelve qué trae el envío para poder ver por qué (estado, claves, paquetes).
+        const at = (d.json && d.json.data && d.json.data.attributes) || {};
+        const inc = ((d.json && d.json.included) || []).map(x => `${x.type}:${Object.keys(x.attributes || {}).join('/')}`).join(' ; ');
+        res.status(409).json({ error: `La guía todavía no tiene PDF (estado: ${at.workflow_status || 'desconocido'}${sh && sh.error ? ', error: ' + sh.error : ''}). Si ya pasó un minuto, revisa la guía en pro.skydropx.com.`, detail: `atributos: ${Object.keys(at).join(', ')} | incluidos: ${inc || 'ninguno'}`.slice(0, 600) });
+        return;
+      }
+      if (!/^https:\/\//i.test(sh.labelUrl)) { res.status(502).json({ error: 'Skydropx devolvió una liga de guía no válida.' }); return; }
+      const f = await fetch(sh.labelUrl);
+      if (!f.ok) { res.status(502).json({ error: `No se pudo bajar el PDF de la guía (HTTP ${f.status}).` }); return; }
+      const buf = Buffer.from(await f.arrayBuffer());
+      const tipo = (f.headers && f.headers.get && f.headers.get('content-type')) || 'application/pdf';
+      res.status(200).json({ content: buf.toString('base64'), contentType: tipo.split(';')[0], filename: `guia-${sh.trackingNumber || id}.pdf` });
       return;
     }
 
@@ -167,9 +235,11 @@ module.exports = async function handler(req, res) {
       let r = await call('/api/v1/shipments', { method: 'POST', body: JSON.stringify({ shipment }) });
       if (!r.ok && (r.status === 400 || r.status === 422)) {
         const retry = await call('/api/v1/shipments', { method: 'POST', body: JSON.stringify(shipment) });
-        if (retry.ok) r = retry; else r = { ...retry, text: `${r.text.slice(0, 200)} | ${retry.text.slice(0, 200)}` };
+        // Si también falla, el error que importa es el del formato documentado (el anidado): el del
+        // reintento aplanado solo dice que faltan campos porque la API los espera bajo "shipment".
+        if (retry.ok) r = retry;
       }
-      if (!r.ok) { res.status(502).json({ error: `Skydropx no pudo crear la guía (HTTP ${r.status})`, detail: r.text.slice(0, 500) }); return; }
+      if (!r.ok) { res.status(502).json({ error: `Skydropx no pudo crear la guía (HTTP ${r.status})`, detail: r.text.slice(0, 700) }); return; }
 
       let parsed = parseShipment(r.json);
       const id = parsed && parsed.id;
@@ -189,3 +259,5 @@ module.exports = async function handler(req, res) {
     res.status(err.status || 500).json({ error: err.message });
   }
 };
+
+module.exports.splitStreet = splitStreet;
