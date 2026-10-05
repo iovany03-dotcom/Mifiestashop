@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Prueba de impresión de tickets | Mi Fiestashop</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 20px; color: #222; }
+  .panel { max-width: 520px; }
+  button { font-size: 16px; padding: 12px 18px; margin: 6px 6px 6px 0; border-radius: 8px; border: 1px solid #ccc; background: #d3007b; color: #fff; cursor: pointer; }
+  button.sec { background: #fff; color: #222; }
+  #info { font-size: 13px; color: #555; white-space: pre-wrap; background: #f6f6f6; padding: 10px; border-radius: 8px; }
+  .ticket { width: 72mm; font-family: monospace; font-size: 12px; border: 1px dashed #aaa; padding: 6px; margin-top: 16px; }
+  @media print {
+    .panel { display: none; }
+    body { margin: 0; }
+    .ticket { border: none; width: 100%; padding: 0; margin: 0; }
+  }
+</style></head>
+<body>
+<div class="panel">
+  <h1>Prueba de impresión</h1>
+  <p>Página mínima, sin nada del sistema, para saber si el problema es la impresora/computadora o la app.</p>
+  <button onclick="imprimir('80')">Imprimir ticket de prueba (80 mm)</button>
+  <button class="sec" onclick="imprimir('58')">58 mm</button>
+  <button class="sec" onclick="imprimir('')">Sin tamaño de papel</button>
+  <p id="info"></p>
+</div>
+<div class="ticket">
+  <div style="text-align:center"><b>MI FIESTASHOP</b><br>Ticket de prueba<br><span id="fecha"></span></div>
+  <hr>Collar hawaiano neón x2 ........ $14.00<br>Bombín neón x5 ................. $25.00<hr>
+  <b>TOTAL: $39.00</b><br><br><div style="text-align:center">Si ves esto en papel, la impresora funciona.</div><br>.
+</div>
+<script>
+  document.getElementById('fecha').textContent = new Date().toLocaleString('es-MX');
+  const info = document.getElementById('info');
+  info.textContent = 'Navegador: ' + navigator.userAgent;
+  function imprimir(mm) {
+    let st = document.getElementById('pagina');
+    if (!st) { st = document.createElement('style'); st.id = 'pagina'; document.head.appendChild(st); }
+    st.textContent = mm ? '@media print { @page { size: ' + mm + 'mm auto; margin: 2mm; } }' : '';
+    const t0 = Date.now();
+    window.print();
+    info.textContent = 'El diálogo de impresión se cerró después de ' + Math.round((Date.now() - t0) / 1000) + ' s.\nNavegador: ' + navigator.userAgent;
+  }
+</script>
+</body></html>
