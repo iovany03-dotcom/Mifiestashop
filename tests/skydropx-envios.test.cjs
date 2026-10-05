@@ -60,3 +60,30 @@ test('skydropx: etiqueta baja el PDF desde el servidor y lo devuelve en base64',
   assert.equal(Buffer.from(r.data.content, 'base64').toString(), '%PDF-1.4 hola');
   assert.equal(r.data.filename, 'guia-T1.pdf');
 });
+
+test('skydropx: encuentra la liga del PDF aunque venga en otro lugar de la respuesta', async () => {
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('rpc_check_session')) return resp(200, true);
+    if (u.includes('/oauth/token')) return resp(200, { access_token: 't' });
+    if (u.includes('/api/v1/shipments/S2')) return resp(200, { data: { id: 'S2', attributes: { workflow_status: 'success' } }, included: [{ type: 'labels', attributes: { files: [{ label_url: 'https://cdn.x/otra.pdf' }] } }] });
+    if (u === 'https://cdn.x/otra.pdf') return { ok: true, status: 200, headers: { get: () => 'application/pdf' }, arrayBuffer: async () => Buffer.from('%PDF') };
+    return resp(404, {});
+  };
+  const r = await call({ accion: 'etiqueta', shipment_id: 'S2' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+});
+
+test('skydropx: sin PDF, el error dice el estado y qué trae el envío', async () => {
+  global.fetch = async (url) => {
+    const u = String(url);
+    if (u.includes('rpc_check_session')) return resp(200, true);
+    if (u.includes('/oauth/token')) return resp(200, { access_token: 't' });
+    if (u.includes('/api/v1/shipments/S3')) return resp(200, { data: { id: 'S3', attributes: { workflow_status: 'in_progress', carrier_name: 'X' } }, included: [] });
+    return resp(404, {});
+  };
+  const r = await call({ accion: 'etiqueta', shipment_id: 'S3' });
+  assert.equal(r.code, 409);
+  assert.match(r.data.error, /in_progress/);
+  assert.match(r.data.detail, /carrier_name/);
+});
