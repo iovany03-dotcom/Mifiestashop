@@ -8491,15 +8491,61 @@ function buildTicketItemsHTML(items) {
   }).join('');
 }
 
-// El ticket se imprime con window.print() sobre la propia página, como antes del 2 de octubre.
-// Ese día se cambió a imprimir desde un iframe oculto, y en las cajas el diálogo de impresión se
-// quedaba trabado sin sacar el ticket (el iframe de 0x0 se quitaba a los 1.5 s, a veces antes de
-// que el navegador terminara de mandar la impresión). El problema que ese cambio arreglaba — el
-// ticket largo salía cortado tras el total — se resuelve en la hoja de impresión (@media print,
-// body.printing-ticket): el ticket queda en flujo normal en lugar de position:fixed.
+// El ticket se imprime en una ventanita propia con solo el ticket (igual que /prueba-impresion.html,
+// que sí imprime en las cajas). Imprimir la página completa del sistema dejaba el diálogo de
+// impresión trabado: es un documento enorme. El 2 de octubre se intentó con un iframe oculto de
+// 0x0 que se quitaba a los 1.5 s y también se trababa; aquí la ventana solo se cierra al terminar
+// la impresión (afterprint), nunca con un temporizador. Si el navegador bloquea la ventana, se
+// imprime como antes, sobre la página (printTicketEnPagina).
 function printTicket() {
-  if (!document.getElementById('printableTicket')) return;
+  const ticket = document.getElementById('printableTicket');
+  if (!ticket) return;
   const width = ticketConfig.width === '58mm' ? 58 : 80;
+  let css = '';
+  try {
+    for (const sheet of document.styleSheets) {
+      let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+      for (const r of rules) {
+        const sel = r.selectorText || '';
+        if (r.type === 1 && /ticket|\.t-center|^:root$/.test(sel)) css += r.cssText + '\n';
+      }
+    }
+  } catch (e) { /* se imprime con el estilo base de abajo */ }
+  const clone = ticket.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.querySelectorAll('img').forEach(img => { img.src = new URL(img.getAttribute('src'), location.href).href; });
+  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ticket</title>
+    <style>
+      ${css}
+      @page { size: ${width}mm auto; margin: 2mm; }
+      html, body { margin: 0; padding: 0; background: #fff; }
+      .hidden { display: none !important; }
+      .ticket-paper { width: 100% !important; margin: 0 !important; padding: 4px 6px 12px !important; box-shadow: none !important; border: none !important; border-radius: 0 !important; }
+      .ticket-brand-bar { margin: 0 0 10px !important; border-radius: 0 !important; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .ticket-table td, .ticket-table th { word-break: break-word; }
+      .ticket-table th:nth-child(n+3), .ticket-table td:nth-child(n+3) { white-space: nowrap; padding-left: 6px; }
+      .ticket-table .t-cod { max-width: 22mm; font-size: 9px; }
+      tr, .ticket-total-row, .ticket-coupon-box { break-inside: avoid; }
+      @media screen { body { width: ${width}mm; margin: 8px auto; } }
+    </style></head><body>${clone.outerHTML}
+    <script>
+      var impreso = false;
+      function imprimir() { if (impreso) return; impreso = true; window.focus(); window.print(); }
+      window.addEventListener('afterprint', function () { setTimeout(function () { window.close(); }, 300); });
+      window.addEventListener('load', function () { setTimeout(imprimir, 150); });
+      setTimeout(imprimir, 3000);
+    <\/script></body></html>`;
+  let w = null;
+  try { w = window.open('', 'mfs_ticket', `width=${width === 58 ? 300 : 380},height=640`); } catch (e) { w = null; }
+  if (!w) { printTicketEnPagina(width); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+// Respaldo (ventana emergente bloqueada): imprime sobre la propia página con la hoja de impresión
+// body.printing-ticket (@media print), que deja visible solo el ticket.
+function printTicketEnPagina(width) {
   let pageStyle = document.getElementById('printPageSize');
   if (!pageStyle) {
     pageStyle = document.createElement('style');
