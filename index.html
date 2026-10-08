@@ -831,6 +831,7 @@
       margin: 0 !important; padding: 4px 6px 12px !important;
       box-shadow: none !important; border: none !important; border-radius: 0 !important;
     }
+    body.printing-ticket #printableTicket, body.printing-ticket #printableTicket * { font-family: 'Courier New', Courier, Consolas, monospace !important; color: #000 !important; }
     #printableTicket .ticket-brand-bar { margin: 0 0 10px !important; border-radius: 0 !important; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     #printableTicket .ticket-table td, #printableTicket .ticket-table th { word-break: break-word; }
     #printableTicket .ticket-table th:nth-child(n+3), #printableTicket .ticket-table td:nth-child(n+3) { white-space: nowrap; padding-left: 6px; }
@@ -8502,31 +8503,39 @@ function printTicket() {
   const ticket = document.getElementById('printableTicket');
   if (!ticket) return;
   const width = ticketConfig.width === '58mm' ? 58 : 80;
-  let css = '';
-  try {
-    for (const sheet of document.styleSheets) {
-      let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
-      for (const r of rules) {
-        const sel = r.selectorText || '';
-        if (r.type === 1 && /ticket|\.t-center|^:root$/.test(sel)) css += r.cssText + '\n';
-      }
-    }
-  } catch (e) { /* se imprime con el estilo base de abajo */ }
+  // Ticket "limpio", igual de sencillo que /prueba-impresion.html (que sí imprime en las Epson):
+  // sin logo, sin la barra negra, sin filtros ni los estilos del sistema; solo texto negro con
+  // letra monoespaciada. Con el ticket "bonito" la Epson imprimía solo las líneas, sin texto.
   const clone = ticket.cloneNode(true);
   clone.removeAttribute('id');
-  clone.querySelectorAll('img').forEach(img => { img.src = new URL(img.getAttribute('src'), location.href).href; });
+  clone.querySelectorAll('img, .ticket-brand-bar, .ticket-scissors, .hidden, script, style').forEach(el => el.remove());
+  clone.removeAttribute('style');
+  clone.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+  clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Ticket</title>
     <style>
-      ${css}
       @page { size: ${width}mm auto; margin: 2mm; }
-      html, body { margin: 0; padding: 0; background: #fff; }
-      .hidden { display: none !important; }
-      .ticket-paper { width: 100% !important; margin: 0 !important; padding: 4px 6px 12px !important; box-shadow: none !important; border: none !important; border-radius: 0 !important; }
-      .ticket-brand-bar { margin: 0 0 10px !important; border-radius: 0 !important; background: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .ticket-table td, .ticket-table th { word-break: break-word; }
-      .ticket-table th:nth-child(n+3), .ticket-table td:nth-child(n+3) { white-space: nowrap; padding-left: 6px; }
-      .ticket-table .t-cod { max-width: 22mm; font-size: 9px; }
-      tr, .ticket-total-row, .ticket-coupon-box { break-inside: avoid; }
+      html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+      body { font-family: monospace; font-size: 12px; line-height: 1.35; }
+      * { color: #000; background: transparent; box-shadow: none; text-shadow: none; filter: none; }
+      .ticket-paper { width: 100%; box-sizing: border-box; padding: 0 2px 8px; overflow-wrap: anywhere; }
+      .t-center { text-align: center; }
+      .ticket-store-name { font-weight: bold; font-size: 14px; }
+      .ticket-divider { border-top: 1px dashed #000; margin: 6px 0; }
+      .ticket-row, .ticket-total-row, .ticket-item-row, .ticket-item-sub, .ticket-meta-row { display: flex; justify-content: space-between; gap: 6px; }
+      .ticket-total-row.grand { font-weight: bold; font-size: 14px; }
+      table { width: 100%; border-collapse: collapse; font-size: 10px; table-layout: fixed; }
+      .ticket-table:not(.ticket-method-table) th:nth-child(1) { width: 17%; }
+      .ticket-table:not(.ticket-method-table) th:nth-child(2) { width: 35%; }
+      .ticket-table:not(.ticket-method-table) th:nth-child(3) { width: 17%; }
+      .ticket-table:not(.ticket-method-table) th:nth-child(4) { width: 11%; }
+      .ticket-table:not(.ticket-method-table) th:nth-child(5) { width: 20%; }
+      td { overflow-wrap: anywhere; }
+      th { text-align: left; border-bottom: 1px solid #000; font-weight: bold; }
+      th, td { padding: 2px 0 2px 2px; vertical-align: top; }
+      th:nth-child(n+3), td:nth-child(n+3), th:last-child, td:last-child { text-align: right; }
+      .ticket-coupon-box { border: 1px dashed #000; padding: 4px; margin: 6px 0; text-align: center; }
+      .ticket-coupon-title, .ticket-thanks { font-weight: bold; }
       @media screen { body { width: ${width}mm; margin: 8px auto; } }
     </style></head><body>${clone.outerHTML}
     <script>
