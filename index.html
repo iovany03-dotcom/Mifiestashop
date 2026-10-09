@@ -2792,6 +2792,7 @@
       <div class="submenu">
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
+        <a class="submenu-link" data-view="recepcion">Recepción de mercancía</a>
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
         <a class="submenu-link" data-view="etiquetas">Etiquetas de precio</a>
         <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
@@ -4632,6 +4633,29 @@
       </div>
     </section>
 
+      <!-- RECEPCIÓN INTELIGENTE DE MERCANCÍA (docs/supabase-recepcion.sql, api/recepcion.js) -->
+      <section id="view-recepcion" class="view-panel hidden">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+            <div>
+              <h2 style="margin:0;">Recepción de mercancía</h2>
+              <p style="margin:6px 0 0; font-size:13px; color:var(--text-secondary); max-width:780px;">
+                Toda compra entra al inventario por aquí: primero se escanea la nota del proveedor, la IA lee códigos, cantidades y precios,
+                se vinculan los códigos nuevos, se cuenta la mercancía y un supervisor autoriza el ingreso.
+              </p>
+            </div>
+            <button class="btn primary" onclick="recNueva()">+ Nueva recepción</button>
+          </div>
+          <div class="rec-tabs" style="display:flex; gap:6px; margin:16px 0 12px; flex-wrap:wrap;">
+            <button class="btn small primary" data-rectab="recepciones" onclick="recTab('recepciones')">Recepciones</button>
+            <button class="btn small" data-rectab="equivalencias" onclick="recTab('equivalencias')">Equivalencias de códigos</button>
+            <button class="btn small" data-rectab="proveedores" onclick="recTab('proveedores')">Proveedores</button>
+            <button class="btn small" data-rectab="reportes" onclick="recTab('reportes')">Reportes</button>
+          </div>
+          <div id="recCuerpo"><p style="color:var(--text-muted);">Cargando…</p></div>
+        </div>
+      </section>
+
     <section id="view-etiquetas" class="view-panel hidden">
       <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
@@ -6457,6 +6481,17 @@
 </div>
 
 <!-- ================= MOVIMIENTOS E HISTORIAL DE INVENTARIO MODAL ================= -->
+<!-- Diálogo genérico de Recepción de mercancía (vincular, contar, editar renglón, nueva recepción…) -->
+<div class="modal-overlay hidden" id="recModal">
+  <div class="modal" style="max-width: 720px;">
+    <div class="modal-header">
+      <h2 id="recModalTitulo">Recepción</h2>
+      <button class="btn small" onclick="recCerrarModal()">✕</button>
+    </div>
+    <div id="recModalCuerpo"></div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="traspasoModal">
   <div class="modal" style="max-width: 760px;">
     <div class="modal-header">
@@ -6473,9 +6508,24 @@
 
     <!-- Movement Type Toggle Buttons -->
     <div style="display:flex; gap:8px; margin-bottom:16px;">
-      <button type="button" class="btn primary" id="btnTipoEntrada" onclick="setMovimientoType('entrada')" style="flex:1; justify-content:center; font-weight:700;">Entrada (Ingreso)</button>
+      <button type="button" class="btn primary" id="btnTipoEntrada" onclick="setMovimientoType('entrada')" style="flex:1; justify-content:center; font-weight:700;">Ajuste de entrada</button>
       <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
       <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; justify-content:center; font-weight:700;">Traspaso</button>
+    </div>
+
+    <div id="movAvisoCompras" style="background:rgba(211,0,123,0.08); border:1px solid rgba(211,0,123,0.35); border-radius:10px; padding:10px 12px; margin-bottom:14px; font-size:13px; color:var(--text-primary);">
+      <b>Las compras a proveedores ya no se registran aquí.</b> Toda mercancía comprada entra por
+      <a href="#" onclick="event.preventDefault(); closeTraspasoModal(); switchView('recepcion');" style="color:#d3007b; font-weight:700;">Recepción de mercancía</a>
+      con la nota del proveedor escaneada. El ajuste de entrada es solo para devoluciones, correcciones o diferencias de conteo, con justificación y aprobación de un supervisor.
+      <div id="movAjusteCatWrap" style="margin-top:8px;">
+        <label style="font-weight:600;">Tipo de ajuste:
+          <select id="movAjusteCat" onchange="saveMovDraft()" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            <option value="devolucion">Devolución de cliente</option>
+            <option value="correccion">Corrección de un error de captura</option>
+            <option value="conteo">Diferencia en conteo físico</option>
+          </select>
+        </label>
+      </div>
     </div>
 
     <form id="traspasoForm" onsubmit="event.preventDefault(); reviewStockMovement();">
@@ -6518,7 +6568,7 @@
 
       <div style="margin-bottom:18px;">
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Motivo / Observaciones (Opcional):</label>
-        <input type="text" id="traspasoMotivo" oninput="saveMovDraft()" placeholder="Ej. Reabastecimiento de proveedor, merma, folio #MOV-9901" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <input type="text" id="traspasoMotivo" oninput="saveMovDraft()" placeholder="Ej. merma por daño, traspaso para surtir sucursal, devolución ticket #1234" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
       <div style="display:flex; gap:10px; justify-content:flex-end;">
@@ -6714,6 +6764,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
+    { key: 'recepcion', label: 'Recepción de mercancía (escanear notas, vincular códigos, contar)' },
     { key: 'etiquetas', label: 'Etiquetas de precio (imprimir con mayoreo y código de barras)' },
     { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
     { key: 'blog', label: 'Blog: escribir y administrar artículos (SEO)' },
@@ -6766,6 +6817,8 @@ function hasPermission(viewName) {
   const permisos = currentStaffSession.permisos || [];
   // Quien ya veía Almacenes / Bodegas también ve sus movimientos.
   if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
+  // La recepción la hacen quienes manejan bodegas; los supervisores la autorizan.
+  if (viewName === 'recepcion' && (permisos.includes('bodegas') || permisos.includes('aprobar-movimientos'))) return true;
   return permisos.includes(viewName);
 }
 
@@ -8000,6 +8053,7 @@ function switchView(viewName) {
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
     etiquetas: ['Etiquetas de precio', 'Imprimir etiquetas con precio y mayoreo'],
+    recepcion: ['Recepción de mercancía', 'Nota escaneada con IA, vinculación de códigos, conteo y autorización'],
     competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
     blog: ['Blog', 'Artículos para atraer visitas desde Google'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
@@ -8043,6 +8097,7 @@ function switchView(viewName) {
   if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'competencia') loadCompetenciaView();
   if (viewName === 'etiquetas') etqIniciar();
+  if (viewName === 'recepcion') recIniciar();
   if (viewName === 'blog') blogMostrarLista();
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
@@ -11794,7 +11849,10 @@ const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro:
 let movLote = [];              // [{ id, qty }]
 let movSearchActive = 0;       // resultado resaltado con las flechas
 const MOV_DRAFT_KEY = 'mf_mov_lote_borrador';
-const MOV_TIPO_LABEL = { entrada: 'Entrada', salida: 'Salida', traspaso: 'Traspaso' };
+const MOV_TIPO_LABEL = { entrada: 'Ajuste de entrada', salida: 'Salida', traspaso: 'Traspaso' };
+// Los ajustes de entrada se guardan como tipo 'ajuste_entrada' con el motivo "categoría: justificación"
+// (docs/supabase-recepcion.sql); las compras solo entran por Recepción de mercancía.
+const MOV_AJUSTE_RE = /^(devolucion|correccion|conteo):\s*/i;
 
 function movDataset() {
   return adminCatalogDataset();
@@ -11837,7 +11895,9 @@ function applyMovState(d) {
   movEditingDocId = d.docId || null;
   if (d.origen) document.getElementById('traspasoOrigen').value = d.origen;
   if (d.destino) document.getElementById('traspasoDestino').value = d.destino;
-  document.getElementById('traspasoMotivo').value = d.motivo || '';
+  const mCat = String(d.motivo || '').match(MOV_AJUSTE_RE);
+  if (mCat && document.getElementById('movAjusteCat')) document.getElementById('movAjusteCat').value = mCat[1].toLowerCase();
+  document.getElementById('traspasoMotivo').value = String(d.motivo || '').replace(MOV_AJUSTE_RE, '');
   movLote = d.items
     .map(it => ({ id: String(it.id), qty: Math.max(1, parseInt(it.qty, 10) || 1) }))
     .filter(it => it.id);
@@ -11857,6 +11917,8 @@ function setMovimientoType(tipo) {
   const wrapOrigen = document.getElementById('wrapperBodegaOrigen');
   const wrapDestino = document.getElementById('wrapperBodegaDestino');
 
+  const catWrap = document.getElementById('movAjusteCatWrap');
+  if (catWrap) catWrap.style.display = tipo === 'entrada' ? 'block' : 'none';
   if (tipo === 'entrada') {
     if(wrapOrigen) wrapOrigen.style.display = 'none';
     if(wrapDestino) wrapDestino.style.display = 'block';
@@ -12175,6 +12237,8 @@ function movErrorMessage(e, fallback) {
   if (/sin_productos/.test(m)) return 'Agrega al menos un producto.';
   if (/partida_invalida/.test(m)) return 'Hay productos con cantidad inválida (deben ser números enteros mayores a 0).';
   if (/bodega_invalida/.test(m)) return 'Revisa la bodega de origen y destino.';
+  if (/INGRESO NO PERMITIDO/.test(m)) return 'INGRESO NO PERMITIDO. Para registrar mercancía es obligatorio escanear primero la nota de compra del proveedor y completar el proceso de recepción inteligente.';
+  if (/ajuste_sin_justificacion/.test(m)) return 'El ajuste de entrada necesita tipo (devolución, corrección o conteo) y una justificación de al menos 5 letras.';
   return fallback;
 }
 
@@ -12186,7 +12250,7 @@ async function refreshMovHistoryData() {
     sbRpc('rpc_stock_move_list_manual', creds).catch(() => []),
     sbRpc('rpc_mov_can_approve', creds).catch(() => false)
   ]);
-  movDocs = Array.isArray(docs) ? docs : [];
+  movDocs = (Array.isArray(docs) ? docs : []).map(d => d.tipo === 'ajuste_entrada' ? { ...d, tipo: 'entrada', ajuste: true } : d);
   movManualRows = Array.isArray(rows) ? rows : [];
   movCanApprove = can === true;
   updateMovHistorialButton();
@@ -12229,7 +12293,7 @@ function movHistoryEntries() {
   const entries = movDocs.map(d => ({
     key: 'd:' + d.id, source: 'doc', doc: d, folio: d.folio, tipo: d.tipo, estado: d.estado,
     reverted: d.estado === 'aprobado' && revertedFolios.has(d.folio),
-    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR)-/.test(d.folio),
+    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR|AJE)-/.test(d.folio),
     isReversal: false, origen: d.origen || '', destino: d.destino || '', nota: d.motivo || '',
     por: d.creado_por || '', date: d.creado_at, aprobadoPor: d.aprobado_por || '', aprobadoAt: d.aprobado_at || '',
     items: (Array.isArray(d.items) ? d.items : []).map(it => ({ id_product: it.id_product, name: it.name || '', qty: Number(it.qty) || 0 }))
@@ -12398,7 +12462,11 @@ async function saveMovAsDraft() {
   if (err) { alert(err); renderMovLote(); return; }
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
-  const motivo = document.getElementById('traspasoMotivo').value.trim();
+  let motivo = document.getElementById('traspasoMotivo').value.trim().replace(MOV_AJUSTE_RE, '');
+  if (currentMovType === 'entrada') {
+    if (motivo.length < 5) { alert('Escribe la justificación del ajuste de entrada (qué pasó y el documento que lo respalda: ticket de devolución, conteo, etc.).'); return; }
+    motivo = `${document.getElementById('movAjusteCat').value}: ${motivo}`;
+  }
   const items = movLote.map(it => {
     const p = movFindProduct(it.id);
     return { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
@@ -13309,6 +13377,10 @@ async function openStockAdjustModal(pId) {
 
   const delta = parsed - current;
   if (delta === 0) return;
+  if (delta > 0) {
+    alert('INGRESO NO PERMITIDO desde aquí.\n\nSi es mercancía comprada, regístrala en Catálogo & Stock → Recepción de mercancía con la nota del proveedor.\nSi es una devolución o una corrección, usa Movimientos & Traspasos → Ajuste de entrada (requiere justificación y aprobación).');
+    return;
+  }
 
   try {
     await sbRpc('rpc_stock_move_insert_bulk', {
@@ -14427,6 +14499,813 @@ async function confirmCrearPedido(){
   } catch (e) {
     alert('No se pudo crear el pedido: ' + e.message);
   }
+}
+
+// ---- Recepción Inteligente de Mercancía ----
+// Reglas en la base (docs/supabase-recepcion.sql): sin nota procesada no hay renglones ni
+// ingreso; el inventario solo sube con rpc_recep_autorizar (supervisor) y cada entrada queda
+// ligada a su renglón. La lectura con IA y los archivos van por /api/recepcion.
+const REC_ESTADOS = {
+  borrador: ['Borrador (falta nota)', '#6b7280'],
+  procesando: ['Procesando nota con IA', '#7c3aed'],
+  pendiente_identificacion: ['Pendiente de identificación', '#d97706'],
+  pendiente_conteo: ['Pendiente de conteo físico', '#2563eb'],
+  con_diferencias: ['Con diferencias', '#dc2626'],
+  pendiente_autorizacion: ['Pendiente de autorización', '#0891b2'],
+  parcial: ['Parcialmente registrada', '#9333ea'],
+  conciliada: ['Conciliada', '#16a34a'],
+  cancelada: ['Cancelada', '#6b7280']
+};
+const REC_INPUT = 'padding:9px 11px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;';
+const REC_MSG_INGRESO = 'INGRESO NO PERMITIDO. Para registrar mercancía es obligatorio escanear primero la nota de compra del proveedor y completar el proceso de recepción inteligente.';
+let recTabActual = 'recepciones';
+let recProveedores = [];
+let recActual = null;          // detalle de la recepción abierta (recep_json + soy_supervisor…)
+let recNotaPaginas = [];       // [{ nombre, media_type, data, preview }]
+let recFiltros = { estado: 'abiertas', proveedor: '', almacen: '', desde: '', hasta: '', empleado: '' };
+
+function recError(e) {
+  let m = String((e && (e.detail || e.message)) || '');
+  try { const j = JSON.parse(m); if (j && j.message) m = j.message; } catch (x) {}
+  const T = {
+    unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión.',
+    sin_permiso_recepcion: 'Tu usuario no tiene permiso de recepción de mercancía (pídelo al administrador: permiso "Recepción de mercancía").',
+    solo_supervisor: 'Solo un supervisor (permiso "Aprobar movimientos de inventario") o el administrador puede hacerlo.',
+    solo_admin: 'Solo el administrador puede corregir equivalencias confirmadas.',
+    equivalencia_existente: 'Ese código ya está vinculado a otro producto para este proveedor. Solo un supervisor puede cambiarlo (queda en el historial).',
+    linea_sin_identificar: 'Primero identifica el producto de este renglón (y confirma la lectura).',
+    recepcion_cerrada: 'Esta recepción ya está cerrada, cancelada o procesándose.',
+    linea_ingresada: 'Ese renglón ya entró al inventario; no se puede modificar.',
+    faltan_piezas_por_caja: 'Indica cuántas piezas trae cada caja.',
+    danadas_mayor_que_recibido: 'Las piezas dañadas no pueden ser más que las recibidas.',
+    cantidad_invalida: 'Las cantidades deben ser números enteros de 0 en adelante.',
+    nada_que_ingresar: 'No hay renglones listos para ingresar (identificados, contados y sin diferencias pendientes).',
+    linea_no_lista: 'Ese renglón todavía no está listo para ingresar.',
+    ya_tiene_ingresos: 'No se puede cancelar: ya hay mercancía ingresada de esta recepción.',
+    falta_motivo: 'Escribe el motivo.',
+    linea_incompleta: 'El renglón necesita código y cantidad mayor a 0.',
+    producto_no_existe: 'Ese producto no existe en el catálogo.',
+    factor_invalido: 'Las piezas por unidad deben ser un número entero mayor a 0.',
+    proveedor_duplicado: 'Ya existe un proveedor con ese nombre.',
+    proveedor_invalido: 'Elige un proveedor activo.',
+    bodega_invalida: 'Elige la sucursal o almacén.',
+    falta_nombre: 'Escribe el nombre del proveedor.',
+    ya_hay_conteo: 'Ya se empezó a contar esta recepción; la nota no se puede volver a leer.',
+    linea_sin_conteo: 'Primero registra el conteo físico de ese renglón.'
+  };
+  if (/INGRESO NO PERMITIDO/.test(m)) return REC_MSG_INGRESO;
+  for (const k of Object.keys(T)) if (m.includes(k)) return T[k];
+  return m || 'Ocurrió un error. Intenta de nuevo.';
+}
+
+function recRpc(fn, params) { return sbRpc(fn, { ...getSessionCredsParams(), ...params }); }
+
+async function recApi(accion, data) {
+  const r = await fetch('/api/recepcion', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...data })
+  });
+  const d = await r.json().catch(() => ({ ok: false, error: `Error del servidor (HTTP ${r.status})` }));
+  if (!d.ok) throw new Error(d.error || 'Error');
+  return d;
+}
+
+function recBadge(estado) {
+  const [t, c] = REC_ESTADOS[estado] || [estado, '#6b7280'];
+  return `<span style="display:inline-block; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; color:#fff; background:${c}; white-space:nowrap;">${escapeHtml(t)}</span>`;
+}
+const recNum = v => (v === null || v === undefined || v === '' ? '—' : Number(v).toLocaleString('es-MX', { maximumFractionDigits: 2 }));
+const recFecha = v => (v ? new Date(v).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' }) : '—');
+
+function recAbrirModal(titulo, html) {
+  document.getElementById('recModalTitulo').textContent = titulo;
+  document.getElementById('recModalCuerpo').innerHTML = html;
+  document.getElementById('recModal').classList.remove('hidden');
+}
+function recCerrarModal() { document.getElementById('recModal').classList.add('hidden'); }
+
+async function recIniciar() {
+  try { recProveedores = await recRpc('rpc_recep_proveedores', {}) || []; }
+  catch (e) { document.getElementById('recCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; return; }
+  if (!adminCatalogProducts.length) loadAdminCatalogProducts();
+  if (recActual && recTabActual === 'recepciones') recAbrir(recActual.recepcion.id); else recTab(recTabActual);
+}
+
+function recTab(t) {
+  recTabActual = t;
+  document.querySelectorAll('[data-rectab]').forEach(b => { b.className = 'btn small' + (b.dataset.rectab === t ? ' primary' : ''); });
+  if (t === 'recepciones') { recActual = null; recLista(); }
+  else if (t === 'equivalencias') recEquivalencias();
+  else if (t === 'proveedores') recProveedoresVista();
+  else recReportes();
+}
+
+// ---------- Pantalla 1: listado ----------
+async function recLista() {
+  const cuerpo = document.getElementById('recCuerpo');
+  const f = recFiltros;
+  const opt = (v, t, sel) => `<option value="${escapeHtml(v)}" ${String(v) === String(sel) ? 'selected' : ''}>${escapeHtml(t)}</option>`;
+  cuerpo.innerHTML = `
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+      <select id="recFEstado" style="${REC_INPUT}">${opt('abiertas', 'Abiertas (sin cerrar)', f.estado)}${opt('', 'Todas', f.estado)}${Object.keys(REC_ESTADOS).map(k => opt(k, REC_ESTADOS[k][0], f.estado)).join('')}</select>
+      <select id="recFProv" style="${REC_INPUT}">${opt('', 'Todos los proveedores', f.proveedor)}${recProveedores.map(p => opt(p.id, p.nombre, f.proveedor)).join('')}</select>
+      <select id="recFAlm" style="${REC_INPUT}">${opt('', 'Todas las sucursales', f.almacen)}${Object.keys(WAREHOUSE_LABELS).map(k => opt(k, WAREHOUSE_LABELS[k], f.almacen)).join('')}</select>
+      <input type="date" id="recFDesde" value="${escapeHtml(f.desde)}" style="${REC_INPUT}" title="Desde">
+      <input type="date" id="recFHasta" value="${escapeHtml(f.hasta)}" style="${REC_INPUT}" title="Hasta">
+      <input type="search" id="recFEmp" value="${escapeHtml(f.empleado)}" placeholder="Empleado" style="${REC_INPUT} width:140px;">
+      <button class="btn small" onclick="recAplicarFiltros()">Filtrar</button>
+    </div>
+    <div id="recListaTabla"><p style="color:var(--text-muted);">Cargando recepciones…</p></div>`;
+  try {
+    const rows = await recRpc('rpc_recep_lista', {
+      p_estado: f.estado || null, p_proveedor_id: f.proveedor ? Number(f.proveedor) : null, p_almacen: f.almacen || null,
+      p_desde: f.desde || null, p_hasta: f.hasta || null, p_empleado: f.empleado || null
+    }) || [];
+    document.getElementById('recListaTabla').innerHTML = rows.length ? `
+      <div style="overflow-x:auto;"><table class="table" style="width:100%; font-size:13px;">
+        <thead><tr><th>Folio</th><th>Proveedor</th><th>Sucursal</th><th>Nota</th><th>Estado</th><th>Renglones</th><th>Empleado</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>${rows.map(r => `<tr style="cursor:pointer;" onclick="recAbrir(${r.id})">
+          <td style="font-weight:700; white-space:nowrap;">${escapeHtml(r.folio)}</td>
+          <td>${escapeHtml(r.proveedor)}</td><td>${escapeHtml(WAREHOUSE_LABELS[r.almacen] || r.almacen)}</td>
+          <td>${escapeHtml(r.nota_folio || '—')}${r.nota_total ? `<div style="font-size:11px; color:var(--text-muted);">${fmtMoney(r.nota_total)}</div>` : ''}</td>
+          <td>${recBadge(r.estado)}</td>
+          <td>${r.lineas}${r.sin_identificar ? ` <span style="color:#d97706; font-size:11px;">(${r.sin_identificar} sin identificar)</span>` : ''}${r.ingresadas ? ` <span style="color:#16a34a; font-size:11px;">(${r.ingresadas} ingresados)</span>` : ''}</td>
+          <td>${escapeHtml(r.creado_por || '')}</td><td style="white-space:nowrap;">${recFecha(r.created_at)}</td>
+          <td><button class="btn small">Abrir</button></td></tr>`).join('')}</tbody></table></div>`
+      : '<p style="color:var(--text-muted);">No hay recepciones con estos filtros.</p>';
+  } catch (e) {
+    document.getElementById('recListaTabla').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`;
+  }
+}
+function recAplicarFiltros() {
+  recFiltros = {
+    estado: document.getElementById('recFEstado').value, proveedor: document.getElementById('recFProv').value,
+    almacen: document.getElementById('recFAlm').value, desde: document.getElementById('recFDesde').value,
+    hasta: document.getElementById('recFHasta').value, empleado: document.getElementById('recFEmp').value.trim()
+  };
+  recLista();
+}
+
+// ---------- Pantalla 2: nueva recepción ----------
+function recNueva() {
+  const activos = recProveedores.filter(p => p.activo);
+  recAbrirModal('Nueva recepción de mercancía', `
+    <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Elige el proveedor y la sucursal que recibe. En el siguiente paso tomas la foto de la nota.</p>
+    <label style="display:block; font-weight:600; margin-bottom:4px;">Proveedor</label>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <select id="recNProv" style="${REC_INPUT} flex:1;"><option value="">Elige el proveedor…</option>${activos.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join('')}</select>
+      <button class="btn small" onclick="recProveedorForm(null, true)">+ Proveedor</button>
+    </div>
+    <label style="display:block; font-weight:600; margin-bottom:4px;">Sucursal / almacén que recibe</label>
+    <select id="recNAlm" style="${REC_INPUT} width:100%; margin-bottom:16px;">${Object.keys(WAREHOUSE_LABELS).map(k => `<option value="${k}">${escapeHtml(WAREHOUSE_LABELS[k])}</option>`).join('')}</select>
+    <div style="display:flex; justify-content:flex-end; gap:8px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recNBtn" onclick="recCrear()">Crear y escanear nota</button></div>`);
+}
+async function recCrear() {
+  const prov = Number(document.getElementById('recNProv').value);
+  if (!prov) { alert('Elige el proveedor.'); return; }
+  const btn = document.getElementById('recNBtn'); btn.disabled = true;
+  try {
+    const d = await recRpc('rpc_recep_crear', { p_proveedor_id: prov, p_almacen: document.getElementById('recNAlm').value });
+    recCerrarModal();
+    recNotaPaginas = [];
+    recMostrar(d);
+  } catch (e) { alert(recError(e)); btn.disabled = false; }
+}
+
+// ---------- Pantallas 3-6: detalle (nota, vinculación, conteo, conciliación) ----------
+async function recAbrir(id) {
+  recTabActual = 'recepciones';
+  document.querySelectorAll('[data-rectab]').forEach(b => { b.className = 'btn small' + (b.dataset.rectab === 'recepciones' ? ' primary' : ''); });
+  document.getElementById('recCuerpo').innerHTML = '<p style="color:var(--text-muted);">Abriendo recepción…</p>';
+  try {
+    if (!recActual || recActual.recepcion.id !== id) recNotaPaginas = [];
+    recMostrar(await recRpc('rpc_recep_detalle', { p_id: id }));
+  } catch (e) { document.getElementById('recCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; }
+}
+
+// Las respuestas de las funciones de escritura no traen los permisos de la sesión; se conservan.
+function recMostrar(d) {
+  if (recActual && recActual.recepcion && d.recepcion && recActual.recepcion.id === d.recepcion.id && d.soy_supervisor === undefined) {
+    d.soy_supervisor = recActual.soy_supervisor; d.soy_admin = recActual.soy_admin; d.yo = recActual.yo;
+  } else if (d.soy_supervisor === undefined) {
+    d.soy_supervisor = !currentStaffSession || (currentStaffSession.permisos || []).includes('aprobar-movimientos');
+  }
+  recActual = d;
+  recRenderDetalle();
+}
+
+function recLineaEstado(l) {
+  if (l.ingresado_at) return ['Ingresado', '#16a34a'];
+  if (l.revisar) return ['Revisar lectura', '#dc2626'];
+  if (!l.id_product) return ['Sin identificar', '#d97706'];
+  if (l.cantidad_recibida === null || l.cantidad_recibida === undefined) return ['Por contar', '#2563eb'];
+  if (l.incidencia && !l.diferencia_resuelta) return ['Diferencia por resolver', '#dc2626'];
+  return ['Lista para ingresar', '#0891b2'];
+}
+
+function recRenderDetalle() {
+  const d = recActual, r = d.recepcion, L = d.lineas || [];
+  const cerrada = ['conciliada', 'cancelada'].includes(r.estado);
+  const procesada = !!r.nota_procesada_at;
+  const sumaImportes = L.filter(l => l.origen === 'nota').reduce((s, l) => s + (Number(l.importe) || 0), 0);
+  const adv = Array.isArray(r.ia_advertencias) ? r.ia_advertencias : [];
+  const cuenta = f => L.filter(f).length;
+  const listas = L.filter(l => !l.ingresado_at && recLineaEstado(l)[0] === 'Lista para ingresar');
+  const p2 = procesada && L.length > 0 && !cuenta(l => !l.ingresado_at && (!l.id_product || l.revisar));
+  const p3 = p2 && !cuenta(l => !l.ingresado_at && l.cantidad_recibida == null);
+  const p4 = p3 && !cuenta(l => !l.ingresado_at && l.incidencia && !l.diferencia_resuelta);
+  const pasos = [
+    ['1. Nota escaneada', procesada],
+    ['2. Códigos identificados', p2],
+    ['3. Conteo físico', p3],
+    ['4. Diferencias resueltas', p4],
+    ['5. Ingreso autorizado', r.estado === 'conciliada']
+  ];
+  const archivos = (r.archivos || []).filter(a => a.tipo === 'nota');
+  document.getElementById('recCuerpo').innerHTML = `
+    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:flex-start;">
+      <div>
+        <button class="btn small" onclick="recTab('recepciones')">← Recepciones</button>
+        <h3 style="margin:10px 0 4px;">${escapeHtml(r.folio)} ${recBadge(r.estado)}</h3>
+        <div style="font-size:13px; color:var(--text-secondary);">${escapeHtml(r.proveedor)} · ${escapeHtml(WAREHOUSE_LABELS[r.almacen] || r.almacen)} · creada por ${escapeHtml(r.creado_por || '')} el ${recFecha(r.created_at)}</div>
+        ${procesada ? `<div style="font-size:13px; margin-top:4px;">Nota <b>${escapeHtml(r.nota_folio || 'sin folio')}</b>${r.nota_fecha ? ` del ${escapeHtml(r.nota_fecha)}` : ''} · Total nota: <b>${r.nota_total != null ? fmtMoney(r.nota_total) : '—'}</b> · Suma de renglones: <b>${fmtMoney(sumaImportes)}</b>
+          ${r.nota_total != null && Math.abs(sumaImportes - Number(r.nota_total)) > Math.max(1, Number(r.nota_total) * 0.01) && r.nota_subtotal == null ? ' <span style="color:#dc2626; font-weight:700;">⚠ no coincide</span>' : ''}</div>` : ''}
+      </div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        ${!cerrada && d.soy_supervisor && listas.length ? `<button class="btn primary" onclick="recAutorizar()">Autorizar ingreso (${listas.length})</button>` : ''}
+        ${!cerrada && d.soy_supervisor ? '<button class="btn small" onclick="recCancelar()">Cancelar recepción</button>' : ''}
+        <button class="btn small" onclick="recAbrir(${r.id})">Actualizar</button>
+      </div>
+    </div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin:14px 0;">${pasos.map(([t, ok]) => `<span style="padding:5px 10px; border-radius:8px; font-size:12px; font-weight:700; background:${ok ? 'rgba(22,163,74,.12)' : 'var(--bg-secondary, rgba(0,0,0,.05))'}; color:${ok ? '#16a34a' : 'var(--text-muted)'};">${ok ? '✓ ' : ''}${t}</span>`).join('')}</div>
+    ${r.estado === 'cancelada' ? `<p style="color:#dc2626;">Cancelada por ${escapeHtml(r.cancelado_por || '')}: ${escapeHtml(r.motivo_cancelacion || '')}</p>` : ''}
+    ${adv.length ? `<div style="background:rgba(217,119,6,.10); border:1px solid rgba(217,119,6,.4); border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:13px;"><b>Revisa:</b><ul style="margin:6px 0 0; padding-left:18px;">${adv.map(a => `<li>${escapeHtml(a)}</li>`).join('')}</ul></div>` : ''}
+    ${recHtmlNota(r, procesada, cerrada, archivos)}
+    ${procesada ? recHtmlLineas(d, L, cerrada) : ''}
+    <details style="margin-top:16px;"><summary style="cursor:pointer; font-weight:700;">Historial de la recepción (${(d.eventos || []).length})</summary>
+      <div style="max-height:320px; overflow:auto; font-size:12px; margin-top:8px;">${(d.eventos || []).map(ev => `<div style="padding:6px 0; border-bottom:1px solid var(--border);"><b>${escapeHtml(ev.accion.replace(/_/g, ' '))}</b> · ${escapeHtml(ev.por || '')} · ${recFecha(ev.at)}${ev.linea_id ? ` · renglón ${ev.linea_id}` : ''}
+        ${ev.despues ? `<div style="color:var(--text-muted); word-break:break-word;">${escapeHtml(JSON.stringify(ev.despues))}</div>` : ''}</div>`).join('') || '<p>Sin eventos.</p>'}</div>
+    </details>`;
+}
+
+function recHtmlNota(r, procesada, cerrada, archivos) {
+  const verArchivos = archivos.length ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">${archivos.map(a => `<button class="btn small" onclick="recVerArchivo('${escapeHtml(a.path)}')">Ver página ${a.pagina || ''}</button>`).join('')}</div>` : '';
+  if (procesada) {
+    const puedeReleer = !cerrada && !(recActual.lineas || []).some(l => l.cantidad_recibida != null || l.ingresado_at);
+    return `<div class="card" style="padding:12px; margin-bottom:12px;">
+      <b>Nota del proveedor</b> · leída por IA el ${recFecha(r.nota_procesada_at)} (${escapeHtml(r.nota_procesada_por || '')})${verArchivos}
+      ${puedeReleer ? `<details style="margin-top:8px;"><summary style="cursor:pointer; font-size:13px;">Volver a leer la nota (reemplaza los renglones)</summary>${recHtmlSubirNota()}</details>` : ''}
+    </div>`;
+  }
+  if (cerrada) return '';
+  return `<div class="card" style="padding:14px; margin-bottom:12px; border:2px dashed #d3007b;">
+    <b style="font-size:15px;">Paso 1: escanea la nota de compra del proveedor</b>
+    <p style="font-size:13px; color:var(--text-secondary); margin:6px 0 10px;">Sin nota procesada no se puede registrar ningún producto. Toma una foto por página (o sube el PDF). La IA extrae códigos, cantidades y precios; después los revisas.</p>
+    ${recHtmlSubirNota()}
+  </div>`;
+}
+
+function recHtmlSubirNota() {
+  return `<div style="display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;">
+      <label class="btn small" style="cursor:pointer;">📷 Tomar foto<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="recAgregarPaginas(this)"></label>
+      <label class="btn small" style="cursor:pointer;">📎 Adjuntar fotos o PDF<input type="file" accept="image/*,application/pdf" multiple style="display:none;" onchange="recAgregarPaginas(this)"></label>
+    </div>
+    <div id="recPaginas" style="display:flex; gap:8px; flex-wrap:wrap;">${recHtmlPaginas()}</div>
+    <button class="btn primary" id="recBtnLeer" style="margin-top:10px;" onclick="recLeerNota()" ${recNotaPaginas.length ? '' : 'disabled'}>Procesar nota con IA</button>
+    <span id="recLeerEstado" style="font-size:13px; color:var(--text-secondary); margin-left:8px;"></span>`;
+}
+function recHtmlPaginas() {
+  return recNotaPaginas.map((p, i) => `<div style="position:relative; width:86px; text-align:center; font-size:11px;">
+      ${p.media_type === 'application/pdf' ? '<div style="width:86px; height:110px; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:8px; font-weight:700;">PDF</div>'
+        : `<img src="${p.preview}" style="width:86px; height:110px; object-fit:cover; border-radius:8px; border:1px solid var(--border);">`}
+      <div>Página ${i + 1}</div>
+      <button class="btn small" style="position:absolute; top:2px; right:2px; padding:0 6px;" onclick="recQuitarPagina(${i})">✕</button></div>`).join('');
+}
+function recQuitarPagina(i) { recNotaPaginas.splice(i, 1); recRefrescarPaginas(); }
+function recRefrescarPaginas() {
+  const c = document.getElementById('recPaginas'); if (c) c.innerHTML = recHtmlPaginas();
+  const b = document.getElementById('recBtnLeer'); if (b) b.disabled = !recNotaPaginas.length;
+}
+
+// Fotos: se reducen a 2000 px y JPEG para que la nota completa quepa en una sola petición.
+function recLeerArchivo(file, maxLado = 2000, calidad = 0.82) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+    if (file.type === 'application/pdf') {
+      fr.onload = () => resolve({ nombre: file.name, media_type: 'application/pdf', data: String(fr.result).split(',')[1] });
+      fr.readAsDataURL(file);
+      return;
+    }
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Ese archivo no es una imagen válida.'));
+      img.onload = () => {
+        const k = Math.min(1, maxLado / Math.max(img.width, img.height));
+        const cv = document.createElement('canvas');
+        cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+        const url = cv.toDataURL('image/jpeg', calidad);
+        resolve({ nombre: file.name, media_type: 'image/jpeg', data: url.split(',')[1], preview: url });
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function recAgregarPaginas(input) {
+  const files = [...(input.files || [])];
+  input.value = '';
+  for (const f of files) {
+    if (!/^image\//.test(f.type) && f.type !== 'application/pdf') { alert(`${f.name}: usa fotos o PDF.`); continue; }
+    try { recNotaPaginas.push(await recLeerArchivo(f)); } catch (e) { alert(e.message); }
+  }
+  if (recNotaPaginas.length > 10) { recNotaPaginas = recNotaPaginas.slice(0, 10); alert('Máximo 10 páginas por nota.'); }
+  recRefrescarPaginas();
+}
+async function recLeerNota() {
+  if (!recNotaPaginas.length) { alert(REC_MSG_INGRESO); return; }
+  const bytes = recNotaPaginas.reduce((t, p) => t + p.data.length * 0.75, 0);
+  if (bytes > 4 * 1024 * 1024) { alert('Las páginas pesan demasiado juntas (máx. 4 MB). Quita páginas o súbelas con menos resolución.'); return; }
+  const btn = document.getElementById('recBtnLeer'); btn.disabled = true;
+  const est = document.getElementById('recLeerEstado');
+  est.textContent = 'Leyendo la nota con IA… puede tardar hasta 2 minutos, no cierres esta pantalla.';
+  try {
+    const d = await recApi('leer_nota', { recepcion_id: recActual.recepcion.id, archivos: recNotaPaginas.map(({ nombre, media_type, data }) => ({ nombre, media_type, data })) });
+    recNotaPaginas = [];
+    recMostrar(d);
+  } catch (e) {
+    est.textContent = '';
+    btn.disabled = false;
+    alert('No se pudo procesar la nota: ' + e.message);
+    recAbrir(recActual.recepcion.id);
+  }
+}
+async function recVerArchivo(path) {
+  const w = window.open('', '_blank');
+  try {
+    const d = await recApi('archivo_url', { recepcion_id: recActual.recepcion.id, path });
+    if (w) w.location = d.url; else window.location.href = d.url;
+  } catch (e) { if (w) w.close(); alert(e.message); }
+}
+
+function recHtmlLineas(d, L, cerrada) {
+  const sup = d.soy_supervisor;
+  const filas = L.map((l, i) => {
+    const [est, col] = recLineaEstado(l);
+    const p = l.producto;
+    const dif = l.diferencia;
+    const costoVar = l.costo_anterior > 0 && l.costo_pieza != null ? (l.costo_pieza - l.costo_anterior) / l.costo_anterior * 100 : null;
+    const abierta = !l.ingresado_at && !cerrada;
+    return `<tr style="${l.revisar ? 'background:rgba(220,38,38,.06);' : ''}">
+      <td>${l.renglon}${l.origen === 'adicional' ? '<div style="font-size:10px; color:#9333ea; font-weight:700;">NO DOCUMENTADA</div>' : ''}</td>
+      <td style="font-family:monospace; font-weight:700; white-space:nowrap;">${escapeHtml(l.codigo || '—')}${l.descripcion ? `<div style="font-family:inherit; font-weight:400; font-size:11px; color:var(--text-muted);">${escapeHtml(l.descripcion)}</div>` : ''}
+        ${l.revisar ? `<div style="font-family:inherit; font-weight:600; font-size:11px; color:#dc2626; white-space:normal;">${escapeHtml(l.revisar_motivo || 'Revisar')}</div>` : ''}</td>
+      <td style="text-align:right;">${l.origen === 'adicional' ? '—' : recNum(l.cantidad_nota)}${l.factor > 1 ? `<div style="font-size:11px; color:var(--text-muted);">× ${l.factor} = ${recNum(l.esperado_piezas)} pzs</div>` : ''}</td>
+      <td style="text-align:right; white-space:nowrap;">${l.precio_unitario != null ? fmtMoney(l.precio_unitario) : '—'}
+        ${costoVar !== null && Math.abs(costoVar) >= 10 ? `<div style="font-size:11px; font-weight:700; color:${costoVar > 0 ? '#dc2626' : '#16a34a'};">${costoVar > 0 ? '▲' : '▼'} ${Math.abs(costoVar).toFixed(0)}% vs ${fmtMoney(l.costo_anterior)}</div>` : ''}</td>
+      <td style="text-align:right;">${l.importe != null ? fmtMoney(l.importe) : '—'}</td>
+      <td style="min-width:180px;">${p ? `<div style="display:flex; gap:8px; align-items:center;">${p.image ? `<img src="${escapeHtml(p.image)}" style="width:40px; height:40px; object-fit:cover; border-radius:6px;">` : ''}
+          <div><div style="font-weight:600;">${escapeHtml(p.name)}</div><div style="font-size:11px; color:var(--text-muted);">${escapeHtml(p.barcode || p.sku || '')}${l.identificada_auto ? ' · reconocido automáticamente' : ''}${p.active === false ? ' · <b style="color:#d97706;">producto oculto/pendiente</b>' : ''}</div></div></div>`
+        : '<span style="color:#d97706; font-weight:700;">Pendiente de vincular</span>'}</td>
+      <td style="text-align:right;">${l.cantidad_recibida != null ? `<b>${recNum(l.cantidad_recibida)}</b>${l.cajas ? `<div style="font-size:11px; color:var(--text-muted);">${l.cajas}×${l.piezas_por_caja}${l.piezas_sueltas ? ` + ${l.piezas_sueltas}` : ''}</div>` : ''}` : '—'}
+        ${l.danadas > 0 ? `<div style="font-size:11px; color:#dc2626;">${recNum(l.danadas)} dañadas</div>` : ''}</td>
+      <td style="text-align:right; font-weight:700; color:${dif > 0 ? '#2563eb' : dif < 0 ? '#dc2626' : 'inherit'};">${dif == null ? '—' : (dif > 0 ? '+' : '') + recNum(dif)}</td>
+      <td><span style="font-size:11px; font-weight:700; color:${col};">${est}</span>${l.diferencia_resuelta && l.resolucion ? `<div style="font-size:11px; color:var(--text-muted);">${escapeHtml(l.resolucion)} (${escapeHtml(l.resuelto_por || '')})</div>` : ''}
+        ${l.ingresado_at ? `<div style="font-size:11px; color:var(--text-muted);">+${recNum(l.ingresado_qty)} pzs · ${escapeHtml(l.ingresado_por || '')}</div>` : ''}
+        ${(l.evidencias || []).map((a, k) => `<a href="#" onclick="event.preventDefault(); recVerArchivo('${escapeHtml(a.path)}')" style="font-size:11px; display:block;">Evidencia ${k + 1}</a>`).join('')}</td>
+      <td style="white-space:nowrap;">${abierta ? `
+        <button class="btn small" onclick="recLineaForm(${l.id})" title="Corregir lo que leyó la IA">${l.revisar ? 'Revisar' : 'Editar'}</button>
+        <button class="btn small ${!l.id_product ? 'primary' : ''}" onclick="recVincular(${l.id})">${l.id_product ? 'Cambiar' : 'Vincular'}</button>
+        ${l.id_product && !l.revisar ? `<button class="btn small ${l.cantidad_recibida == null ? 'primary' : ''}" onclick="recConteo(${l.id})">Contar</button>` : ''}
+        ${sup && l.cantidad_recibida != null && l.incidencia && !l.diferencia_resuelta ? `<button class="btn small" onclick="recResolver(${l.id})">Resolver</button>` : ''}
+        <button class="btn small" onclick="recEliminarLinea(${l.id})" title="Quitar renglón">🗑</button>` : ''}</td>
+    </tr>`;
+  }).join('');
+  return `
+    ${!cerrada ? `<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:8px 0 10px;">
+      <input type="text" id="recEscaner" placeholder="Escanea código de barras o código del proveedor y Enter" onkeydown="if(event.key==='Enter'){event.preventDefault(); recEscanear(this.value); this.value='';}" style="${REC_INPUT} flex:1; min-width:240px;">
+      <label class="btn small" style="cursor:pointer;">📷 Producto sin código<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="recFotoProductoSinCodigo(this)"></label>
+      <button class="btn small" onclick="recLineaForm(null, 'nota')">+ Renglón de la nota</button>
+      <button class="btn small" onclick="recLineaForm(null, 'adicional')">+ Mercancía no documentada</button>
+    </div>` : ''}
+    <div style="overflow-x:auto;"><table class="table" style="width:100%; font-size:13px;">
+      <thead><tr><th>#</th><th>Código proveedor</th><th style="text-align:right;">Cant. nota</th><th style="text-align:right;">Precio</th><th style="text-align:right;">Importe</th><th>Producto</th><th style="text-align:right;">Recibido (pzs)</th><th style="text-align:right;">Dif.</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="10" style="text-align:center; color:var(--text-muted); padding:16px;">La IA no encontró renglones. Agrégalos con "+ Renglón de la nota".</td></tr>'}</tbody></table></div>
+    <p style="font-size:12px; color:var(--text-muted);">La diferencia compara las piezas contadas contra lo que dice la nota (cantidad × piezas por unidad). Solo entra al inventario lo contado menos lo dañado, y solo cuando un supervisor lo autoriza.</p>`;
+}
+
+function recLinea(id) { return (recActual.lineas || []).find(l => l.id === id); }
+
+// Editar / agregar renglón (corrige errores de lectura de la IA).
+function recLineaForm(id, origen) {
+  const l = id ? recLinea(id) : { origen, codigo: '', descripcion: '', cantidad_nota: '', precio_unitario: '', importe: '' };
+  const adicional = l.origen === 'adicional';
+  recAbrirModal(id ? `Renglón ${l.renglon}` : (adicional ? 'Mercancía no documentada' : 'Agregar renglón de la nota'), `
+    ${adicional ? '<p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Producto que llegó pero no viene en la nota. Queda pendiente de aclaración: un supervisor debe resolverlo antes de ingresarlo.</p>' : ''}
+    ${l.revisar ? `<p style="color:#dc2626; font-size:13px; margin-top:0;"><b>La IA marcó este renglón:</b> ${escapeHtml(l.revisar_motivo || '')}. Compáralo con la foto de la nota y corrígelo o confírmalo.</p>` : ''}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <label>Código del proveedor (tal cual)<input id="recLCod" value="${escapeHtml(l.codigo || '')}" style="${REC_INPUT} width:100%; font-family:monospace;"></label>
+      <label>Descripción (opcional)<input id="recLDesc" value="${escapeHtml(l.descripcion || '')}" style="${REC_INPUT} width:100%;"></label>
+      ${adicional ? '' : `<label>Cantidad en la nota<input id="recLCant" type="number" min="0" step="any" value="${l.cantidad_nota ?? ''}" style="${REC_INPUT} width:100%;"></label>`}
+      <label>Precio unitario<input id="recLPrecio" type="number" min="0" step="any" value="${l.precio_unitario ?? ''}" style="${REC_INPUT} width:100%;"></label>
+      ${adicional ? '' : `<label>Importe<input id="recLImp" type="number" min="0" step="any" value="${l.importe ?? ''}" style="${REC_INPUT} width:100%;"></label>`}
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+      ${recActual.recepcion.archivos && recActual.recepcion.archivos.length ? `<button class="btn" onclick="recVerArchivo('${escapeHtml((recActual.recepcion.archivos.find(a => a.tipo === 'nota') || {}).path || '')}')">Ver nota</button>` : ''}
+      <button class="btn" onclick="recCerrarModal()">Cancelar</button>
+      <button class="btn primary" onclick="recGuardarLinea(${id || 'null'}, '${l.origen}')">${l.revisar ? 'Confirmar renglón' : 'Guardar'}</button></div>`);
+}
+async function recGuardarLinea(id, origen) {
+  const val = k => { const el = document.getElementById(k); return el && el.value !== '' ? Number(el.value) : null; };
+  try {
+    const d = await recRpc('rpc_recep_linea_guardar', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: id, p_codigo: document.getElementById('recLCod').value,
+      p_descripcion: document.getElementById('recLDesc').value, p_cantidad: val('recLCant'), p_precio: val('recLPrecio'),
+      p_importe: val('recLImp'), p_origen: origen
+    });
+    recCerrarModal(); recMostrar(d);
+    if (!id && origen === 'adicional') { const nueva = d.lineas[d.lineas.length - 1]; if (nueva && !nueva.id_product) recVincular(nueva.id); }
+  } catch (e) { alert(recError(e)); }
+}
+async function recEliminarLinea(id) {
+  const l = recLinea(id);
+  const motivo = prompt(`¿Por qué quitas el renglón ${l.renglon} (${l.codigo || 'sin código'})? Queda registrado en el historial.`);
+  if (!motivo || !motivo.trim()) return;
+  try { recMostrar(await recRpc('rpc_recep_linea_eliminar', { p_recepcion_id: recActual.recepcion.id, p_linea_id: id, p_motivo: motivo })); }
+  catch (e) { alert(recError(e)); }
+}
+
+// ---------- Pantalla 4: vinculación de códigos ----------
+let recVincId = null;
+function recVincular(id, sugeridos) {
+  recVincId = id;
+  const l = recLinea(id);
+  const pres = l.presentacion || 'pieza';
+  recAbrirModal(`Identificar ${l.codigo ? `código ${l.codigo}` : 'producto'}`, `
+    <p style="font-size:13px; color:var(--text-secondary); margin-top:0;">Renglón ${l.renglon}: ${l.cantidad_nota != null ? `${recNum(l.cantidad_nota)} unidades` : 'sin cantidad en nota'}${l.precio_unitario != null ? ` a ${fmtMoney(l.precio_unitario)}` : ''}${l.descripcion ? ` · "${escapeHtml(l.descripcion)}"` : ''}.
+      Busca el producto de nuestro catálogo que corresponde ${l.codigo ? `al código <b style="font-family:monospace;">${escapeHtml(l.codigo)}</b> de ${escapeHtml(recActual.recepcion.proveedor)}` : ''}.</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+      <input type="search" id="recVBuscar" placeholder="Nombre, SKU o código de barras" oninput="recVincBuscar()" style="${REC_INPUT} flex:1; min-width:200px;">
+      <label class="btn small" style="cursor:pointer;">📷 Identificar con foto<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="recVincFoto(this)"></label>
+      <button class="btn small" onclick="recProductoNuevoForm()">+ Producto nuevo</button>
+    </div>
+    <div id="recVRes" style="max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px;">${sugeridos ? recVincHtmlResultados(sugeridos, true) : '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'}</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+      <label>Presentación en la nota<select id="recVPres" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
+      <label>Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${l.factor || 1}" style="${REC_INPUT} width:100%;"></label>
+    </div>
+    <p style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
+    <label style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
+    <input type="hidden" id="recVSel">
+    <div id="recVSelTxt" style="margin-top:10px; font-weight:700;"></div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" onclick="recVincGuardar()">Vincular</button></div>`);
+  setTimeout(() => document.getElementById('recVBuscar')?.focus(), 50);
+}
+function recVincHtmlResultados(lista, deIA) {
+  if (!lista.length) return `<p style="padding:10px; color:var(--text-muted); margin:0;">${deIA ? 'La IA no encontró productos parecidos. Busca por nombre o registra uno nuevo.' : 'Sin resultados.'}</p>`;
+  return lista.map(p => `<div class="mov-search-item" onclick="recVincElegir('${String(p.id)}', this)" data-nombre="${escapeHtml(p.name)}">
+      <div style="display:flex; gap:8px; align-items:center;">${p.image ? `<img src="${escapeHtml(p.image)}" style="width:42px; height:42px; object-fit:cover; border-radius:6px;">` : '<div style="width:42px;"></div>'}
+        <div><div class="mov-name">${escapeHtml(p.name)}</div><div class="mov-sub">${escapeHtml([p.barcode, p.sku, p.categoria || p.catLabel].filter(Boolean).join(' · '))}${p.active === false ? ' · oculto' : ''}${p.motivo ? ` · IA: ${escapeHtml(p.motivo)}` : ''}</div></div></div>
+      <span style="font-size:11px; color:var(--text-muted);">#${escapeHtml(String(p.id))}</span></div>`).join('');
+}
+function recVincBuscar() {
+  const q = normalizeEs(document.getElementById('recVBuscar').value.trim());
+  const cont = document.getElementById('recVRes');
+  if (q.length < 2) { cont.innerHTML = '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'; return; }
+  const palabras = q.split(/\s+/);
+  const res = adminCatalogDataset().filter(p => {
+    const t = normalizeEs(`${p.name || ''} ${p.sku || ''} ${p.barcode || ''} ${p.id}`);
+    return palabras.every(w => t.includes(w));
+  }).slice(0, 60).map(p => ({ ...p, image: (Array.isArray(p.images) && p.images[0]) || p.image || p.legacy_image_url || '' }));
+  cont.innerHTML = recVincHtmlResultados(res);
+}
+function recVincElegir(id, el) {
+  document.getElementById('recVSel').value = id;
+  document.querySelectorAll('#recVRes .mov-search-item').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('recVSelTxt').textContent = `Seleccionado: ${el ? el.dataset.nombre : '#' + id}`;
+}
+async function recVincGuardar(reemplazar) {
+  const id = document.getElementById('recVSel').value;
+  if (!id) { alert('Elige un producto de la lista.'); return; }
+  const factor = parseInt(document.getElementById('recVFactor').value, 10);
+  if (!(factor >= 1)) { alert('Las piezas por unidad deben ser 1 o más.'); return; }
+  try {
+    const d = await recRpc('rpc_recep_vincular', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: recVincId, p_id_product: Number(id),
+      p_presentacion: document.getElementById('recVPres').value, p_factor: factor,
+      p_guardar_equivalencia: document.getElementById('recVGuardar').checked, p_reemplazar: !!reemplazar
+    });
+    recCerrarModal(); recMostrar(d);
+  } catch (e) {
+    const msg = recError(e);
+    if (/equivalencia_existente/.test(String(e.detail || e.message)) && recActual.soy_supervisor && !reemplazar) {
+      if (confirm(msg + '\n\n¿Reemplazar la equivalencia anterior por esta? Como supervisor, el cambio queda en el historial.')) recVincGuardar(true);
+      return;
+    }
+    alert(msg);
+  }
+}
+async function recVincFoto(input) {
+  const f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  const cont = document.getElementById('recVRes');
+  cont.innerHTML = '<p style="padding:10px; margin:0;">Analizando la foto con IA…</p>';
+  try {
+    const foto = await recLeerArchivo(f, 1400, 0.8);
+    const d = await recApi('sugerir_foto', { foto: { media_type: foto.media_type, data: foto.data } });
+    cont.innerHTML = `<p style="padding:8px 10px; margin:0; font-size:12px; color:var(--text-muted);">La IA ve: ${escapeHtml(d.descripcion || '')}. Elige el correcto (la IA solo sugiere).</p>` + recVincHtmlResultados(d.candidatos || [], true);
+  } catch (e) { cont.innerHTML = `<p style="padding:10px; color:#dc2626; margin:0;">${escapeHtml(e.message)}</p>`; }
+}
+// Producto sin código visible: foto -> sugerencias -> se agrega como renglón no documentado o
+// se elige el renglón de la nota al que corresponde.
+async function recFotoProductoSinCodigo(input) {
+  const f = input.files && input.files[0]; input.value = '';
+  if (!f) return;
+  recAbrirModal('Identificar producto por foto', '<p>Analizando la foto con IA…</p>');
+  try {
+    const foto = await recLeerArchivo(f, 1400, 0.8);
+    const d = await recApi('sugerir_foto', { foto: { media_type: foto.media_type, data: foto.data } });
+    const cand = d.candidatos || [];
+    const enNota = new Set((recActual.lineas || []).filter(l => l.id_product).map(l => String(l.id_product)));
+    document.getElementById('recModalCuerpo').innerHTML = `<p style="font-size:13px; margin-top:0;">La IA ve: <b>${escapeHtml(d.descripcion || '')}</b>. Elige el producto (la IA solo sugiere):</p>
+      ${cand.length ? cand.map(p => `<div class="mov-search-item" onclick="recSinCodigoElegir('${String(p.id)}')">
+        <div style="display:flex; gap:8px; align-items:center;">${p.image ? `<img src="${escapeHtml(p.image)}" style="width:48px; height:48px; object-fit:cover; border-radius:6px;">` : ''}
+        <div><div class="mov-name">${escapeHtml(p.name)}</div><div class="mov-sub">${escapeHtml(p.categoria || '')} · ${escapeHtml(p.motivo || '')}</div></div></div>
+        <span style="font-size:11px; font-weight:700; color:${enNota.has(String(p.id)) ? '#16a34a' : '#9333ea'};">${enNota.has(String(p.id)) ? 'En la nota → contar' : 'No está en la nota'}</span></div>`).join('')
+        : '<p style="color:var(--text-muted);">Sin coincidencias. Agrégalo como mercancía no documentada y regístralo como producto nuevo.</p>'}
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cerrar</button><button class="btn" onclick="recCerrarModal(); recLineaForm(null, 'adicional')">Mercancía no documentada</button></div>`;
+  } catch (e) { document.getElementById('recModalCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(e.message)}</p>`; }
+}
+async function recSinCodigoElegir(idProd) {
+  const l = (recActual.lineas || []).find(x => String(x.id_product) === String(idProd) && !x.ingresado_at);
+  recCerrarModal();
+  if (l) { recConteo(l.id); return; }
+  const p = adminCatalogDataset().find(x => String(x.id) === String(idProd));
+  if (!confirm(`${p ? p.name : 'Ese producto'} no está en la nota. ¿Registrarlo como mercancía no documentada (pendiente de aclaración)?`)) return;
+  await recAgregarAdicional(idProd, p ? (p.barcode || '') : '', p ? p.name : '');
+}
+async function recAgregarAdicional(idProd, codigo, nombre) {
+  try {
+    let d = await recRpc('rpc_recep_linea_guardar', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: null, p_codigo: codigo || null, p_descripcion: nombre,
+      p_cantidad: null, p_precio: null, p_importe: null, p_origen: 'adicional'
+    });
+    const nueva = d.lineas.reduce((a, b) => (b.id > a.id ? b : a));
+    d = await recRpc('rpc_recep_vincular', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: nueva.id, p_id_product: Number(idProd), p_presentacion: 'pieza',
+      p_factor: 1, p_guardar_equivalencia: false, p_reemplazar: false
+    });
+    recMostrar(d);
+    recConteo(nueva.id);
+  } catch (e) { alert(recError(e)); }
+}
+function recProductoNuevoForm() {
+  const l = recLinea(recVincId);
+  const costo = l && l.precio_unitario != null ? (l.precio_unitario / (l.factor || 1)) : '';
+  document.getElementById('recVRes').innerHTML = `<div style="padding:12px;">
+    <p style="font-size:13px; margin-top:0;">El producto se crea <b>oculto en la tienda</b> y queda pendiente de revisión: un supervisor completa fotos y descripción y lo activa en Productos.</p>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <label style="grid-column:1/-1;">Nombre<input id="recPNNombre" value="${escapeHtml(l && l.descripcion || '')}" style="${REC_INPUT} width:100%;"></label>
+      <label>Precio de venta (pieza)<input id="recPNPrecio" type="number" min="0" step="any" style="${REC_INPUT} width:100%;"></label>
+      <label>Costo por pieza<input id="recPNCosto" type="number" min="0" step="any" value="${costo === '' ? '' : Math.round(costo * 100) / 100}" style="${REC_INPUT} width:100%;"></label>
+      <label style="grid-column:1/-1;">Código de barras (si trae)<input id="recPNBarras" style="${REC_INPUT} width:100%;"></label>
+    </div>
+    <button class="btn primary" style="margin-top:10px;" onclick="recProductoNuevoCrear()">Crear producto</button></div>`;
+}
+async function recProductoNuevoCrear() {
+  try {
+    const d = await recApi('producto_nuevo', {
+      nombre: document.getElementById('recPNNombre').value, precio: Number(document.getElementById('recPNPrecio').value),
+      costo: Number(document.getElementById('recPNCosto').value), barcode: document.getElementById('recPNBarras').value
+    });
+    const p = d.producto;
+    adminCatalogProducts.push({ ...p, cat: 'general', catLabel: 'General', status: 'Inactivo' });
+    document.getElementById('recVRes').innerHTML = recVincHtmlResultados([p]);
+    recVincElegir(String(p.id), document.querySelector('#recVRes .mov-search-item'));
+  } catch (e) { alert(e.message); }
+}
+
+// Escáner: código de barras del producto o código del proveedor -> abre el conteo del renglón.
+function recEscanear(valor) {
+  const v = String(valor || '').trim();
+  if (!v) return;
+  const norm = x => String(x || '').trim().toUpperCase();
+  const L = (recActual.lineas || []).filter(l => !l.ingresado_at);
+  let l = L.find(x => norm(x.codigo) === norm(v));
+  let prod = null;
+  if (!l) {
+    prod = adminCatalogDataset().find(p => norm(p.barcode) === norm(v) || norm(p.sku) === norm(v) || String(p.id) === v);
+    if (prod) l = L.find(x => String(x.id_product) === String(prod.id));
+  }
+  if (l) {
+    if (!l.id_product || l.revisar) { alert(`El código ${v} está en el renglón ${l.renglon}, pero falta identificarlo.`); recVincular(l.id); return; }
+    recConteo(l.id);
+    return;
+  }
+  if (prod) {
+    if (confirm(`${prod.name} no viene en la nota. ¿Registrarlo como mercancía no documentada (pendiente de aclaración)?`)) recAgregarAdicional(prod.id, v, prod.name);
+    return;
+  }
+  alert(`No encontré "${v}" ni en la nota ni en el catálogo. Si es un producto nuevo, agrégalo como mercancía no documentada.`);
+}
+
+// ---------- Pantalla 5: recepción física ----------
+let recConteoId = null;
+function recConteo(id) {
+  recConteoId = id;
+  const l = recLinea(id);
+  const p = l.producto || {};
+  const esperado = l.esperado_piezas;
+  recAbrirModal('Conteo físico', `
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">${p.image ? `<img src="${escapeHtml(p.image)}" style="width:64px; height:64px; object-fit:cover; border-radius:8px;">` : ''}
+      <div><b>${escapeHtml(p.name || '')}</b><div style="font-size:12px; color:var(--text-muted);">Código ${escapeHtml(l.codigo || '—')} · renglón ${l.renglon}</div>
+      <div style="font-size:13px; margin-top:2px;">${esperado != null ? `La nota dice <b>${recNum(l.cantidad_nota)} ${escapeHtml(l.presentacion || 'pieza')}${l.factor > 1 ? ` × ${l.factor} = ${recNum(esperado)} piezas` : ''}</b>` : 'No viene en la nota'}</div></div></div>
+    <p style="font-size:12px; color:#d97706; margin:0 0 10px;">Cuenta físicamente. Escanear o ver una caja no basta: confirma cuántas piezas trae.</p>
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+      <label>Cajas<input id="recCCajas" type="number" min="0" step="1" value="${l.cajas ?? ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
+      <label>Piezas por caja<input id="recCPpc" type="number" min="0" step="1" value="${l.piezas_por_caja ?? (l.factor > 1 ? l.factor : '')}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
+      <label>Piezas sueltas<input id="recCSueltas" type="number" min="0" step="1" value="${l.piezas_sueltas ?? ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
+      <label>Dañadas<input id="recCDan" type="number" min="0" step="1" value="${l.danadas || ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
+      <label style="grid-column:2/-1;">Observaciones<input id="recCObs" value="${escapeHtml(l.observaciones || '')}" style="${REC_INPUT} width:100%;"></label>
+    </div>
+    <div id="recCTotal" style="margin-top:12px; font-size:15px;"></div>
+    <label style="display:block; margin-top:10px; font-size:13px;">Foto de evidencia (daños, empaque, etiqueta) <input type="file" id="recCFoto" accept="image/*" capture="environment"></label>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recCBtn" onclick="recConteoGuardar(${id})">Confirmar conteo</button></div>`);
+  recConteoTotal();
+  setTimeout(() => document.getElementById(l.factor > 1 ? 'recCCajas' : 'recCSueltas')?.focus(), 50);
+}
+function recConteoTotal() {
+  const n = k => parseInt(document.getElementById(k).value, 10) || 0;
+  const total = n('recCCajas') * n('recCPpc') + n('recCSueltas');
+  const l = recLinea(recConteoId);
+  const esperado = l && l.esperado_piezas;
+  const dif = esperado != null ? total - esperado : null;
+  document.getElementById('recCTotal').innerHTML = `Recibido: <b>${recNum(total)} piezas</b>${n('recCDan') ? ` · buenas: <b>${recNum(total - n('recCDan'))}</b>` : ''}
+    ${dif != null ? ` · <b style="color:${dif === 0 ? '#16a34a' : '#dc2626'};">${dif === 0 ? 'coincide con la nota' : dif > 0 ? `sobran ${dif}` : `faltan ${-dif}`}</b>` : ''}`;
+}
+async function recConteoGuardar(id) {
+  const v = k => { const x = document.getElementById(k).value; return x === '' ? null : Number(x); };
+  const btn = document.getElementById('recCBtn'); btn.disabled = true;
+  try {
+    let d = await recRpc('rpc_recep_conteo', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: id, p_cajas: v('recCCajas'), p_piezas_por_caja: v('recCPpc'),
+      p_sueltas: v('recCSueltas'), p_danadas: v('recCDan'), p_observaciones: document.getElementById('recCObs').value
+    });
+    const f = document.getElementById('recCFoto').files[0];
+    if (f) {
+      const foto = await recLeerArchivo(f, 1600, 0.8);
+      d = await recApi('evidencia', { recepcion_id: recActual.recepcion.id, linea_id: id, archivo: { media_type: foto.media_type, data: foto.data }, nota: document.getElementById('recCObs').value });
+    }
+    recCerrarModal(); recMostrar(d);
+    document.getElementById('recEscaner')?.focus();
+  } catch (e) { alert(recError(e)); btn.disabled = false; }
+}
+
+// ---------- Pantalla 6: conciliación y autorización ----------
+async function recResolver(id) {
+  const l = recLinea(id);
+  const dif = l.diferencia;
+  const tipo = l.origen === 'adicional' ? `mercancía no documentada (${recNum(l.cantidad_recibida)} pzs)` : dif < 0 ? `faltan ${recNum(-dif)} piezas` : dif > 0 ? `sobran ${recNum(dif)} piezas` : '';
+  const res = prompt(`Renglón ${l.renglon}: ${[tipo, l.danadas ? `${recNum(l.danadas)} dañadas` : ''].filter(Boolean).join(' y ')}.\n\nEscribe cómo se resuelve (ej. "proveedor repone faltante en la siguiente entrega", "se aceptan los sobrantes, nota de crédito pendiente"). Entrarán ${recNum(l.cantidad_recibida - l.danadas)} piezas buenas.`);
+  if (!res || !res.trim()) return;
+  try { recMostrar(await recRpc('rpc_recep_resolver', { p_recepcion_id: recActual.recepcion.id, p_linea_id: id, p_resolucion: res })); }
+  catch (e) { alert(recError(e)); }
+}
+async function recAutorizar() {
+  const listas = (recActual.lineas || []).filter(l => !l.ingresado_at && recLineaEstado(l)[0] === 'Lista para ingresar');
+  const pendientes = (recActual.lineas || []).filter(l => !l.ingresado_at).length - listas.length;
+  const piezas = listas.reduce((s, l) => s + (l.cantidad_recibida - l.danadas), 0);
+  if (!confirm(`Autorizar el ingreso a ${WAREHOUSE_LABELS[recActual.recepcion.almacen]} de ${listas.length} renglones (${recNum(piezas)} piezas buenas).${pendientes ? `\n\n${pendientes} renglones siguen pendientes: quedará como entrada parcial.` : ''}\n\nEsto actualiza el inventario.`)) return;
+  try {
+    const d = await recRpc('rpc_recep_autorizar', { p_recepcion_id: recActual.recepcion.id, p_lineas: null });
+    recMostrar(d);
+    alert(`Listo: ${d.ingresadas} renglones ingresados al inventario.`);
+    if (typeof loadRealStockData === 'function') loadRealStockData();
+  } catch (e) { alert(recError(e)); }
+}
+async function recCancelar() {
+  const motivo = prompt('Motivo de la cancelación (queda en el historial):');
+  if (!motivo || !motivo.trim()) return;
+  try { recMostrar(await recRpc('rpc_recep_cancelar', { p_recepcion_id: recActual.recepcion.id, p_motivo: motivo })); }
+  catch (e) { alert(recError(e)); }
+}
+
+// ---------- Equivalencias ----------
+async function recEquivalencias() {
+  const cuerpo = document.getElementById('recCuerpo');
+  cuerpo.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+      <select id="recEProv" style="${REC_INPUT}" onchange="recEquivCargar()"><option value="">Todos los proveedores</option>${recProveedores.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)} (${p.equivalencias})</option>`).join('')}</select>
+      <input type="search" id="recEBuscar" placeholder="Código o producto" onkeydown="if(event.key==='Enter') recEquivCargar()" style="${REC_INPUT}">
+      <label style="display:flex; gap:6px; align-items:center; font-size:13px;"><input type="checkbox" id="recEInact" onchange="recEquivCargar()"> Incluir inactivas</label>
+      <button class="btn small" onclick="recEquivCargar()">Buscar</button></div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Proveedor + código del proveedor = producto interno. Se crean al vincular códigos en una recepción; las confirmadas solo las corrige el administrador y cada cambio queda en el historial.</p>
+    <div id="recETabla">Cargando…</div>`;
+  recEquivCargar();
+}
+let recEquivRows = [];
+async function recEquivCargar() {
+  try {
+    recEquivRows = await recRpc('rpc_recep_equivalencias', {
+      p_proveedor_id: Number(document.getElementById('recEProv').value) || null, p_buscar: document.getElementById('recEBuscar').value.trim() || null,
+      p_incluir_inactivas: document.getElementById('recEInact').checked
+    }) || [];
+    const admin = !currentStaffSession;
+    document.getElementById('recETabla').innerHTML = recEquivRows.length ? `<div style="overflow-x:auto;"><table class="table" style="width:100%; font-size:13px;">
+      <thead><tr><th>Proveedor</th><th>Código</th><th>Producto</th><th>Presentación</th><th>Estado</th><th>Confirmó</th><th></th></tr></thead><tbody>
+      ${recEquivRows.map((e, i) => `<tr style="${e.estado !== 'activa' ? 'opacity:.55;' : ''}"><td>${escapeHtml(e.proveedor)}</td><td style="font-family:monospace; font-weight:700;">${escapeHtml(e.codigo)}</td>
+        <td><div style="display:flex; gap:6px; align-items:center;">${e.image ? `<img src="${escapeHtml(e.image)}" style="width:34px; height:34px; object-fit:cover; border-radius:6px;">` : ''}${escapeHtml(e.producto || '#' + e.id_product)}</div></td>
+        <td>${escapeHtml(e.presentacion)} × ${recNum(e.factor)}</td><td>${escapeHtml(e.estado)}</td><td>${escapeHtml(e.confirmado_por || '')}<div style="font-size:11px; color:var(--text-muted);">${recFecha(e.created_at)}</div></td>
+        <td style="white-space:nowrap;"><button class="btn small" onclick="recEquivHistorial(${i})">Historial</button>${admin ? ` <button class="btn small" onclick="recEquivEditar(${i})">Corregir</button>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p style="color:var(--text-muted);">Todavía no hay equivalencias. Se crean solas al vincular códigos en las recepciones.</p>';
+  } catch (e) { document.getElementById('recETabla').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; }
+}
+function recEquivHistorial(i) {
+  const e = recEquivRows[i];
+  recAbrirModal(`Historial ${e.codigo}`, (e.historial || []).map(h => `<div style="padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;"><b>${escapeHtml(h.accion)}</b> · ${escapeHtml(h.por || '')} · ${recFecha(h.at)}
+    ${h.antes ? `<div style="font-size:11px; color:var(--text-muted);">Antes: producto #${escapeHtml(String(h.antes.id_product))}, ${escapeHtml(h.antes.presentacion || '')} × ${escapeHtml(String(h.antes.factor))}, ${escapeHtml(h.antes.estado || '')}</div>` : ''}
+    ${h.despues ? `<div style="font-size:11px; color:var(--text-muted);">Después: ${h.despues.id_product ? `producto #${escapeHtml(String(h.despues.id_product))}, ` : ''}${escapeHtml(h.despues.presentacion || '')} ${h.despues.factor ? '× ' + escapeHtml(String(h.despues.factor)) : ''} ${escapeHtml(h.despues.estado || '')} ${h.despues.recepcion ? '· ' + escapeHtml(h.despues.recepcion) : ''}</div>` : ''}</div>`).join('') || '<p>Sin historial.</p>');
+}
+async function recEquivEditar(i) {
+  const e = recEquivRows[i];
+  const accion = prompt(`Corregir equivalencia ${e.proveedor} + ${e.codigo} → ${e.producto}.\n\nEscribe:\n  • el ID del producto correcto, o\n  • "f 12" para cambiar las piezas por unidad, o\n  • "desactivar" / "activar"`);
+  if (!accion) return;
+  const a = accion.trim().toLowerCase();
+  const p = { p_id: e.id, p_id_product: null, p_presentacion: null, p_factor: null, p_estado: null };
+  if (a === 'desactivar') p.p_estado = 'inactiva';
+  else if (a === 'activar') p.p_estado = 'activa';
+  else if (/^f\s*\d+$/.test(a)) p.p_factor = Number(a.replace(/\D/g, ''));
+  else if (/^\d+$/.test(a)) p.p_id_product = Number(a);
+  else { alert('No entendí la corrección.'); return; }
+  try { await recRpc('rpc_recep_equivalencia_editar', p); recEquivCargar(); } catch (err) { alert(recError(err)); }
+}
+
+// ---------- Proveedores ----------
+function recProveedoresVista() {
+  const sup = !currentStaffSession || (currentStaffSession.permisos || []).includes('aprobar-movimientos');
+  document.getElementById('recCuerpo').innerHTML = `
+    <button class="btn small primary" onclick="recProveedorForm(null)">+ Nuevo proveedor</button>
+    <div style="overflow-x:auto; margin-top:10px;"><table class="table" style="width:100%; font-size:13px;">
+      <thead><tr><th>Proveedor</th><th>RFC</th><th>Teléfono</th><th>Contacto</th><th>Códigos vinculados</th><th>Estado</th><th></th></tr></thead>
+      <tbody>${recProveedores.map(p => `<tr><td style="font-weight:700;">${escapeHtml(p.nombre)}</td><td>${escapeHtml(p.rfc || '')}</td><td>${escapeHtml(p.telefono || '')}</td><td>${escapeHtml(p.contacto || '')}</td>
+        <td>${p.equivalencias}</td><td>${p.activo ? 'Activo' : 'Inactivo'}</td><td>${sup ? `<button class="btn small" onclick="recProveedorForm(${p.id})">Editar</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="color:var(--text-muted);">Agrega tu primer proveedor.</td></tr>'}</tbody></table></div>`;
+}
+function recProveedorForm(id, desdeNueva) {
+  const p = recProveedores.find(x => x.id === id) || { nombre: '', rfc: '', telefono: '', contacto: '', activo: true };
+  recAbrirModal(id ? 'Editar proveedor' : 'Nuevo proveedor', `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <label style="grid-column:1/-1;">Nombre<input id="recPrNom" value="${escapeHtml(p.nombre)}" style="${REC_INPUT} width:100%;"></label>
+      <label>RFC<input id="recPrRfc" value="${escapeHtml(p.rfc || '')}" style="${REC_INPUT} width:100%;"></label>
+      <label>Teléfono<input id="recPrTel" value="${escapeHtml(p.telefono || '')}" style="${REC_INPUT} width:100%;"></label>
+      <label style="grid-column:1/-1;">Contacto<input id="recPrCon" value="${escapeHtml(p.contacto || '')}" style="${REC_INPUT} width:100%;"></label>
+      ${id ? `<label><input type="checkbox" id="recPrAct" ${p.activo ? 'checked' : ''}> Activo</label>` : ''}
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;"><button class="btn" onclick="${desdeNueva ? 'recNueva()' : 'recCerrarModal()'}">Cancelar</button><button class="btn primary" onclick="recProveedorGuardar(${id || 'null'}, ${!!desdeNueva})">Guardar</button></div>`);
+}
+async function recProveedorGuardar(id, desdeNueva) {
+  try {
+    const r = await recRpc('rpc_recep_proveedor_guardar', {
+      p_id: id, p_nombre: document.getElementById('recPrNom').value, p_rfc: document.getElementById('recPrRfc').value,
+      p_telefono: document.getElementById('recPrTel').value, p_contacto: document.getElementById('recPrCon').value,
+      p_activo: id ? document.getElementById('recPrAct').checked : true
+    });
+    recProveedores = await recRpc('rpc_recep_proveedores', {}) || [];
+    if (desdeNueva) { recNueva(); document.getElementById('recNProv').value = r.id; }
+    else { recCerrarModal(); recProveedoresVista(); }
+  } catch (e) { alert(recError(e)); }
+}
+
+// ---------- Reportes ----------
+async function recReportes() {
+  const hoy = new Date(); const hace = new Date(Date.now() - 30 * 864e5);
+  const f = d => d.toISOString().slice(0, 10);
+  document.getElementById('recCuerpo').innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center;">
+      Del <input type="date" id="recRDesde" value="${f(hace)}" style="${REC_INPUT}"> al <input type="date" id="recRHasta" value="${f(hoy)}" style="${REC_INPUT}">
+      <button class="btn small" onclick="recReporteCargar()">Ver</button></div><div id="recRCuerpo">Cargando…</div>`;
+  recReporteCargar();
+}
+async function recReporteCargar() {
+  try {
+    const d = await recRpc('rpc_recep_reporte', { p_desde: document.getElementById('recRDesde').value || null, p_hasta: document.getElementById('recRHasta').value || null });
+    const pct = d.lineas ? Math.round(d.reconocidas_auto / d.lineas * 100) : 0;
+    const kpi = (t, v, s) => `<div class="card" style="padding:12px; min-width:150px; flex:1;"><div style="font-size:12px; color:var(--text-muted);">${t}</div><div style="font-size:22px; font-weight:800;">${v}</div>${s ? `<div style="font-size:11px; color:var(--text-muted);">${s}</div>` : ''}</div>`;
+    const tabla = (cab, filas) => `<div style="overflow-x:auto;"><table class="table" style="width:100%; font-size:13px;"><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filas || `<tr><td colspan="${cab.length}" style="color:var(--text-muted);">Sin datos.</td></tr>`}</tbody></table></div>`;
+    document.getElementById('recRCuerpo').innerHTML = `
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+        ${kpi('Recepciones', d.recepciones, Object.entries(d.por_estado || {}).map(([k, v]) => `${(REC_ESTADOS[k] || [k])[0]}: ${v}`).join(' · '))}
+        ${kpi('Códigos reconocidos solos', pct + '%', `${d.reconocidas_auto} de ${d.lineas} renglones`)}
+        ${kpi('Códigos sin identificar', d.sin_identificar)}
+        ${kpi('Equivalencias nuevas', d.nuevas_equivalencias)}
+        ${kpi('Productos nuevos', d.productos_nuevos, 'dados de alta desde recepción')}
+      </div>
+      <h4>Por proveedor</h4>${tabla(['Proveedor', 'Recepciones', 'Faltantes', 'Sobrantes', 'No documentadas', 'Dañadas', 'Importe'],
+        (d.por_proveedor || []).map(p => `<tr><td>${escapeHtml(p.proveedor)}</td><td>${p.recepciones}</td><td style="color:#dc2626;">${recNum(p.faltantes)}</td><td style="color:#2563eb;">${recNum(p.sobrantes)}</td><td>${recNum(p.no_documentadas)}</td><td>${recNum(p.danadas)}</td><td>${fmtMoney(p.importe)}</td></tr>`).join(''))}
+      <h4>Variaciones de costo (10% o más contra el último costo)</h4>${tabla(['Recepción', 'Proveedor', 'Código', 'Producto', 'Costo anterior', 'Costo nuevo', 'Variación'],
+        (d.variaciones_costo || []).map(v => `<tr><td>${escapeHtml(v.folio)}</td><td>${escapeHtml(v.proveedor)}</td><td style="font-family:monospace;">${escapeHtml(v.codigo || '')}</td><td>${escapeHtml(v.producto || '')}</td><td>${fmtMoney(v.costo_anterior)}</td><td>${fmtMoney(v.costo_nuevo)}</td><td style="font-weight:700; color:${v.variacion_pct > 0 ? '#dc2626' : '#16a34a'};">${v.variacion_pct > 0 ? '+' : ''}${v.variacion_pct}%</td></tr>`).join(''))}
+      <h4>Por empleado</h4>${tabla(['Empleado', 'Recepciones', 'Tiempo promedio hasta conciliar'],
+        (d.por_empleado || []).map(e => `<tr><td>${escapeHtml(e.empleado || '')}</td><td>${e.recepciones}</td><td>${e.minutos_promedio != null ? recNum(e.minutos_promedio) + ' min' : '—'}</td></tr>`).join(''))}`;
+  } catch (e) { document.getElementById('recRCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; }
 }
 
 // ---- Etiquetas de precio (Productos → Etiquetas) ----

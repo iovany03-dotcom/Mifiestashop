@@ -120,6 +120,9 @@
       "maxDuration": 15,
       "includeFiles": "scripts/cms-*.html"
     },
+    "api/recepcion.js": {
+      "maxDuration": 300
+    },
     "api/mcp.js": {
       "maxDuration": 60
     }
