@@ -4655,7 +4655,7 @@
                 <option value="carta">Hoja carta (30 por hoja, 3 × 10)</option>
               </select></label>
             <label>Copias por producto: <input type="number" id="etqCopias" min="1" max="200" value="1" oninput="etqActualizarResumen()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:70px;"></label>
-            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqConCodigo" onchange="etqVistaPrevia()"> Código de barras</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqConCodigo" checked onchange="etqVistaPrevia()"> Código de barras</label>
           </div>
           <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; font-size:12.5px;">
             <button class="btn small" onclick="etqSeleccionar(true)">Seleccionar todos los de la lista</button>
@@ -14547,14 +14547,14 @@ function etqHtml(p, f, conCodigo) {
 function etqCss(f, scope) {
   const S = scope ? scope + ' ' : '';
   const base = f.tienda
-    ? `${S}.etq { box-sizing: border-box; width: ${f.w}mm; height: ${f.h}mm; padding: 0 2.5mm 2.5mm; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; font-family: Arial, Helvetica, sans-serif; color: #222; background: #fff; border: 0.2mm solid #ccc; }
+    ? `${S}.etq { box-sizing: border-box; width: ${f.w}mm; height: ${f.h}mm; padding: 0 2.5mm 1.8mm; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; font-family: Arial, Helvetica, sans-serif; color: #222; background: #fff; border: 0.2mm solid #ccc; }
        ${S}.marca { width: calc(100% + 5mm); margin: 0 -2.5mm 1.5mm; background: #5b2a86; color: #fff; font-size: 6pt; font-weight: bold; padding: 0.8mm 0; letter-spacing: .3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
        ${S}.n { font-size: 8pt; font-weight: bold; line-height: 1.15; max-height: 2.4em; overflow: hidden; }
        ${S}.p { margin: auto 0; font-size: 20pt; font-weight: bold; color: #6b2a8a; line-height: 1.1; }
        ${S}.m { width: 100%; box-sizing: border-box; margin-top: 1.5mm; background: #ececf0; border-radius: 1.5mm; padding: 1.4mm 1mm; font-size: 6.2pt; line-height: 1.35; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
        ${S}.m b { display: block; } ${S}.m span { display: block; font-size: 5.8pt; color: #444; }
-       ${S}.b { width: 100%; margin-top: 1mm; } ${S}.b svg { width: 100%; height: 6mm; display: block; }
-       ${S}.c { font-size: 5pt; line-height: 1; }`
+       ${S}.b { width: 100%; margin-top: 1.2mm; } ${S}.b svg { width: 100%; height: 5.5mm; display: block; }
+       ${S}.c { font-size: 6.5pt; line-height: 1.1; margin-top: 0.3mm; letter-spacing: 1px; font-family: monospace; }`
     : `${S}.etq { box-sizing: border-box; width: ${f.w}mm; height: ${f.h}mm; padding: 1.2mm 1.5mm; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; text-align: center; font-family: monospace; color: #000; background: #fff; }
        ${S}.n { font-size: ${f.nombre}pt; font-weight: bold; line-height: 1.1; max-height: 2.2em; overflow: hidden; }
        ${S}.p { font-size: ${f.precio}pt; font-weight: bold; line-height: 1; }
