@@ -1440,7 +1440,7 @@
   <div class="store-topbar-yellow">
     Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊
   </div>
-  <div class="store-topbar-notice" data-fecha="2026-10-02" hidden>📍 Hoy 2 de octubre la sucursal de Querétaro permanece cerrada.</div>
+  <div class="store-topbar-notice" data-desde="2026-10-08" data-hasta="2026-10-14" hidden>📍 La sucursal de Querétaro estará cerrada del 12 al 14 de octubre. ¡Anticipa tu compra!</div>
 
   <!-- Header -->
   <header class="store-header">
@@ -2399,8 +2399,8 @@
   </script>
 
   <script>
-    // Aviso temporal de la barra superior: solo se muestra en la fecha indicada (data-fecha).
-    (()=>{try{const hoy=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});document.querySelectorAll('.store-topbar-notice[data-fecha]').forEach(el=>{el.hidden=el.dataset.fecha!==hoy;});}catch{}})();
+    // Aviso temporal de la barra superior: se muestra solo en la fecha (data-fecha) o entre data-desde y data-hasta (inclusive).
+    (()=>{try{const hoy=new Date().toLocaleDateString('sv-SE',{timeZone:'America/Mexico_City'});document.querySelectorAll('.store-topbar-notice').forEach(el=>{const d=el.dataset;const ok=d.fecha?d.fecha===hoy:((!d.desde||hoy>=d.desde)&&(!d.hasta||hoy<=d.hasta));el.hidden=!ok;});}catch{}})();
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -2687,7 +2687,7 @@
 <div id="view-boda-page" class="hidden" style="min-height:100vh; background:#fff; color:#2e1065;">
   <div class="store-topbar">🎉 Envío GRATIS en compras mayores a $1,500 MXN</div>
   <div class="store-topbar-yellow">Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊</div>
-  <div class="store-topbar-notice" data-fecha="2026-10-02" hidden>📍 Hoy 2 de octubre la sucursal de Querétaro permanece cerrada.</div>
+  <div class="store-topbar-notice" data-desde="2026-10-08" data-hasta="2026-10-14" hidden>📍 La sucursal de Querétaro estará cerrada del 12 al 14 de octubre. ¡Anticipa tu compra!</div>
   <header class="store-header">
     <div class="store-header-left">
       <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
