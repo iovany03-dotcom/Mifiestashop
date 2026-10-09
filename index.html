@@ -14480,11 +14480,12 @@ async function etqIniciar() {
   }
   etqRender();
 }
+function etqActivo(p) { return p.active !== false && p.status !== 'Inactivo'; }
 function etqFiltrados() {
   const q = normalizeEs(document.getElementById('etqBuscar')?.value || '');
   const cat = document.getElementById('etqCategoria')?.value || '';
   const soloMay = document.getElementById('etqSoloMayoreo')?.checked;
-  return adminCatalogDataset().filter(p => p.active !== false && p.status !== 'Inactivo')
+  return adminCatalogDataset().filter(etqActivo)
     .filter(p => !cat || p.catLabel === cat)
     .filter(p => !soloMay || etqMayoreo(p))
     .filter(p => !q || normalizeEs(p.name || '').includes(q) || normalizeEs(p.sku || '').includes(q) || String(p.barcode || '').includes(q) || String(p.id) === q)
@@ -14503,7 +14504,9 @@ function etqRender() {
       <td>${may ? `${fmtMoney(may.precio)} <span style="font-size:11px; color:var(--text-muted);">desde ${may.desde} pzas</span>` : '—'}</td>
       <td style="font-size:11px; font-family:monospace;">${escapeHtml(etqCodigo(p))}</td></tr>`;
   }).join('') || '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Sin productos con este filtro.</td></tr>';
-  document.getElementById('etqInfo').textContent = lista.length > mostrar.length ? `Mostrando ${mostrar.length} de ${lista.length} productos (usa el buscador para ver otros). "Seleccionar todos" incluye los ${lista.length}.` : `${lista.length} productos en la lista.`;
+  const desactivados = adminCatalogDataset().filter(p => !etqActivo(p)).length;
+  document.getElementById('etqInfo').textContent = (lista.length > mostrar.length ? `Mostrando ${mostrar.length} de ${lista.length} productos (usa el buscador para ver otros). "Seleccionar todos" incluye los ${lista.length}.` : `${lista.length} productos en la lista.`)
+    + (desactivados ? ` Solo productos activos: los ${desactivados} desactivados no aparecen ni se imprimen.` : '');
   etqActualizarResumen();
 }
 function etqToggle(id, on) { on ? etqSeleccion.add(id) : etqSeleccion.delete(id); etqActualizarResumen(); }
@@ -14567,7 +14570,7 @@ function etqCss(f, scope) {
 
 function etqProductosElegidos() {
   const porId = new Map(adminCatalogDataset().map(p => [String(p.id), p]));
-  return [...etqSeleccion].map(id => porId.get(id)).filter(Boolean).sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
+  return [...etqSeleccion].map(id => porId.get(id)).filter(p => p && etqActivo(p)).sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
 }
 function etqFormatoActual() { return ETQ_FORMATOS[document.getElementById('etqFormato')?.value] || ETQ_FORMATOS['5x5carta']; }
 
