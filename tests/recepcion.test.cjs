@@ -129,3 +129,37 @@ test('rechaza archivos que no son foto ni PDF', async () => {
     assert.equal(res.code, 400);
   } finally { global.fetch = prev; }
 });
+
+test('con OPENAI_API_KEY la nota se lee con ChatGPT (salida JSON estricta)', async () => {
+  const prev = global.fetch; const prevKey = process.env.OPENAI_API_KEY;
+  process.env.OPENAI_API_KEY = 'sk-prueba';
+  let enviado = null;
+  global.fetch = async (url, opts) => {
+    assert.equal(String(url), 'https://api.openai.com/v1/chat/completions');
+    assert.equal(opts.headers.Authorization, 'Bearer sk-prueba');
+    enviado = JSON.parse(opts.body);
+    const datos = { folio: 'F-9', fecha: '2026-10-09', proveedor: null, subtotal: null, total: 20,
+      lineas: [{ codigo: '0012', descripcion: null, cantidad: 2, precio_unitario: 10, importe: 20, legible: true, nota: null }], advertencias: [] };
+    return { ok: true, status: 200, json: async () => ({ model: 'gpt-5', choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(datos) } }] }) };
+  };
+  try {
+    const r = await iaReal.leerNota([{ media_type: 'image/jpeg', data: 'QUJD' }, { media_type: 'application/pdf', data: 'UERG' }], { proveedor: 'Prov A' });
+    assert.equal(r.lineas[0].codigo, '0012');
+    assert.equal(r.modelo, 'gpt-5');
+    assert.equal(enviado.response_format.type, 'json_schema');
+    assert.equal(enviado.response_format.json_schema.strict, true);
+    const partes = enviado.messages[1].content;
+    assert.ok(partes.some(p => p.type === 'image_url' && p.image_url.url === 'data:image/jpeg;base64,QUJD'));
+    assert.ok(partes.some(p => p.type === 'file' && p.file.file_data === 'data:application/pdf;base64,UERG'));
+  } finally {
+    global.fetch = prev;
+    if (prevKey === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = prevKey;
+  }
+});
+
+test('sin ninguna llave de IA avisa qué falta', async () => {
+  const a = process.env.OPENAI_API_KEY, b = process.env.ANTHROPIC_API_KEY;
+  delete process.env.OPENAI_API_KEY; delete process.env.ANTHROPIC_API_KEY;
+  try { await assert.rejects(iaReal.leerNota([{ media_type: 'image/jpeg', data: 'QUJD' }]), /OPENAI_API_KEY/); }
+  finally { if (a) process.env.OPENAI_API_KEY = a; if (b) process.env.ANTHROPIC_API_KEY = b; }
+});
