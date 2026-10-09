@@ -2793,6 +2793,7 @@
         <a class="submenu-link" data-view="productos">Productos</a>
         <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
+        <a class="submenu-link" data-view="etiquetas">Etiquetas de precio</a>
         <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
         <a class="submenu-link" data-view="blog">Blog (SEO)</a>
       </div>
@@ -4164,7 +4165,6 @@
           <button class="btn primary" id="prodTabBtn-catalogo" onclick="switchProductosTab('catalogo')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Catálogo</button>
           <button class="btn" id="prodTabBtn-categorias" onclick="switchProductosTab('categorias')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Categorías</button>
           <button class="btn" id="prodTabBtn-promociones" onclick="switchProductosTab('promociones')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Promociones</button>
-          <button class="btn" id="prodTabBtn-etiquetas" onclick="switchProductosTab('etiquetas')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Etiquetas</button>
         </div>
 
         <div id="prodTab-catalogo">
@@ -4219,42 +4219,6 @@
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div id="prodTab-etiquetas" class="hidden">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
-            <h2 style="margin:0;">Etiquetas de precio</h2>
-            <button class="btn primary" onclick="etqImprimir()" id="etqBtnImprimir">Imprimir etiquetas</button>
-          </div>
-          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">Cada etiqueta lleva el nombre, el precio y, si aplica, el precio de mayoreo con las piezas mínimas, más un código de barras que el POS reconoce al escanear (el código de barras del producto o, si no tiene, su número de producto).</p>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
-            <input type="search" id="etqBuscar" placeholder="Buscar producto, SKU o código…" oninput="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1; min-width:200px;">
-            <select id="etqCategoria" onchange="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;"><option value="">Todas las categorías</option></select>
-            <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloMayoreo" onchange="etqRender()"> Solo con mayoreo</label>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; font-size:12.5px;">
-            <label>Formato:
-              <select id="etqFormato" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
-                <option value="50x25">Etiqueta adhesiva 50 × 25 mm</option>
-                <option value="40x30">Etiqueta adhesiva 40 × 30 mm</option>
-                <option value="58x40">Etiqueta adhesiva 58 × 40 mm</option>
-                <option value="carta">Hoja carta (30 por hoja, 3 × 10)</option>
-              </select></label>
-            <label>Copias por producto: <input type="number" id="etqCopias" min="1" max="200" value="1" oninput="etqActualizarResumen()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:70px;"></label>
-            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqConCodigo" checked> Código de barras</label>
-          </div>
-          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; font-size:12.5px;">
-            <button class="btn small" onclick="etqSeleccionar(true)">Seleccionar todos los de la lista</button>
-            <button class="btn small" onclick="etqSeleccionar(false)">Quitar selección</button>
-            <span id="etqResumen" style="color:var(--text-muted);"></span>
-          </div>
-          <div class="table-wrap" style="max-height:60vh; overflow:auto;">
-            <table>
-              <thead><tr><th style="width:34px;"></th><th>Producto</th><th>Precio</th><th>Mayoreo</th><th>Código</th></tr></thead>
-              <tbody id="etqTabla"></tbody>
-            </table>
-          </div>
-          <div id="etqInfo" style="font-size:12px; color:var(--text-muted); margin-top:8px;"></div>
         </div>
 
         <div id="prodTab-promociones" class="hidden">
@@ -4666,6 +4630,48 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <section id="view-etiquetas" class="view-panel hidden">
+      <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
+            <h2 style="margin:0;">Etiquetas de precio</h2>
+            <button class="btn primary" onclick="etqImprimir()" id="etqBtnImprimir">Imprimir etiquetas</button>
+          </div>
+          <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">Cada etiqueta lleva el nombre, el precio y, si aplica, el precio de mayoreo con las piezas mínimas, más un código de barras que el POS reconoce al escanear (el código de barras del producto o, si no tiene, su número de producto).</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+            <input type="search" id="etqBuscar" placeholder="Buscar producto, SKU o código…" oninput="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1; min-width:200px;">
+            <select id="etqCategoria" onchange="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;"><option value="">Todas las categorías</option></select>
+            <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloMayoreo" onchange="etqRender()"> Solo con mayoreo</label>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; font-size:12.5px;">
+            <label>Formato:
+              <select id="etqFormato" onchange="etqVistaPrevia()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                <option value="5x5carta">5 × 5 cm en hoja carta (20 por hoja) — diseño Mi Fiesta Shop</option>
+                <option value="5x5">5 × 5 cm adhesiva (una por etiqueta) — diseño Mi Fiesta Shop</option>
+                <option value="50x25">Etiqueta adhesiva 50 × 25 mm</option>
+                <option value="40x30">Etiqueta adhesiva 40 × 30 mm</option>
+                <option value="58x40">Etiqueta adhesiva 58 × 40 mm</option>
+                <option value="carta">Hoja carta (30 por hoja, 3 × 10)</option>
+              </select></label>
+            <label>Copias por producto: <input type="number" id="etqCopias" min="1" max="200" value="1" oninput="etqActualizarResumen()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; width:70px;"></label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqConCodigo" onchange="etqVistaPrevia()"> Código de barras</label>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; font-size:12.5px;">
+            <button class="btn small" onclick="etqSeleccionar(true)">Seleccionar todos los de la lista</button>
+            <button class="btn small" onclick="etqSeleccionar(false)">Quitar selección</button>
+            <span id="etqResumen" style="color:var(--text-muted);"></span>
+          </div>
+          <div class="table-wrap" style="max-height:60vh; overflow:auto;">
+            <table>
+              <thead><tr><th style="width:34px;"></th><th>Producto</th><th>Precio</th><th>Mayoreo</th><th>Código</th></tr></thead>
+              <tbody id="etqTabla"></tbody>
+            </table>
+          </div>
+          <div id="etqInfo" style="font-size:12px; color:var(--text-muted); margin-top:8px;"></div>
+          <h3 style="margin:18px 0 8px;">Vista previa <span id="etqPrevNota" style="font-size:12px; font-weight:400; color:var(--text-muted);"></span></h3>
+          <div id="etqVista" style="background:#e9e9ee; border-radius:10px; padding:14px; overflow:auto; max-height:70vh;"></div>
+        </div>
     </section>
 
     <section id="view-competencia" class="view-panel hidden">
@@ -6708,6 +6714,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
+    { key: 'etiquetas', label: 'Etiquetas de precio (imprimir con mayoreo y código de barras)' },
     { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
     { key: 'blog', label: 'Blog: escribir y administrar artículos (SEO)' },
     { key: 'aprobar-movimientos', label: 'Aprobar movimientos de inventario (entradas, salidas y traspasos)' },
@@ -7992,6 +7999,7 @@ function switchView(viewName) {
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
     movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
+    etiquetas: ['Etiquetas de precio', 'Imprimir etiquetas con precio y mayoreo'],
     competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
     blog: ['Blog', 'Artículos para atraer visitas desde Google'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
@@ -8034,6 +8042,7 @@ function switchView(viewName) {
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'competencia') loadCompetenciaView();
+  if (viewName === 'etiquetas') etqIniciar();
   if (viewName === 'blog') blogMostrarLista();
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
@@ -14505,58 +14514,104 @@ function etqSeleccionar(todos) {
 function etqActualizarResumen() {
   const copias = Math.max(1, parseInt(document.getElementById('etqCopias')?.value, 10) || 1);
   document.getElementById('etqResumen').textContent = etqSeleccion.size ? `${etqSeleccion.size} productos seleccionados · ${etqSeleccion.size * copias} etiquetas` : 'Ningún producto seleccionado';
+  etqVistaPrevia();
 }
 
 const ETQ_FORMATOS = {
+  '5x5carta': { w: 50, h: 50, tienda: true, hoja: { cols: 4, page: 'letter', margen: '14.7mm 7.9mm' } },
+  '5x5': { w: 50, h: 50, tienda: true },
   '50x25': { w: 50, h: 25, nombre: 7.5, precio: 15, may: 6.5, barra: 6.5, cod: 5.5 },
   '40x30': { w: 40, h: 30, nombre: 7, precio: 14, may: 6, barra: 8, cod: 5.5 },
   '58x40': { w: 58, h: 40, nombre: 9, precio: 19, may: 8, barra: 10, cod: 6.5 },
-  carta: { w: 66.7, h: 25.4, nombre: 7.5, precio: 15, may: 6.5, barra: 6.5, cod: 5.5, hoja: true }
+  carta: { w: 66.7, h: 25.4, nombre: 7.5, precio: 15, may: 6.5, barra: 6.5, cod: 5.5, hoja: { cols: 3, page: 'letter', margen: '12.7mm 4.8mm', gap: '3.2mm' } }
 };
-function etqImprimir() {
+
+// Una etiqueta. Diseño "tienda" (5 × 5 cm): barra morada con la marca, nombre, precio grande y
+// recuadro con el mayoreo (piezas, precio por pieza y cuánto ahorra) o "Sin mayoreo".
+function etqHtml(p, f, conCodigo) {
+  const may = etqMayoreo(p);
+  const cod = etqCodigo(p);
+  const barras = conCodigo ? `<div class="b">${code128Svg(cod, 40)}</div><div class="c">${escapeHtml(cod)}</div>` : '';
+  if (f.tienda) {
+    const ahorro = may ? Math.round((1 - may.precio / Number(p.price)) * 100) : 0;
+    return `<div class="etq t"><div class="marca">MI FIESTA SHOP</div><div class="n">${escapeHtml(p.name || '')}</div>
+      <div class="p">${fmtMoney(p.price)}</div>
+      <div class="m">${may ? `<b>Mayoreo desde ${may.desde} piezas</b><span>${fmtMoney(may.precio)} c/u &nbsp;|&nbsp; Ahorra ${ahorro}%</span>` : '<b>Sin mayoreo</b>'}</div>${barras}</div>`;
+  }
+  return `<div class="etq"><div class="n">${escapeHtml(p.name || '')}</div>
+    <div class="p">${fmtMoney(p.price)}</div>
+    ${may ? `<div class="m">Mayoreo ${fmtMoney(may.precio)} desde ${may.desde} pzas</div>` : ''}${barras}</div>`;
+}
+
+// CSS de las etiquetas; `scope` lo limita a la vista previa del panel.
+function etqCss(f, scope) {
+  const S = scope ? scope + ' ' : '';
+  const base = f.tienda
+    ? `${S}.etq { box-sizing: border-box; width: ${f.w}mm; height: ${f.h}mm; padding: 0 2.5mm 2.5mm; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center; font-family: Arial, Helvetica, sans-serif; color: #222; background: #fff; border: 0.2mm solid #ccc; }
+       ${S}.marca { width: calc(100% + 5mm); margin: 0 -2.5mm 1.5mm; background: #5b2a86; color: #fff; font-size: 6pt; font-weight: bold; padding: 0.8mm 0; letter-spacing: .3px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+       ${S}.n { font-size: 8pt; font-weight: bold; line-height: 1.15; max-height: 2.4em; overflow: hidden; }
+       ${S}.p { margin: auto 0; font-size: 20pt; font-weight: bold; color: #6b2a8a; line-height: 1.1; }
+       ${S}.m { width: 100%; box-sizing: border-box; margin-top: 1.5mm; background: #ececf0; border-radius: 1.5mm; padding: 1.4mm 1mm; font-size: 6.2pt; line-height: 1.35; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+       ${S}.m b { display: block; } ${S}.m span { display: block; font-size: 5.8pt; color: #444; }
+       ${S}.b { width: 100%; margin-top: 1mm; } ${S}.b svg { width: 100%; height: 6mm; display: block; }
+       ${S}.c { font-size: 5pt; line-height: 1; }`
+    : `${S}.etq { box-sizing: border-box; width: ${f.w}mm; height: ${f.h}mm; padding: 1.2mm 1.5mm; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; text-align: center; font-family: monospace; color: #000; background: #fff; }
+       ${S}.n { font-size: ${f.nombre}pt; font-weight: bold; line-height: 1.1; max-height: 2.2em; overflow: hidden; }
+       ${S}.p { font-size: ${f.precio}pt; font-weight: bold; line-height: 1; }
+       ${S}.m { font-size: ${f.may}pt; font-weight: bold; line-height: 1.1; }
+       ${S}.b svg { width: 100%; height: ${f.barra}mm; display: block; }
+       ${S}.c { font-size: ${f.cod}pt; line-height: 1; letter-spacing: .5px; }`;
+  const grid = f.hoja ? `${S}.hoja { display: grid; grid-template-columns: repeat(${f.hoja.cols}, ${f.w}mm); grid-auto-rows: ${f.h}mm; column-gap: ${f.hoja.gap || 0}; }` : '';
+  return base + '\n' + grid;
+}
+
+function etqProductosElegidos() {
   const porId = new Map(adminCatalogDataset().map(p => [String(p.id), p]));
-  const prods = [...etqSeleccion].map(id => porId.get(id)).filter(Boolean).sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
+  return [...etqSeleccion].map(id => porId.get(id)).filter(Boolean).sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
+}
+function etqFormatoActual() { return ETQ_FORMATOS[document.getElementById('etqFormato')?.value] || ETQ_FORMATOS['5x5carta']; }
+
+// Vista previa en el panel: hasta 20 etiquetas (una hoja) de lo seleccionado o, si no hay
+// selección, de los primeros productos de la lista.
+function etqVistaPrevia() {
+  const cont = document.getElementById('etqVista');
+  if (!cont) return;
+  const f = etqFormatoActual();
+  const conCodigo = document.getElementById('etqConCodigo')?.checked;
+  const elegidos = etqProductosElegidos();
+  const muestra = (elegidos.length ? elegidos : etqFiltrados()).slice(0, 20);
+  document.getElementById('etqPrevNota').textContent = elegidos.length
+    ? `(primeras ${muestra.length} de ${elegidos.length} seleccionadas)` : '(ejemplo con los primeros productos de la lista; selecciona los que quieras imprimir)';
+  cont.innerHTML = `<style>${etqCss(f, '#etqVista')} #etqVista .hojaPrev { display: grid; grid-template-columns: repeat(${f.hoja ? f.hoja.cols : 4}, ${f.w}mm); gap: ${f.tienda ? 0 : '2mm'}; background: #fff; width: max-content; padding: 4mm; box-shadow: 0 2px 10px rgba(0,0,0,.12); }</style>
+    <div class="hojaPrev">${muestra.map(p => etqHtml(p, f, conCodigo)).join('')}</div>`;
+}
+
+function etqImprimir() {
+  const prods = etqProductosElegidos();
   if (!prods.length) { alert('Selecciona al menos un producto (o usa "Seleccionar todos los de la lista").'); return; }
   const copias = Math.min(200, Math.max(1, parseInt(document.getElementById('etqCopias').value, 10) || 1));
   const total = prods.length * copias;
   if (total > 3000) { alert(`Son ${total} etiquetas; imprime máximo 3000 a la vez (filtra por categoría).`); return; }
-  const f = ETQ_FORMATOS[document.getElementById('etqFormato').value] || ETQ_FORMATOS['50x25'];
+  const f = etqFormatoActual();
   const conCodigo = document.getElementById('etqConCodigo').checked;
-  const etiqueta = p => {
-    const may = etqMayoreo(p);
-    const cod = etqCodigo(p);
-    return `<div class="etq"><div class="n">${escapeHtml(p.name || '')}</div>
-      <div class="p">${fmtMoney(p.price)}</div>
-      ${may ? `<div class="m">Mayoreo ${fmtMoney(may.precio)} desde ${may.desde} pzas</div>` : ''}
-      ${conCodigo ? `<div class="b">${code128Svg(cod, 40)}</div><div class="c">${escapeHtml(cod)}</div>` : ''}</div>`;
-  };
   const etiquetas = [];
-  prods.forEach(p => { for (let i = 0; i < copias; i++) etiquetas.push(etiqueta(p)); });
-  const css = f.hoja
-    ? `@page { size: letter; margin: 12.7mm 4.8mm; }
-       .hoja { display: grid; grid-template-columns: repeat(3, ${f.w}mm); grid-auto-rows: ${f.h}mm; column-gap: 3.2mm; }
-       .etq { width: ${f.w}mm; height: ${f.h}mm; }`
-    : `@page { size: ${f.w}mm ${f.h}mm; margin: 0; }
-       .etq { width: ${f.w}mm; height: ${f.h}mm; page-break-after: always; break-after: page; }`;
+  prods.forEach(p => { const h = etqHtml(p, f, conCodigo); for (let i = 0; i < copias; i++) etiquetas.push(h); });
+  const pagina = f.hoja
+    ? `@page { size: ${f.hoja.page}; margin: ${f.hoja.margen}; }`
+    : `@page { size: ${f.w}mm ${f.h}mm; margin: 0; } .etq { page-break-after: always; break-after: page; }`;
   const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Etiquetas (${total})</title>
     <style>
-      ${css}
-      html, body { margin: 0; padding: 0; background: #fff; color: #000; }
-      body { font-family: monospace; }
-      .etq { box-sizing: border-box; padding: 1.2mm 1.5mm; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; text-align: center; }
-      .n { font-size: ${f.nombre}pt; font-weight: bold; line-height: 1.1; max-height: 2.2em; overflow: hidden; }
-      .p { font-size: ${f.precio}pt; font-weight: bold; line-height: 1; }
-      .m { font-size: ${f.may}pt; font-weight: bold; line-height: 1.1; }
-      .b svg { width: 100%; height: ${f.barra}mm; display: block; }
-      .c { font-size: ${f.cod}pt; line-height: 1; letter-spacing: .5px; }
-      @media screen { body { background: #eee; padding: 10px; } .etq { background: #fff; margin: 0 auto 6px; outline: 1px dashed #bbb; } .hoja .etq { margin: 0; } }
+      ${pagina}
+      html, body { margin: 0; padding: 0; background: #fff; }
+      ${etqCss(f, '')}
+      @media screen { body { background: #e9e9ee; padding: 10px; } .hoja { background: #fff; width: max-content; margin: 0 auto; } body > .etq { margin: 0 auto 6px; } }
     </style></head><body>${f.hoja ? `<div class="hoja">${etiquetas.join('')}</div>` : etiquetas.join('')}
     <script>
       var impreso = false;
       function imprimir() { if (impreso) return; impreso = true; window.focus(); window.print(); }
       window.addEventListener('load', function () { setTimeout(imprimir, 300); });
     <\/script></body></html>`;
-  const w = window.open('', 'mfs_etiquetas', 'width=520,height=760');
+  const w = window.open('', 'mfs_etiquetas', 'width=900,height=800');
   if (!w) { alert('El navegador bloqueó la ventana de etiquetas: permite ventanas emergentes de mifiestashop.com y vuelve a intentar.'); return; }
   w.document.open(); w.document.write(html); w.document.close();
 }
@@ -19013,7 +19068,7 @@ async function generateBranchQr(key) {
 // Stock" y Promociones en "Vender").
 let categoriasTabLoaded = false, promocionesTabLoaded = false;
 function switchProductosTab(tab) {
-  ['catalogo', 'categorias', 'promociones', 'etiquetas'].forEach(key => {
+  ['catalogo', 'categorias', 'promociones'].forEach(key => {
     const panel = document.getElementById(`prodTab-${key}`);
     if (panel) panel.classList.toggle('hidden', key !== tab);
     const btn = document.getElementById(`prodTabBtn-${key}`);
@@ -19021,7 +19076,6 @@ function switchProductosTab(tab) {
   });
   if (tab === 'categorias' && !categoriasTabLoaded) { categoriasTabLoaded = true; loadCategoriesFromAPI(); }
   if (tab === 'promociones' && !promocionesTabLoaded) { promocionesTabLoaded = true; loadPromosAdmin(); }
-  if (tab === 'etiquetas') etqIniciar();
 }
 
 // --- Back office: Clientes (pestañas: Directorio, Ajustes — antes 2
