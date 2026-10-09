@@ -6812,6 +6812,28 @@ function loadStaffSessionFromStorage() {
 }
 loadStaffSessionFromStorage();
 
+// Los permisos se guardan al iniciar sesión; si el administrador los cambia después, la
+// persona no veía las secciones nuevas hasta cerrar sesión. Se vuelven a leer del servidor al
+// abrir el panel y al regresar a la pestaña (como mucho una vez por minuto).
+let staffPermsRefrescadoAt = 0;
+async function refrescarPermisosStaff() {
+  if (!currentStaffSession || !currentStaffSession.id) return;
+  const creds = getStaffCreds();
+  if (!creds || !creds.pin || Date.now() - staffPermsRefrescadoAt < 60000) return;
+  staffPermsRefrescadoAt = Date.now();
+  try {
+    const rows = await sbRpc('rpc_staff_login', { p_id: parseInt(currentStaffSession.id, 10), p_pin: creds.pin });
+    const person = Array.isArray(rows) ? rows[0] : rows;
+    if (!person) return;
+    const permisos = Array.isArray(person.permisos) ? person.permisos : [];
+    const antes = JSON.stringify(currentStaffSession.permisos || []);
+    currentStaffSession = { ...currentStaffSession, nombre: person.nombre, rol: person.rol, permisos };
+    localStorage.setItem('mf_staff_session', JSON.stringify(currentStaffSession));
+    if (antes !== JSON.stringify(permisos)) applyStaffPermissionsUI();
+  } catch (e) { /* sin conexión: se queda con los permisos guardados */ }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refrescarPermisosStaff(); });
+
 function hasPermission(viewName) {
   if (!currentStaffSession) return true;
   const permisos = currentStaffSession.permisos || [];
@@ -16546,6 +16568,7 @@ function showAdminDashboard() {
   if (dash) dash.classList.remove('hidden');
   document.title = 'Mi Fiestashop — Sistema ERP & POS';
   applyStaffPermissionsUI();
+  refrescarPermisosStaff();
   const landingView = (currentStaffSession && !hasPermission('dashboard'))
     ? (currentStaffSession.permisos[0] || 'pos')
     : 'dashboard';
