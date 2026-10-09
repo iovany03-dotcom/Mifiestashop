@@ -4667,6 +4667,7 @@
             <input type="search" id="etqBuscar" placeholder="Buscar producto, SKU o código…" oninput="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1; min-width:200px;">
             <select id="etqCategoria" onchange="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;"><option value="">Todas las categorías</option></select>
             <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloMayoreo" onchange="etqRender()"> Solo con mayoreo</label>
+            <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloSel" onchange="etqRender()"> Ver solo seleccionados</label>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; font-size:12.5px;">
             <label>Formato:
@@ -4684,7 +4685,7 @@
           <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; font-size:12.5px;">
             <button class="btn small" onclick="etqSeleccionar(true)">Seleccionar todos los de la lista</button>
             <button class="btn small" onclick="etqSeleccionar(false)">Quitar selección</button>
-            <span id="etqResumen" style="color:var(--text-muted);"></span>
+            <span id="etqResumen" style="font-weight:700; color:#d3007b;"></span>
           </div>
           <div class="table-wrap" style="max-height:60vh; overflow:auto;">
             <table>
@@ -15386,7 +15387,9 @@ function etqFiltrados() {
   const q = normalizeEs(document.getElementById('etqBuscar')?.value || '');
   const cat = document.getElementById('etqCategoria')?.value || '';
   const soloMay = document.getElementById('etqSoloMayoreo')?.checked;
+  const soloSel = document.getElementById('etqSoloSel')?.checked;
   return adminCatalogDataset().filter(etqActivo)
+    .filter(p => !soloSel || etqSeleccion.has(String(p.id)))
     .filter(p => !cat || p.catLabel === cat)
     .filter(p => !soloMay || etqMayoreo(p))
     .filter(p => !q || normalizeEs(p.name || '').includes(q) || normalizeEs(p.sku || '').includes(q) || String(p.barcode || '').includes(q) || String(p.id) === q)
@@ -15412,12 +15415,16 @@ function etqRender() {
 }
 function etqToggle(id, on) { on ? etqSeleccion.add(id) : etqSeleccion.delete(id); etqActualizarResumen(); }
 function etqSeleccionar(todos) {
-  if (todos) etqFiltrados().forEach(p => etqSeleccion.add(String(p.id))); else etqSeleccion.clear();
+  if (todos) {
+    const lista = etqFiltrados();
+    if (lista.length > 30 && !confirm(`Se van a seleccionar los ${lista.length} productos de la lista. ¿Seguro?`)) return;
+    lista.forEach(p => etqSeleccion.add(String(p.id)));
+  } else etqSeleccion.clear();
   etqRender();
 }
 function etqActualizarResumen() {
   const copias = Math.max(1, parseInt(document.getElementById('etqCopias')?.value, 10) || 1);
-  document.getElementById('etqResumen').textContent = etqSeleccion.size ? `${etqSeleccion.size} productos seleccionados · ${etqSeleccion.size * copias} etiquetas` : 'Ningún producto seleccionado';
+  document.getElementById('etqResumen').textContent = etqSeleccion.size ? `${etqSeleccion.size} ${etqSeleccion.size === 1 ? 'producto seleccionado' : 'productos seleccionados'} · ${etqSeleccion.size * copias} ${etqSeleccion.size * copias === 1 ? 'etiqueta' : 'etiquetas'}` : 'Ningún producto seleccionado';
   etqVistaPrevia();
 }
 
@@ -15483,9 +15490,13 @@ function etqVistaPrevia() {
   const f = etqFormatoActual();
   const conCodigo = document.getElementById('etqConCodigo')?.checked;
   const elegidos = etqProductosElegidos();
-  const muestra = (elegidos.length ? elegidos : etqFiltrados()).slice(0, 20);
+  const muestra = elegidos.slice(0, 20);
   document.getElementById('etqPrevNota').textContent = elegidos.length
-    ? `(primeras ${muestra.length} de ${elegidos.length} seleccionadas)` : '(ejemplo con los primeros productos de la lista; selecciona los que quieras imprimir)';
+    ? (elegidos.length > muestra.length ? `(primeras ${muestra.length} de ${elegidos.length} seleccionadas)` : `(${elegidos.length} ${elegidos.length === 1 ? 'seleccionada' : 'seleccionadas'})`) : '';
+  if (!elegidos.length) {
+    cont.innerHTML = '<p style="margin:0; color:#555; font-size:13px;">Marca en la lista los productos que quieres imprimir y aquí verás cómo quedan.</p>';
+    return;
+  }
   cont.innerHTML = `<style>${etqCss(f, '#etqVista')} #etqVista .hojaPrev { display: grid; grid-template-columns: repeat(${f.hoja ? f.hoja.cols : 4}, ${f.w}mm); gap: ${f.tienda ? 0 : '2mm'}; background: #fff; width: max-content; padding: 4mm; box-shadow: 0 2px 10px rgba(0,0,0,.12); }</style>
     <div class="hojaPrev">${muestra.map(p => etqHtml(p, f, conCodigo)).join('')}</div>`;
 }
@@ -15496,6 +15507,7 @@ function etqImprimir() {
   const copias = Math.min(200, Math.max(1, parseInt(document.getElementById('etqCopias').value, 10) || 1));
   const total = prods.length * copias;
   if (total > 3000) { alert(`Son ${total} etiquetas; imprime máximo 3000 a la vez (filtra por categoría).`); return; }
+  if (prods.length > 1 && !confirm(`Vas a imprimir ${total} etiquetas de ${prods.length} productos${copias > 1 ? ` (${copias} copias de cada uno)` : ''}.\n\n¿Continuar? Si solo querías algunos, presiona Cancelar y usa "Quitar selección".`)) return;
   const f = etqFormatoActual();
   const conCodigo = document.getElementById('etqConCodigo').checked;
   const etiquetas = [];
