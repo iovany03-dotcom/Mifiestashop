@@ -5975,10 +5975,11 @@
 
     <div style="margin-bottom:16px;">
       <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:6px;">Método de Pago:</label>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn primary" id="payMethodCash" onclick="setPayMethod('cash')">Efectivo</button>
         <button class="btn" id="payMethodCard" onclick="setPayMethod('card')">Tarjeta</button>
         <button class="btn" id="payMethodTransfer" onclick="setPayMethod('transfer')">Transferencia</button>
+        <button class="btn" id="payMethodML" onclick="setPayMethod('mercadolibre')">Mercado Libre</button>
       </div>
     </div>
 
@@ -8460,12 +8461,14 @@ function setPayMethod(method) {
   document.getElementById('payMethodCash').className = method === 'cash' ? 'btn primary' : 'btn';
   document.getElementById('payMethodCard').className = method === 'card' ? 'btn primary' : 'btn';
   document.getElementById('payMethodTransfer').className = method === 'transfer' ? 'btn primary' : 'btn';
+  document.getElementById('payMethodML').className = method === 'mercadolibre' ? 'btn primary' : 'btn';
   document.getElementById('cashDetailsArea').style.display = method === 'cash' ? 'block' : 'none';
 }
 
 function payMethodTicketLabel(method) {
   if (method === 'card') return 'Pago con Tarjeta';
   if (method === 'transfer') return 'Pago por Transferencia';
+  if (method === 'mercadolibre') return 'Mercado Libre';
   if (method === 'cash' || !method) return 'Pago En Efectivo';
   return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
 }
