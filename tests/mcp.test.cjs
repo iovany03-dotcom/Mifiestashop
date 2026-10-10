@@ -77,3 +77,56 @@ test('buscar_productos', async () => {
     assert.ok(ll.some(c => c.u.includes('name.ilike.*collar*') && c.u.includes('active=eq.true')));
   } finally { global.fetch = prev; }
 });
+
+// PNG de 1×1 válido.
+const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+function mockFotos(scopes) {
+  const llamadas = [];
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    llamadas.push({ u, opts });
+    const json = d => ({ ok: true, status: 200, json: async () => d, text: async () => '' });
+    if (u.includes('/rest/v1/api_keys?key_hash')) return json([{ id: 1, nombre: 'test', scopes, activo: true }]);
+    if (u.includes('/rest/v1/api_keys?id=')) return json(null);
+    if (u.includes('/storage/v1/object/assets/')) return json({ Key: 'ok' });
+    if (u.includes('/rest/v1/catalogo_productos') && opts.method === 'PATCH') return json([{ id: 83289, name: 'Antifaz', price: 25, ...JSON.parse(opts.body) }]);
+    if (u.includes('/rest/v1/catalogo_productos')) return json([{ id: 83289, images: ['https://x/a1.jpg', 'https://x/a2.jpg'] }]);
+    if (u.includes('/rest/v1/productos_migrados') && opts.method === 'PATCH') return json(null);
+    if (u.includes('/rest/v1/productos_migrados')) return json([{ images: ['https://x/a1.jpg', 'https://x/a2.jpg'] }]);
+    return json([]);
+  };
+  return llamadas;
+}
+
+test('cambiar_foto_producto reemplaza la primera foto con una imagen en base64 y conserva la segunda', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  const llamadas = mockFotos(['products:write']);
+  try {
+    const lista = await llamar({ jsonrpc: '2.0', id: 1, method: 'tools/list' });
+    const t = lista.body.result.tools.find(x => x.name === 'cambiar_foto_producto');
+    assert.deepEqual(t._meta['openai/fileParams'], ['imagen']);
+    const res = await llamar({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'cambiar_foto_producto', arguments: { id: 83289, posicion: 1, imagen_base64: PNG } } });
+    assert.ok(!res.body.result.isError, res.body.result.content[0].text);
+    const fotos = res.body.result.structuredContent.fotos;
+    assert.equal(fotos.length, 2);
+    assert.match(fotos[0], /storage\/v1\/object\/public\/assets\/productos\/.+\.png$/);
+    assert.equal(fotos[1], 'https://x/a2.jpg');
+    const subida = llamadas.find(l => l.u.includes('/storage/v1/object/assets/'));
+    assert.equal(subida.opts.headers['Content-Type'], 'image/png');
+    assert.ok(llamadas.some(l => l.u.includes('/rest/v1/productos_migrados') && l.opts.method === 'PATCH'));
+  } finally { global.fetch = prev; }
+});
+
+test('subir_imagen acepta data URL y rechaza lo que no es imagen', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  mockFotos(['products:write']);
+  try {
+    let res = await llamar({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'subir_imagen', arguments: { imagen_base64: 'data:image/png;base64,' + PNG } } });
+    assert.match(res.body.result.structuredContent.url, /^https:\/\/.+\.png$/);
+    res = await llamar({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'subir_imagen', arguments: { imagen_base64: Buffer.from('<html>hola</html>').toString('base64') } } });
+    assert.equal(res.body.result.isError, true);
+    assert.match(res.body.result.content[0].text, /no es una imagen/);
+    res = await llamar({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'subir_imagen', arguments: { imagen_url: '/mnt/data/foto.png' } } });
+    assert.equal(res.body.result.isError, true);
+  } finally { global.fetch = prev; }
+});

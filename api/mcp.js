@@ -32,24 +32,61 @@ async function sbJson(path, opts) {
 const num = v => (v === undefined || v === null || v === '' ? undefined : Number(v));
 function urlHttps(u) { const s = String(u || '').trim(); return /^https:\/\/[^\s"'<>]+$/i.test(s) ? s.slice(0, 600) : null; }
 
-// Copia una imagen de una URL pública a nuestro almacenamiento (las URLs que generan los asistentes
-// suelen caducar). Regresa la URL propia.
-async function rehospedarImagen(url, carpeta) {
-  const src = urlHttps(url);
-  if (!src) throw new ToolError(`URL de imagen inválida (debe empezar con https://): ${url}`);
-  if (src.startsWith(`${SUPABASE_URL}/storage/v1/object/public/`)) return src;
-  const r = await fetch(src, { signal: AbortSignal.timeout(15000) });
-  if (!r.ok) throw new ToolError(`No se pudo descargar la imagen (${r.status}): ${src}`);
-  const tipo = (r.headers.get('content-type') || '').split(';')[0];
-  if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(tipo)) throw new ToolError(`El archivo no es una imagen compatible (${tipo || 'desconocido'}).`);
-  const bytes = Buffer.from(await r.arrayBuffer());
+const EXT_IMAGEN = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
+
+// Tipo real por los primeros bytes (no se confía en lo que diga el remitente).
+function tipoPorBytes(b) {
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
+  if (b.slice(0, 4).toString('latin1') === 'RIFF' && b.slice(8, 12).toString('latin1') === 'WEBP') return 'image/webp';
+  if (b.slice(0, 3).toString('latin1') === 'GIF') return 'image/gif';
+  if (b.slice(4, 12).toString('latin1').startsWith('ftypavi')) return 'image/avif';
+  return null;
+}
+
+async function guardarImagen(bytes, carpeta) {
+  if (!bytes.length) throw new ToolError('La imagen está vacía.');
   if (bytes.length > 10 * 1024 * 1024) throw new ToolError('La imagen pesa más de 10 MB.');
-  const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' }[tipo];
-  const ruta = `${carpeta}/${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}.${ext}`;
+  const tipo = tipoPorBytes(bytes);
+  if (!tipo) throw new ToolError('El archivo no es una imagen compatible (usa JPG, PNG, WEBP, GIF o AVIF).');
+  const ruta = `${carpeta}/${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}.${EXT_IMAGEN[tipo]}`;
   const up = await sb(`/storage/v1/object/assets/${ruta}`, { method: 'POST', headers: { 'Content-Type': tipo }, body: bytes });
   if (!up.ok) throw new ToolError(`No se pudo guardar la imagen (${up.status}).`);
   return `${SUPABASE_URL}/storage/v1/object/public/assets/${ruta}`;
 }
+
+// Copia una imagen a nuestro almacenamiento y regresa la URL propia. Acepta:
+//   - URL https pública (las que generan los asistentes suelen caducar, por eso se copia)
+//   - "data:image/png;base64,…" (imagen generada o editada por el asistente)
+//   - archivo adjunto de ChatGPT: { download_url, file_id } (ver openai/fileParams)
+async function rehospedarImagen(fuente, carpeta) {
+  if (fuente && typeof fuente === 'object' && fuente.download_url) fuente = fuente.download_url;
+  const s = String(fuente || '').trim();
+  const data = /^data:image\/[a-z+.-]+;base64,([A-Za-z0-9+/=\s]+)$/i.exec(s);
+  if (data) return guardarImagen(Buffer.from(data[1].replace(/\s+/g, ''), 'base64'), carpeta);
+  const src = urlHttps(s);
+  if (!src) throw new ToolError(`Imagen inválida: manda una URL https, una imagen en base64 ("data:image/...;base64,...") o adjunta el archivo con la herramienta subir_imagen. Recibí: ${s.slice(0, 80)}`);
+  if (src.startsWith(`${SUPABASE_URL}/storage/v1/object/public/`)) return src;
+  const r = await fetch(src, { signal: AbortSignal.timeout(20000) });
+  if (!r.ok) throw new ToolError(`No se pudo descargar la imagen (${r.status}): ${src.slice(0, 120)}`);
+  return guardarImagen(Buffer.from(await r.arrayBuffer()), carpeta);
+}
+
+// Imagen que llega a subir_imagen / cambiar_foto_producto en cualquiera de sus formas.
+async function imagenDeArgumentos(a, carpeta) {
+  if (a.imagen) return rehospedarImagen(a.imagen, carpeta);
+  if (a.imagen_base64) {
+    const b64 = String(a.imagen_base64).trim();
+    return rehospedarImagen(b64.startsWith('data:') ? b64 : `data:image/png;base64,${b64}`, carpeta);
+  }
+  if (a.imagen_url) return rehospedarImagen(a.imagen_url, carpeta);
+  throw new ToolError('Falta la imagen: adjunta el archivo (imagen), o manda imagen_base64 o imagen_url.');
+}
+const PROPIEDADES_IMAGEN = {
+  imagen: { type: 'object', description: 'Archivo de imagen adjunto (ChatGPT lo llena solo al adjuntar el archivo).', properties: { download_url: { type: 'string' }, file_id: { type: 'string' } } },
+  imagen_base64: { type: 'string', description: 'La imagen en base64 (o "data:image/png;base64,..."), para imágenes generadas o editadas por el asistente.' },
+  imagen_url: { type: 'string', description: 'URL https pública de la imagen.' }
+};
 
 function urlProducto(p) {
   return p.link_rewrite ? `${ORIGIN}/${p.id}-${p.link_rewrite}${p.barcode ? '-' + p.barcode : ''}.html` : null;
@@ -158,7 +195,7 @@ const TOOLS = [
       properties: {
         id: { type: 'integer' }, nombre: { type: 'string' }, descripcion: { type: 'string' }, precio: { type: 'number', exclusiveMinimum: 0 },
         precio_mayoreo: { type: 'number' }, mayoreo_desde: { type: 'integer' }, categoria_id: { type: 'integer' },
-        imagenes: { type: 'array', items: { type: 'string' }, maxItems: 10 }, activo: { type: 'boolean' }
+        imagenes: { type: 'array', items: { type: 'string' }, maxItems: 10, description: 'Reemplaza TODAS las fotos. URLs https o "data:image/...;base64,...". Para cambiar solo una usa cambiar_foto_producto.' }, activo: { type: 'boolean' }
       }
     },
     async run(a) {
@@ -194,6 +231,49 @@ const TOOLS = [
       if (cambio.category_label) mig.category_label = cambio.category_label;
       if (Object.keys(mig).length) await sb(`/rest/v1/productos_migrados?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(mig) });
       return { actualizado: true, producto: resumenProducto(p) };
+    }
+  },
+  {
+    name: 'subir_imagen', scope: 'products:write',
+    description: 'Sube una imagen (archivo adjunto, generada/editada por ti en base64, o URL) al almacenamiento de la tienda y regresa su URL https permanente, para usarla en crear_producto, actualizar_producto o el blog.',
+    inputSchema: { type: 'object', properties: { ...PROPIEDADES_IMAGEN } },
+    _meta: { 'openai/fileParams': ['imagen'] },
+    async run(a) { return { url: await imagenDeArgumentos(a, 'productos') }; }
+  },
+  {
+    name: 'cambiar_foto_producto', scope: 'products:write',
+    description: 'Reemplaza, agrega o quita UNA foto de un producto sin tocar las demás. posicion empieza en 1 (1 = foto principal). accion: "reemplazar" (por defecto), "agregar" (al final, o en posicion) o "quitar".',
+    inputSchema: {
+      type: 'object', required: ['id'],
+      properties: {
+        id: { type: 'integer' }, posicion: { type: 'integer', minimum: 1, maximum: 10 },
+        accion: { type: 'string', enum: ['reemplazar', 'agregar', 'quitar'] }, ...PROPIEDADES_IMAGEN
+      }
+    },
+    _meta: { 'openai/fileParams': ['imagen'] },
+    async run(a) {
+      const id = Number(a.id);
+      if (!Number.isSafeInteger(id)) throw new ToolError('id inválido');
+      const [p] = await sbJson(`/rest/v1/catalogo_productos?select=id,images&id=eq.${id}`);
+      if (!p) throw new ToolError('No existe un producto con ese id.');
+      const [m] = await sbJson(`/rest/v1/productos_migrados?select=images&id=eq.${id}`).catch(() => []);
+      const a1 = Array.isArray(p.images) ? p.images : [], a2 = m && Array.isArray(m.images) ? m.images : [];
+      const fotos = (a2.length > a1.length ? a2 : a1).slice();  // la tienda muestra la lista más completa
+      const accion = a.accion || 'reemplazar';
+      const pos = Math.max(1, parseInt(a.posicion, 10) || 1);
+      if (accion === 'quitar') {
+        if (pos > fotos.length) throw new ToolError(`El producto solo tiene ${fotos.length} fotos.`);
+        fotos.splice(pos - 1, 1);
+      } else {
+        const url = await imagenDeArgumentos(a, 'productos');
+        if (accion === 'agregar') { if (fotos.length >= 10) throw new ToolError('El producto ya tiene 10 fotos.'); fotos.splice(a.posicion ? pos - 1 : fotos.length, 0, url); }
+        else if (pos > fotos.length) fotos.push(url);
+        else fotos[pos - 1] = url;
+      }
+      const cambio = { images: fotos.length ? fotos : null, legacy_image_url: fotos[0] || null, updated_at: new Date().toISOString() };
+      const [n] = await sbJson(`/rest/v1/catalogo_productos?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(cambio) });
+      if (m) await sb(`/rest/v1/productos_migrados?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ images: cambio.images }) });
+      return { actualizado: true, fotos, producto: resumenProducto(n) };
     }
   },
   {
@@ -260,7 +340,7 @@ const TOOLS = [
   }
 ];
 
-const INSTRUCCIONES = 'Herramientas de Mi Fiestashop (artículos para fiestas, México). Precios en pesos MXN por pieza. Antes de crear un producto busca si ya existe con buscar_productos. Los productos nuevos quedan ocultos salvo que el usuario pida publicarlos. Para el blog escribe en español de México, con <h2> por sección y enlaces a productos de la tienda.';
+const INSTRUCCIONES = 'Herramientas de Mi Fiestashop (artículos para fiestas, México). Precios en pesos MXN por pieza. Antes de crear un producto busca si ya existe con buscar_productos. Los productos nuevos quedan ocultos salvo que el usuario pida publicarlos. Para el blog escribe en español de México, con <h2> por sección y enlaces a productos de la tienda. Para cambiar una foto usa cambiar_foto_producto (adjunta el archivo o manda la imagen en imagen_base64); no hace falta subirla antes a otro sitio.';
 
 function tieneScope(scopes, s) { return scopes.includes('*') || scopes.includes(s); }
 
@@ -282,7 +362,7 @@ async function atender(msg, scopes) {
   }
   if (method === 'ping') return ok({});
   if (method === 'tools/list') {
-    return ok({ tools: TOOLS.filter(t => tieneScope(scopes, t.scope)).map(({ name, description, inputSchema, annotations }) => ({ name, description, inputSchema, ...(annotations ? { annotations } : {}) })) });
+    return ok({ tools: TOOLS.filter(t => tieneScope(scopes, t.scope)).map(({ name, description, inputSchema, annotations, _meta }) => ({ name, description, inputSchema, ...(annotations ? { annotations } : {}), ...(_meta ? { _meta } : {}) })) });
   }
   if (method === 'tools/call') {
     const tool = TOOLS.find(t => t.name === (params && params.name));
