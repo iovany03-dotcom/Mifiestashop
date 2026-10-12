@@ -4254,12 +4254,14 @@
         </div>
         <div id="factEstado" style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Consultando Facturama…</div>
         <div id="factForm" class="hidden" style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-bottom:10px;">
-            <label style="font-size:12px;">Cargar de un pedido (opcional)<br>
-              <input id="factPedidoFolio" placeholder="Folio, ej. WEB-123" style="padding:8px; width:170px;"></label>
-            <select id="factPedidoOrigen" style="padding:8px;"><option value="online">Tienda en línea</option><option value="pos">POS</option></select>
-            <button class="btn" onclick="cargarPedidoFactura()">Cargar</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:600;">Pedido o ticket a facturar <span style="color:#dc2626;">(obligatorio)</span><br>
+              <input id="factPedidoFolio" placeholder="Ej. WEB-123456 o #POS-53986" oninput="factFolioCambio()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); cargarPedidoFactura(); }" style="padding:8px; width:220px; text-transform:uppercase;"></label>
+            <select id="factPedidoOrigen" style="padding:8px;" onchange="factFolioCambio(true)"><option value="online">Pedido de la tienda</option><option value="pos">Ticket del POS</option></select>
+            <button class="btn primary" onclick="cargarPedidoFactura()">Cargar</button>
           </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Toda factura queda ligada a su pedido o ticket. Los conceptos, el envío y el descuento salen tal cual de la venta (no se escriben a mano), y solo se facturan ventas pagadas que no tengan ya una factura vigente.</div>
+          <div id="factPedidoResumen" class="hidden" style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:12px;"></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; margin-bottom:10px;">
             <input id="factRfc" placeholder="RFC del cliente" style="padding:8px; text-transform:uppercase;">
             <input id="factNombre" placeholder="Nombre / razón social (como en su constancia)" style="padding:8px;">
@@ -4269,11 +4271,8 @@
             <input id="factEmail" type="email" placeholder="Correo para enviarla (opcional)" style="padding:8px;">
             <select id="factFormaPago" style="padding:8px;"><option value="01">01 Efectivo</option><option value="03">03 Transferencia</option><option value="04">04 Tarjeta de crédito</option><option value="28">28 Tarjeta de débito</option><option value="99">99 Por definir</option></select>
           </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Conceptos (el precio es unitario <b>con IVA</b>):</div>
-          <div id="factItems"></div>
-          <button class="btn" style="margin-top:6px;" onclick="agregarConceptoFactura()">+ Concepto</button>
           <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button class="btn primary" id="factEmitirBtn" onclick="emitirFactura()">Emitir factura</button>
+            <button class="btn primary" id="factEmitirBtn" onclick="emitirFactura()" disabled>Emitir factura</button>
             <button class="btn" onclick="document.getElementById('factForm').classList.add('hidden')">Cerrar</button>
             <span id="factMsg" style="font-size:12.5px;"></span>
           </div>
@@ -5633,6 +5632,7 @@
         </select>
         <button class="btn" id="odUpdateStatusBtn" style="border-radius:6px; font-size:13px;" onclick="updateOrderDetailStatus()">Actualizar el estado</button>
         <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="printOrderDetail()"> Imprimir pedido</button>
+        <button class="btn secondary hidden" id="odFacturarBtn" style="border-radius:6px; font-size:13px;" onclick="currentOrderObj && facturarDesdePedido(orderOrigen(currentOrderObj), currentOrderObj.id)">Facturar</button>
         <button class="btn secondary" id="odCancelBtn" style="border-radius:6px; font-size:13px; border-color:#f59e0b; color:#b45309;" onclick="cancelOrderDetail()">Cancelar pedido</button>
         <button class="btn secondary hidden" id="odDeleteBtn" style="border-radius:6px; font-size:13px; border-color:var(--bad); color:var(--bad);" onclick="deleteOrderDetail()">Borrar pedido</button>
         <span id="odOrigenNote" class="hidden" style="font-size:12px; color:var(--text-muted);"></span>
@@ -16335,6 +16335,9 @@ function renderOdStatus(order) {
   if (cancelBtn) cancelBtn.classList.toggle('hidden', cancelado);
   const delBtn = document.getElementById('odDeleteBtn');
   if (delBtn) delBtn.classList.toggle('hidden', esPs || !isSuperAdmin);
+  // Facturar: solo pedidos de la tienda y tickets del POS (la factura queda ligada a ellos).
+  const factBtn = document.getElementById('odFacturarBtn');
+  if (factBtn) factBtn.classList.toggle('hidden', esPs || cancelado || (currentStaffSession && !hasPermission('facturacion')));
   const note = document.getElementById('odOrigenNote');
   if (note) {
     note.textContent = esPs ? 'Pedido de las cajas de PrestaShop: su estado se cambia en PrestaShop.' : '';
@@ -21598,7 +21601,7 @@ async function cargarFacturas() {
       const fecha = new Date(f.fecha).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' });
       const sb = f.entorno === 'sandbox' ? ' <span class="pill info" style="font-size:10px;">pruebas</span>' : '';
       const id = escapeHtml(f.facturama_id);
-      return `<tr><td>${fecha}</td><td style="font-size:11px;">${escapeHtml(f.uuid || '—')}${sb}</td><td>${escapeHtml(f.rfc)}</td><td>${escapeHtml(f.nombre)}</td><td>${escapeHtml(f.pedido_folio || '—')}</td><td>${fmtMoney(f.total)}</td><td>${est}</td>
+      return `<tr><td>${fecha}</td><td style="font-size:11px;">${escapeHtml(f.uuid || '—')}${sb}</td><td>${escapeHtml(f.rfc)}</td><td>${escapeHtml(f.nombre)}</td><td>${f.pedido_folio ? escapeHtml(f.pedido_folio) : '<span class="pill bad" title="Emitida antes de que fuera obligatorio ligarla a un pedido o ticket">Sin pedido</span>'}</td><td>${fmtMoney(f.total)}</td><td>${est}</td>
         <td style="white-space:nowrap;"><button class="btn" onclick="descargarFactura('${id}','pdf')">PDF</button> <button class="btn" onclick="descargarFactura('${id}','xml')">XML</button>${f.estado === 'cancelada' ? '' : ` <button class="btn" onclick="cancelarFactura('${id}')">Cancelar</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Todavía no se ha emitido ninguna factura desde aquí.</td></tr>';
   } catch (err) {
@@ -21606,55 +21609,103 @@ async function cargarFacturas() {
   }
 }
 
-function agregarConceptoFactura(it) {
-  const div = document.createElement('div');
-  div.className = 'fact-item';
-  div.style.cssText = 'display:grid; grid-template-columns:3fr 1fr 1fr auto; gap:6px; margin-bottom:6px;';
-  div.innerHTML = '<input class="fi-name" placeholder="Descripción" style="padding:7px;"><input class="fi-qty" type="number" min="1" step="1" value="1" style="padding:7px;"><input class="fi-price" type="number" min="0" step="0.01" placeholder="Precio c/IVA" style="padding:7px;"><button class="btn" onclick="this.parentElement.remove()">✕</button>';
-  if (it) { div.querySelector('.fi-name').value = it.name || ''; div.querySelector('.fi-qty').value = it.qty || 1; div.querySelector('.fi-price').value = it.price || 0; div.dataset.sku = it.sku || ''; }
-  document.getElementById('factItems').appendChild(div);
+// La factura siempre va ligada a un pedido de la tienda o a un ticket del POS: primero se
+// carga la venta (api/facturama.js acción "pedido") y sus conceptos se muestran tal cual,
+// sin poder editarlos; el servidor los vuelve a sacar de la venta al timbrar.
+let factVenta = null;
+
+function factFolioCambio(desdeOrigen) {
+  const input = document.getElementById('factPedidoFolio');
+  // "#POS-…" o "POS-…" es un ticket del POS; lo demás, un pedido de la tienda.
+  if (!desdeOrigen && /^#?POS-/i.test(input.value.trim())) document.getElementById('factPedidoOrigen').value = 'pos';
+  else if (!desdeOrigen && /^[A-Z]+-\d/i.test(input.value.trim())) document.getElementById('factPedidoOrigen').value = 'online';
+  if (factVenta) {
+    factVenta = null;
+    document.getElementById('factPedidoResumen').classList.add('hidden');
+    document.getElementById('factEmitirBtn').disabled = true;
+  }
 }
 
 function abrirFacturaForm() {
   document.getElementById('factForm').classList.remove('hidden');
   document.getElementById('factMsg').textContent = '';
-  if (!document.querySelector('#factItems .fact-item')) agregarConceptoFactura();
+  setTimeout(() => document.getElementById('factPedidoFolio').focus(), 0);
+}
+
+// Abre la facturación con un pedido/ticket ya cargado (botón "Facturar" del detalle del pedido).
+async function facturarDesdePedido(origen, folio) {
+  if (typeof closeOrderDetailModal === 'function') closeOrderDetailModal();
+  switchView('facturacion');
+  abrirFacturaForm();
+  document.getElementById('factPedidoFolio').value = folio;
+  document.getElementById('factPedidoOrigen').value = origen === 'pos' ? 'pos' : 'online';
+  factVenta = null;
+  await cargarPedidoFactura();
+}
+
+function renderFactVenta() {
+  const box = document.getElementById('factPedidoResumen');
+  const v = factVenta;
+  if (!v) { box.classList.add('hidden'); return; }
+  const fecha = v.fecha ? new Date(v.fecha).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' }) : '';
+  const filas = (v.conceptos || []).map(c => `<tr>
+      <td>${escapeHtml(c.name)}</td><td style="text-align:center;">${c.qty}</td><td style="text-align:right;">${fmtMoney(c.price)}</td>
+      <td style="text-align:right;">${c.descuento ? '−' + fmtMoney(c.descuento) : ''}</td>
+      <td style="text-align:right; font-weight:600;">${fmtMoney(c.price * c.qty - (c.descuento || 0))}</td></tr>`).join('');
+  box.innerHTML = `
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+      <div><b>${v.origen === 'pos' ? 'Ticket' : 'Pedido'} ${escapeHtml(v.folio)}</b> · ${escapeHtml(fecha)}${v.nombre ? ' · ' + escapeHtml(v.nombre) : ''}</div>
+      <div><span class="pill ${v.facturable ? 'ok' : 'bad'}">${escapeHtml(v.estado || '')}</span> <b>Total ${fmtMoney(v.total)}</b></div>
+    </div>
+    <div class="table-wrap" style="max-height:220px;"><table style="font-size:12.5px;">
+      <thead><tr><th>Concepto</th><th style="text-align:center;">Cant.</th><th style="text-align:right;">Precio c/IVA</th><th style="text-align:right;">Descuento</th><th style="text-align:right;">Importe</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin productos</td></tr>'}</tbody>
+    </table></div>
+    ${v.facturable ? '' : `<div style="color:#dc2626; font-size:12.5px; margin-top:8px; font-weight:600;">No se puede facturar: ${escapeHtml(v.motivo || '')}</div>`}`;
+  box.classList.remove('hidden');
+  document.getElementById('factEmitirBtn').disabled = !v.facturable;
 }
 
 async function cargarPedidoFactura() {
   const folio = document.getElementById('factPedidoFolio').value.trim(), msg = document.getElementById('factMsg');
-  if (!folio) { msg.textContent = 'Escribe el folio del pedido.'; return; }
+  msg.style.color = '';
+  factVenta = null;
+  renderFactVenta();
+  document.getElementById('factEmitirBtn').disabled = true;
+  if (!folio) { msg.textContent = 'Escribe el folio del pedido o del ticket.'; return; }
   msg.textContent = 'Buscando…';
   try {
     const d = await facturamaRequest({ accion: 'pedido', folio, origen: document.getElementById('factPedidoOrigen').value });
-    document.getElementById('factItems').innerHTML = '';
-    (d.pedido.items.length ? d.pedido.items : [null]).forEach(it => agregarConceptoFactura(it));
-    if (d.pedido.email) document.getElementById('factEmail').value = d.pedido.email;
-    if (d.pedido.nombre && !document.getElementById('factNombre').value) document.getElementById('factNombre').value = d.pedido.nombre;
-    msg.textContent = 'Pedido cargado. Completa los datos fiscales del cliente.';
-  } catch (e) { msg.textContent = e.message; }
+    factVenta = { ...d.pedido, conceptos: d.pedido.conceptos || d.pedido.items || [] };
+    document.getElementById('factPedidoFolio').value = factVenta.folio;
+    document.getElementById('factPedidoOrigen').value = factVenta.origen;
+    renderFactVenta();
+    if (factVenta.email && !document.getElementById('factEmail').value) document.getElementById('factEmail').value = factVenta.email;
+    msg.textContent = factVenta.facturable ? 'Venta cargada. Completa los datos fiscales del cliente.' : '';
+  } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
 }
 
 async function emitirFactura() {
   const msg = document.getElementById('factMsg'), btn = document.getElementById('factEmitirBtn');
-  const items = [...document.querySelectorAll('#factItems .fact-item')].map(d => ({
-    name: d.querySelector('.fi-name').value.trim(), qty: Number(d.querySelector('.fi-qty').value), price: Number(d.querySelector('.fi-price').value), sku: d.dataset.sku || ''
-  })).filter(i => i.name || i.price);
   const v = id => document.getElementById(id).value.trim();
-  if (!confirm('¿Emitir esta factura? Una vez timbrada solo se puede cancelar con las reglas del SAT.')) return;
+  if (!factVenta || !factVenta.facturable) { msg.style.color = '#dc2626'; msg.textContent = 'Primero carga el pedido o ticket que vas a facturar.'; return; }
+  if (!confirm(`¿Emitir la factura del ${factVenta.origen === 'pos' ? 'ticket' : 'pedido'} ${factVenta.folio} por ${fmtMoney(factVenta.total)}? Una vez timbrada solo se puede cancelar con las reglas del SAT.`)) return;
   btn.disabled = true; msg.style.color = ''; msg.textContent = 'Timbrando…';
   try {
     const d = await facturamaRequest({
-      accion: 'emitir', origen: v('factPedidoFolio') ? document.getElementById('factPedidoOrigen').value : 'manual', pedidoFolio: v('factPedidoFolio'),
+      accion: 'emitir', origen: factVenta.origen, pedidoFolio: factVenta.folio,
       receptor: { rfc: v('factRfc'), nombre: v('factNombre'), cp: v('factCp'), regimen: v('factRegimen'), usoCfdi: v('factUso') },
-      email: v('factEmail'), formaPago: document.getElementById('factFormaPago').value, items,
+      email: v('factEmail'), formaPago: document.getElementById('factFormaPago').value,
       registradoPor: (typeof currentStaffSession !== 'undefined' && currentStaffSession && currentStaffSession.name) || 'Admin'
     });
     msg.style.color = '#16a34a';
     msg.textContent = 'Factura emitida' + (d.correoEnviado ? ' y enviada por correo.' : (d.correoEnviado === false ? ' (no se pudo enviar el correo).' : '.')) + (d.aviso ? ' ' + d.aviso : '');
+    // Ya quedó facturada: no se puede volver a timbrar la misma venta por error.
+    factVenta.facturable = false; factVenta.motivo = 'ya se facturó.';
+    renderFactVenta();
     cargarFacturas();
   } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
-  btn.disabled = false;
+  btn.disabled = !(factVenta && factVenta.facturable);
 }
 
 async function descargarFactura(id, formato) {
