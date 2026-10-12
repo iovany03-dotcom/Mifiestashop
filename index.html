@@ -7060,6 +7060,24 @@ function trackFunnel(evento, { productId, valor, datos, urgente } = {}) {
   if (!funnelTimer) funnelTimer = setTimeout(flushFunnel, 2000);
 }
 
+// Solo cuenta como visita cuando la página de verdad se ve en pantalla: la
+// app de Facebook/Instagram puede pre-cargar la página del anuncio antes de
+// que la persona lo toque (y algunos navegadores pre-renderizan ligas), y
+// esas cargas no las vio nadie.
+function whenPageVisible(fn) {
+  if (document.prerendering) {
+    document.addEventListener('prerenderingchange', () => whenPageVisible(fn), { once: true });
+    return;
+  }
+  if (document.visibilityState === 'visible') { fn(); return; }
+  const onVisible = () => {
+    if (document.visibilityState !== 'visible') return;
+    document.removeEventListener('visibilitychange', onVisible);
+    fn();
+  };
+  document.addEventListener('visibilitychange', onVisible);
+}
+
 function trackFunnelPageView() {
   const path = window.location.pathname;
   if (path === funnelLastPath) return;
@@ -7118,17 +7136,47 @@ function trackPixelEvent(eventName, params, eventId) {
   if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {}, eventId });
 }
 
+// "Agregar al carrito" se reporta (a Meta y al embudo) UNA vez por producto
+// en cada visita. Los mayoristas suelen dar clic muchas veces en "Agregar"
+// en vez de escribir la cantidad (se vieron sesiones con 299 clics en 9
+// minutos): cada clic se contaba como un "agregar al carrito" y Meta veía
+// ~10 veces más que los carritos reales (500–800 eventos al día contra
+// 30–60 carritos). Misma clave que las páginas CMS (assets/cms-pixel.js),
+// así un producto agregado en una página de batucada y luego en la tienda
+// cuenta una sola vez en la misma visita.
+const ATC_KEY = 'mf_atc';
+
+function addToCartYaReportado(productId) {
+  const s = funnelSession();
+  const sid = s ? s.sid : 'sin-sesion';
+  const id = String(productId);
+  try {
+    const guardado = JSON.parse(localStorage.getItem(ATC_KEY) || 'null');
+    const ids = guardado && guardado.sid === sid && Array.isArray(guardado.ids) ? guardado.ids : [];
+    if (ids.includes(id)) return true;
+    ids.push(id);
+    localStorage.setItem(ATC_KEY, JSON.stringify({ sid, ids: ids.slice(-300) }));
+  } catch (e) { /* sin localStorage: se reporta siempre, como antes */ }
+  return false;
+}
+
+function reportAddToCart(product, qty) {
+  if (addToCartYaReportado(product.id)) return;
+  const n = Math.max(1, parseInt(qty, 10) || 1);
+  trackPixelEvent('AddToCart', {
+    content_ids: [String(product.id)], content_name: product.name, content_type: 'product',
+    contents: [{ id: String(product.id), quantity: n }],
+    value: product.price * n, currency: 'MXN'
+  });
+}
+
 // Una sola pulsación de "Agregar" con cantidad N es UN evento AddToCart con
 // el valor total (precio × N) — antes el botón de la ficha llamaba esto N
 // veces y Meta contaba N agregados al carrito de 1 pieza cada uno.
 function addToCartTracked(product, qty) {
   const n = Math.max(1, parseInt(qty, 10) || 1);
   for (let i = 0; i < n; i++) addToCart(product);
-  trackPixelEvent('AddToCart', {
-    content_ids: [String(product.id)], content_name: product.name, content_type: 'product',
-    contents: [{ id: String(product.id), quantity: n }],
-    value: product.price * n, currency: 'MXN'
-  });
+  reportAddToCart(product, n);
 }
 
 // Buscar: se manda una vez por búsqueda distinta, con un pequeño retraso
@@ -13273,7 +13321,7 @@ function addToClienteCart(pId) {
   addToCart({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
   updateStoreCartBadge();
   updateClienteCartUI();
-  trackPixelEvent('AddToCart', { content_ids: [String(prod.id)], content_name: prod.name, content_type: 'product', value: prod.price, currency: 'MXN' });
+  reportAddToCart(prod, 1);
 }
 
 function updateClienteCartUI() {
@@ -21332,7 +21380,7 @@ handleEmailLink();
 handleMercadoPagoReturn();
 loadCmsPagesForFooter();
 loadMetaPixelConfig();
-trackFunnelPageView();
+whenPageVisible(trackFunnelPageView);
 populateCheckoutEstadoSelect();
 populateSkydropxEstadoSelects();
 
