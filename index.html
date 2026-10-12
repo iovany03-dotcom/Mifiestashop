@@ -2118,6 +2118,7 @@
           </div>
           <div id="checkoutCouponMsg" class="hidden" style="font-size:12px; margin-top:6px;"></div>
         </div>
+        <div id="checkoutUpsellSection" class="hidden" style="margin-top:18px; border-top:1px dashed var(--border); padding-top:16px;"></div>
       </div>
     </div>
   </div>
@@ -19221,6 +19222,58 @@ function renderRelatedProductsInto(containerId, sourceText, excludeId, heading){
   initScrollReveal();
 }
 
+// Upsell en el checkout ("Antes de pagar, ¿agregamos algo más?"): sugiere
+// productos relacionados con lo que ya hay en el carrito, excluyendo lo que
+// el cliente ya agregó. Reutiliza el mismo scoring por palabras clave que
+// "También te puede interesar", solo que la fuente es el carrito completo
+// en vez de un solo producto.
+function findCheckoutUpsellProducts(limit){
+  if (cart.length === 0) return [];
+  const sourceText = cart.map(i => i.name).join(' ');
+  const cartIds = new Set(cart.map(i => String(i.id)));
+  return findRelatedProducts(sourceText, null, limit + cart.length)
+    .filter(p => !cartIds.has(String(p.id)))
+    .slice(0, limit);
+}
+
+function buildCheckoutUpsellItemHTML(p){
+  return `
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f0e6ef;">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}" style="width:48px; height:48px; object-fit:cover; border-radius:8px; background:var(--mf-cream); flex-shrink:0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; font-weight:700; color:#2e1065; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.name)}</div>
+        <div style="font-size:12px; color:var(--mf-orange); font-weight:800;">${fmtMoney(p.price)}</div>
+      </div>
+      <button type="button" onclick="addCheckoutUpsellItem('${p.id}')" style="border:1px solid var(--mf-pink); background:#fff5fa; color:var(--mf-pink); font-weight:700; font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; flex-shrink:0;">+ Agregar</button>
+    </div>`;
+}
+
+function renderCheckoutUpsell(){
+  const box = document.getElementById('checkoutUpsellSection');
+  if (!box) return;
+  const items = findCheckoutUpsellProducts(4);
+  if (items.length === 0) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <h3 style="margin:0 0 6px; font-size:13.5px; color:#2e1065;">✨ Antes de pagar, ¿agregamos algo más?</h3>
+    <div>${items.map(buildCheckoutUpsellItemHTML).join('')}</div>
+  `;
+}
+
+function addCheckoutUpsellItem(id){
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const p = dataset.find(pr => String(pr.id) === String(id));
+  if (!p) return;
+  addToCartTracked({ id: p.id, name: p.name, sku: p.sku, price: p.price, cat: p.cat || 'general', img: p.img }, 1);
+  updateStoreCartBadge();
+  renderCheckoutSummary();
+  renderCheckoutUpsell();
+}
+
 // "Existencia por sucursal" en la ficha de producto: se muestra solo si está
 // activado en el Dashboard (ajustes_pago.mostrar_stock_sucursal). Oculto
 // por defecto.
@@ -19827,6 +19880,7 @@ function goToStorefrontCheckout(){
   if (quoteBox) quoteBox.classList.add('hidden');
   prefillCheckoutFromCliente();
   renderCheckoutSummary();
+  renderCheckoutUpsell();
   showStorefrontPage('storefrontCheckoutPage');
   // Cupón que venía en la liga de un mensaje (Retransmisiones).
   const code = pendingCouponCode || (checkoutCoupon && checkoutCoupon.codigo);
