@@ -11681,7 +11681,7 @@ function rtRenderPreview() {
   // vista previa nunca debe mostrar lo que de verdad no se puede mandar.
   const nombre = (d && String(d.nombre || '').trim().split(/\s+/)[0]) || 'Cliente';
   const liga = 'https://www.mifiestashop.com/?carrito=…' + (c ? `&cupon=${c.codigo}` : '');
-  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: (c && c.vence) || 'sin fecha límite', liga };
+  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: (c && c.vence) || 'cierre de esta promoción', liga };
   const fill = t => String(t || '').replace(/\{(nombre|cupon|descuento|vence|liga)\}/g, (_, k) => campos[k]);
   const canal = rtCanal();
 
@@ -11699,7 +11699,7 @@ function rtRenderPreview() {
   if (c && !/\{cupon\}/.test(document.getElementById('rtMensaje').value) && canal === 'whatsapp') avisos.push('⚠ El mensaje de WhatsApp no incluye {cupon}: el cliente no verá el código (solo irá en la liga).');
   el.innerHTML = (canal === 'email' ? `<b>Asunto:</b> ${escapeHtml(fill(document.getElementById('rtAsunto').value))}\n\n` : '') +
     escapeHtml(mensaje) +
-    (canal === 'email' ? `\n\n${c ? `[Caja del cupón: ${escapeHtml(c.codigo)} · ${escapeHtml(c.descuento)} · válido hasta el ${escapeHtml(c.vence)}]\n` : ''}[Lista de productos que dejó]\n[Botón: Terminar mi compra]` : '') +
+    (canal === 'email' ? `\n\n${c ? `[Caja del cupón: ${escapeHtml(c.codigo)} · ${escapeHtml(c.descuento)}${c.vence ? ' · válido hasta el ' + escapeHtml(c.vence) : ''}]\n` : ''}[Lista de productos que dejó]\n[Botón: Terminar mi compra]` : '') +
     (avisos.length ? `\n\n<span style="color:#b45309;">${avisos.map(escapeHtml).join('\n')}</span>` : '');
 }
 
