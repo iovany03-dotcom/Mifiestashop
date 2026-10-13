@@ -1,8 +1,8 @@
 // Migrated CMS pages are versioned in this repository, independent of PrestaShop.
 const pages = require('../data/cms-runtime.json');
 const legacyIndexRaw = require('../data/cms-legacy-index.json');
-const legacy = require('../lib/prestashop-pages.js');
-const { prestashopConectado, sbGetAll } = require('../lib/prestashop.js');
+const { normalize, titleFromSlug, isGenericTitle, fallbackContentFor, FOOTER_PAGE_KEYWORDS } = require('../lib/paginas-respaldo.js');
+const { sbGetAll } = require('../lib/catalogo-supabase.js');
 
 // Páginas que se ocultan de nuestro propio sistema (admin, footer y acceso
 // directo) sin tocar ni borrar nada en PrestaShop.
@@ -10,11 +10,9 @@ const HIDDEN_PAGE_IDS = ['9', '11', '12', '412', '413', '415', '416', '417', '41
 const HIDDEN_PAGE_SLUGS = ['bicicletas', 'hogar', 'herramientas', 'entrega', 'aviso-legal', 'sobre-nosotros', 'pago-seguro', 'articulos-para-fiesta-mayoreo-en-mexico', 'productos-con-descuentos'];
 const legacyIndex = legacyIndexRaw.filter(p => !HIDDEN_PAGE_IDS.includes(String(p.id)));
 
-// PrestaShop desconectado (default, ver lib/prestashop.js): las páginas que
-// no están migradas al repo salen de ps_cms_paginas, la copia que el cron
-// sincroniza cada hora desde PrestaShop — mismas reglas de título y de
-// texto de respaldo que el camino en vivo (lib/prestashop-pages.js).
-const { normalize, titleFromSlug, isGenericTitle, fallbackContentFor, FOOTER_PAGE_KEYWORDS } = legacy.helpers;
+// Las páginas que no están migradas al repo salen de ps_cms_paginas (la
+// copia que quedó de PrestaShop), con las reglas de título y texto de
+// respaldo de lib/paginas-respaldo.js.
 
 function pageTitle(row) {
   const raw = row.title || '';
@@ -66,31 +64,12 @@ module.exports = async function handler(req, res) {
     }
     const page = id ? pages.find(p=>String(p.id)===String(id)) : pages.find(p=>p.slug===slug);
     if (!page) {
-      if (!prestashopConectado()) {
-        const synced = await pageFromSupabase(id, slug);
-        return synced ? res.status(200).json({page: synced}) : res.status(404).json({error:'Página no encontrada'});
-      }
-      if (!process.env.PS_API_KEY) return res.status(404).json({error:'Página no encontrada'});
-      return legacy(req,res);
+      const synced = await pageFromSupabase(id, slug);
+      return synced ? res.status(200).json({page: synced}) : res.status(404).json({error:'Página no encontrada'});
     }
     return res.status(200).json({page});
   }
   const migrated=pages.map(({content,description,...page})=>page);
   if(all)return res.status(200).json({pages:[...legacyIndex,...migrated]});
-  if(!prestashopConectado())return res.status(200).json({pages:await footerPagesFromSupabase(migrated)});
-  if(!process.env.PS_API_KEY)return res.status(200).json({pages:all?migrated:[]});
-  let code=200;
-  const proxy={
-    setHeader:(key,value)=>res.setHeader(key,value),
-    status(status){code=status;return proxy},
-    json(data){
-      if(!Array.isArray(data.pages))return res.status(code).json(data);
-      const result=data.pages
-        .filter(page=>!HIDDEN_PAGE_IDS.includes(String(page.id)))
-        .map(page=>migrated.find(p=>String(p.id)===String(page.id))||page);
-      if(all)for(const page of migrated)if(!result.some(p=>String(p.id)===String(page.id)))result.push(page);
-      return res.status(code).json({...data,pages:result});
-    }
-  };
-  return legacy(req,proxy);
+  return res.status(200).json({pages:await footerPagesFromSupabase(migrated)});
 };

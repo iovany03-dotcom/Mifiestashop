@@ -1,14 +1,12 @@
 // Vercel serverless function: lee las categorías desde nuestra propia copia
-// en Supabase (ps_categorias), sincronizada cada hora por
-// api/cron-sync-prestashop.js — ya no se consulta PrestaShop en cada carga.
+// en Supabase (ps_categorias).
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 // Algunas categorías vienen capturadas en PrestaShop TODO EN MAYÚSCULAS
 // (p.ej. "ARTÍCULOS DE XV AÑOS"), distinto del resto ("Globos", "Despedida
 // de soltera"...) — se re-castean aquí, en lectura, para que se vean
-// consistentes sin tener que escribir de vuelta a PrestaShop ni pelear con
-// que el sync horario (ps_categorias) las vuelva a sobreescribir.
+// consistentes sin tener que reescribirlas en ps_categorias.
 function normalizeCategoryName(name) {
   const trimmed = String(name || '').trim();
   if (!trimmed || trimmed !== trimmed.toUpperCase() || trimmed === trimmed.toLowerCase()) return trimmed;

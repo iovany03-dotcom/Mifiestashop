@@ -11,8 +11,7 @@
 //
 // Si las variables no están configuradas, responde 200 con fallback:true en
 // vez de fallar, para no romper el checkout ni el formulario de suscripción
-// mientras se configura el correo (mismo patrón que api/productos.js con
-// PS_API_KEY).
+// mientras se configura el correo.
 //
 // GET /api/enviar-correo?preview=<tipo>  -> { subject, html } con datos de
 // ejemplo, para que el Backoffice pueda mostrar una vista previa real de la

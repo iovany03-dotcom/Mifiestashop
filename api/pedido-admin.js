@@ -5,9 +5,8 @@
 //   - "online": pedidos_online (checkout de la tienda y pedidos creados a
 //     mano con "+ Crear Pedido").
 //   - "pos": pos_tickets (ventas del Sistema POS de esta app).
-//   - "prestashop": ps_pedidos, la copia de los pedidos de las cajas de
-//     PrestaShop. El sync los vuelve a traer cada hora, así que su estado
-//     solo se puede cambiar en PrestaShop; aquí se rechaza.
+//   - "prestashop": ps_pedidos, el histórico de los pedidos de las cajas de
+//     PrestaShop (ya desconectado): solo lectura, aquí se rechaza.
 //
 // Acciones:
 //   - estado:   cambia el estado. Si el nuevo estado es "Cancelado" hace lo
@@ -95,7 +94,7 @@ module.exports = async function handler(req, res) {
   if (!session) { res.status(401).json({ error: 'unauthorized' }); return; }
 
   if (origen === 'prestashop') {
-    res.status(409).json({ error: 'Este pedido viene de las cajas de PrestaShop: su estado, cancelación o borrado se hacen en PrestaShop (aquí se vuelve a copiar cada hora).' });
+    res.status(409).json({ error: 'Este pedido es del histórico de las cajas de PrestaShop: es solo de consulta, no se puede cambiar su estado, cancelar ni borrar.' });
     return;
   }
 
