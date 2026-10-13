@@ -1,8 +1,5 @@
 // Vercel serverless function: lee los clientes desde nuestra propia copia
-// en Supabase (ps_clientes), sincronizada cada hora por
-// api/cron-sync-prestashop.js — ya no se consulta PrestaShop en cada
-// carga del Directorio de Clientes (antes tardaba 5-8s por traer miles de
-// clientes en vivo cada vez).
+// en Supabase (ps_clientes), el histórico que quedó de PrestaShop.
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 

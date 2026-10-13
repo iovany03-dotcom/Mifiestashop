@@ -1,8 +1,7 @@
 // Vercel serverless function: junta los carritos de DOS fuentes.
 //
-// 1) ps_carritos: nuestra copia de los carritos de PrestaShop (sincronizada
-//    cada hora por api/cron-sync-prestashop.js) — lo que se genere del lado
-//    de PrestaShop (ej. POS de tienda física).
+// 1) ps_carritos: el histórico de carritos que quedó de PrestaShop (ya
+//    desconectado, no recibe nuevos).
 // 2) carritos_web: carritos guardados en vivo por el propio sitio nuevo
 //    (api/carrito-guardar.js), desde que la tienda en línea dejó de tocar
 //    PrestaShop (ver docs/dominio-mifiestashop-com.md) — sin esto, un

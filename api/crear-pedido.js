@@ -1,14 +1,14 @@
 // Vercel serverless function: crea un pedido del checkout público, validando
-// los precios contra PrestaShop en el servidor.
+// los precios contra el catálogo en el servidor.
 //
 // Antes, el checkout calculaba el subtotal/total en el navegador a partir
 // de los precios que ya traía cargados en memoria y los mandaba tal cual a
 // Supabase — cualquiera con la consola del navegador abierta podía cambiar
 // el precio de un artículo en el carrito antes de confirmar la compra y el
 // pedido se guardaba con ese total falso, sin ninguna verificación. Este
-// endpoint vuelve a consultar el precio real de cada producto en PrestaShop
-// y recalcula el subtotal/total con esos valores, ignorando cualquier precio
-// que haya mandado el cliente.
+// endpoint vuelve a consultar el precio real de cada producto en
+// catalogo_productos y recalcula el subtotal/total con esos valores,
+// ignorando cualquier precio que haya mandado el cliente.
 //
 // POST /api/crear-pedido
 // body: {
@@ -19,11 +19,8 @@
 //   coupon_code                     // opcional (cupones de "Retransmisiones")
 // }
 // -> { folio, subtotal, descuento, total, items: [{id,name,sku,price,qty}] }
-//
-// Con PrestaShop desconectado (default) el precio sale de catalogo_productos;
-// con PRESTASHOP_CONECTADO=1 vuelve a consultarse en vivo (PS_BASE_URL, PS_API_KEY).
 
-const { prestashopConectado, fetchPreciosActivos } = require('../lib/prestashop.js');
+const { fetchPreciosActivos } = require('../lib/catalogo-supabase.js');
 const { validarCupon, normalizarCodigo } = require('../lib/cupones.js');
 const { enviarPushAdmins } = require('../lib/push.js');
 
@@ -40,18 +37,6 @@ const PICKUP_BRANCHES = {
 const MAX_LINES = 50;
 const MAX_QTY_PER_LINE = 999;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function firstLangValue(field, fallback) {
-  let val = field;
-  if (Array.isArray(field)) {
-    val = field[0]?.value;
-    if (val === undefined) val = field[0];
-  } else if (field && typeof field === 'object') {
-    val = field.value !== undefined ? field.value : Object.values(field)[0];
-  }
-  if (typeof val !== 'string' || val === '') return fallback;
-  return val;
-}
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -99,55 +84,15 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-  const conectado = prestashopConectado();
-  if (conectado && !apiKey) {
-    res.status(200).json({ fallback: true, error: 'PS_API_KEY no configurado en Vercel' });
-    return;
-  }
-
   try {
-    // PrestaShop desconectado (default, ver lib/prestashop.js): el precio
-    // real sale de catalogo_productos (sincronizado desde PrestaShop cada
-    // 10 min) — igual de ajeno al navegador que la consulta en vivo.
-    const precios = conectado ? null : await fetchPreciosActivos(cleanItems.map(it => it.id));
-
-    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
-    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-    // header antes de llegar al webservice, así que siempre daba 401 aunque
-    // la key fuera válida y estuviera activa.
-
-    // Vuelve a consultar el precio y nombre REALES de cada producto en
-    // PrestaShop — el precio que haya mandado el navegador se descarta.
-    const resolved = await Promise.all(cleanItems.map(async (it) => {
-      if (!conectado) {
-        const row = precios[String(it.id)];
-        if (!row) return null;
-        return { id: it.id, qty: it.qty, name: row.name || `Producto #${it.id}`, sku: row.sku || `PS-${it.id}`, price: Number(row.price) || 0 };
-      }
-      const fields = '[id,name,reference,price,active]';
-      const url = `${baseUrl}/api/products/${it.id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`;
-      const r = await fetch(url);
-      if (!r.ok) return null;
-      const data = await r.json();
-      // Con display=[...campos específicos...] PrestaShop responde con la
-      // clave en plural "products" (arreglo), aunque se consulte un solo ID
-      // — no "product" (singular) como con display=full. Sin este fallback,
-      // raw siempre salía undefined y CADA producto se marcaba como "ya no
-      // disponible", bloqueando el checkout por completo.
-      const raw = Array.isArray(data.products) ? data.products[0]
-        : Array.isArray(data.product) ? data.product[0]
-        : data.product;
-      if (!raw || String(raw.active) === '0') return null;
-      return {
-        id: it.id,
-        qty: it.qty,
-        name: firstLangValue(raw.name, `Producto #${it.id}`),
-        sku: raw.reference || `PS-${it.id}`,
-        price: parseFloat(raw.price || 0)
-      };
-    }));
+    // Precio y nombre REALES de cada producto activo (catalogo_productos) —
+    // el precio que haya mandado el navegador se descarta.
+    const precios = await fetchPreciosActivos(cleanItems.map(it => it.id));
+    const resolved = cleanItems.map(it => {
+      const row = precios[String(it.id)];
+      if (!row) return null;
+      return { id: it.id, qty: it.qty, name: row.name || `Producto #${it.id}`, sku: row.sku || `PS-${it.id}`, price: Number(row.price) || 0 };
+    });
 
     if (resolved.some(r => r === null)) {
       res.status(400).json({ error: 'Uno o más productos ya no están disponibles' });

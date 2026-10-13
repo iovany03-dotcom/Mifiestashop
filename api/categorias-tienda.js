@@ -1,13 +1,9 @@
-// Vercel serverless function: todas las categorías reales de PrestaShop
-// (hijas de la categoría raíz "Productos", id 266), con conteo real de
-// productos — usado por el panel de "Ver todos los productos" de la tienda
-// pública y su barra lateral de categorías. Las categorías se leen de
-// nuestra copia en Supabase (ps_categorias, sincronizada cada hora por
-// api/cron-sync-prestashop.js — ver lib/sync-prestashop.js), no se
-// consulta PrestaShop para la lista en sí, solo para el conteo por
-// categoría — y ni eso con PrestaShop desconectado (default, ver
-// lib/prestashop.js), donde el conteo sale de catalogo_productos.
-const { prestashopConectado, fetchCatalogoActivo } = require('../lib/prestashop.js');
+// Vercel serverless function: todas las categorías de la tienda (hijas de
+// la categoría raíz "Productos", id 266), con conteo real de productos —
+// usado por el panel de "Ver todos los productos" de la tienda pública y su
+// barra lateral de categorías. Las categorías salen de ps_categorias y el
+// conteo de catalogo_productos, ambos en Supabase.
+const { fetchCatalogoActivo } = require('../lib/catalogo-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -36,8 +32,7 @@ const FALLBACK_CATEGORIES = [
 // Algunas categorías vienen capturadas en PrestaShop TODO EN MAYÚSCULAS
 // (p.ej. "ARTÍCULOS DE XV AÑOS"), distinto del resto ("Globos", "Despedida
 // de soltera"...) — se re-castean aquí, en lectura, para que se vean
-// consistentes sin tener que escribir de vuelta a PrestaShop ni pelear con
-// que el sync horario (ps_categorias) las vuelva a sobreescribir.
+// consistentes sin tener que reescribirlas en ps_categorias.
 function normalizeCategoryName(name) {
   const trimmed = String(name || '').trim();
   if (!trimmed || trimmed !== trimmed.toUpperCase() || trimmed === trimmed.toLowerCase()) return trimmed;
@@ -93,71 +88,24 @@ module.exports = async function handler(req, res) {
     categories = FALLBACK_CATEGORIES;
   }
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-
-  // PrestaShop desconectado (default, ver lib/prestashop.js): el conteo sale
-  // de catalogo_productos (productos activos), con el mismo criterio que
+  // El conteo sale de catalogo_productos (productos activos), con el mismo criterio que
   // /api/productos usa para navegar por categoría — categoría por defecto
   // UNIDA con las categorías reales de los productos migrados.
-  if (!prestashopConectado()) {
-    try {
-      const [rows, migratedRows] = await Promise.all([fetchCatalogoActivo('id,category_id'), fetchMigratedCategoryIds()]);
-      const activeIds = new Set(rows.map(r => Number(r.id)));
-      const idsByCat = new Map();
-      const add = (cat, id) => {
-        const key = String(cat);
-        if (!idsByCat.has(key)) idsByCat.set(key, new Set());
-        idsByCat.get(key).add(id);
-      };
-      rows.forEach(r => { if (r.category_id) add(r.category_id, Number(r.id)); });
-      migratedRows.forEach(row => {
-        if (!activeIds.has(Number(row.id)) || !Array.isArray(row.category_ids)) return;
-        row.category_ids.forEach(cat => add(cat, Number(row.id)));
-      });
-      res.status(200).json({ categories: categories.map(c => ({ ...c, count: (idsByCat.get(String(c.id)) || new Set()).size })) });
-    } catch (err) {
-      res.status(200).json({ error: err.message, categories: categories.map(c => ({ ...c, count: 0 })) });
-    }
-    return;
-  }
-
-  if (!apiKey) {
-    res.status(200).json({ fallback: true, categories: categories.map(c => ({ ...c, count: 0 })) });
-    return;
-  }
-
   try {
-    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
-    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-    // header antes de llegar al webservice, así que siempre daba 401 aunque
-    // la key fuera válida y estuviera activa.
-    const migratedRows = await fetchMigratedCategoryIds();
-
-    // El conteo se calcula con el MISMO criterio que usa /api/productos para
-    // navegar por categoría: el filtro exacto de id_category_default en
-    // PrestaShop (no nb_products_recursive, que es recursivo e incluye
-    // subcategorías) UNIDO con las categorías reales de los productos
-    // migrados (category_ids) — un producto puede vivir en varias a la
-    // vez, y su categoría por defecto no siempre es la única.
-    const results = await Promise.all(categories.map(async (c) => {
-      try {
-        const filters = `filter[active]=1&filter[id_category_default]=${encodeURIComponent('[' + c.id + ']')}`;
-        const url = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
-        const r = await fetch(url);
-        const data = r.ok ? await r.json() : null;
-        const defaultIds = data && Array.isArray(data.products) ? data.products.map(p => Number(p.id)) : [];
-        const migratedIds = migratedRows
-          .filter(row => Array.isArray(row.category_ids) && row.category_ids.map(String).includes(String(c.id)))
-          .map(row => Number(row.id));
-        const count = new Set([...defaultIds, ...migratedIds]).size;
-        return { ...c, count };
-      } catch (e) {
-        return { ...c, count: 0 };
-      }
-    }));
-
-    res.status(200).json({ categories: results });
+    const [rows, migratedRows] = await Promise.all([fetchCatalogoActivo('id,category_id'), fetchMigratedCategoryIds()]);
+    const activeIds = new Set(rows.map(r => Number(r.id)));
+    const idsByCat = new Map();
+    const add = (cat, id) => {
+      const key = String(cat);
+      if (!idsByCat.has(key)) idsByCat.set(key, new Set());
+      idsByCat.get(key).add(id);
+    };
+    rows.forEach(r => { if (r.category_id) add(r.category_id, Number(r.id)); });
+    migratedRows.forEach(row => {
+      if (!activeIds.has(Number(row.id)) || !Array.isArray(row.category_ids)) return;
+      row.category_ids.forEach(cat => add(cat, Number(row.id)));
+    });
+    res.status(200).json({ categories: categories.map(c => ({ ...c, count: (idsByCat.get(String(c.id)) || new Set()).size })) });
   } catch (err) {
     res.status(200).json({ error: err.message, categories: categories.map(c => ({ ...c, count: 0 })) });
   }

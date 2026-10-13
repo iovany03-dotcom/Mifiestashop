@@ -1,7 +1,4 @@
 const test = require('node:test'), assert = require('node:assert/strict');
-// Estas pruebas cubren el camino EN VIVO (PRESTASHOP_CONECTADO=1, el respaldo
-// para reconectar); el modo desconectado (default) está en desconectado.test.cjs.
-process.env.PRESTASHOP_CONECTADO = '1';
 const crypto = require('node:crypto');
 const { authenticateApiRequest, hashKey } = require('../lib/api-auth.js');
 const productsList = require('../api/v1/products/index.js');
@@ -72,17 +69,15 @@ test('api-auth: rejects missing/invalid/wrong-scope, accepts valid key with scop
 });
 
 test('GET /api/v1/products requires auth and returns full-catalog products, no price/stock write leakage', async () => {
-  const psProduct = {
-    id: 83101, name: 'Vela de Bengala', reference: 'VEL-BEN', price: '10.00',
-    id_default_image: '33604', id_category_default: '270', active: '1',
-    description_short: '<p>Corta</p>', link_rewrite: 'vela-de-bengala'
+  const row = {
+    id: 83101, name: 'Vela de Bengala', sku: 'VEL-BEN', price: 10, category_id: 270,
+    description_short: 'Corta', link_rewrite: 'vela-de-bengala', images: ['https://sb/83101.jpg'], source: 'prestashop'
   };
   const restore = mockFetch(baseRouter(async (url) => {
-    if (url.includes('/api/products?display') && url.includes('limit=0,50')) return { ok: true, json: async () => ({ products: [psProduct] }) };
-    if (url.includes('/api/products?display=%5Bid%5D')) return { ok: true, json: async () => ({ products: [psProduct] }) };
+    if (url.includes('/rest/v1/catalogo_productos')) return { ok: true, json: async () => (url.includes('offset=0') ? [row] : []) };
     if (url.includes('/rest/v1/productos_migrados?id=in.')) return { ok: true, json: async () => ([]) };
   }));
-  await withEnv({ PS_API_KEY: 'ps-key', PS_BASE_URL: 'https://ps.test', SUPABASE_SERVICE_ROLE_KEY: 'service-role-test' }, async () => {
+  await withEnv({ SUPABASE_SERVICE_ROLE_KEY: 'service-role-test' }, async () => {
     const noAuth = response();
     await productsList({ method: 'GET', headers: {}, query: {} }, noAuth);
     assert.equal(noAuth.code, 401);
@@ -94,21 +89,23 @@ test('GET /api/v1/products requires auth and returns full-catalog products, no p
     assert.equal(ok.data.data[0].name, 'Vela de Bengala');
     assert.equal(ok.data.data[0].price, 10);
     assert.equal(ok.data.meta.total, 1);
+    assert.equal(ok.data.data[0].image, 'https://sb/83101.jpg');
+    assert.equal(ok.data.data[0].url, 'https://www.mifiestashop.com/83101-vela-de-bengala.html');
   });
   restore();
 });
 
 test('PATCH /api/v1/products/:id rejects price/stock edits and updates descriptive fields', async () => {
-  const psProduct = { id: 83101, name: 'Vela de Bengala', reference: 'VEL-BEN', active: '1' };
+  const row = { id: 83101, name: 'Vela de Bengala', sku: 'VEL-BEN', price: 10, active: true, source: 'prestashop' };
   const restore = mockFetch(baseRouter(async (url, opts) => {
-    if (url.includes('/api/products/83101?display')) return { ok: true, json: async () => ({ product: psProduct }) };
+    if (url.includes('/rest/v1/catalogo_productos')) return { ok: true, json: async () => (url.includes('offset=0') && url.includes('id=in.(83101)') ? [row] : []) };
     if (url.includes('/rest/v1/productos_migrados?id=eq.83101') && (!opts.method || opts.method === 'GET')) return { ok: true, json: async () => ([]) };
     if (url.includes('/rest/v1/productos_migrados?on_conflict=id') && opts.method === 'POST') {
       const body = JSON.parse(opts.body);
       return { ok: true, json: async () => ([{ ...body }]) };
     }
   }));
-  await withEnv({ PS_API_KEY: 'ps-key', PS_BASE_URL: 'https://ps.test', SUPABASE_SERVICE_ROLE_KEY: 'service-role-test' }, async () => {
+  await withEnv({ SUPABASE_SERVICE_ROLE_KEY: 'service-role-test' }, async () => {
     const rejected = response();
     await productDetail({ method: 'PATCH', headers: { authorization: `Bearer ${TEST_KEY}` }, query: { id: '83101' }, body: { price: 999 } }, rejected);
     assert.equal(rejected.code, 422);
@@ -118,6 +115,12 @@ test('PATCH /api/v1/products/:id rejects price/stock edits and updates descripti
     await productDetail({ method: 'PATCH', headers: { authorization: `Bearer ${TEST_KEY}` }, query: { id: '83101' }, body: { description: 'Nueva descripción' } }, ok);
     assert.equal(ok.code, 200);
     assert.equal(ok.data.data.description, 'Nueva descripción');
+    assert.equal(ok.data.data.price, 10);
+    assert.equal(ok.data.data.sku, 'VEL-BEN');
+
+    const missing = response();
+    await productDetail({ method: 'PATCH', headers: { authorization: `Bearer ${TEST_KEY}` }, query: { id: '99999' }, body: { description: 'x' } }, missing);
+    assert.equal(missing.code, 404);
   });
   restore();
 });
@@ -138,10 +141,10 @@ test('GET /api/v1/categories returns active categories only, paginated', async (
   restore();
 });
 
-test('POST /api/v1/orders revalidates price live from PrestaShop, ignoring client-supplied price', async () => {
+test('POST /api/v1/orders revalidates price against the catalog, ignoring client-supplied price', async () => {
   const restore = mockFetch(baseRouter(async (url, opts) => {
-    if (url.includes('/api/products/83101?display')) {
-      return { ok: true, json: async () => ({ products: [{ id: 83101, name: 'Vela de Bengala', reference: 'VEL-BEN', price: '10.00', active: '1' }] }) };
+    if (url.includes('/rest/v1/catalogo_productos')) {
+      return { ok: true, json: async () => (url.includes('offset=0') ? [{ id: 83101, name: 'Vela de Bengala', sku: 'VEL-BEN', price: 10, active: true }] : []) };
     }
     if (url.includes('/rest/v1/pedidos_online') && opts.method === 'POST') {
       const body = JSON.parse(opts.body);
@@ -150,7 +153,7 @@ test('POST /api/v1/orders revalidates price live from PrestaShop, ignoring clien
       return { ok: true, json: async () => ([{ id: 1, ...body }]) };
     }
   }));
-  await withEnv({ PS_API_KEY: 'ps-key', PS_BASE_URL: 'https://ps.test', SUPABASE_SERVICE_ROLE_KEY: 'service-role-test' }, async () => {
+  await withEnv({ SUPABASE_SERVICE_ROLE_KEY: 'service-role-test' }, async () => {
     const ok = response();
     await ordersList({
       method: 'POST', headers: { authorization: `Bearer ${TEST_KEY}` }, query: {},

@@ -8,7 +8,7 @@
 // POST { p_admin_password, p_staff_email, p_staff_pin }
 // -> { count, products: [...] } (misma forma que /api/productos, con
 //    además "active" en cada producto)
-const { sbGetAll } = require('../lib/prestashop.js');
+const { sbGetAll } = require('../lib/catalogo-supabase.js');
 const { toProduct, fetchMigrated, fetchCategoryNames } = require('../lib/productos-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -38,7 +38,7 @@ module.exports = async function handler(req, res) {
   catch (e) { res.status(401).json({ error: 'unauthorized', detail: e.message }); return; }
   if (!session) { res.status(401).json({ error: 'unauthorized' }); return; }
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
+  const baseUrl = 'https://www.mifiestashop.com';
   try {
     const [rows, migrated, categoryNames] = await Promise.all([
       sbGetAll(`catalogo_productos?select=${CATALOGO_COLUMNS_ADMIN}&order=id.asc`),

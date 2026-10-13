@@ -4174,7 +4174,7 @@
             <h2>Catálogo de Productos</h2>
             <div style="display:flex; gap:10px;">
               <button class="btn primary" onclick="openEditProductModal(null)">Crear Nuevo Producto</button>
-              <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">Actualizar Catálogo</button>
+              <button class="btn secondary" onclick="cargarCatalogoProductos()">Actualizar Catálogo</button>
             </div>
           </div>
           <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
@@ -4377,8 +4377,8 @@
             <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
           </div>
           <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-            Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
-            Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
+            Páginas de contenido de la tienda. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
+            Las que ya fueron migradas a nuestro propio sistema están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva.
           </p>
           <div style="margin-bottom:14px;">
             <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
@@ -5116,7 +5116,7 @@
                 <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
               </thead>
               <tbody>
-                <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
+                <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>Catálogo</td><td>Catálogo de productos cargado correctamente.</td><td><span class="pill ok">Completado</span></td></tr>
                 <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
                 <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
                 <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
@@ -10013,7 +10013,7 @@ function renderStockTable(){
   `;}).join('');
 }
 
-// DYNAMIC PRODUCTS SYNC FROM PRESTASHOP & SUPABASE API
+// CATÁLOGO DE PRODUCTOS (SUPABASE)
 let liveProducts = [];
 
 // Catálogo COMPLETO (activos + inactivos) para el panel "Catálogo de
@@ -10053,12 +10053,12 @@ async function loadAdminCatalogProducts() {
 // tarda /api/productos, lo cual confundía a los clientes.
 let productsFirstLoadDone = false;
 
-async function syncProductsFromPrestaShopAPI(){
+async function cargarCatalogoProductos(){
   let loaded = false;
 
   try {
     // Sin filter[category], /api/productos trae como máximo `limit` productos
-    // (500 por default) en el orden que PrestaShop decida — con 1072
+    // (500 por default) — con 1072
     // productos activos, medio catálogo (los que caen después del 500)
     // quedaba invisible para el buscador y las categorías del inicio, aunque
     // sí aparecían en el catálogo completo paginado por categoría. 5000 es
@@ -10101,8 +10101,8 @@ async function syncProductsFromPrestaShopAPI(){
     console.log('Consultando Supabase DB como respaldo:', e.message);
   }
 
-  // Respaldo principal si PrestaShop no responde: la copia completa del
-  // catálogo en Supabase (catalogo_productos, llenada por el sync) con las
+  // Respaldo principal si /api/productos no responde: el catálogo completo
+  // en Supabase (catalogo_productos) leído directo, con las
   // fotos ya migradas (productos_migrados) — no la tabla vieja de costos,
   // que solo trae 250 productos.
   if (!loaded) {
@@ -10162,7 +10162,7 @@ async function syncProductsFromPrestaShopAPI(){
       // Solo se consulta la vista pública (sin costo de compra, precio a
       // distribuidor ni datos de competencia) — la tabla completa ya no es
       // legible sin la contraseña de edición, ni siquiera para este
-      // respaldo cuando falla PrestaShop.
+      // respaldo cuando falla /api/productos.
       const data = await sbGet('costos_productos_publico?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,link_imagen,codigo_barra,codigo_pos,descripcion&limit=250');
       if (Array.isArray(data) && data.length > 0) {
         liveProducts = data.map(item => {
@@ -10209,7 +10209,7 @@ function catalogErrorHTML(pad) {
   return `<div style="grid-column:1/-1; padding:${pad}px; text-align:center; color:var(--danger, #dc2626);">
     <b>No se pudo cargar el catálogo de productos.</b><br>
     <span style="color:var(--text-muted); font-size:13px;">Revisa tu conexión e inténtalo de nuevo.</span><br>
-    <button class="btn small primary" style="margin-top:10px;" onclick="syncProductsFromPrestaShopAPI()">Reintentar</button>
+    <button class="btn small primary" style="margin-top:10px;" onclick="cargarCatalogoProductos()">Reintentar</button>
   </div>`;
 }
 
@@ -10626,7 +10626,7 @@ async function saveProductChanges() {
   }
 
   // Respaldo legado (costos_productos_publico) — solo lo lee el propio
-  // navegador cuando PrestaShop no responde, no el resto del sitio. Se deja
+  // navegador cuando /api/productos no responde, no el resto del sitio. Se deja
   // por compatibilidad, pero el guardado real ahora es catalogo_productos
   // (abajo), que sí es lo que /api/productos.js sirve al público.
   if (targetProd && targetProd.id) {
@@ -13608,7 +13608,7 @@ const DEFAULT_SUPPLIERS = [
   { id: 3, name: 'Pirotecnia Fría & Efectos Especiales', contact: 'Mtro. Alejandro Ruiz', phone: '+52 442 8899 0011', email: 'info@pirotecniafria.mx', status: 'Activo' }
 ];
 
-// API LOADERS FOR PRESTASHOP ENDPOINTS
+// API LOADERS (PEDIDOS, CLIENTES, CARRITOS)
 async function loadCategoriesFromAPI(){
   const tbody = document.getElementById('categoriesTableBody');
   if(!tbody) return;
@@ -14185,7 +14185,7 @@ function renderOdDetails(order, extra) {
   if (dateEl) { dateEl.value = String(order.deliveryDate || (ps && ps.delivery_date) || '').slice(0, 10); dateEl.disabled = !editable; }
   const saveBtn = document.getElementById('odSaveExtrasBtn');
   if (saveBtn) saveBtn.disabled = !editable;
-  odText('odExtrasNote', editable ? '' : (origen === 'prestashop' ? 'Pedido de las cajas de PrestaShop: se edita en PrestaShop.' : 'Venta del POS: no tiene nota ni fecha de entrega.'));
+  odText('odExtrasNote', editable ? '' : (origen === 'prestashop' ? 'Pedido histórico de las cajas de PrestaShop: solo lectura.' : 'Venta del POS: no tiene nota ni fecha de entrega.'));
   odText('odOrderNote', order.nota || (ps && ps.note) || '—');
 
   // Contacto
@@ -14216,7 +14216,7 @@ function renderOdDetails(order, extra) {
       const guia = order.trackingNumber || '';
       trans.innerHTML = `
         <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;">
-          <span><b>Paquetería:</b> ${escapeHtml(carrier || (origen === 'prestashop' ? 'Ver en PrestaShop' : 'Sin paquetería'))}</span>
+          <span><b>Paquetería:</b> ${escapeHtml(carrier || (origen === 'prestashop' ? 'No registrada' : 'Sin paquetería'))}</span>
           <span><b>Costo:</b> ${envio > 0 ? odMoney(envio) : (carrier ? 'Gratis' : '—')}</span>
         </div>
         ${origen === 'online' ? `
@@ -16353,7 +16353,7 @@ function renderOdStatus(order) {
   if (factBtn) factBtn.classList.toggle('hidden', esPs || cancelado || (currentStaffSession && !hasPermission('facturacion')));
   const note = document.getElementById('odOrigenNote');
   if (note) {
-    note.textContent = esPs ? 'Pedido de las cajas de PrestaShop: su estado se cambia en PrestaShop.' : '';
+    note.textContent = esPs ? 'Pedido histórico de las cajas de PrestaShop: solo lectura.' : '';
     note.classList.toggle('hidden', !esPs);
   }
 }
@@ -16676,9 +16676,8 @@ function resetStorefrontSeoTags() {
 }
 
 // URL propia de categoría (/{id}-{link_rewrite}, igual que productos pero
-// sin ".html") — linkRewrite viene de /api/categorias-tienda (ps_categorias
-// sincronizada de PrestaShop). Sin linkRewrite (categoría recién agregada,
-// aún sin sincronizar) se devuelve '' y el llamador no cambia la URL.
+// sin ".html") — linkRewrite viene de /api/categorias-tienda (ps_categorias).
+// Sin linkRewrite se devuelve '' y el llamador no cambia la URL.
 function categoryPathFor(c) {
   if (!c || !c.linkRewrite) return '';
   return `/${c.id}-${c.linkRewrite}`;
@@ -16811,7 +16810,7 @@ async function openCmsPage(slug, pushState) {
 
     body.innerHTML = `<div class="cms-page-content">${data.page.content}</div><div id="cmsPageRelatedGrid"></div>`;
 
-    if (liveProducts.length === 0) await syncProductsFromPrestaShopAPI();
+    if (liveProducts.length === 0) await cargarCatalogoProductos();
     renderRelatedProductsInto('cmsPageRelatedGrid', data.page.title, null, `Productos relacionados con ${data.page.title}`);
   } catch (e) {
     body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se pudo cargar esta página en este momento.</div>';
@@ -16862,7 +16861,7 @@ const LEGAL_PAGES = {
       </ul>
 
       <h3>4. Dónde se almacenan tus datos</h3>
-      <p>Tu cuenta, tus pedidos y tus datos de contacto se guardan de forma segura en Supabase, nuestra plataforma de base de datos. El catálogo de productos se sincroniza desde el sistema de nuestra tienda (PrestaShop). Los correos que te enviamos se procesan a través de nuestro proveedor de correo (Hostinger).</p>
+      <p>Tu cuenta, tus pedidos y tus datos de contacto se guardan de forma segura en Supabase, nuestra plataforma de base de datos. El catálogo de productos también se administra ahí. Los correos que te enviamos se procesan a través de nuestro proveedor de correo (Hostinger).</p>
 
       <h3>5. Con quién compartimos tus datos</h3>
       <ul>
@@ -17901,7 +17900,7 @@ async function renderBodaProductsGrid() {
   const container = document.getElementById('bodaProductsGrid');
   if (!container) return;
   if (liveProducts.length === 0) {
-    try { await syncProductsFromPrestaShopAPI(); } catch (e) {}
+    try { await cargarCatalogoProductos(); } catch (e) {}
   }
   const container2 = document.getElementById('bodaProductsGrid');
   if (!container2) return;
@@ -17954,11 +17953,6 @@ async function loadCmsPagesAdmin() {
     const data = await r.json();
     const pages = Array.isArray(data.pages) ? data.pages : [];
 
-    if (data.fallback) {
-      cmsPagesAdminCache = [];
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Configure PS_API_KEY en Vercel para ver las páginas de PrestaShop.</td></tr>';
-      return;
-    }
 
     // Títulos editados manualmente desde este mismo panel (cms_titulos_override
     // en Supabase) — /api/paginas siempre trae el título original de
@@ -18653,7 +18647,7 @@ let currentStorefrontCat = 'all';
 let currentStorefrontQuery = '';
 
 // Vista previa rápida de "Productos Destacados" en el home: en vez de dejar
-// el esqueleto de carga fijo hasta que syncProductsFromPrestaShopAPI() trae
+// el esqueleto de carga fijo hasta que cargarCatalogoProductos() trae
 // el catálogo completo (hasta 5000 productos, varios segundos), se pide en
 // paralelo un lote chico con &fast=1 (sin nombre/imagen migrados ni precio
 // de mayoreo real, sin el conteo total — todo eso llega igual con el sync
@@ -21403,7 +21397,7 @@ function handleRecuperarCarrito() {
   return true;
 }
 
-syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
+cargarCatalogoProductos().then(openProductDeepLinkIfPresent).then(() => {
   if (window.location.pathname === '/' && handleRecuperarCarrito()) return;
   const category = new URLSearchParams(window.location.search).get('categoria');
   if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);

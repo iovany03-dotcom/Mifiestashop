@@ -1,5 +1,4 @@
 const test = require('node:test'), assert = require('node:assert/strict');
-delete process.env.PRESTASHOP_CONECTADO;
 const handler = require('../api/ventas-productos.js');
 
 function call() {

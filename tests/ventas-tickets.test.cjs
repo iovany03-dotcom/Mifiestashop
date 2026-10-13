@@ -1,6 +1,5 @@
 const test = require('node:test'), assert = require('node:assert/strict');
 // Modo desconectado (default): pedidos de ps_pedidos + pedidos_online + tickets del POS propio.
-delete process.env.PRESTASHOP_CONECTADO;
 const handler = require('../api/ventas.js');
 
 function call(query) {

@@ -1,9 +1,9 @@
-// Modo desconectado (default, sin PRESTASHOP_CONECTADO): cada endpoint debe
-// responder desde Supabase y NUNCA consultar PrestaShop — el mock de fetch
-// truena si alguien pide algo a https://ps.test.
+// PrestaShop está desconectado por completo: cada endpoint debe responder
+// desde Supabase y NUNCA consultar PrestaShop, aunque quedaran sus variables
+// viejas en Vercel — el mock de fetch truena si alguien pide algo a
+// https://ps.test.
 const test = require('node:test'), assert = require('node:assert/strict');
 
-delete process.env.PRESTASHOP_CONECTADO;
 process.env.PS_API_KEY = 'llave-secreta';
 process.env.PS_BASE_URL = 'https://ps.test';
 

@@ -103,7 +103,7 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
       <pre><code>curl https://www.mifiestashop.com/api/v1/products \
   -H "Authorization: Bearer mfs_live_xxxxxxxxxxxxxxxxxxxxxxxx"</code></pre>
       <div class="callout">
-        A diferencia del webservice de PrestaShop (Basic Auth con la llave como usuario y contraseña vacía), esta API usa <code>Bearer</code> — el estándar que ya esperan la mayoría de los clientes HTTP y SDKs modernos. La llave nunca se guarda en texto plano en nuestra base de datos: solo su hash, así que si la pierdes hay que generar una nueva.
+        Esta API usa <code>Bearer</code> — el estándar que ya esperan la mayoría de los clientes HTTP y SDKs modernos. La llave nunca se guarda en texto plano en nuestra base de datos: solo su hash, así que si la pierdes hay que generar una nueva.
       </div>
     </section>
 
@@ -123,7 +123,7 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
         <tr><td>404</td><td>El recurso no existe (o el producto/categoría está inactivo).</td></tr>
         <tr><td>422</td><td>La solicitud es válida como JSON pero los datos no pasan alguna validación (falta un campo, un status inválido, etc.).</td></tr>
         <tr><td>429</td><td>Reservado para límites de tasa futuros — ver el aviso más abajo.</td></tr>
-        <tr><td>502</td><td>PrestaShop o Supabase no respondieron correctamente. Reintenta más tarde.</td></tr>
+        <tr><td>502</td><td>La base de datos no respondió correctamente. Reintenta más tarde.</td></tr>
       </table>
       <div class="callout warn">
         <strong>Límites de tasa:</strong> todavía no hay un límite estricto por llave. No lo trates como ilimitado — un uso abusivo puede llevar a que se revoque la llave manualmente mientras se agrega un límite real. Si tu integración necesita hacer muchas solicitudes seguidas, escríbenos.
@@ -132,7 +132,7 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
 
     <section id="productos">
       <h2>Productos</h2>
-      <p>Precio y existencia siempre vienen en vivo desde PrestaShop — nunca están cacheados ni son editables por esta API. El nombre, descripción, categoría e imágenes se pueden mejorar con <code>PATCH</code> sin tocar esos dos campos.</p>
+      <p>Precio y existencia se administran desde el panel de la tienda — no son editables por esta API. El nombre, descripción, categoría e imágenes se pueden mejorar con <code>PATCH</code> sin tocar esos dos campos.</p>
 
       <div class="endpoint">
         <span class="badge get">GET</span><h3>/products</h3>
@@ -175,7 +175,7 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
 
       <div class="endpoint">
         <span class="badge patch">PATCH</span><h3>/products/:id</h3>
-        <p class="desc">Actualiza los campos descriptivos de un producto existente en PrestaShop.</p>
+        <p class="desc">Actualiza los campos descriptivos de un producto existente en el catálogo.</p>
         <span class="scope">Requiere <code>products:write</code></span>
         <table class="params">
           <tr><th>Campo</th><th>Descripción</th></tr>
@@ -189,7 +189,7 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
   -H "Content-Type: application/json" \
   -d '{"description": "Nueva descripción mejorada"}'</code></pre>
         <div class="callout warn">
-          Mandar <code>price</code>, <code>stock</code> o <code>quantity</code> devuelve <code>422 read_only_field</code> a propósito: siempre vienen en vivo de PrestaShop en todo el sitio, editarlos por aquí daría una falsa sensación de control sobre el inventario real. Ver <a href="#decisiones">Decisiones de diseño</a>.
+          Mandar <code>price</code>, <code>stock</code> o <code>quantity</code> devuelve <code>422 read_only_field</code> a propósito: se administran desde el panel de la tienda, editarlos por aquí daría una falsa sensación de control sobre el inventario real. Ver <a href="#decisiones">Decisiones de diseño</a>.
         </div>
       </div>
     </section>
@@ -216,7 +216,7 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
 
     <section id="pedidos">
       <h2>Pedidos</h2>
-      <p>Los pedidos creados por esta API se validan igual que el checkout público: el precio de cada artículo se vuelve a consultar en vivo en PrestaShop, nunca se confía en el que mande quien llama a la API.</p>
+      <p>Los pedidos creados por esta API se validan igual que el checkout público: el precio de cada artículo se vuelve a consultar en el catálogo, nunca se confía en el que mande quien llama a la API.</p>
 
       <div class="endpoint">
         <span class="badge get">GET</span><h3>/orders</h3>
@@ -314,19 +314,19 @@ table.params td:first-child{font-family:var(--mono);color:#a9e8e9;white-space:no
 
     <section id="decisiones">
       <h2>Decisiones de diseño</h2>
-      <p>Esta API está inspirada en el webservice de PrestaShop, pero no es una copia — donde el original es ambiguo, fue difícil de usar en la práctica, o hubiera prometido algo que este sitio no puede garantizar de verdad, se hizo diferente a propósito:</p>
+      <p>Algunos límites son a propósito:</p>
       <div class="grid-2">
         <div class="callout">
-          <strong>Precio y stock nunca son editables.</strong> Todo el sitio (tienda, POS, esta API) lee precio y existencia en vivo directo de PrestaShop, sin caché. Permitir editarlos por aquí rompería esa garantía para el resto del sitio.
+          <strong>Precio y stock nunca son editables.</strong> Todo el sitio (tienda, POS, esta API) lee precio y existencia del mismo catálogo, que se administra desde el panel. Permitir editarlos por aquí se saltaría ese control.
         </div>
         <div class="callout">
-          <strong>No se pueden crear productos nuevos.</strong> Un producto que no existe todavía en PrestaShop no se puede vender ni aparece en ningún otro lado del sitio — "crearlo" solo en esta API no serviría de nada. Editar productos que ya existen sí es real y aparece de inmediato.
+          <strong>No se pueden crear productos nuevos.</strong> Los productos se dan de alta desde el panel de la tienda (con precio, inventario y fotos). Editar productos que ya existen sí es real y aparece de inmediato.
         </div>
         <div class="callout">
-          <strong>Categorías, solo lectura.</strong> Su jerarquía y traducciones son de las partes más delicadas de PrestaShop; el sitio ya sincroniza los nombres reales cada hora, así que no había necesidad de duplicar esa responsabilidad aquí todavía.
+          <strong>Categorías, solo lectura.</strong> Su jerarquía define la navegación y las ligas de toda la tienda, así que se administra solo desde el panel.
         </div>
         <div class="callout">
-          <strong>Clientes, solo lectura.</strong> Los datos de clientes vienen de PrestaShop hacia nuestra base, no al revés — crear un cliente nuevo aquí requeriría escribirlo directo en el webservice real de PrestaShop, algo que este proyecto no ha probado todavía lo suficiente como para ofrecerlo con confianza.
+          <strong>Clientes, solo lectura.</strong> Las cuentas de clientes se crean cuando el cliente se registra en la tienda; esta API solo las consulta.
         </div>
       </div>
       <p style="margin-top:8px;">Cualquiera de estos límites puede cambiar — si tu integración necesita algo que hoy no está disponible, dínoslo.</p>

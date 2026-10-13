@@ -10,8 +10,7 @@ const { audiencia, enviar, sb, telefonoWhatsApp } = require('./retransmisiones.j
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
-  // Mismo criterio que api/cron-sync-prestashop.js: con CRON_SECRET, solo Vercel Cron (o quien
-  // lo conozca).
+  // Con CRON_SECRET, solo Vercel Cron (o quien lo conozca).
   const expected = process.env.CRON_SECRET;
   if (expected) {
     const got = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');

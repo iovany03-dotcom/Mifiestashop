@@ -72,21 +72,20 @@ test('only Facebook and Google pages are migrated; VIP forms keep their original
   for(const id of [9,11,12,412,413,414,415,416,417,418,419,420,421])assert.equal(fs.existsSync(path.join(root,'cms-pages/'+id+'.html')),false);
   for(const id of [294,295,296]){const page=source.find(p=>p.id===id);const form=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+id+'.html'),'utf8'));assert.equal(form('#vip-form').attr('data-endpoint'),page.vip.endpoint);assert.equal(form('#vip-form').attr('data-redirect'),page.vip.redirect);assert.equal(form('#vip-form input').length,3);}
 });
-test('sitemap includes all original CMS paths even without a PrestaShop key',async()=>{
-  const prev=process.env.PS_API_KEY;delete process.env.PS_API_KEY;
+test('sitemap includes all original CMS paths',async()=>{
+  const previousFetch=global.fetch;global.fetch=async()=>({ok:true,json:async()=>[]});
   try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'www.mifiestashop.com'}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://www.mifiestashop.com${page.sourcePath}`));}
-  finally{if(prev!==undefined)process.env.PS_API_KEY=prev;}
+  finally{global.fetch=previousFetch;}
 });
-test('excluded pages keep their original PrestaShop response and coexist with migrated pages',async()=>{
-  const previousFetch=global.fetch,previousKey=process.env.PS_API_KEY;
-  process.env.PS_API_KEY='test-only';process.env.PRESTASHOP_CONECTADO='1';
-  const legal={id:420,meta_title:'Política de Envío Gratis Mi Fiesta Shop',link_rewrite:'politica-de-envio-gratis-mi-fiesta-shop',active:1,content:'<p>Contenido original</p>'};
-  global.fetch=async()=>({ok:true,json:async()=>({content_management_system:[legal]})});
+test('excluded pages keep their original content (ps_cms_paginas) and coexist with migrated pages',async()=>{
+  const previousFetch=global.fetch;
+  const legal={id:420,title:'Política de Envío Gratis Mi Fiesta Shop',slug:'politica-de-envio-gratis-mi-fiesta-shop',active:true,content:'<p>Contenido original</p>'};
+  global.fetch=async url=>({ok:true,json:async()=>(String(url).includes('/rest/v1/ps_cms_paginas')&&String(url).includes('offset=0')?[legal]:[])});
   try {
     let res=response();await handler({query:{id:'420'}},res);assert.equal(res.data.page.content,legal.content);assert.equal(res.data.page.migrated,undefined);
     res=response();await handler({query:{all:'1'}},res);assert.equal(res.data.pages.length,143);assert.ok(res.data.pages.every(p=>![9,11,12,412,413,415,416,417,419].includes(Number(p.id))));assert.equal(res.data.pages.filter(p=>p.migrated).length,139);
-    res=response();await handler({query:{}},res);assert.equal(res.data.pages.length,1);assert.equal(res.data.pages[0].id,420);
-  }finally{global.fetch=previousFetch;delete process.env.PRESTASHOP_CONECTADO;if(previousKey===undefined)delete process.env.PS_API_KEY;else process.env.PS_API_KEY=previousKey;}
+    res=response();await handler({query:{}},res);assert.equal(res.data.pages.length,1);assert.equal(Number(res.data.pages[0].id),420);
+  }finally{global.fetch=previousFetch;}
 });
 test('imported markup cannot execute old builder scripts or change document base',()=>{
   const p=source[0];const html=sanitize('<base href="https://evil.example"><script>alert(1)</script><p onclick="bad()">Texto</p><img src="javascript:bad()" onerror="bad()"><a href="javascript:bad()">Leer</a><iframe src="https://evil.example"></iframe>',p,source,null);
@@ -105,11 +104,11 @@ test('promo/paquete bundles never leak into the regular product catalog grid',()
   assert.match(cmsJs,/filter\(p=>!\/promo\|paquete\//);
 });
 
-test('promo pricing packages always price live from PrestaShop, never hardcoded',()=>{
+test('promo pricing packages always price from the catalog, never hardcoded',()=>{
   const productos=fs.readFileSync(path.join(root,'api/productos.js'),'utf8');
   assert.doesNotMatch(productos,/649|999|2,?799/);
   const promo=fs.readFileSync(path.join(root,'api/promo-paquetes.js'),'utf8');
-  assert.match(promo,/PS_API_KEY/);assert.doesNotMatch(promo,/649|999|2,?799/);
+  assert.match(promo,/fetchCatalogoByIds/);assert.doesNotMatch(promo,/649|999|2,?799/);
   for(const id of [269,281,274,411]){
     const page=source.find(p=>p.id===id);const model=modelFor(page,source);
     const html=fs.readFileSync(path.join(root,`cms-pages/${page.id}.html`),'utf8');
