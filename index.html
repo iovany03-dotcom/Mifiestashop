@@ -13913,10 +13913,23 @@ async function loadOrdersFromAPI(){
   const skSelect = document.getElementById('skSelectOrder');
   if (skSelect && list.length > 0) {
     skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' +
-      list.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.id)} - ${escapeHtml(o.customer)} (${fmtMoney(o.total)})</option>`).join('');
+      list.map(o => {
+        const pagado = isOrderStatusPaid(o.status);
+        const etiqueta = `${o.id} - ${o.customer} (${fmtMoney(o.total)})${pagado ? '' : ' — Pendiente de pago'}`;
+        return `<option value="${escapeHtml(o.id)}" ${pagado ? '' : 'disabled'}>${escapeHtml(etiqueta)}</option>`;
+      }).join('');
   }
 
   renderTopProductsTable();
+}
+
+// Estados que cuentan como "ya pagado" (mismos que pintan la pill verde en la
+// tabla de pedidos): se usan también para bloquear la generación de guías de
+// envío de un pedido que todavía no se ha cobrado.
+const ESTADOS_PEDIDO_PAGADO = ['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado', 'pago realizado'];
+
+function isOrderStatusPaid(status) {
+  return ESTADOS_PEDIDO_PAGADO.includes(String(status || '').toLowerCase());
 }
 
 // Color del estado: verde = pagado/enviado/entregado, rojo = cancelado o
@@ -13924,7 +13937,7 @@ async function loadOrdersFromAPI(){
 function orderStatusPillClass(status) {
   const s = String(status || '').toLowerCase();
   if (/cancelad|reembols|error/.test(s)) return 'bad';
-  if (['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado', 'pago realizado'].includes(s)) return 'ok';
+  if (isOrderStatusPaid(s)) return 'ok';
   return 'warn';
 }
 
@@ -21750,6 +21763,16 @@ async function crearGuiaSkydropxReal() {
   const v = id => (document.getElementById(id)?.value || '').trim();
   if (!SK_RATE_SEL || !SK_RATE_SEL.rate_id || !SK_QUOTATION_ID) { alert('Primero cotiza y selecciona una tarifa (las tarifas caducan: si pasó mucho tiempo, cotiza de nuevo).'); return; }
   const orderId = v('skSelectOrder') || '#General';
+  // El <option> del pedido ya viene deshabilitado si no está pagado, pero se
+  // revalida aquí por si la lista cambió después de cargar el formulario:
+  // no se saca guía (no se cobra el saldo de Skydropx) de un pedido sin pagar.
+  if (orderId !== '#General') {
+    const pedido = loadedOrdersList.find(o => String(o.id) === orderId);
+    if (pedido && !isOrderStatusPaid(pedido.status)) {
+      alert(`El pedido ${orderId} todavía no está pagado (estado: "${pedido.status}"). Para generar su guía de envío, primero debe quedar en un estado de pago aceptado.`);
+      return;
+    }
+  }
   const origen = { nombre: v('skOrigNombre'), empresa: v('skOrigEmpresa'), telefono: v('skOrigTel'), email: v('skOrigEmail'), calle: v('skOrigCalle'), referencia: 'Bodega' };
   const destino = { nombre: v('skDestNombre'), empresa: v('skDestEmpresa'), telefono: v('skDestTel'), email: v('skDestEmail'), calle: v('skDestCalle'), referencia: v('skReference') };
   const faltan = [['Nombre del remitente', origen.nombre], ['Teléfono del remitente', origen.telefono], ['Correo del remitente', origen.email], ['Calle del remitente', origen.calle],
