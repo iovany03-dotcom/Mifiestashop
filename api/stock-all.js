@@ -1,7 +1,6 @@
 // Vercel serverless function: lee el stock de TODOS los productos por
-// almacén desde nuestra propia copia en Supabase (ps_stock), sincronizada
-// cada hora por api/cron-sync-prestashop.js — usado por el Backoffice
-// (Inventario, POS, Traspasos). Ya no consulta PrestaShop en cada carga.
+// almacén desde Supabase (ps_stock) — usado por el Backoffice (Inventario,
+// POS, Traspasos).
 const WAREHOUSE_TO_KEY = {
   '55': 'puebla',
   '53': 'rumania',

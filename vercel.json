@@ -17,9 +17,6 @@
     "api/admin-page.js": {
       "includeFiles": "index.html"
     },
-    "api/cron-sync-prestashop.js": {
-      "maxDuration": 60
-    },
     "api/cron-conciliar-mp.js": {
       "maxDuration": 60
     },
@@ -113,12 +110,12 @@
     "api/mp-webhook.js": {
       "maxDuration": 30
     },
-    "api/ps-diagnostico.js": {
-      "maxDuration": 60
-    },
     "api/blog.js": {
       "maxDuration": 15,
       "includeFiles": "scripts/cms-*.html"
+    },
+    "api/recepcion.js": {
+      "maxDuration": 300
     },
     "api/mcp.js": {
       "maxDuration": 60

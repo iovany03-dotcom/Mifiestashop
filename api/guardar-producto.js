@@ -1,7 +1,6 @@
 // Vercel serverless function: guarda (crea o edita) un producto en
-// catalogo_productos — el destino real de lectura del catálogo (ver
-// lib/sync-prestashop.js, dominio "productos", y la migración de
-// api/productos.js para leer de aquí en vez de PrestaShop en vivo).
+// catalogo_productos — de donde lee el catálogo todo el sitio (ver
+// lib/productos-supabase.js).
 //
 // Antes, el botón "Guardar" del admin (saveProductChanges() en index.html)
 // solo escribía a costos_productos_publico vía rpc_catalog_update_producto
@@ -111,9 +110,7 @@ module.exports = async function handler(req, res) {
     // este editor había llegado a completarse.
     price_mayoreo: Number(producto.priceMayoreo) || null,
     active: producto.active !== false,
-    // Igual que api/producto-activo.js: sin esto, el ciclo de sincronización
-    // (cada 10 min, lib/sync-prestashop.js) pisaría este estado con lo que
-    // diga PrestaShop en ese momento.
+    // Igual que api/producto-activo.js: queda marcado como decisión manual.
     active_override: producto.active !== false,
     low_stock_threshold: Number(producto.lowStockThreshold) || null,
     legacy_image_url: producto.img ? String(producto.img).trim() : null,
@@ -145,11 +142,9 @@ module.exports = async function handler(req, res) {
     row.meta_description = null;
     row.meta_keywords = null;
     row.link_rewrite = slugify(name);
-    // Un producto real de PrestaShop no debe dejar de sincronizarse solo
-    // porque se editó aquí una vez — el próximo ciclo de
-    // lib/sync-prestashop.js (cada 10 min) lo pisaría de cualquier forma,
-    // volviendo su "source" a 'prestashop'. "manual" es correcto solo para
-    // uno creado aquí desde cero, que PrestaShop nunca va a traer.
+    // "manual" = creado aquí desde cero; los que vinieron de PrestaShop
+    // conservan source 'prestashop' (de eso depende su liga, ver
+    // lib/url-producto.js).
     row.source = 'manual';
   } else {
     // Productos manuales guardados antes de este arreglo se quedaron con

@@ -1,13 +1,9 @@
 // Vercel serverless function: activa/desactiva un producto directamente en
 // Supabase, desde el admin.
 //
-// Ya no dependemos de PrestaShop como tienda en vivo (ver
-// lib/prestashop.js), pero el catálogo se sigue sincronizando desde ahí en
-// segundo plano (lib/sync-prestashop.js, dominio "productos" cada 10 min) —
-// sin nada más, ese ciclo pisaría este cambio con lo que diga PrestaShop en
-// la siguiente corrida. Por eso esto no solo cambia "active": también marca
-// "active_override", que el propio sync respeta y deja de tocar (ver
-// fetchActiveOverrideIds en lib/sync-prestashop.js).
+// No solo cambia "active": también marca "active_override" (la decisión
+// manual del admin), como hacía cuando el catálogo todavía se sincronizaba
+// desde PrestaShop y había que protegerla de que el sync la pisara.
 //
 // Solo toca estas dos columnas — a propósito no reusa el flujo completo de
 // api/guardar-producto.js (que reescribe todo el producto) para no arriesgar

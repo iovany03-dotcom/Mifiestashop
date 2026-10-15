@@ -1,8 +1,5 @@
 // Vercel serverless function: lee los pedidos desde nuestra propia copia en
-// Supabase (ps_pedidos), sincronizada cada hora por
-// api/cron-sync-prestashop.js — ya no se consulta PrestaShop en cada carga
-// de la lista de "Pedidos" (antes hacía varias llamadas en vivo: orders,
-// customers, employees, order_states, shops, order_details por cada carga).
+// Supabase (ps_pedidos), el histórico que quedó de PrestaShop.
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 

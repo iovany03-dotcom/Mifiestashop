@@ -10,8 +10,18 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 - **Las páginas CMS (`cms-pages/`, `data/cms-runtime.json`) están publicadas a mano encima de una construcción vieja.** No correr `scripts/build-cms.cjs` completo sin revisar el diff: la fuente actual ya no genera cosas que sí traen las páginas publicadas (por ejemplo el aviso de mantenimiento) y reescribiría todo. Los cambios recientes se aplicaron con parches de una línea por página y también se dejaron en la plantilla del generador.
 - Al cambiar `assets/cms.css` hay que actualizar el `?v=` de `cms.css` en todas las páginas (hash sha256 de 12 caracteres del archivo con saltos de línea LF).
 - Archivos con saltos de línea CRLF en Windows: los reemplazos masivos con `node -e` fallan; usar la herramienta de edición o comparar con `git diff --ignore-space-at-eol`.
-- La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`). La constante `serviceKey` de `api/cron-sync-prestashop.js` es en realidad la llave anónima.
-- Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `PS_API_KEY`, `PS_BASE_URL`, `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`. Las variables nuevas solo aplican a despliegues nuevos.
+- La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`).
+- Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`, `OPENAI_API_KEY` u `ANTHROPIC_API_KEY` (lectura de notas en Recepción de mercancía). Las variables nuevas solo aplican a despliegues nuevos.
+
+## 2026-10-13
+
+- **PrestaShop desconectado por completo:** se quitaron el interruptor `PRESTASHOP_CONECTADO` y todos los caminos en vivo (productos, categorías, inventario, stock por sucursal, proveedores, ventas, ventas por producto, paquetes, páginas CMS, sitemap, checkout y API pública v1), la copia automática (`lib/sync-prestashop.js`, `api/cron-sync-prestashop.js`), el envío de ventas del POS (`api/pos-sync-prestashop.js`), el diagnóstico (`api/ps-diagnostico.js`) y la conexión directa al servidor (`lib/ps-http.js`). `lib/prestashop.js` pasó a `lib/catalogo-supabase.js` (solo lecturas de Supabase) y `lib/prestashop-pages.js` a `lib/paginas-respaldo.js` (solo textos de respaldo). Las tablas `ps_*` quedan como histórico. Las variables `PS_API_KEY`, `PS_BASE_URL`, `PS_ORIGIN_IP`, `PS_ORIGIN_CERT_NAME` y `PRESTASHOP_CONECTADO` de Vercel ya no las usa nada.
+
+## 2026-10-09
+
+- **Recepción Inteligente de Mercancía** (Catálogo & Stock → Recepción de mercancía). Regla: **ninguna compra entra al inventario sin nota escaneada, procesada y vinculada a una recepción**. Flujo: proveedor + sucursal → foto/PDF de la nota → Claude (`lib/recepcion-ia.js`, modelo `claude-opus-5-5`, salida JSON con esquema) extrae código, cantidad, precio, importe, folio, fecha y total → los códigos conocidos se reconocen solos (tabla `equivalencias_proveedor`: proveedor + código = producto, con presentación y piezas por unidad) y los desconocidos se vinculan a mano (o con foto del producto, o dando de alta un producto nuevo oculto) → conteo físico por cajas/piezas, dañadas y evidencia → diferencias (faltantes, sobrantes, no documentada) las resuelve un supervisor → el supervisor autoriza y solo entra lo contado menos lo dañado (`pos_stock_moves` con motivo `compra:` y `recepcion_linea_id` único: no se puede duplicar). Entradas parciales permitidas. Pestañas de equivalencias (con historial; solo el admin corrige), proveedores (`proveedores_compra`) y reportes. SQL en `docs/supabase-recepcion.sql`; servidor en `api/recepcion.js` (lectura con IA y archivos en el bucket privado `recepciones`). **Requiere `OPENAI_API_KEY` (ChatGPT, modelo en `OPENAI_MODEL`, por defecto gpt-5) o `ANTHROPIC_API_KEY` (Claude) en Vercel; si están las dos se usa OpenAI.**
+- **Bloqueo en la base de datos:** el trigger `pos_stock_moves_regla_ingreso` rechaza toda fila con cantidad positiva que no venga de la recepción, de un traspaso, de un ajuste de entrada aprobado, de una reversa o de una cancelación de pedido (llave de servicio). El modal "Movimientos & Traspasos" ya no registra compras: "Entrada" pasó a ser **Ajuste de entrada** (devolución / corrección / conteo, con justificación y aprobación; folio `AJE-`), y "Ajustar" en Bodegas solo puede bajar existencias.
+- **Etiquetas de precio** en su propia sección (diseño 5 × 5 cm, vista previa, código de barras, solo productos activos).
 
 ## 2026-10-02
 
@@ -54,7 +64,7 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 
 ## Pendientes y problemas conocidos
 
-1. **Seguridad:** `/api/promo-paquetes` incluye en la URL de la imagen la llave de PrestaShop (`ws_key=...`); es pública. Regenerar la llave y servir las imágenes sin exponerla.
+1. **Seguridad:** la llave del webservice de PrestaShop llegó a publicarse en URLs de imágenes; aunque el código ya no la usa, conviene desactivarla en PrestaShop.
 2. **Dirección de la página 288** conserva el error "pata" (`/content/288-articulos-pata-batucada-en-cdmx`). Corregirla exige elegir un slug que no choque con la 308 y redirigir el viejo.
 3. **Paquetes de batucada:** solo existe el Estándar; no hay Jr ni VIP en el catálogo.
 4. **Meta:** con transferencia o efectivo, Purchase se reporta al crear el pedido, antes de confirmar el pago. Solo Mercado Pago se reporta desde el servidor.
