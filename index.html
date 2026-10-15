@@ -4665,7 +4665,16 @@
           <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">Cada etiqueta lleva el nombre, el precio y, si aplica, el precio de mayoreo con las piezas mínimas, más un código de barras que el POS reconoce al escanear (el código de barras del producto o, si no tiene, su número de producto).</p>
           <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
             <input type="search" id="etqBuscar" placeholder="Buscar producto, SKU o código…" oninput="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1; min-width:200px;">
-            <select id="etqCategoria" onchange="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;"><option value="">Todas las categorías</option></select>
+            <details id="etqCatDet" style="position:relative;">
+              <summary id="etqCatResumen" style="list-style:none; cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; user-select:none;">Categorías: todas</summary>
+              <div style="position:absolute; z-index:30; top:calc(100% + 4px); left:0; width:300px; max-height:340px; overflow:auto; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,.22); padding:8px;">
+                <div style="display:flex; gap:6px; margin-bottom:6px; position:sticky; top:0; background:var(--card-bg); padding-bottom:6px;">
+                  <button type="button" class="btn small" onclick="etqCatMarcar(true)">Marcar todas</button>
+                  <button type="button" class="btn small" onclick="etqCatMarcar(false)">Desmarcar todas</button>
+                </div>
+                <div id="etqCatLista"></div>
+              </div>
+            </details>
             <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloMayoreo" onchange="etqRender()"> Solo con mayoreo</label>
             <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloSel" onchange="etqRender()"> Ver solo seleccionados</label>
           </div>
@@ -15430,6 +15439,28 @@ function code128Svg(texto, alto) {
 
 let etqSeleccion = new Set();
 let etqListo = false;
+// Categorías con casilla para marcar/desmarcar: solo se listan los productos activos (los que se imprimen).
+const ETQ_SIN_CAT = '(Sin categoría)';
+let etqCats = [];            // [{ nombre, n }]
+let etqCatsSel = new Set();  // nombres marcados
+function etqListaCategorias() {
+  const cuenta = new Map();
+  adminCatalogDataset().filter(etqActivo).forEach(p => { const c = p.catLabel || ETQ_SIN_CAT; cuenta.set(c, (cuenta.get(c) || 0) + 1); });
+  return [...cuenta.entries()].map(([nombre, n]) => ({ nombre, n })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+function etqCatPintar() {
+  const lista = document.getElementById('etqCatLista');
+  if (lista) lista.innerHTML = etqCats.map((c, i) => `<label style="display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:12.5px; cursor:pointer;">
+      <input type="checkbox" ${etqCatsSel.has(c.nombre) ? 'checked' : ''} onchange="etqCatToggle(${i}, this.checked)">
+      <span style="flex:1;">${escapeHtml(c.nombre)}</span><span style="color:var(--text-muted); font-size:11px;">${c.n}</span></label>`).join('');
+  const r = document.getElementById('etqCatResumen');
+  if (r) {
+    const m = etqCatsSel.size, t = etqCats.length;
+    r.textContent = m === t ? 'Categorías: todas' : (m === 0 ? 'Categorías: ninguna' : `Categorías: ${m} de ${t}`);
+  }
+}
+function etqCatToggle(i, on) { const c = etqCats[i]; if (!c) return; on ? etqCatsSel.add(c.nombre) : etqCatsSel.delete(c.nombre); etqCatPintar(); etqRender(); }
+function etqCatMarcar(todas) { etqCatsSel = new Set(todas ? etqCats.map(c => c.nombre) : []); etqCatPintar(); etqRender(); }
 function etqCodigo(p) { return (p.barcode && String(p.barcode).trim()) || String(p.id); }
 function etqMayoreo(p) {
   const pm = Number(p.priceMayoreo), desde = Number(p.priceMayoreoDesdeUnidades);
@@ -15442,20 +15473,22 @@ async function etqIniciar() {
   }
   if (!etqListo) {
     etqListo = true;
-    const cats = [...new Set(adminCatalogDataset().map(p => p.catLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
-    document.getElementById('etqCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    etqCats = etqListaCategorias();
+    etqCatsSel = new Set(etqCats.map(c => c.nombre));
+    etqCatPintar();
+    document.addEventListener('click', e => { const d = document.getElementById('etqCatDet'); if (d && d.open && !d.contains(e.target)) d.open = false; });
   }
   etqRender();
 }
 function etqActivo(p) { return p.active !== false && p.status !== 'Inactivo'; }
 function etqFiltrados() {
   const q = normalizeEs(document.getElementById('etqBuscar')?.value || '');
-  const cat = document.getElementById('etqCategoria')?.value || '';
+  const todasCats = etqCatsSel.size === etqCats.length;
   const soloMay = document.getElementById('etqSoloMayoreo')?.checked;
   const soloSel = document.getElementById('etqSoloSel')?.checked;
   return adminCatalogDataset().filter(etqActivo)
     .filter(p => !soloSel || etqSeleccion.has(String(p.id)))
-    .filter(p => !cat || p.catLabel === cat)
+    .filter(p => todasCats || etqCatsSel.has(p.catLabel || ETQ_SIN_CAT))
     .filter(p => !soloMay || etqMayoreo(p))
     .filter(p => !q || normalizeEs(p.name || '').includes(q) || normalizeEs(p.sku || '').includes(q) || String(p.barcode || '').includes(q) || String(p.id) === q)
     .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
