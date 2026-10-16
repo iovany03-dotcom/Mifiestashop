@@ -93,8 +93,20 @@ async function cargarVenta(api, origenPedido, folioPedido) {
     conceptos.forEach(c => { c.price = c.price * 1.16; });
   }
 
+  // Pedido manual con "Aplicar IVA" (panel → Crear pedido): igual que en el POS, el 16% se suma encima de
+  // los precios de los productos ((subtotal - descuento) × 1.16 + envío = total); el envío no lleva IVA
+  // aparte. Esos precios y su descuento van sin IVA, así que se pasan a "con IVA" antes de desglosar.
+  let factorIva = 1;
+  if (origen === 'online' && p.source === 'manual' && process.env.FACTURAMA_IVA_INCLUIDO !== '0') {
+    const base = (Number(p.subtotal) || 0) - (Number(p.discount_amount) || 0);
+    if (base > 0 && Math.abs(base * 1.16 + (Number(p.shipping_cost) || 0) - Number(p.total)) <= 1) {
+      factorIva = 1.16;
+      conceptos.forEach(c => { c.price = c.price * factorIva; });
+    }
+  }
+
   // Cupón / descuento del pedido repartido proporcionalmente (el último renglón se lleva el ajuste de centavos).
-  const descuento = r2(Number(p.discount_amount) || 0);
+  const descuento = r2((Number(p.discount_amount) || 0) * factorIva);
   if (descuento > 0 && conceptos.length) {
     const brutoTotal = conceptos.reduce((s, c) => s + c.price * c.qty, 0);
     let repartido = 0;

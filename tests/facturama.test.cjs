@@ -15,6 +15,11 @@ const PEDIDOS = {
   'WEB-3': { folio: 'WEB-3', status: 'Entregado', subtotal: 1000, discount_amount: 100, shipping_cost: 150, shipping_carrier: 'Estafeta', total: 1050,
              items: [{ id: 1, name: 'Promo Boda', sku: 'Boda, promo, VIP', qty: 1, price: 800 }, { id: 2, name: 'Mandil', sku: 'MAN', qty: 10, price: 20 }] }
 };
+// Pedidos manuales con "Aplicar IVA": el panel suma el 16% sobre los productos ((subtotal - descuento) x 1.16 + envio).
+PEDIDOS['MAN-423362'] = { folio: 'MAN-423362', source: 'manual', status: 'Pago aceptado', subtotal: 21132, total: 24513.12, shipping_cost: 0, customer_name: 'Evolucion', items: [
+  { id: 1, name: 'Antifaz Carnaval Pluma', qty: 120, price: 27.1 }, { id: 2, name: 'Antifaz carnaval Negro / Blanco', qty: 400, price: 16.6 }, { id: 3, name: 'Antifaz Carnaval con flor', qty: 400, price: 28.1 }] };
+PEDIDOS['MAN-DESC'] = { folio: 'MAN-DESC', source: 'manual', status: 'Pago aceptado', subtotal: 1000, discount_amount: 100, shipping_cost: 50, total: 1094, items: [{ id: 1, name: 'Promo', qty: 10, price: 100 }] };
+PEDIDOS['MAN-SINIVA'] = { folio: 'MAN-SINIVA', source: 'manual', status: 'Pago aceptado', subtotal: 200, shipping_cost: 0, total: 200, items: [{ id: 1, name: 'Vela', qty: 4, price: 50 }] };
 const TICKETS = {
   '#POS-123': { folio: '#POS-123', total: 73, items: [{ product_id: '10790803185325', name: 'Globo calabaza', sku: 'Globo, metalico', qty: 1, price: 24 }, { product_id: '5', name: 'Vela', qty: 7, price: 7 }] },
   // Ticket real con "Aplicar IVA": el POS sumo el 16% sobre los precios de los productos (895.20 + 143.232 = 1038.432).
@@ -185,6 +190,30 @@ test('facturama: ticket del POS con IVA agregado se puede facturar (productos si
   assert.ok(Math.abs(total - 1038.43) <= 0.06, 'total ' + total);
   assert.equal(items[1].UnitPrice, 13); assert.equal(items[1].Subtotal, 130);
   for (const c of items) assert.ok(Math.abs(c.Total - (c.Subtotal + c.Taxes[0].Total)) < 0.011);
+});
+
+test('facturama: pedido manual con IVA agregado (MAN-423362) se puede facturar: productos sin IVA + 16% = total', async () => {
+  const st = fake();
+  const p = await call({ accion: 'pedido', folio: 'MAN-423362' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo);
+  assert.equal(p.data.pedido.total, 24513.12); assert.equal(p.data.pedido.totalConceptos, 24513.12);
+  const r = await call({ accion: 'emitir', origen: 'online', pedidoFolio: 'MAN-423362', receptor });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  const items = st.cfdi.Items;
+  const sub = items.reduce((s, c) => s + c.Subtotal, 0), total = items.reduce((s, c) => s + c.Total, 0);
+  assert.ok(Math.abs(sub - 21132) < 0.01, 'subtotal ' + sub);
+  assert.ok(Math.abs(total - 24513.12) <= 0.06, 'total ' + total);
+  assert.equal(items[0].UnitPrice, 27.1);
+});
+
+test('facturama: pedido manual con IVA, descuento y envío cuadra con el total cobrado; sin IVA agregado queda igual', async () => {
+  const st = fake();
+  let p = await call({ accion: 'pedido', folio: 'MAN-DESC' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo); assert.equal(p.data.pedido.totalConceptos, 1094);
+  p = await call({ accion: 'pedido', folio: 'MAN-SINIVA' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo); assert.equal(p.data.pedido.totalConceptos, 200);
+  const q = await call({ accion: 'pedido', folio: 'WEB-1' });
+  assert.equal(q.data.pedido.totalConceptos, 116, 'un pedido de la tienda no se toca');
 });
 
 test('facturama: ticket del POS sin IVA agregado sigue facturandose igual (precio final, IVA incluido)', async () => {
