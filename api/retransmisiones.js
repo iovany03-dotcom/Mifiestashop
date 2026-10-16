@@ -48,7 +48,7 @@ const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 const SITIO = 'https://www.mifiestashop.com';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const ESTADOS_SIN_PAGAR = ['Pendiente', 'Pendiente de pago', 'Error en el pago'];
+const ESTADOS_SIN_PAGAR = ['Pendiente', 'Pendiente de pago', 'Factura anticipada', 'Error en el pago'];
 const ESTADOS_PAGADOS = ['Pago aceptado', 'Pagado', 'En preparación', 'Enviado', 'Entregado'];
 const MAX_ENVIO = 40;
 

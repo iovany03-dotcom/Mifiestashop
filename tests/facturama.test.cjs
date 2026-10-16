@@ -204,3 +204,26 @@ test('facturama: ticket con IVA que no cuadra con su total sigue bloqueado', asy
   const p = await call({ accion: 'pedido', folio: '#POS-ROTO' });
   assert.equal(p.data.pedido.facturable, false); assert.match(p.data.pedido.motivo, /suman/);
 });
+
+test('facturama: pedido en "Factura anticipada" (sin pagar) se puede facturar, como pago diferido PPD / forma 99', async () => {
+  PEDIDOS['WEB-ANT'] = { folio: 'WEB-ANT', status: 'Factura anticipada', total: 116, shipping_cost: 0, customer_email: 'c@x.com', customer_name: 'Ana', items: [{ id: 83591, name: 'Globo', sku: 'G1', qty: 2, price: 58 }] };
+  const st = fake();
+  const p = await call({ accion: 'pedido', origen: 'online', folio: 'WEB-ANT' });
+  assert.equal(p.code, 200, JSON.stringify(p.data));
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo);
+  // aunque el navegador mande contado y tarjeta, un pedido sin pagar sale como pago diferido
+  const r = await call({ accion: 'emitir', origen: 'online', pedidoFolio: 'WEB-ANT', receptor, formaPago: '04', metodoPago: 'PUE' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.equal(st.cfdi.PaymentMethod, 'PPD'); assert.equal(st.cfdi.PaymentForm, '99');
+  assert.ok(Math.abs(st.cfdi.Items.reduce((s, c) => s + c.Total, 0) - 116) <= 0.02);
+});
+
+test('facturama: un pedido pagado conserva la forma de pago que se eligió, y los pendientes siguen bloqueados', async () => {
+  const st = fake();
+  const r = await call({ accion: 'emitir', origen: 'online', pedidoFolio: 'WEB-1', receptor, formaPago: '03' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.equal(st.cfdi.PaymentForm, '03'); assert.equal(st.cfdi.PaymentMethod, 'PUE');
+  const p = await call({ accion: 'pedido', origen: 'online', folio: 'WEB-2' });
+  assert.equal(p.data.pedido.facturable, false);
+  assert.match(p.data.pedido.motivo, /pagados o en estado "Factura anticipada"/);
+});

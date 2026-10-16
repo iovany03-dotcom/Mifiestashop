@@ -4260,7 +4260,7 @@
             <select id="factPedidoOrigen" style="padding:8px;" onchange="factFolioCambio(true)"><option value="online">Pedido de la tienda</option><option value="pos">Ticket del POS</option></select>
             <button class="btn primary" onclick="cargarPedidoFactura()">Cargar</button>
           </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Toda factura queda ligada a su pedido o ticket. Los conceptos, el envío y el descuento salen tal cual de la venta (no se escriben a mano), y solo se facturan ventas pagadas que no tengan ya una factura vigente.</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Toda factura queda ligada a su pedido o ticket. Los conceptos, el envío y el descuento salen tal cual de la venta (no se escriben a mano), y solo se facturan ventas pagadas (o pedidos en estado "Factura anticipada", que salen como pago diferido) que no tengan ya una factura vigente.</div>
           <div id="factPedidoResumen" class="hidden" style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:12px;"></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; margin-bottom:10px;">
             <input id="factRfc" placeholder="RFC del cliente" style="padding:8px; text-transform:uppercase;">
@@ -5631,6 +5631,7 @@
         <select id="odStatusSelect" style="padding:8px 14px; border-radius:6px; border:1px solid var(--border); font-weight:700; font-size:14px; cursor:pointer;">
           <option value="Pendiente">Pendiente</option>
           <option value="Pendiente de pago">Pendiente de pago</option>
+          <option value="Factura anticipada">Factura anticipada</option>
           <option value="Pago aceptado">Pago aceptado</option>
           <option value="Error en el pago">Error en el pago</option>
           <option value="En preparación">En preparación</option>
@@ -5788,6 +5789,11 @@
 
             <div style="border-top:1px dashed var(--border); padding-top:10px; font-size:13px;">
               <b>Nota del pedido:</b> <span id="odOrderNote" style="color:var(--text-secondary); font-size:12px; margin-left:6px;">—</span>
+            </div>
+
+            <div style="border-top:1px dashed var(--border); padding-top:10px; margin-top:12px;">
+              <div style="font-size:13px; font-weight:700; margin-bottom:8px;">Historial de movimientos</div>
+              <div id="odHistorialBody" style="font-size:12px;"></div>
             </div>
           </div>
 
@@ -14116,6 +14122,7 @@ function openOrderDetailModal(id){
   renderOdDetails(order, {});
   switchOdTab('estado');
   modal.classList.remove('hidden');
+  cargarHistorialPedido(order);
 
   if (order.rawId) {
     fetch('/api/pedido-detalle', {
@@ -14134,6 +14141,38 @@ function openOrderDetailModal(id){
         renderOdProductRows(null);
         renderOdDetails(order, { loaded: true });
       });
+  }
+}
+
+// ---- Historial de movimientos del pedido: quién, qué, día y hora ----
+function odFechaHora(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+async function cargarHistorialPedido(order) {
+  const box = document.getElementById('odHistorialBody');
+  if (!box || !order) return;
+  const base = `<div style="display:flex; gap:10px; padding:6px 0;"><span style="min-width:150px; color:var(--text-muted);">${escapeHtml(order.date || '—')}</span><span style="color:var(--text-secondary);">Pedido recibido</span></div>`;
+  if (orderOrigen(order) === 'prestashop') {
+    box.innerHTML = '<div style="color:var(--text-muted);">Pedido histórico de las cajas de PrestaShop: no tiene historial de movimientos.</div>' + base;
+    odText('tabOdEstado', 'Estado (1)');
+    return;
+  }
+  box.innerHTML = '<div style="color:var(--text-muted);">Cargando historial…</div>';
+  try {
+    const data = await pedidoAdminRequest({ accion: 'historial', origen: orderOrigen(order), folio: order.id });
+    if (currentOrderObj !== order) return; // se abrió otro pedido mientras tanto
+    const filas = data.historial || [];
+    const items = filas.map(h => `<div style="display:flex; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;">
+        <span style="min-width:150px; color:var(--text-muted); font-variant-numeric:tabular-nums;">${escapeHtml(odFechaHora(h.created_at))}</span>
+        <span style="min-width:110px; font-weight:700;">${escapeHtml(h.usuario || '—')}</span>
+        <span style="flex:1; min-width:180px; color:var(--text-secondary);">${escapeHtml(h.detalle || h.accion || '')}</span>
+      </div>`).join('');
+    box.innerHTML = (items || '<div style="color:var(--text-muted); padding:4px 0;">Todavía no hay movimientos registrados (solo se guardan los cambios hechos desde ahora).</div>') + base;
+    odText('tabOdEstado', `Estado (${filas.length + 1})`);
+  } catch (e) {
+    if (currentOrderObj === order) box.innerHTML = `<div style="color:var(--danger, #c0392b);">No se pudo cargar el historial: ${escapeHtml(e.message)}</div>` + base;
   }
 }
 
@@ -14335,6 +14374,7 @@ async function saveOrderDetailExtras(soloGuia) {
     if (soloGuia) order.trackingNumber = body.trackingNumber;
     else { order.nota = body.nota; order.deliveryDate = body.deliveryDate; odText('odOrderNote', body.nota || '—'); renderOrdersTableRows(); }
     odText(soloGuia ? 'odContactNote' : 'odExtrasNote', soloGuia ? 'Guía guardada.' : 'Guardado.');
+    cargarHistorialPedido(order);
   } catch (e) {
     alert(e.message);
   }
@@ -16346,7 +16386,7 @@ function orderOrigen(o) {
   return o.channel === 'Sistema POS' ? 'pos' : 'online';
 }
 
-const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
+const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Factura anticipada', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
 
 // El selector antes siempre decía "Pago aceptado" (era su primera opción
 // fija); ahora muestra el estado real del pedido.
@@ -16425,6 +16465,7 @@ async function updateOrderDetailStatus() {
   try {
     const data = await pedidoAdminRequest({ accion: 'estado', origen: orderOrigen(order), folio: order.id, estado: status });
     applyOrderStatusLocally(order, data.estado);
+    cargarHistorialPedido(order);
     await refreshStockAfterOrderChange(data.piezasRegresadas);
     if (status === 'Cancelado') {
       notifyEvent('cancelled', 'Pedido cancelado', `El pedido ${order.id} fue cancelado${data.piezasRegresadas ? ` y se regresaron ${data.piezasRegresadas} piezas al stock` : ''}.`);
@@ -16453,6 +16494,7 @@ async function cancelOrderDetail() {
   try {
     const data = await pedidoAdminRequest({ accion: 'cancelar', origen: orderOrigen(order), folio: order.id });
     applyOrderStatusLocally(order, 'Cancelado');
+    cargarHistorialPedido(order);
     await refreshStockAfterOrderChange(data.piezasRegresadas);
     notifyEvent('cancelled', 'Pedido cancelado', `El pedido ${order.id} fue cancelado${data.piezasRegresadas ? ` y se regresaron ${data.piezasRegresadas} piezas al stock` : ''}.`);
     alert(`Pedido ${order.id} cancelado.` + (data.piezasRegresadas ? ` Se regresaron ${data.piezasRegresadas} piezas al stock.` : ' Este pedido no había descontado stock.'));
@@ -21721,7 +21763,7 @@ async function cargarPedidoFactura() {
     document.getElementById('factPedidoOrigen').value = factVenta.origen;
     renderFactVenta();
     if (factVenta.email && !document.getElementById('factEmail').value) document.getElementById('factEmail').value = factVenta.email;
-    msg.textContent = factVenta.facturable ? 'Venta cargada. Completa los datos fiscales del cliente.' : '';
+    msg.textContent = factVenta.facturable ? (factVenta.estado === 'Factura anticipada' ? 'Pedido en "Factura anticipada" (sin pago todavía): la factura saldrá con método PPD y forma de pago 99 (por definir). Completa los datos fiscales del cliente.' : 'Venta cargada. Completa los datos fiscales del cliente.') : '';
   } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
 }
 
