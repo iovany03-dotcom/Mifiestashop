@@ -13,6 +13,10 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 - La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`).
 - Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`, `OPENAI_API_KEY` u `ANTHROPIC_API_KEY` (lectura de notas en Recepción de mercancía). Las variables nuevas solo aplican a despliegues nuevos.
 
+## 2026-10-16
+
+- **Facturación: tickets del POS con IVA no se podían facturar** ("los productos suman $895.20 pero su total es $1,038.43"). Con "Aplicar IVA" el POS suma el 16% encima de los precios de los productos (subtotal + IVA = total), pero `api/facturama.js` comparaba esos precios, sin IVA, contra el total con IVA. Ahora, si el ticket trae IVA agregado y su subtotal + IVA cuadra con el total, los precios se pasan a "con IVA" antes de desglosar: el CFDI sale con el subtotal de los productos, el IVA del ticket y el total cobrado. Los tickets sin IVA (396 de 413) facturan igual que antes, y uno con IVA que no cuadra sigue bloqueado. Probado con el ticket real #POS-12278 (`tests/facturama.test.cjs`).
+
 ## 2026-10-13
 
 - **PrestaShop desconectado por completo:** se quitaron el interruptor `PRESTASHOP_CONECTADO` y todos los caminos en vivo (productos, categorías, inventario, stock por sucursal, proveedores, ventas, ventas por producto, paquetes, páginas CMS, sitemap, checkout y API pública v1), la copia automática (`lib/sync-prestashop.js`, `api/cron-sync-prestashop.js`), el envío de ventas del POS (`api/pos-sync-prestashop.js`), el diagnóstico (`api/ps-diagnostico.js`) y la conexión directa al servidor (`lib/ps-http.js`). `lib/prestashop.js` pasó a `lib/catalogo-supabase.js` (solo lecturas de Supabase) y `lib/prestashop-pages.js` a `lib/paginas-respaldo.js` (solo textos de respaldo). Las tablas `ps_*` quedan como histórico. Las variables `PS_API_KEY`, `PS_BASE_URL`, `PS_ORIGIN_IP`, `PS_ORIGIN_CERT_NAME` y `PRESTASHOP_CONECTADO` de Vercel ya no las usa nada.

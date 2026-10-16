@@ -80,6 +80,16 @@ async function cargarVenta(api, origenPedido, folioPedido) {
     };
   }).filter(c => c.qty > 0 && c.price > 0);
 
+  // Ticket del POS con "Aplicar IVA": el POS suma el 16% encima de los precios de los productos
+  // (subtotal + IVA = total), o sea que esos precios NO traen IVA. Para que la factura quede con
+  // el subtotal de los productos, el IVA del ticket y el total cobrado, se pasan a "con IVA"
+  // (el resto del sistema asume precios con IVA incluido) antes de desglosarlos.
+  const subtotalTicket = Number(p.subtotal), ivaTicket = Number(p.iva), totalTicket = Number(p.total);
+  if (origen === 'pos' && process.env.FACTURAMA_IVA_INCLUIDO !== '0' && ivaTicket > 0
+      && Math.abs(subtotalTicket + ivaTicket - totalTicket) <= 1) {
+    conceptos.forEach(c => { c.price = c.price * 1.16; });
+  }
+
   // Cupón / descuento del pedido repartido proporcionalmente (el último renglón se lleva el ajuste de centavos).
   const descuento = r2(Number(p.discount_amount) || 0);
   if (descuento > 0 && conceptos.length) {
