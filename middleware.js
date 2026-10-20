@@ -58,22 +58,37 @@ function replaceAttr(html, selector, attr, newValue) {
 // Arma el JSON-LD Product (Schema.org) como texto seguro para incrustar en
 // un <script>: escapa "<" para que ni una descripción con ese caracter
 // pueda cerrar la etiqueta antes de tiempo (</script> dentro del string).
-// Sin "offers"/precio a propósito: el precio vive siempre en vivo en
-// PrestaShop (nunca se migró, ver api/productos.js), y traerlo aquí
-// añadiría al middleware la misma dependencia lenta que ya nos dejó sin
-// catálogo una vez en esta sesión — no vale la pena para un middleware que
-// tiene que responder rápido en cada carga de página de producto.
-function buildProductJsonLd(name, sku, desc, images) {
-  const json = JSON.stringify({
-    '@context': 'https://schema.org',
+// El precio sale de catalogo_productos (la fuente desde que se desconectó PrestaShop), en la
+// misma consulta: no agrega llamadas. Con "offers" Google puede mostrar el precio en los
+// resultados; BreadcrumbList muestra Inicio › Categoría en vez de la URL.
+function buildProductJsonLd(name, sku, desc, images, extra = {}) {
+  const { price, pageUrl, barcode, categoria } = extra;
+  const producto = {
     '@type': 'Product',
     name,
     sku: sku || undefined,
+    gtin13: /^\d{13}$/.test(String(barcode || '')) ? String(barcode) : undefined,
+    brand: { '@type': 'Brand', name: 'Mi Fiestashop' },
     description: desc,
     image: images.map(url => ({ '@type': 'ImageObject', url, width: 800, height: 800 }))
+  };
+  if (Number(price) > 0) {
+    producto.offers = {
+      '@type': 'Offer', price: Number(price).toFixed(2), priceCurrency: 'MXN',
+      availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition',
+      url: pageUrl || undefined, seller: { '@type': 'Organization', name: 'Mi Fiestashop' }
+    };
+  }
+  const migas = [{ '@type': 'ListItem', position: 1, name: 'Inicio', item: `${ORIGEN_SEO}/` }];
+  if (categoria && categoria.name && categoria.path) migas.push({ '@type': 'ListItem', position: 2, name: categoria.name, item: `${ORIGEN_SEO}${categoria.path}` });
+  migas.push({ '@type': 'ListItem', position: migas.length + 1, name, item: pageUrl || undefined });
+  const json = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [producto, { '@type': 'BreadcrumbList', itemListElement: migas }]
   });
   return json.replace(/</g, '\\u003c');
 }
+const ORIGEN_SEO = 'https://www.mifiestashop.com';
 
 // Consulta a Supabase con la llave pública. null = falla nuestra (red o
 // Supabase): en ese caso nunca se inventa un 404 ni una redirección.
@@ -101,11 +116,11 @@ const CATALOGO_RAIZ = '/266-productos';
 // false } si el id no es de la tienda, { redirect } si está desactivado
 // (a su categoría, como hace PrestaShop) o { canonicalPath, seo }.
 async function resolveProduct(id) {
-  const rows = await sb(`catalogo_productos?id=eq.${id}&select=id,name,sku,link_rewrite,barcode,category_id,active,description_short,description,images,meta_title,meta_description`);
+  const rows = await sb(`catalogo_productos?id=eq.${id}&select=id,name,sku,link_rewrite,barcode,category_id,active,description_short,description,images,meta_title,meta_description,price`);
   if (!rows) return { unknown: true };
   const p = rows[0];
   if (!p) return { exists: false };
-  const cats = p.category_id ? await sb(`ps_categorias?id=eq.${p.category_id}&select=id,link_rewrite,active`) : [];
+  const cats = p.category_id ? await sb(`ps_categorias?id=eq.${p.category_id}&select=id,name,link_rewrite,active`) : [];
   const cat = cats && cats[0];
   if (!p.active) {
     return { redirect: cat && cat.active && cat.link_rewrite ? `/${cat.id}-${cat.link_rewrite}` : CATALOGO_RAIZ };
@@ -128,7 +143,10 @@ async function resolveProduct(id) {
       title: `${(p.meta_title && p.meta_title.trim()) || name} | Mi Fiestashop`,
       desc,
       image: images[0] || null,
-      jsonLd: buildProductJsonLd(name, (m && m.sku) || p.sku, desc, images)
+      jsonLd: buildProductJsonLd(name, (m && m.sku) || p.sku, desc, images, {
+        price: p.price, barcode: p.barcode, pageUrl: `${ORIGEN_SEO}${canonicalPath}`,
+        categoria: cat && cat.active && cat.link_rewrite ? { name: cat.name, path: `/${cat.id}-${cat.link_rewrite}` } : null
+      })
     }
   };
 }
