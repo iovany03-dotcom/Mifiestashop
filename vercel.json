@@ -118,6 +118,10 @@
       "maxDuration": 15,
       "includeFiles": "scripts/cms-*.html"
     },
+    "api/app-js.js": {
+      "maxDuration": 10,
+      "includeFiles": "index.html"
+    },
     "api/seo.js": {
       "maxDuration": 300
     },
@@ -132,6 +136,10 @@
     }
   },
   "rewrites": [
+    {
+      "source": "/app/:hash.js",
+      "destination": "/api/app-js?h=:hash"
+    },
     {
       "source": "/mcp",
       "destination": "/api/mcp"

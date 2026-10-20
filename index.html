@@ -2299,29 +2299,29 @@
       <div class="store-footer-col">
         <h4>Categorías</h4>
         <ul>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('269');">Globos</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('273');">Batucada</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('287');">Boda</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('279');">Decoración</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('311');">Despedida de Soltera</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('304');">Diademas</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('271');">Fiesta Mexicana</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('294');">Graduaciones</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('274');">Halloween</a></li>
+          <li><a href="/269-globos" onclick="event.preventDefault(); openStorefrontCatalog('269');">Globos</a></li>
+          <li><a href="/273-batucada" onclick="event.preventDefault(); openStorefrontCatalog('273');">Batucada</a></li>
+          <li><a href="/287-boda" onclick="event.preventDefault(); openStorefrontCatalog('287');">Boda</a></li>
+          <li><a href="/279-decoracion" onclick="event.preventDefault(); openStorefrontCatalog('279');">Decoración</a></li>
+          <li><a href="/311-despedida-de-soltera" onclick="event.preventDefault(); openStorefrontCatalog('311');">Despedida de Soltera</a></li>
+          <li><a href="/304-diademas" onclick="event.preventDefault(); openStorefrontCatalog('304');">Diademas</a></li>
+          <li><a href="/271-fiesta-mexicana" onclick="event.preventDefault(); openStorefrontCatalog('271');">Fiesta Mexicana</a></li>
+          <li><a href="/294-graduaciones" onclick="event.preventDefault(); openStorefrontCatalog('294');">Graduaciones</a></li>
+          <li><a href="/274-halloween" onclick="event.preventDefault(); openStorefrontCatalog('274');">Halloween</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
         <h4>Más Categorías</h4>
         <ul>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('296');">Infantiles</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('303');">Lentes</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('268');">Luminosos</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('285');">Navidad</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('280');">Pirotecnia Fría</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('270');">Velas</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('286');">Año Nuevo</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('305');">Sombreros</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('307');">XV Años</a></li>
+          <li><a href="/296-infantiles" onclick="event.preventDefault(); openStorefrontCatalog('296');">Infantiles</a></li>
+          <li><a href="/303-lentes" onclick="event.preventDefault(); openStorefrontCatalog('303');">Lentes</a></li>
+          <li><a href="/268-luminosos" onclick="event.preventDefault(); openStorefrontCatalog('268');">Luminosos</a></li>
+          <li><a href="/285-navidad" onclick="event.preventDefault(); openStorefrontCatalog('285');">Navidad</a></li>
+          <li><a href="/280-pirotecnia" onclick="event.preventDefault(); openStorefrontCatalog('280');">Pirotecnia Fría</a></li>
+          <li><a href="/270-velas" onclick="event.preventDefault(); openStorefrontCatalog('270');">Velas</a></li>
+          <li><a href="/286-ano-nuevo" onclick="event.preventDefault(); openStorefrontCatalog('286');">Año Nuevo</a></li>
+          <li><a href="/305-sombreros" onclick="event.preventDefault(); openStorefrontCatalog('305');">Sombreros</a></li>
+          <li><a href="/307-xv-anos" onclick="event.preventDefault(); openStorefrontCatalog('307');">XV Años</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
@@ -7518,8 +7518,8 @@ function renderMetaPixelAdminForm() {
 }
 
 // GATE & ACCESS CONTROL
-document.getElementById('gateBtn').addEventListener('click', checkGate);
-document.getElementById('gatePw').addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkGate(); });
+document.getElementById('gateBtn')?.addEventListener('click', checkGate);
+document.getElementById('gatePw')?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkGate(); });
 
 async function checkGate(){
   const pw = document.getElementById('gatePw').value;
@@ -7937,7 +7937,7 @@ function updateCalcUtilidad() {
   }
 }
 
-document.getElementById('modalSave').addEventListener('click', async ()=>{
+document.getElementById('modalSave')?.addEventListener('click', async ()=>{
   const status = document.getElementById('modalStatus');
   const inputs = document.querySelectorAll('#modalBody input[data-field]');
   const body = {};
@@ -7954,10 +7954,10 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   } catch(e){ status.textContent = 'Error: ' + e.message; }
 });
 
-document.getElementById('prodSearch').addEventListener('input', ()=>{ prodPage=0; loadProductos(); });
-document.getElementById('prodCat').addEventListener('change', ()=>{ prodPage=0; loadProductos(); });
-document.getElementById('prodPrev').addEventListener('click', ()=>{ if(prodPage>0){ prodPage--; loadProductos(); } });
-document.getElementById('prodNext').addEventListener('click', ()=>{ prodPage++; loadProductos(); });
+document.getElementById('prodSearch')?.addEventListener('input', ()=>{ prodPage=0; loadProductos(); });
+document.getElementById('prodCat')?.addEventListener('change', ()=>{ prodPage=0; loadProductos(); });
+document.getElementById('prodPrev')?.addEventListener('click', ()=>{ if(prodPage>0){ prodPage--; loadProductos(); } });
+document.getElementById('prodNext')?.addEventListener('click', ()=>{ prodPage++; loadProductos(); });
 
 // Sin productos de demostración: si el catálogo real no carga, se muestra un error (ver catalogLoadError).
 const PRODUCTS_DATA = [];
@@ -8333,6 +8333,7 @@ function updateCartUI() {
   saveCartToStorage();
   scheduleCartSave();
   const container = document.getElementById('cartItemsContainer');
+  if (!container) return; // tienda pública: el carrito del punto de venta no está en la página
   if (cart.length === 0) {
     container.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--text-muted); font-size:13px;">El carrito está vacío.<br>Haz clic en los productos para agregarlos.</div>`;
     document.getElementById('cartSubtotal').textContent = '$0.00';
@@ -9758,6 +9759,7 @@ function renderVentasPorTienda(rows, msg){
 }
 
 async function loadVentas(from, to){
+  if (!document.getElementById('kpiRev')) return; // tienda pública: el panel no está en la página
   const loading = document.getElementById('ventasLoading');
   const errBox = document.getElementById('ventasError');
   if(loading) loading.classList.remove('hidden');
@@ -10219,7 +10221,7 @@ async function cargarCatalogoProductos(){
   renderProducts('all');
   renderCatalogTable('all');
   renderInventarioTable();
-  renderStorefrontProducts('all');
+  renderStorefrontProducts('all', '', false, true);
   renderTopProductsTable();
 }
 
@@ -19246,12 +19248,17 @@ async function loadStorefrontFeaturedPreview(){
   }
 }
 
-function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
+// fondo = true: solo se actualiza la cuadrícula de la portada (p. ej. al terminar de cargar el
+// catálogo), sin sacar al cliente de la página donde está — antes eso regresaba a la portada a
+// quien entraba directo a una categoría como /290-promociones.
+function renderStorefrontProducts(cat = 'all', query = '', keepPage, fondo) {
   const grid = document.getElementById('storefrontProductGrid');
   if (!grid) return;
 
-  hideStorefrontPages();
-  resetStorefrontSeoTags();
+  if (!fondo) {
+    hideStorefrontPages();
+    resetStorefrontSeoTags();
+  }
 
   if (!keepPage) {
     currentStorefrontCat = cat;
@@ -19475,7 +19482,7 @@ function renderCatalogSidebar(){
   list.innerHTML = `
     <li><a class="${catalogState.catId === 'all' && !catalogState.query ? 'active' : ''}" href="/266-productos" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); selectCatalogCategory('all');">Todos los productos</a></li>
     ` + catalogCategories.map(c => `
-    <li><a class="${String(catalogState.catId) === String(c.id) && !catalogState.query ? 'active' : ''}" onclick="selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
+    <li><a class="${String(catalogState.catId) === String(c.id) && !catalogState.query ? 'active' : ''}" href="${categoryPathFor(c) || '#'}" onclick="event.preventDefault(); selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
   `).join('');
 }
 
@@ -19552,9 +19559,18 @@ async function loadCatalogPage(){
 
   const searching = !!catalogState.query;
   const titleEl = document.getElementById('catalogSearchTitle');
+  // Fuera de una búsqueda, el título (H1) es el nombre de la categoría y debajo va su
+  // presentación (ps_categorias.description); el servidor ya los manda armados (middleware.js).
+  const catActual = !searching && catalogState.catId !== 'all' ? catalogCategories.find(c => String(c.id) === String(catalogState.catId)) : null;
   if (titleEl) {
-    titleEl.textContent = searching ? `Resultados para “${catalogState.query}”` : '';
-    titleEl.classList.toggle('hidden', !searching);
+    const titulo = searching ? `Resultados para “${catalogState.query}”` : (catActual ? catActual.name : '');
+    if (titulo || !titleEl.textContent || searching) titleEl.textContent = titulo;
+    titleEl.classList.toggle('hidden', !titleEl.textContent);
+    let intro = document.getElementById('catalogCatIntro');
+    if (!intro) { intro = document.createElement('div'); intro.id = 'catalogCatIntro'; intro.className = 'catalog-cat-intro'; titleEl.after(intro); }
+    if (searching) intro.innerHTML = '';
+    else if (catActual) intro.innerHTML = catActual.description || '';
+    intro.classList.toggle('hidden', !intro.innerHTML.trim());
   }
   document.querySelector('#storefrontCatalogPage .catalog-layout')?.classList.toggle('searching', searching);
   if (searching && !(productsFirstLoadDone && liveProducts.length > 0)) {
@@ -19699,7 +19715,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
-        <h2 style="margin:6px 0 10px; font-size:22px; color:#2e1065;">${p.name}</h2>
+        <${qtyId === 'storefrontPageQty' ? 'h1' : 'h2'} style="margin:6px 0 10px; font-size:22px; color:#2e1065;">${p.name}</${qtyId === 'storefrontPageQty' ? 'h1' : 'h2'}>
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-orange);">${fmtMoney(p.price)}</div>
         ${wholesaleNoteHTML(p)}
         <p style="color:#5b4a68; line-height:1.5; font-size:14px; margin-top:14px;">${desc}</p>
