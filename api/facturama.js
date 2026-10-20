@@ -19,6 +19,7 @@
 //   accion "enviar"    -> { ok } { id, email }
 // Facturas guardadas en la tabla `facturas` (docs/supabase-facturas.sql).
 const fx = require('../lib/facturama.js');
+const historial = require('../lib/pedido-historial.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -47,6 +48,8 @@ function sb(serviceKey) {
 }
 
 const PAGADOS = ['Pago aceptado', 'Pagado', 'En preparación', 'Enviado', 'Entregado'];
+// Estado que permite facturar un pedido todavía no pagado. La factura sale como pago diferido (PPD, forma 99).
+const ANTICIPADA = 'Factura anticipada';
 const r2 = n => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 // "#POS-123", "pos-123" -> origen pos, folio "#POS-123"; cualquier otro -> pedido de la tienda.
@@ -80,8 +83,30 @@ async function cargarVenta(api, origenPedido, folioPedido) {
     };
   }).filter(c => c.qty > 0 && c.price > 0);
 
+  // Ticket del POS con "Aplicar IVA": el POS suma el 16% encima de los precios de los productos
+  // (subtotal + IVA = total), o sea que esos precios NO traen IVA. Para que la factura quede con
+  // el subtotal de los productos, el IVA del ticket y el total cobrado, se pasan a "con IVA"
+  // (el resto del sistema asume precios con IVA incluido) antes de desglosarlos.
+  const subtotalTicket = Number(p.subtotal), ivaTicket = Number(p.iva), totalTicket = Number(p.total);
+  if (origen === 'pos' && process.env.FACTURAMA_IVA_INCLUIDO !== '0' && ivaTicket > 0
+      && Math.abs(subtotalTicket + ivaTicket - totalTicket) <= 1) {
+    conceptos.forEach(c => { c.price = c.price * 1.16; });
+  }
+
+  // Pedido manual con "Aplicar IVA" (panel → Crear pedido): igual que en el POS, el 16% se suma encima de
+  // los precios de los productos ((subtotal - descuento) × 1.16 + envío = total); el envío no lleva IVA
+  // aparte. Esos precios y su descuento van sin IVA, así que se pasan a "con IVA" antes de desglosar.
+  let factorIva = 1;
+  if (origen === 'online' && p.source === 'manual' && process.env.FACTURAMA_IVA_INCLUIDO !== '0') {
+    const base = (Number(p.subtotal) || 0) - (Number(p.discount_amount) || 0);
+    if (base > 0 && Math.abs(base * 1.16 + (Number(p.shipping_cost) || 0) - Number(p.total)) <= 1) {
+      factorIva = 1.16;
+      conceptos.forEach(c => { c.price = c.price * factorIva; });
+    }
+  }
+
   // Cupón / descuento del pedido repartido proporcionalmente (el último renglón se lleva el ajuste de centavos).
-  const descuento = r2(Number(p.discount_amount) || 0);
+  const descuento = r2((Number(p.discount_amount) || 0) * factorIva);
   if (descuento > 0 && conceptos.length) {
     const brutoTotal = conceptos.reduce((s, c) => s + c.price * c.qty, 0);
     let repartido = 0;
@@ -99,7 +124,7 @@ async function cargarVenta(api, origenPedido, folioPedido) {
   const totalConceptos = r2(conceptos.reduce((s, c) => s + c.price * c.qty - (c.descuento || 0), 0));
   const estado = origen === 'online' ? (p.status || 'Pendiente') : (p.estado || 'Cobrado');
   let motivo = null;
-  if (origen === 'online' && !PAGADOS.includes(estado)) motivo = `El pedido ${folio} está "${estado}": solo se facturan pedidos pagados.`;
+  if (origen === 'online' && !PAGADOS.includes(estado) && estado !== ANTICIPADA) motivo = `El pedido ${folio} está "${estado}": solo se facturan pedidos pagados o en estado "${ANTICIPADA}".`;
   else if (origen === 'pos' && /cancel/i.test(estado)) motivo = `El ticket ${folio} está cancelado.`;
   else if (!conceptos.length) motivo = `El ${origen === 'pos' ? 'ticket' : 'pedido'} ${folio} no tiene productos con precio.`;
   else if (Math.abs(totalConceptos - total) > 1) motivo = `Los productos del ${origen === 'pos' ? 'ticket' : 'pedido'} suman $${totalConceptos.toFixed(2)} pero su total es $${total.toFixed(2)}; corrige el ${origen === 'pos' ? 'ticket' : 'pedido'} antes de facturarlo.`;
@@ -133,6 +158,8 @@ module.exports = async function handler(req, res) {
   if (!ok) { res.status(401).json({ error: 'unauthorized' }); return; }
 
   const { accion } = body;
+  // Quién hace la acción sale de la sesión, no del navegador: va a la factura y al historial del pedido.
+  const usuario = (await historial.actorName(body)) || 'Desconocido';
   if (accion === 'estado') { res.status(200).json({ configurado: fx.facturamaConfigurado(), entorno: fx.entorno() }); return; }
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -172,6 +199,8 @@ module.exports = async function handler(req, res) {
       const origen = venta.origen;
       // Los conceptos salen del pedido/ticket (servidor); lo que mande el navegador se ignora.
       const items = venta.conceptos.slice(0, 100);
+      // Pedido en "Factura anticipada" (sin pago todavía): el SAT exige método PPD con forma de pago 99 (por definir).
+      const anticipada = venta.estado === ANTICIPADA;
       const email = body.email ? String(body.email).trim() : '';
       if (email && !EMAIL_RE.test(email)) { res.status(400).json({ error: 'Correo inválido.' }); return; }
 
@@ -181,7 +210,7 @@ module.exports = async function handler(req, res) {
 
       let cfdi;
       try {
-        cfdi = fx.armarCfdi({ receptor: body.receptor, items, formaPago: body.formaPago, metodoPago: body.metodoPago, folio: nuevoFolio(), fecha: fechaMx(), referencia: pedidoFolio });
+        cfdi = fx.armarCfdi({ receptor: body.receptor, items, formaPago: anticipada ? '99' : body.formaPago, metodoPago: anticipada ? 'PPD' : body.metodoPago, folio: nuevoFolio(), fecha: fechaMx(), referencia: pedidoFolio });
       } catch (e) { res.status(400).json({ error: e.message }); return; }
 
       const emitida = await fx.timbrar(cfdi);
@@ -190,11 +219,16 @@ module.exports = async function handler(req, res) {
         facturama_id: emitida.Id, uuid, folio: String(emitida.Folio || cfdi.Folio), serie: emitida.Serie || cfdi.Serie || null,
         origen, pedido_folio: pedidoFolio, rfc: cfdi.Receiver.Rfc, nombre: cfdi.Receiver.Name, email: email || null,
         total: Number(emitida.Total != null ? emitida.Total : cfdi.Items.reduce((s, c) => s + c.Total, 0)),
-        entorno: fx.entorno(), estado: 'activa', creado_por: String(body.registradoPor || '').slice(0, 80) || null
+        entorno: fx.entorno(), estado: 'activa', creado_por: usuario
       };
       let guardada = null, aviso = null;
       try { guardada = (await api('facturas', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([fila]) }))[0]; }
       catch (e) { aviso = 'La factura se timbró pero no se pudo guardar en el listado: ' + e.message; guardada = fila; }
+      const totalFactura = Number(fila.total) || 0;
+      await historial.registrar(serviceKey, {
+        folio: pedidoFolio, origen, accion: 'factura', usuario,
+        detalle: `Factura emitida${uuid ? ` (UUID ${uuid})` : ''} por $${totalFactura.toFixed(2)}${anticipada ? ' · factura anticipada (pago diferido)' : ''}`
+      });
       let correo = null;
       if (email) { try { await fx.enviarCorreo(emitida.Id, email, 'Tu factura de Mi Fiestashop'); correo = true; } catch (e) { correo = false; } }
       res.status(200).json({ factura: guardada, correoEnviado: correo, aviso });
@@ -227,6 +261,15 @@ module.exports = async function handler(req, res) {
       const c = await fx.cancelar(id, motivo, sust);
       const estado = c && c.Status === 'canceled' ? 'cancelada' : (c && c.Status === 'pending' ? 'pendiente_cancelacion' : 'activa');
       await api(`facturas?facturama_id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ estado, motivo_cancelacion: motivo }) });
+      try {
+        const f = ((await api(`facturas?facturama_id=eq.${encodeURIComponent(id)}&select=pedido_folio,origen,uuid&limit=1`)) || [])[0];
+        if (f && f.pedido_folio) {
+          await historial.registrar(serviceKey, {
+            folio: f.pedido_folio, origen: f.origen || 'online', accion: 'factura', usuario,
+            detalle: `Factura ${f.uuid ? `(UUID ${f.uuid}) ` : ''}${estado === 'cancelada' ? 'cancelada' : (estado === 'pendiente_cancelacion' ? 'con cancelación pendiente del receptor' : 'no se pudo cancelar')} (motivo ${motivo})`
+          });
+        }
+      } catch (e) { /* el historial no impide la cancelación */ }
       res.status(200).json({ estado, cancelacion: c ? { Status: c.Status, Message: c.Message, IsCancelable: c.IsCancelable } : null });
       return;
     }

@@ -15,8 +15,22 @@ const PEDIDOS = {
   'WEB-3': { folio: 'WEB-3', status: 'Entregado', subtotal: 1000, discount_amount: 100, shipping_cost: 150, shipping_carrier: 'Estafeta', total: 1050,
              items: [{ id: 1, name: 'Promo Boda', sku: 'Boda, promo, VIP', qty: 1, price: 800 }, { id: 2, name: 'Mandil', sku: 'MAN', qty: 10, price: 20 }] }
 };
+// Pedidos manuales con "Aplicar IVA": el panel suma el 16% sobre los productos ((subtotal - descuento) x 1.16 + envio).
+PEDIDOS['MAN-423362'] = { folio: 'MAN-423362', source: 'manual', status: 'Pago aceptado', subtotal: 21132, total: 24513.12, shipping_cost: 0, customer_name: 'Evolucion', items: [
+  { id: 1, name: 'Antifaz Carnaval Pluma', qty: 120, price: 27.1 }, { id: 2, name: 'Antifaz carnaval Negro / Blanco', qty: 400, price: 16.6 }, { id: 3, name: 'Antifaz Carnaval con flor', qty: 400, price: 28.1 }] };
+PEDIDOS['MAN-DESC'] = { folio: 'MAN-DESC', source: 'manual', status: 'Pago aceptado', subtotal: 1000, discount_amount: 100, shipping_cost: 50, total: 1094, items: [{ id: 1, name: 'Promo', qty: 10, price: 100 }] };
+PEDIDOS['MAN-SINIVA'] = { folio: 'MAN-SINIVA', source: 'manual', status: 'Pago aceptado', subtotal: 200, shipping_cost: 0, total: 200, items: [{ id: 1, name: 'Vela', qty: 4, price: 50 }] };
 const TICKETS = {
   '#POS-123': { folio: '#POS-123', total: 73, items: [{ product_id: '10790803185325', name: 'Globo calabaza', sku: 'Globo, metalico', qty: 1, price: 24 }, { product_id: '5', name: 'Vela', qty: 7, price: 7 }] },
+  // Ticket real con "Aplicar IVA": el POS sumo el 16% sobre los precios de los productos (895.20 + 143.232 = 1038.432).
+  '#POS-12278': { folio: '#POS-12278', subtotal: 895.2, iva: 143.232, total: 1038.432, items: [
+    { product_id: '83508', name: 'Espanta Suegras (100 pzas)', qty: 1, price: 68 }, { product_id: '83281', name: 'Bombín con peluca metálica', qty: 10, price: 13 },
+    { product_id: '83391', name: 'Lente gigante neón', qty: 4, price: 17 }, { product_id: '83392', name: 'Collar hawaiano neón', qty: 5, price: 7 },
+    { product_id: '83408', name: 'Globo redondo neón', qty: 1, price: 143 }, { product_id: '83877', name: 'Cortina de color', qty: 2, price: 21 },
+    { product_id: '83500', name: 'Collar esfera disco', qty: 12, price: 23.1 }, { product_id: '83382', name: 'Silbato (24 pzas)', qty: 1, price: 35 },
+    { product_id: '84516', name: 'Pulsera luminosa cyalume 90 pzas', qty: 1, price: 97 }] },
+  // Ticket sin IVA agregado (IVA desmarcado): los precios son finales y subtotal = total.
+  '#POS-SINIVA': { folio: '#POS-SINIVA', subtotal: 100, iva: 0, total: 100, items: [{ product_id: '7', name: 'Vela', qty: 4, price: 25 }] },
   '#POS-999': { folio: '#POS-999', total: 50, estado: 'cancelada', items: [{ product_id: '1', name: 'Vela', qty: 1, price: 50 }] }
 };
 function fake({ facturas = [], timbre } = {}) {
@@ -159,4 +173,86 @@ test('facturama: ticket del POS con folio escrito sin # se encuentra', async () 
   assert.equal(r.code, 200, JSON.stringify(r.data));
   assert.equal(st.facturas[0].pedido_folio, '#POS-123'); assert.equal(st.facturas[0].origen, 'pos');
   assert.equal(st.cfdi.Items[0].IdentificationNumber, '10790803185325');
+});
+
+test('facturama: ticket del POS con IVA agregado se puede facturar (productos sin IVA + 16% = total del ticket)', async () => {
+  const st = fake();
+  const p = await call({ accion: 'pedido', folio: '#POS-12278' });
+  assert.equal(p.code, 200, JSON.stringify(p.data));
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo);
+  assert.equal(p.data.pedido.total, 1038.43); assert.equal(p.data.pedido.totalConceptos, 1038.43);
+  const r = await call({ accion: 'emitir', origen: 'pos', pedidoFolio: '#POS-12278', receptor });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  const items = st.cfdi.Items;
+  const sub = items.reduce((s, c) => s + c.Subtotal, 0), iva = items.reduce((s, c) => s + c.Taxes[0].Total, 0), total = items.reduce((s, c) => s + c.Total, 0);
+  assert.ok(Math.abs(sub - 895.2) < 0.001, 'subtotal ' + sub);
+  assert.ok(Math.abs(iva - 143.23) <= 0.06, 'IVA ' + iva);
+  assert.ok(Math.abs(total - 1038.43) <= 0.06, 'total ' + total);
+  assert.equal(items[1].UnitPrice, 13); assert.equal(items[1].Subtotal, 130);
+  for (const c of items) assert.ok(Math.abs(c.Total - (c.Subtotal + c.Taxes[0].Total)) < 0.011);
+});
+
+test('facturama: pedido manual con IVA agregado (MAN-423362) se puede facturar: productos sin IVA + 16% = total', async () => {
+  const st = fake();
+  const p = await call({ accion: 'pedido', folio: 'MAN-423362' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo);
+  assert.equal(p.data.pedido.total, 24513.12); assert.equal(p.data.pedido.totalConceptos, 24513.12);
+  const r = await call({ accion: 'emitir', origen: 'online', pedidoFolio: 'MAN-423362', receptor });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  const items = st.cfdi.Items;
+  const sub = items.reduce((s, c) => s + c.Subtotal, 0), total = items.reduce((s, c) => s + c.Total, 0);
+  assert.ok(Math.abs(sub - 21132) < 0.01, 'subtotal ' + sub);
+  assert.ok(Math.abs(total - 24513.12) <= 0.06, 'total ' + total);
+  assert.equal(items[0].UnitPrice, 27.1);
+});
+
+test('facturama: pedido manual con IVA, descuento y envío cuadra con el total cobrado; sin IVA agregado queda igual', async () => {
+  const st = fake();
+  let p = await call({ accion: 'pedido', folio: 'MAN-DESC' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo); assert.equal(p.data.pedido.totalConceptos, 1094);
+  p = await call({ accion: 'pedido', folio: 'MAN-SINIVA' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo); assert.equal(p.data.pedido.totalConceptos, 200);
+  const q = await call({ accion: 'pedido', folio: 'WEB-1' });
+  assert.equal(q.data.pedido.totalConceptos, 116, 'un pedido de la tienda no se toca');
+});
+
+test('facturama: ticket del POS sin IVA agregado sigue facturandose igual (precio final, IVA incluido)', async () => {
+  const st = fake();
+  const p = await call({ accion: 'pedido', folio: '#POS-SINIVA' });
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo);
+  const r = await call({ accion: 'emitir', origen: 'pos', pedidoFolio: '#POS-SINIVA', receptor });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  const total = st.cfdi.Items.reduce((s, c) => s + c.Total, 0);
+  assert.ok(Math.abs(total - 100) <= 0.01, 'total ' + total);
+  assert.equal(st.cfdi.Items[0].Subtotal, 86.21);
+});
+
+test('facturama: ticket con IVA que no cuadra con su total sigue bloqueado', async () => {
+  fake();
+  TICKETS['#POS-ROTO'] = { folio: '#POS-ROTO', subtotal: 100, iva: 16, total: 500, items: [{ product_id: '7', name: 'Vela', qty: 4, price: 25 }] };
+  const p = await call({ accion: 'pedido', folio: '#POS-ROTO' });
+  assert.equal(p.data.pedido.facturable, false); assert.match(p.data.pedido.motivo, /suman/);
+});
+
+test('facturama: pedido en "Factura anticipada" (sin pagar) se puede facturar, como pago diferido PPD / forma 99', async () => {
+  PEDIDOS['WEB-ANT'] = { folio: 'WEB-ANT', status: 'Factura anticipada', total: 116, shipping_cost: 0, customer_email: 'c@x.com', customer_name: 'Ana', items: [{ id: 83591, name: 'Globo', sku: 'G1', qty: 2, price: 58 }] };
+  const st = fake();
+  const p = await call({ accion: 'pedido', origen: 'online', folio: 'WEB-ANT' });
+  assert.equal(p.code, 200, JSON.stringify(p.data));
+  assert.equal(p.data.pedido.facturable, true, p.data.pedido.motivo);
+  // aunque el navegador mande contado y tarjeta, un pedido sin pagar sale como pago diferido
+  const r = await call({ accion: 'emitir', origen: 'online', pedidoFolio: 'WEB-ANT', receptor, formaPago: '04', metodoPago: 'PUE' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.equal(st.cfdi.PaymentMethod, 'PPD'); assert.equal(st.cfdi.PaymentForm, '99');
+  assert.ok(Math.abs(st.cfdi.Items.reduce((s, c) => s + c.Total, 0) - 116) <= 0.02);
+});
+
+test('facturama: un pedido pagado conserva la forma de pago que se eligió, y los pendientes siguen bloqueados', async () => {
+  const st = fake();
+  const r = await call({ accion: 'emitir', origen: 'online', pedidoFolio: 'WEB-1', receptor, formaPago: '03' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.equal(st.cfdi.PaymentForm, '03'); assert.equal(st.cfdi.PaymentMethod, 'PUE');
+  const p = await call({ accion: 'pedido', origen: 'online', folio: 'WEB-2' });
+  assert.equal(p.data.pedido.facturable, false);
+  assert.match(p.data.pedido.motivo, /pagados o en estado "Factura anticipada"/);
 });

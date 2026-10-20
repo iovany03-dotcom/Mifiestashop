@@ -108,3 +108,18 @@ test('mp-pago: conciliar sin intentos no toca el pedido', async () => {
   const r = await conciliarPedido({ accessToken: 't', serviceRoleKey: 's', folio: 'WEB-2' });
   assert.equal(r.intentos.length, 0); assert.equal(r.aplicado, null); assert.equal(patches, 0);
 });
+
+test('mp-pago: el cambio de estado por pago queda en el historial como "Mercado Pago (automático)" y "Factura anticipada" se actualiza', async () => {
+  const st = fake({ pago: { id: 77, status: 'approved', transaction_amount: 100, external_reference: 'WEB-9' }, pedido: { status: 'Factura anticipada', total: 100, items: [] } });
+  const inserts = [];
+  const base = global.fetch;
+  global.fetch = async (url, opts = {}) => {
+    if (String(url).includes('/rest/v1/pedido_historial') && opts.method === 'POST') { inserts.push(JSON.parse(opts.body)); return { ok: true, status: 201, json: async () => null, text: async () => '' }; }
+    return base(url, opts);
+  };
+  const r = await aplicarPago(args);
+  assert.equal(r.estado, 'Pago aceptado'); assert.equal(st.pedido.status, 'Pago aceptado');
+  const fila = [].concat(...inserts)[0];
+  assert.equal(fila.usuario, 'Mercado Pago (automático)'); assert.equal(fila.folio, 'WEB-9');
+  assert.match(fila.detalle, /Estado: Factura anticipada → Pago aceptado/);
+});

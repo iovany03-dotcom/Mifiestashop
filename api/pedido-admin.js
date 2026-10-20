@@ -19,11 +19,21 @@
 //               personal). Regresa el stock igual que cancelar y borra el
 //               pedido.
 //
+//   - datos:     nota interna, fecha de entrega y guía (pedidos de la tienda).
+//   - historial: lista el historial de movimientos del pedido (cualquier origen).
+//
+// Cada estado, cancelación, borrado y cambio de datos se anota en pedido_historial (lib/pedido-historial.js)
+// con el nombre de quien lo hizo (sacado de la sesión en el servidor) y la fecha y hora.
+//
 // POST { p_admin_password, p_staff_email, p_staff_pin, accion, origen, folio,
-//        estado?, registradoPor? } -> { ok: true, estado?, piezasRegresadas }
+//        estado?, registradoPor? } -> { ok: true, estado?, piezasRegresadas, historialRegistrado }
+const historial = require('../lib/pedido-historial.js');
+
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
-const ESTADOS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
+// "Factura anticipada": permite facturar el pedido aunque todavía no esté pagado (ver api/facturama.js);
+// no cuenta como venta cobrada. Cuando se paga se cambia a Pago aceptado (o lo hace Mercado Pago solo).
+const ESTADOS = ['Pendiente', 'Pendiente de pago', 'Factura anticipada', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
 
 async function rpc(fn, params) {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
@@ -66,6 +76,21 @@ async function regresarStock(api, folio, registradoPor) {
   return reversal.reduce((s, m) => s + Math.max(0, m.qty), 0);
 }
 
+// Valores del pedido ANTES del cambio, para escribir en el historial "de qué a qué". Si no se pueden
+// leer, el cambio igual se hace y el historial queda sin el valor anterior.
+async function leerPedido(api, origen, folio) {
+  try {
+    const table = origen === 'online' ? 'pedidos_online' : 'pos_tickets';
+    const cols = origen === 'online' ? 'status,nota,delivery_date,tracking_number' : 'estado';
+    const rows = await api(`${table}?folio=eq.${encodeURIComponent(folio)}&select=${cols}&limit=1`);
+    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  } catch (e) {
+    return null;
+  }
+}
+const estadoActual = (origen, row) => row ? (origen === 'online' ? (row.status || 'Pendiente') : (row.estado || 'Pago aceptado')) : null;
+const fmtFecha = v => (v ? String(v).slice(0, 10) : '—');
+
 async function setEstado(api, origen, folio, estado) {
   const f = encodeURIComponent(folio);
   const table = origen === 'online' ? 'pedidos_online' : 'pos_tickets';
@@ -93,12 +118,23 @@ module.exports = async function handler(req, res) {
   }).catch(() => false);
   if (!session) { res.status(401).json({ error: 'unauthorized' }); return; }
 
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Historial de movimientos del pedido: quién hizo cada cambio, qué y cuándo.
+  if (accion === 'historial') {
+    if (!serviceKey) { res.status(500).json({ error: 'Falta SUPABASE_SERVICE_ROLE_KEY en Vercel' }); return; }
+    try { res.status(200).json({ historial: await historial.listar(serviceKey, folio) }); }
+    catch (e) { res.status(502).json({ error: 'No se pudo leer el historial.', detail: String(e.message || e).slice(0, 200) }); }
+    return;
+  }
+
   if (origen === 'prestashop') {
     res.status(409).json({ error: 'Este pedido es del histórico de las cajas de PrestaShop: es solo de consulta, no se puede cambiar su estado, cancelar ni borrar.' });
     return;
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const usuario = (await historial.actorName(body)) || 'Desconocido';
+  const serviceRoleKey = serviceKey;
   if (!serviceRoleKey) { res.status(500).json({ error: 'Falta SUPABASE_SERVICE_ROLE_KEY en Vercel' }); return; }
   const api = rest(serviceRoleKey);
 
@@ -106,9 +142,18 @@ module.exports = async function handler(req, res) {
     if (accion === 'estado' || accion === 'cancelar') {
       const estado = accion === 'cancelar' ? 'Cancelado' : String(body.estado || '');
       if (!ESTADOS.includes(estado)) { res.status(400).json({ error: 'Estado no válido.' }); return; }
+      const de = estadoActual(origen, await leerPedido(api, origen, folio));
       if (!await setEstado(api, origen, folio, estado)) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
-      const piezasRegresadas = estado === 'Cancelado' ? await regresarStock(api, folio, registradoPor) : 0;
-      res.status(200).json({ ok: true, estado, piezasRegresadas });
+      const piezasRegresadas = estado === 'Cancelado' ? await regresarStock(api, folio, registradoPor || usuario) : 0;
+      let historialRegistrado = true;
+      if (de !== estado || piezasRegresadas > 0) {
+        const piezas = piezasRegresadas > 0 ? ` · se regresaron ${piezasRegresadas} piezas al stock` : '';
+        historialRegistrado = await historial.registrar(serviceRoleKey, {
+          folio, origen, accion, usuario,
+          detalle: accion === 'cancelar' ? `Pedido cancelado${de ? ` (estaba en "${de}")` : ''}${piezas}` : `Estado: ${de || '—'} → ${estado}${piezas}`
+        });
+      }
+      res.status(200).json({ ok: true, estado, piezasRegresadas, historialRegistrado });
       return;
     }
 
@@ -125,20 +170,31 @@ module.exports = async function handler(req, res) {
       }
       if (body.trackingNumber !== undefined) patch.tracking_number = String(body.trackingNumber || '').trim().slice(0, 100) || null;
       if (!Object.keys(patch).length) { res.status(400).json({ error: 'Nada que guardar.' }); return; }
+      const antes = (await leerPedido(api, 'online', folio)) || {};
       const rows = await api(`pedidos_online?folio=eq.${encodeURIComponent(folio)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch) });
       if (!Array.isArray(rows) || rows.length === 0) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
-      res.status(200).json({ ok: true });
+      const cambios = [];
+      if (patch.nota !== undefined && (antes.nota || null) !== patch.nota) cambios.push('Nota interna actualizada');
+      if (patch.delivery_date !== undefined && fmtFecha(antes.delivery_date) !== fmtFecha(patch.delivery_date)) cambios.push(`Fecha de entrega: ${fmtFecha(antes.delivery_date)} → ${fmtFecha(patch.delivery_date)}`);
+      if (patch.tracking_number !== undefined && (antes.tracking_number || null) !== patch.tracking_number) cambios.push(`Guía de rastreo: ${antes.tracking_number || '—'} → ${patch.tracking_number || '—'}`);
+      const historialRegistrado = await historial.registrar(serviceRoleKey, cambios.map(detalle => ({ folio, origen, accion: 'datos', detalle, usuario })));
+      res.status(200).json({ ok: true, historialRegistrado });
       return;
     }
 
     if (accion === 'eliminar') {
       const esAdmin = await rpc('rpc_check_admin', { p_password: body.p_admin_password ?? null }).catch(() => false);
       if (!esAdmin) { res.status(403).json({ error: 'Solo el super administrador puede borrar pedidos.' }); return; }
-      const piezasRegresadas = await regresarStock(api, folio, registradoPor);
+      const de = estadoActual(origen, await leerPedido(api, origen, folio));
+      const piezasRegresadas = await regresarStock(api, folio, registradoPor || usuario);
       const table = origen === 'online' ? 'pedidos_online' : 'pos_tickets';
       const rows = await api(`${table}?folio=eq.${encodeURIComponent(folio)}`, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
       if (!Array.isArray(rows) || rows.length === 0) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
-      res.status(200).json({ ok: true, piezasRegresadas });
+      const historialRegistrado = await historial.registrar(serviceRoleKey, {
+        folio, origen, accion: 'eliminar', usuario,
+        detalle: `Pedido borrado${de ? ` (estaba en "${de}")` : ''}${piezasRegresadas > 0 ? ` · se regresaron ${piezasRegresadas} piezas al stock` : ''}`
+      });
+      res.status(200).json({ ok: true, piezasRegresadas, historialRegistrado });
       return;
     }
 
