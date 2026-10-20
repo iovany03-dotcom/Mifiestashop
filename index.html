@@ -14714,6 +14714,12 @@ function recError(e) {
     equivalencia_existente: 'Ese código ya está vinculado a otro producto para este proveedor. Solo un supervisor puede cambiarlo (queda en el historial).',
     linea_sin_identificar: 'Primero identifica el producto de este renglón (y confirma la lectura).',
     recepcion_cerrada: 'Esta recepción ya está cerrada, cancelada o procesándose.',
+    reparto_no_cuadra: 'Las piezas repartidas no suman lo que dice la nota.',
+    reparto_producto_repetido: 'Un producto está repetido en el reparto.',
+    reparto_minimo_dos: 'El reparto necesita al menos dos productos.',
+    reparto_invalido: 'Revisa el reparto: cada producto necesita piezas enteras mayores a 0.',
+    cantidad_no_entera: 'La cantidad de la nota por las piezas por unidad no es un número entero de piezas.',
+    linea_no_dividible: 'Solo se puede repartir un renglón de la nota.',
     linea_ingresada: 'Ese renglón ya entró al inventario; no se puede modificar.',
     faltan_piezas_por_caja: 'Indica cuántas piezas trae cada caja.',
     danadas_mayor_que_recibido: 'Las piezas dañadas no pueden ser más que las recibidas.',
@@ -15040,7 +15046,7 @@ function recHtmlLineas(d, L, cerrada) {
       <td>${l.renglon}${l.origen === 'adicional' ? '<div style="font-size:10px; color:#9333ea; font-weight:700;">NO DOCUMENTADA</div>' : ''}</td>
       <td style="font-family:monospace; font-weight:700; white-space:nowrap;">${escapeHtml(l.codigo || '—')}${l.descripcion ? `<div style="font-family:inherit; font-weight:400; font-size:11px; color:var(--text-muted);">${escapeHtml(l.descripcion)}</div>` : ''}
         ${l.revisar ? `<div style="font-family:inherit; font-weight:600; font-size:11px; color:#dc2626; white-space:normal;">${escapeHtml(l.revisar_motivo || 'Revisar')}</div>` : ''}</td>
-      <td style="text-align:right;">${l.origen === 'adicional' ? '—' : recNum(l.cantidad_nota)}${l.factor > 1 ? `<div style="font-size:11px; color:var(--text-muted);">× ${l.factor} = ${recNum(l.esperado_piezas)} pzs</div>` : ''}</td>
+      <td style="text-align:right;">${l.origen === 'adicional' ? '—' : recNum(l.cantidad_nota)}${l.factor > 1 ? `<div style="font-size:11px; color:var(--text-muted);">× ${l.factor} = ${recNum(l.esperado_piezas)} pzs</div>` : ''}${l.reparto ? `<div style="font-size:10px; color:#9333ea; font-weight:700;">PARTE DE ${recNum(l.reparto.cantidad_nota)} × ${l.reparto.factor} = ${recNum(l.reparto.cantidad_nota * l.reparto.factor)} PZS</div>` : ''}</td>
       <td style="text-align:right; white-space:nowrap;">${l.precio_unitario != null ? fmtMoney(l.precio_unitario) : '—'}
         ${costoVar !== null && Math.abs(costoVar) >= 10 ? `<div style="font-size:11px; font-weight:700; color:${costoVar > 0 ? '#dc2626' : '#16a34a'};">${costoVar > 0 ? '▲' : '▼'} ${Math.abs(costoVar).toFixed(0)}% vs ${fmtMoney(l.costo_anterior)}</div>` : ''}</td>
       <td style="text-align:right;">${l.importe != null ? fmtMoney(l.importe) : '—'}</td>
@@ -15055,7 +15061,7 @@ function recHtmlLineas(d, L, cerrada) {
         ${(l.evidencias || []).map((a, k) => `<a href="#" onclick="event.preventDefault(); recVerArchivo('${escapeHtml(a.path)}')" style="font-size:11px; display:block;">Evidencia ${k + 1}</a>`).join('')}</td>
       <td style="white-space:nowrap;">${abierta ? `
         <button class="btn small" onclick="recLineaForm(${l.id})" title="Corregir lo que leyó la IA">${l.revisar ? 'Revisar' : 'Editar'}</button>
-        <button class="btn small ${!l.id_product ? 'primary' : ''}" onclick="recVincular(${l.id})">${l.id_product ? 'Cambiar' : 'Vincular'}</button>
+        <button class="btn small ${!l.id_product ? 'primary' : ''}" onclick="recVincular(${l.id})">${l.reparto ? 'Reparto' : (l.id_product ? 'Cambiar' : 'Vincular')}</button>
         ${l.id_product && !l.revisar ? `<button class="btn small ${l.cantidad_recibida == null ? 'primary' : ''}" onclick="recConteo(${l.id})">Contar</button>` : ''}
         ${sup && l.cantidad_recibida != null && l.incidencia && !l.diferencia_resuelta ? `<button class="btn small" onclick="recResolver(${l.id})">Resolver</button>` : ''}
         <button class="btn small" onclick="recEliminarLinea(${l.id})" title="Quitar renglón">🗑</button>` : ''}</td>
@@ -15129,17 +15135,90 @@ function recVincular(id, sugeridos) {
       <label class="btn small" style="cursor:pointer;">📷 Identificar con foto<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="recVincFoto(this)"></label>
       <button class="btn small" onclick="recProductoNuevoForm()">+ Producto nuevo</button>
     </div>
+    <label style="display:flex; gap:6px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px;"><input type="checkbox" id="recVVarios" onchange="recVincModoVarios(this.checked)"> Son varios productos del catálogo (elige cuáles y cuántas piezas de cada uno)</label>
     <div id="recVRes" style="max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px;">${sugeridos ? recVincHtmlResultados(sugeridos, true) : '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'}</div>
+    <div id="recVVariosPanel" class="hidden" style="margin-top:10px;"></div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
-      <label>Presentación en la nota<select id="recVPres" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
-      <label>Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${l.factor || 1}" style="${REC_INPUT} width:100%;"></label>
+      <label id="recVPresLbl">Presentación en la nota<select id="recVPres" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
+      <label>Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${l.reparto ? l.reparto.factor : (l.factor || 1)}" oninput="recVariosPintar()" style="${REC_INPUT} width:100%;"></label>
     </div>
-    <p style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
-    <label style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
+    <p id="recVEjemplo" style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
+    <label id="recVGuardarLbl" style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo && !l.reparto ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
     <input type="hidden" id="recVSel">
     <div id="recVSelTxt" style="margin-top:10px; font-weight:700;"></div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" onclick="recVincGuardar()">Vincular</button></div>`);
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recVBtnOk" onclick="recVincGuardar()">Vincular</button></div>`);
+  recVarios = { activo: false, partes: [] };
+  if (l.reparto) {
+    recVarios.partes = (recActual.lineas || []).filter(x => x.reparto && x.reparto.grupo === l.reparto.grupo && x.id_product)
+      .map(x => ({ id: String(x.id_product), nombre: x.producto ? x.producto.name : '#' + x.id_product, piezas: Number(x.cantidad_nota) }));
+    document.getElementById('recVVarios').checked = true;
+    recVincModoVarios(true);
+  }
   setTimeout(() => document.getElementById('recVBuscar')?.focus(), 50);
+}
+
+// ---- Un renglón de la nota con varios productos del catálogo (rpc_recep_dividir) ----
+// Se eligen los productos y las piezas de cada uno hasta completar lo que dice la nota
+// (cantidad × piezas por unidad); cada producto queda como su propia línea para contarse e ingresarse.
+let recVarios = { activo: false, partes: [] };
+function recVariosTotal() {
+  const l = recLinea(recVincId);
+  const cant = l && l.reparto ? Number(l.reparto.cantidad_nota) : Number(l && l.cantidad_nota);
+  const factor = parseInt(document.getElementById('recVFactor')?.value, 10) || 0;
+  return cant > 0 && factor >= 1 ? cant * factor : 0;
+}
+function recVariosSuma() { return recVarios.partes.reduce((a, p) => a + (Number(p.piezas) || 0), 0); }
+function recVincModoVarios(on) {
+  recVarios.activo = !!on;
+  const l = recLinea(recVincId);
+  document.getElementById('recVVariosPanel').classList.toggle('hidden', !on);
+  ['recVPresLbl', 'recVEjemplo', 'recVGuardarLbl', 'recVSelTxt'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !!on));
+  document.getElementById('recVBtnOk').textContent = on ? 'Dividir renglón' : 'Vincular';
+  if (!on && l && l.reparto) { const g = document.getElementById('recVGuardar'); if (g) { g.checked = false; g.disabled = true; } }
+  recVariosPintar();
+}
+function recVariosAgregar(id, nombre) {
+  if (recVarios.partes.some(p => p.id === String(id))) { alert('Ese producto ya está en la lista.'); return; }
+  const falta = Math.max(0, recVariosTotal() - recVariosSuma());
+  recVarios.partes.push({ id: String(id), nombre: nombre || ('#' + id), piezas: falta > 0 ? falta : 1 });
+  recVariosPintar();
+}
+function recVariosPiezas(i, v) { const n = Math.max(0, Math.floor(Number(v) || 0)); if (recVarios.partes[i]) recVarios.partes[i].piezas = n; recVariosPintar(true); }
+function recVariosResto(i) {
+  const otros = recVarios.partes.reduce((a, p, k) => a + (k === i ? 0 : (Number(p.piezas) || 0)), 0);
+  recVarios.partes[i].piezas = Math.max(0, recVariosTotal() - otros);
+  recVariosPintar();
+}
+function recVariosQuitar(i) { recVarios.partes.splice(i, 1); recVariosPintar(); }
+function recVariosPintar(sinFilas) {
+  const panel = document.getElementById('recVVariosPanel');
+  if (!panel || !recVarios.activo) return;
+  const total = recVariosTotal(), suma = recVariosSuma(), falta = total - suma;
+  const ok = recVarios.partes.length >= 2 && falta === 0 && recVarios.partes.every(p => p.piezas > 0);
+  const resumen = `<div id="recVVariosResumen" style="font-weight:700; margin-top:8px; color:${falta === 0 ? '#16a34a' : falta < 0 ? '#dc2626' : '#d97706'};">
+      Asignadas ${recNum(suma)} de ${recNum(total)} piezas de la nota${falta > 0 ? ` · faltan ${recNum(falta)}` : falta < 0 ? ` · te pasaste por ${recNum(-falta)}` : ' · completo ✓'}</div>`;
+  if (sinFilas) { const r = document.getElementById('recVVariosResumen'); if (r) r.outerHTML = resumen; }
+  else {
+    panel.innerHTML = `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Toca productos de la lista de arriba para agregarlos y pon las piezas de cada uno. Deben sumar exactamente lo que dice la nota.</div>
+      ${recVarios.partes.length ? recVarios.partes.map((p, i) => `<div style="display:flex; gap:8px; align-items:center; padding:4px 0; border-bottom:1px solid var(--border);">
+        <div style="flex:1; font-size:13px; font-weight:600;">${escapeHtml(p.nombre)}</div>
+        <input type="number" min="1" step="1" value="${p.piezas}" oninput="recVariosPiezas(${i}, this.value)" style="${REC_INPUT} width:90px;">
+        <button class="btn small" type="button" onclick="recVariosResto(${i})" title="Poner las piezas que faltan para completar la nota">Resto</button>
+        <button class="btn small" type="button" onclick="recVariosQuitar(${i})">✕</button></div>`).join('') : '<div style="color:var(--text-muted); font-size:13px;">Todavía no hay productos.</div>'}
+      ${resumen}`;
+  }
+  const b = document.getElementById('recVBtnOk'); if (b) b.disabled = !ok;
+}
+async function recVariosGuardar() {
+  const total = recVariosTotal();
+  if (recVarios.partes.length < 2 || recVariosSuma() !== total) { alert(`Las piezas deben sumar ${recNum(total)}.`); return; }
+  try {
+    const d = await recRpc('rpc_recep_dividir', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: recVincId, p_factor: parseInt(document.getElementById('recVFactor').value, 10),
+      p_partes: recVarios.partes.map(p => ({ id_product: Number(p.id), piezas: p.piezas }))
+    });
+    recCerrarModal(); recMostrar(d);
+  } catch (e) { alert(recError(e)); }
 }
 function recVincHtmlResultados(lista, deIA) {
   if (!lista.length) return `<p style="padding:10px; color:var(--text-muted); margin:0;">${deIA ? 'La IA no encontró productos parecidos. Busca por nombre o registra uno nuevo.' : 'Sin resultados.'}</p>`;
@@ -15160,12 +15239,14 @@ function recVincBuscar() {
   cont.innerHTML = recVincHtmlResultados(res);
 }
 function recVincElegir(id, el) {
+  if (recVarios.activo) { recVariosAgregar(id, el ? el.dataset.nombre : ''); return; }
   document.getElementById('recVSel').value = id;
   document.querySelectorAll('#recVRes .mov-search-item').forEach(x => x.classList.remove('active'));
   if (el) el.classList.add('active');
   document.getElementById('recVSelTxt').textContent = `Seleccionado: ${el ? el.dataset.nombre : '#' + id}`;
 }
 async function recVincGuardar(reemplazar) {
+  if (recVarios.activo) { recVariosGuardar(); return; }
   const id = document.getElementById('recVSel').value;
   if (!id) { alert('Elige un producto de la lista.'); return; }
   const factor = parseInt(document.getElementById('recVFactor').value, 10);

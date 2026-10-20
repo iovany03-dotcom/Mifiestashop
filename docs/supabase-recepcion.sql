@@ -93,6 +93,7 @@ create table if not exists public.recepcion_lineas (
   ingresado_qty numeric, ingresado_at timestamptz, ingresado_por text,
   observaciones text,
   evidencias jsonb not null default '[]'::jsonb,
+  reparto jsonb,   -- renglón repartido en varios productos: { grupo, cantidad_nota, factor, precio_unitario, importe } de la nota original
   constraint recepcion_lineas_cantidades check (
     (cantidad_nota is null or cantidad_nota >= 0) and (cantidad_recibida is null or cantidad_recibida >= 0)
     and danadas >= 0 and (cantidad_recibida is null or danadas <= cantidad_recibida))
@@ -425,7 +426,7 @@ begin
   if not exists (select 1 from catalogo_productos where id = p_id_product) then raise exception 'producto_no_existe'; end if;
   select costo_compra into v_costo from catalogo_productos where id = p_id_product;
 
-  if coalesce(p_guardar_equivalencia, true) and l.codigo is not null then
+  if coalesce(p_guardar_equivalencia, true) and l.codigo is not null and l.reparto is null then
     select * into e from equivalencias_proveedor
      where proveedor_id = r.proveedor_id and codigo_norm = recep_norm_codigo(l.codigo) and estado = 'activa' for update;
     if found and (e.id_product <> p_id_product or e.factor <> v_factor or e.presentacion <> v_pres) then
@@ -900,3 +901,77 @@ begin
 end $$;
 create or replace trigger pos_stock_moves_regla_ingreso before insert or update on public.pos_stock_moves
   for each row execute function public.pos_stock_moves_regla_ingreso();
+
+-- ---------------------------------------------------------------- un renglón = varios productos
+-- Un renglón de la nota puede traer varios productos del catálogo bajo un mismo código (ej. "Pz
+-- Sombreros": 53 × 2 = 106 piezas de distintos modelos). El renglón se reemplaza por una línea
+-- por producto con sus piezas (deben sumar lo que dice la nota); cada una se cuenta y se ingresa
+-- por separado. El importe y el precio de la nota se reparten por pieza (la última absorbe el
+-- redondeo). Sirve también para rehacer el reparto de un renglón ya dividido (mientras no se ingrese).
+alter table public.recepcion_lineas add column if not exists reparto jsonb;
+
+create or replace function public.recep_dividir_core(p_rec bigint, p_linea bigint, p_factor numeric, p_partes jsonb, p_por text)
+returns void language plpgsql security definer set search_path to 'public' as $$
+declare r recepciones; l recepcion_lineas; o jsonb; v_grupo bigint; v_ids bigint[]; v_cant numeric; v_precio numeric; v_importe numeric;
+        v_total numeric; v_suma numeric := 0; v_n int; v_i int := 0; v_vistos bigint[] := '{}'; v_id bigint;
+        pa jsonb; v_prod bigint; v_pz numeric; v_imp numeric; v_acum numeric := 0; v_costo numeric;
+begin
+  select * into r from recepciones where id = p_rec for update;
+  if not found then raise exception 'no_encontrado'; end if;
+  if r.estado in ('cancelada','conciliada','procesando') then raise exception 'recepcion_cerrada'; end if;
+  select * into l from recepcion_lineas where id = p_linea and recepcion_id = r.id for update;
+  if not found then raise exception 'no_encontrado'; end if;
+  if l.origen <> 'nota' then raise exception 'linea_no_dividible'; end if;
+  if p_factor is null or p_factor < 1 or p_factor > 100000 or p_factor <> trunc(p_factor) then raise exception 'factor_invalido'; end if;
+  if l.reparto is not null then
+    o := l.reparto; v_grupo := coalesce((o->>'grupo')::bigint, l.id);
+  else
+    o := jsonb_build_object('cantidad_nota', l.cantidad_nota, 'precio_unitario', l.precio_unitario, 'importe', l.importe);
+    v_grupo := l.id;
+  end if;
+  select array_agg(id) into v_ids from recepcion_lineas
+   where recepcion_id = r.id and (id = l.id or (l.reparto is not null and (reparto->>'grupo')::bigint = v_grupo));
+  if exists (select 1 from recepcion_lineas where id = any(v_ids) and ingresado_at is not null) then raise exception 'linea_ingresada'; end if;
+  v_cant := (o->>'cantidad_nota')::numeric; v_precio := nullif(o->>'precio_unitario','')::numeric; v_importe := nullif(o->>'importe','')::numeric;
+  if v_cant is null or v_cant <= 0 then raise exception 'linea_incompleta'; end if;
+  v_total := v_cant * p_factor;
+  if v_total <> trunc(v_total) then raise exception 'cantidad_no_entera'; end if;
+  if p_partes is null or jsonb_typeof(p_partes) <> 'array' then raise exception 'reparto_invalido'; end if;
+  v_n := jsonb_array_length(p_partes);
+  if v_n < 2 or v_n > 60 then raise exception 'reparto_minimo_dos'; end if;
+  for pa in select * from jsonb_array_elements(p_partes) loop
+    v_prod := (pa->>'id_product')::bigint; v_pz := (pa->>'piezas')::numeric;
+    if v_prod is null or v_pz is null or v_pz <= 0 or v_pz <> trunc(v_pz) then raise exception 'reparto_invalido'; end if;
+    if v_prod = any(v_vistos) then raise exception 'reparto_producto_repetido'; end if;
+    if not exists (select 1 from catalogo_productos where id = v_prod) then raise exception 'producto_no_existe'; end if;
+    v_vistos := v_vistos || v_prod; v_suma := v_suma + v_pz;
+  end loop;
+  if v_suma <> v_total then raise exception 'reparto_no_cuadra'; end if;
+
+  perform recep_evento(r.id, l.id, 'dividir_linea', to_jsonb(l), jsonb_build_object('factor', p_factor, 'partes', p_partes), p_por);
+  foreach v_id in array v_ids loop perform recep_borrar_lineas(r.id, v_id); end loop;
+  for pa in select * from jsonb_array_elements(p_partes) loop
+    v_i := v_i + 1;
+    v_prod := (pa->>'id_product')::bigint; v_pz := (pa->>'piezas')::numeric;
+    v_imp := case when v_importe is null then null when v_i = v_n then round(v_importe - v_acum, 2) else round(v_importe * v_pz / v_total, 2) end;
+    v_acum := v_acum + coalesce(v_imp, 0);
+    select costo_compra into v_costo from catalogo_productos where id = v_prod;
+    insert into recepcion_lineas (recepcion_id, renglon, origen, codigo, descripcion, cantidad_nota, precio_unitario, importe,
+        id_product, presentacion, factor, identificada_auto, identificada_por, identificada_at, costo_anterior, reparto)
+    values (r.id, l.renglon, 'nota', l.codigo, l.descripcion, v_pz, case when v_precio is null then null else round(v_precio / p_factor, 4) end, v_imp,
+        v_prod, 'pieza', 1, false, left(p_por, 100), now(), v_costo,
+        jsonb_build_object('grupo', v_grupo, 'cantidad_nota', v_cant, 'factor', p_factor, 'precio_unitario', v_precio, 'importe', v_importe));
+  end loop;
+  perform recep_recalcular(r.id);
+end $$;
+revoke execute on function public.recep_dividir_core(bigint, bigint, numeric, jsonb, text) from public, anon, authenticated;
+
+create or replace function public.rpc_recep_dividir(p_admin_password text, p_staff_email text, p_staff_pin text,
+  p_recepcion_id bigint, p_linea_id bigint, p_factor numeric, p_partes jsonb)
+returns jsonb language plpgsql security definer set search_path to 'public' as $$
+declare s record;
+begin
+  s := recep_sesion(p_admin_password, p_staff_email, p_staff_pin);
+  perform recep_dividir_core(p_recepcion_id, p_linea_id, p_factor, p_partes, s.nombre);
+  return recep_json(p_recepcion_id);
+end $$;
