@@ -14855,7 +14855,7 @@ async function seoProductosVista(c, problema) {
       </select>
       <button class="btn primary" onclick="seoOptimizarSeleccion()" ${seoConfig && seoConfig.ia ? '' : 'disabled title="Falta la llave de IA"'}>✨ Optimizar seleccionados con IA</button>
     </div>
-    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">La IA propone título, meta descripción y descripción; tú revisas, editas y guardas. Nada se cambia sin que presiones Guardar. Se optimizan de 5 en 5.</p>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">La IA propone título, meta descripción y descripción; tú revisas, editas y guardas. Nada se cambia sin que presiones Guardar. Se optimizan de 3 en 3.</p>
     <div id="seoPTabla">Cargando…</div>`;
   if (problema) document.getElementById('seoPProblema').value = problema;
   seoCargarProductos();
@@ -14867,7 +14867,7 @@ async function seoCargarProductos() {
     const d = await seoApi('productos', { buscar: document.getElementById('seoPBuscar').value.trim(), problema: document.getElementById('seoPProblema').value, limite: 300 });
     seoProductos = d.productos;
     t.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">${d.total} productos${d.total > d.productos.length ? ` (se muestran los ${d.productos.length} peores)` : ''}.</p>` +
-      seoTabla(['<input type="checkbox" onchange="document.querySelectorAll(\'.seoPSel\').forEach((x,i)=>{ if(i<5) x.checked=this.checked })" title="Primeros 5">', 'Puntaje', 'Producto', 'Título SEO / Meta descripción', 'Problemas', ''], d.productos.map(p => `<tr id="seoPRow${p.id}">
+      seoTabla(['<input type="checkbox" onchange="document.querySelectorAll(\'.seoPSel\').forEach((x,i)=>{ if(i<3) x.checked=this.checked })" title="Primeros 3">', 'Puntaje', 'Producto', 'Título SEO / Meta descripción', 'Problemas', ''], d.productos.map(p => `<tr id="seoPRow${p.id}">
         <td><input type="checkbox" class="seoPSel" value="${p.id}"></td><td>${seoPuntaje(p.puntaje)}</td>
         <td><div style="display:flex; gap:8px; align-items:center;">${p.imagen ? `<img src="${escapeHtml(p.imagen)}" style="width:38px; height:38px; object-fit:cover; border-radius:6px;">` : ''}<div><b>${escapeHtml(p.nombre)}</b><div style="font-size:11px; color:var(--text-muted);">#${p.id} · ${escapeHtml(p.categoria || '')} · ${p.palabras} palabras · ${p.fotos} fotos</div></div></div></td>
         <td style="font-size:12px; max-width:320px;"><div>${p.meta_title ? escapeHtml(p.meta_title) : '<i style="color:#d97706;">sin título SEO</i>'}</div><div style="color:var(--text-muted);">${p.meta_description ? escapeHtml(p.meta_description) : '<i style="color:#d97706;">sin meta descripción</i>'}</div></td>
@@ -14876,9 +14876,9 @@ async function seoCargarProductos() {
   } catch (e) { t.innerHTML = seoError(e); }
 }
 async function seoOptimizarSeleccion() {
-  const ids = [...document.querySelectorAll('.seoPSel:checked')].map(x => Number(x.value)).slice(0, 5);
-  if (!ids.length) { alert('Marca de 1 a 5 productos.'); return; }
-  recAbrirModal('Optimizar con IA', `<p>La IA está escribiendo títulos y descripciones para ${ids.length} productos… (unos 20–60 segundos)</p>`);
+  const ids = [...document.querySelectorAll('.seoPSel:checked')].map(x => Number(x.value)).slice(0, 3);
+  if (!ids.length) { alert('Marca de 1 a 3 productos.'); return; }
+  recAbrirModal('Optimizar con IA', `<p>La IA está escribiendo títulos y descripciones para ${ids.length} productos… (de 30 segundos a 1 minuto)</p>`);
   try {
     const d = await seoApi('optimizar_ia', { ids });
     d.propuestas.forEach(p => { seoPropuestas[p.id] = p; });

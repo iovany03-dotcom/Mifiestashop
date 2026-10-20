@@ -119,7 +119,7 @@
       "includeFiles": "scripts/cms-*.html"
     },
     "api/seo.js": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "api/cron-seo.js": {
       "maxDuration": 300

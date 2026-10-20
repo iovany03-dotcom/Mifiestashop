@@ -67,7 +67,7 @@ function buildProductJsonLd(name, sku, desc, images, extra = {}) {
     '@type': 'Product',
     name,
     sku: sku || undefined,
-    gtin13: /^\d{13}$/.test(String(barcode || '')) ? String(barcode) : undefined,
+    gtin13: gtin13Valido(barcode) ? String(barcode) : undefined,
     brand: { '@type': 'Brand', name: 'Mi Fiestashop' },
     description: desc,
     image: images.map(url => ({ '@type': 'ImageObject', url, width: 800, height: 800 }))
@@ -89,6 +89,14 @@ function buildProductJsonLd(name, sku, desc, images, extra = {}) {
   return json.replace(/</g, '\\u003c');
 }
 const ORIGEN_SEO = 'https://www.mifiestashop.com';
+// Solo se declara el GTIN si el dígito verificador cuadra: muchos códigos de barras del
+// catálogo son internos y un GTIN inválido es un error en Google Merchant / resultados.
+function gtin13Valido(c) {
+  const s = String(c || '');
+  if (!/^\d{13}$/.test(s)) return false;
+  const suma = s.slice(0, 12).split('').reduce((t, d, i) => t + Number(d) * (i % 2 ? 3 : 1), 0);
+  return (10 - (suma % 10)) % 10 === Number(s[12]);
+}
 
 // Consulta a Supabase con la llave pública. null = falla nuestra (red o
 // Supabase): en ese caso nunca se inventa un 404 ni una redirección.

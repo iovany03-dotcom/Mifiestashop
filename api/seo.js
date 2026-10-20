@@ -148,8 +148,8 @@ const ESQUEMA_SEO = {
 };
 
 async function optimizarIA({ ids }) {
-  const lista = (Array.isArray(ids) ? ids : []).map(Number).filter(Number.isSafeInteger).slice(0, 5);
-  if (!lista.length) throw new HttpError(400, 'Elige de 1 a 5 productos.');
+  const lista = (Array.isArray(ids) ? ids : []).map(Number).filter(Number.isSafeInteger).slice(0, 3);
+  if (!lista.length) throw new HttpError(400, 'Elige de 1 a 3 productos.');
   const filas = await sb(`/rest/v1/catalogo_productos?select=id,name,sku,price,price_mayoreo,price_mayoreo_desde_unidades,category_label,description,description_short,meta_title,meta_description&id=in.(${lista.join(',')})`);
   const { generarJson } = require('../lib/recepcion-ia.js');
   const texto = filas.map(p => JSON.stringify({
@@ -159,7 +159,7 @@ async function optimizarIA({ ids }) {
     meta_title_actual: p.meta_title, meta_description_actual: p.meta_description
   })).join('\n');
   const d = await generarJson({
-    nombre: 'seo_productos', esquema: ESQUEMA_SEO, maxTokens: 12000,
+    nombre: 'seo_productos', esquema: ESQUEMA_SEO, maxTokens: 12000, esfuerzo: 'low',
     sistema: `Eres especialista en SEO de comercio electrónico en México para Mi Fiestashop (artículos para fiesta, batucada, bodas, XV años, cumpleaños; venta por menudeo y mayoreo, envíos a todo México, tiendas en CDMX, Puebla y Querétaro).
 Para cada producto escribe en español de México:
 - palabra_clave: la búsqueda que haría un cliente en Google (ej. "collar hawaiano mayoreo").
