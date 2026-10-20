@@ -369,7 +369,7 @@ test('api/retransmisiones: nunca manda un parámetro {{n}} vacío a Meta (#13100
     const params = enviado.template.parameters;
     assert.ok(params.every(p => p && p.trim().length > 0), 'ningún parámetro debe quedar vacío: ' + JSON.stringify(params));
     assert.equal(params[0], 'Cliente'); // sin nombre guardado
-    assert.equal(params[2], 'sin fecha límite'); // cupón sin vence_at
+    assert.equal(params[2], 'cierre de esta promoción'); // cupón sin vence_at: debe leerse bien después de "válido hasta el ..."
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; delete process.env.CHATBOTPROIA_TOKEN; }
 });
 

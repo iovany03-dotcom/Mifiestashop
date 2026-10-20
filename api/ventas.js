@@ -1,14 +1,11 @@
-// Vercel serverless function: aggregates PrestaShop sales (MXN, confirmed orders)
-// for a given date range. Keeps the PrestaShop API key server-side only.
-//
-// Requires env vars (set in Vercel Project Settings -> Environment Variables):
-//   PS_BASE_URL   e.g. https://www.mifiestashop.com
-//   PS_API_KEY    the PrestaShop webservice key
+// Vercel serverless function: ventas (MXN, pedidos confirmados) en un rango de
+// fechas: el histórico de PrestaShop copiado en Supabase (ps_pedidos), los
+// pedidos de la tienda en línea (pedidos_online) y los tickets del POS propio
+// (pos_tickets).
 
-// La tienda de cada pedido es el empleado (caja) que lo registró: mismos ids
-// que BRANCH_TO_EMPLOYEE en api/pos-sync-prestashop.js. Sin empleado = tienda
-// en línea; cualquier otro empleado se agrupa en "Otros".
-const { prestashopConectado, sbGetAll } = require('../lib/prestashop.js');
+// La tienda de cada pedido es el empleado (caja) que lo registró. Sin
+// empleado = tienda en línea; cualquier otro empleado se agrupa en "Otros".
+const { sbGetAll } = require('../lib/catalogo-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const PAGADOS_ONLINE = ['Pago aceptado', 'Pagado', 'En preparación', 'Enviado', 'Entregado'];
@@ -38,15 +35,6 @@ function storeOf(order) {
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
-  const baseUrl = process.env.PS_BASE_URL;
-  const apiKey = process.env.PS_API_KEY;
-  const conectado = prestashopConectado();
-
-  if (conectado && (!baseUrl || !apiKey)) {
-    res.status(500).json({ error: 'Faltan variables de entorno PS_BASE_URL / PS_API_KEY en Vercel.' });
-    return;
-  }
-
   const { from, to } = req.query;
   if (!from || !to) {
     res.status(400).json({ error: 'Parámetros requeridos: from, to (YYYY-MM-DD)' });
@@ -60,42 +48,16 @@ module.exports = async function handler(req, res) {
   const fromDt = `${from} 00:00:00`;
   const toDt = `${to} 23:59:59`;
 
-  const fields = '[id,total_paid,date_add,id_employee]';
-  const url =
-    `${baseUrl}/api/orders?` +
-    `filter[date_add]=[${encodeURIComponent(fromDt)},${encodeURIComponent(toDt)}]&date=1` +
-    `&filter[valid]=1&filter[id_currency]=3` +
-    `&display=${encodeURIComponent(fields)}` +
-    `&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
-
   try {
-    let orders;
-    if (!conectado) {
-      // PrestaShop desconectado (default, ver lib/prestashop.js): pedidos de
-      // ps_pedidos, la copia que el cron sincroniza desde PrestaShop. Mismo
-      // filtro (válidos, en pesos); date_add se guarda con la hora local de
-      // la tienda, igual que el filtro de fechas de PrestaShop.
-      orders = await sbGetAll(
-        `ps_pedidos?select=id,total_paid,date_add,id_employee&valid=is.true&or=(id_currency.eq.3,id_currency.is.null)` +
-        `&date_add=gte.${encodeURIComponent(fromDt)}&date_add=lte.${encodeURIComponent(toDt)}&order=id.asc`
-      );
-    } else {
-      // La key va en la URL (?ws_key=), no en el header Authorization: Basic
-      // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-      // header antes de llegar al webservice, así que siempre daba 401 aunque
-      // la key fuera válida y estuviera activa.
-      const r = await fetch(url);
-      if (!r.ok) {
-        const text = await r.text();
-        res.status(502).json({ error: `PrestaShop API error ${r.status}`, detail: text.slice(0, 500) });
-        return;
-      }
-      const data = await r.json();
-      orders = Array.isArray(data.orders) ? data.orders : [];
-    }
+    // Pedidos históricos de PrestaShop (ps_pedidos): válidos y en pesos;
+    // date_add se guarda con la hora local de la tienda.
+    const orders = await sbGetAll(
+      `ps_pedidos?select=id,total_paid,date_add,id_employee&valid=is.true&or=(id_currency.eq.3,id_currency.is.null)` +
+      `&date_add=gte.${encodeURIComponent(fromDt)}&date_add=lte.${encodeURIComponent(toDt)}&order=id.asc`
+    );
     // Pedidos de la tienda propia (checkout público / manuales / API) en
-    // pedidos_online: ya no pasan por PrestaShop, así que se suman aparte.
-    // Cuentan los que tienen pago validado; la fecha se toma en hora de México.
+    // pedidos_online: cuentan los que tienen pago validado; la fecha se toma
+    // en hora de México.
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (serviceKey) {
       const estados = PAGADOS_ONLINE.map(s => `"${s}"`).join(',');
@@ -113,8 +75,7 @@ module.exports = async function handler(req, res) {
 
       // Ventas del POS propio (pos_tickets). Los tickets que ya tienen pedido en
       // PrestaShop (ps_order_id) están contados arriba: se excluyen para no
-      // duplicarlos. Sin esto, las ventas hechas en este POS no aparecían nunca
-      // en las estadísticas cuando PrestaShop dejó de recibirlas.
+      // duplicarlos.
       const tUrl = `${SUPABASE_URL}/rest/v1/pos_tickets?select=folio,total,almacen,created_at&ps_order_id=is.null` +
         `&created_at=gte.${encodeURIComponent(from + 'T00:00:00-06:00')}` +
         `&created_at=lte.${encodeURIComponent(to + 'T23:59:59-06:00')}&order=created_at.asc&limit=10000`;
@@ -178,6 +139,6 @@ module.exports = async function handler(req, res) {
       breakdown,
     });
   } catch (err) {
-    res.status(500).json({ error: conectado ? 'Fallo al consultar PrestaShop' : 'Fallo al consultar ventas en Supabase', detail: String(err) });
+    res.status(500).json({ error: 'Fallo al consultar ventas en Supabase', detail: String(err) });
   }
 };

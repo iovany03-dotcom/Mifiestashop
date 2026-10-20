@@ -1,5 +1,5 @@
-// Vercel serverless function: direcciones de clientes (copia de PrestaShop en ps_direcciones, vía la vista direcciones_clientes,
-// sincronizada por lib/sync-prestashop.js, dominio "direcciones"; ver docs/supabase-direcciones.sql). Tienen datos personales, así que
+// Vercel serverless function: direcciones de clientes (histórico de PrestaShop en ps_direcciones, vía la vista direcciones_clientes;
+// ver docs/supabase-direcciones.sql). Tienen datos personales, así que
 // solo se leen con la llave de servicio y después de validar la sesión del admin/personal.
 //
 // POST { p_admin_password, p_staff_email, p_staff_pin, q?, offset?, limit?, incluirEliminadas? }

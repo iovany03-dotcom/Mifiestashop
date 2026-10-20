@@ -2,26 +2,18 @@
 // GET  scope products:read
 // PATCH scope products:write — SOLO campos descriptivos (name, description,
 // images, category_label), escritos en productos_migrados. Precio y stock
-// nunca se aceptan aquí: siguen viniendo únicamente de PrestaShop, la misma
-// regla que ya sigue el resto del sitio (ver api/productos.js) — exponerlos
-// como editables por API daría una falsa sensación de control sobre el
-// inventario real. Crear un producto que no existe todavía en PrestaShop
-// tampoco está soportado (ver la página de documentación): no aparecería en
-// ningún otro lado del sitio, así que no tendría caso "crearlo" solo aquí.
+// nunca se aceptan aquí: se administran solo desde el panel (catálogo e
+// inventario) — exponerlos como editables por API daría una falsa sensación
+// de control sobre el inventario real. Crear un producto que no existe en
+// el catálogo tampoco está soportado (ver la página de documentación).
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
 const { fetchCatalogoImages } = require('../../../lib/catalogo-productos.js');
-const { prestashopConectado, fetchCatalogoRows } = require('../../../lib/prestashop.js');
+const { fetchCatalogoRows } = require('../../../lib/catalogo-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
-function firstLangValue(field, fallback) {
-  let val = field;
-  if (Array.isArray(field)) { val = field[0]?.value; if (val === undefined) val = field[0]; }
-  else if (field && typeof field === 'object') { val = field.value !== undefined ? field.value : Object.values(field)[0]; }
-  if (typeof val !== 'string' || val === '') return fallback;
-  return val;
-}
+const SITE_URL = 'https://www.mifiestashop.com';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -30,50 +22,20 @@ module.exports = async function handler(req, res) {
   const id = parseInt(req.query.id, 10);
   if (!id) return sendApiError(res, 400, 'id inválido.', 'invalid_id');
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-  const conectado = prestashopConectado();
-  if (conectado && !apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
-
-  // PrestaShop desconectado (default, ver lib/prestashop.js): el producto se
-  // lee de catalogo_productos (sincronizado desde PrestaShop) con la misma
-  // forma que tenía la respuesta en vivo, para que el resto no cambie.
+  // El producto activo, de catalogo_productos.
   async function loadProduct() {
-    if (!conectado) {
-      const row = (await fetchCatalogoRows([id], 'id,sku,name,description,price,category_id,link_rewrite,weight,active,source'))[0];
-      if (!row || !row.active) return { status: 404 };
-      return {
-        product: {
-          id: String(row.id), name: row.name || '', reference: row.sku || '', price: String(row.price ?? 0),
-          id_default_image: '0', id_category_default: row.category_id ? String(row.category_id) : '',
-          active: '1', description: row.description || '', weight: row.weight != null ? String(row.weight) : '',
-          link_rewrite: row.source === 'prestashop' ? (row.link_rewrite || '') : ''
-        }
-      };
-    }
-    const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,description,link_rewrite,weight]';
-    const r = await fetch(`${baseUrl}/api/products/${id}?display=${encodeURIComponent(fields)}&output_format=JSON&ws_key=${apiKey}`);
-    if (r.status === 404) return { status: 404 };
-    if (!r.ok) return { status: 502, upstream: r.status };
-    const data = await r.json();
-    const p = data.product;
-    if (!p || p.active !== '1') return { status: 404 };
-    return { product: p };
+    const row = (await fetchCatalogoRows([id], 'id,sku,name,description,price,category_id,link_rewrite,weight,active,source'))[0];
+    if (!row || !row.active) return null;
+    return row;
   }
-  // La key va en la URL (?ws_key=), no en el header Authorization: Basic —
-  // Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-  // header antes de llegar al webservice, así que siempre daba 401 aunque
-  // la key fuera válida y estuviera activa.
 
   if (req.method === 'GET') {
     const auth = await authenticateApiRequest(req, 'products:read');
     if (!auth.ok) return sendApiError(res, auth.status, auth.error);
 
     try {
-      const loaded = await loadProduct();
-      if (loaded.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
-      if (loaded.status === 502) return sendApiError(res, 502, `PrestaShop respondió ${loaded.upstream}.`, 'upstream_error');
-      const p = loaded.product;
+      const p = await loadProduct();
+      if (!p) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
 
       const mr = await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}&select=sku,name,description,category_label,images`, {
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` }
@@ -82,25 +44,22 @@ module.exports = async function handler(req, res) {
       const m = Array.isArray(mRows) && mRows[0];
       const own = (await fetchCatalogoImages([id]))[String(id)];
 
-      const linkRewrite = firstLangValue(p.link_rewrite, '');
-      const imgId = p.id_default_image;
-      const image = own ? own[0] : (m && Array.isArray(m.images) && m.images[0]
-        ? m.images[0]
-        : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : null));
+      const linkRewrite = p.source === 'prestashop' ? (p.link_rewrite || '') : '';
+      const image = own ? own[0] : (m && Array.isArray(m.images) && m.images[0] ? m.images[0] : null);
 
       res.status(200).json({
         data: {
           id: Number(p.id),
-          sku: m ? m.sku : (p.reference || undefined),
-          name: m ? m.name : firstLangValue(p.name, 'Producto'),
-          description: m && m.description ? m.description : firstLangValue(p.description, '').replace(/<[^>]*>/g, '').trim() || undefined,
-          price: parseFloat(p.price || 0),
-          weight: parseFloat(p.weight || 0) || undefined,
-          category_id: Number(p.id_category_default) || undefined,
+          sku: m ? m.sku : (p.sku || undefined),
+          name: m ? m.name : (p.name || 'Producto'),
+          description: m && m.description ? m.description : String(p.description || '').replace(/<[^>]*>/g, '').trim() || undefined,
+          price: Number(p.price) || 0,
+          weight: Number(p.weight) || undefined,
+          category_id: Number(p.category_id) || undefined,
           category_label: m ? m.category_label : undefined,
           image,
           images: m && Array.isArray(m.images) && m.images.length ? m.images : undefined,
-          url: linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : undefined
+          url: linkRewrite ? `${SITE_URL}/${p.id}-${linkRewrite}.html` : undefined
         }
       });
     } catch (err) {
@@ -117,7 +76,7 @@ module.exports = async function handler(req, res) {
     const allowed = ['name', 'description', 'images', 'category_label'];
     const disallowedTouched = Object.keys(body).filter(k => ['price', 'stock', 'quantity'].includes(k));
     if (disallowedTouched.length) {
-      return sendApiError(res, 422, `No se puede editar ${disallowedTouched.join(', ')} por API: siempre viene en vivo de PrestaShop.`, 'read_only_field');
+      return sendApiError(res, 422, `No se puede editar ${disallowedTouched.join(', ')} por API: se administra desde el panel.`, 'read_only_field');
     }
     const update = {};
     allowed.forEach(k => { if (body[k] !== undefined) update[k] = body[k]; });
@@ -129,12 +88,10 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-      // Confirma que el producto existe y está activo en PrestaShop antes de
-      // guardar la sobreescritura — nunca se acepta un id inventado.
-      const loaded = await loadProduct();
-      if (loaded.status === 404) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
-      if (loaded.status === 502) return sendApiError(res, 502, `PrestaShop respondió ${loaded.upstream}.`, 'upstream_error');
-      const psProduct = loaded.product;
+      // Confirma que el producto existe y está activo antes de guardar la
+      // sobreescritura — nunca se acepta un id inventado.
+      const product = await loadProduct();
+      if (!product) return sendApiError(res, 404, 'Producto no encontrado.', 'not_found');
 
       const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
       if (!serviceRoleKey) return sendApiError(res, 500, 'SUPABASE_SERVICE_ROLE_KEY no configurado en Vercel.', 'not_configured');
@@ -147,8 +104,8 @@ module.exports = async function handler(req, res) {
 
       const row = {
         id,
-        sku: existing?.sku || psProduct.reference || `PS-${id}`,
-        name: update.name !== undefined ? update.name : (existing?.name || firstLangValue(psProduct.name, 'Producto')),
+        sku: existing?.sku || product.sku || `PS-${id}`,
+        name: update.name !== undefined ? update.name : (existing?.name || product.name || 'Producto'),
         description: update.description !== undefined ? update.description : (existing?.description || null),
         category_label: update.category_label !== undefined ? update.category_label : (existing?.category_label || null),
         images: update.images !== undefined ? update.images : (existing?.images || null)
@@ -172,7 +129,7 @@ module.exports = async function handler(req, res) {
         data: {
           id: Number(s.id), sku: s.sku, name: s.name, description: s.description || undefined,
           category_label: s.category_label || undefined, images: s.images || undefined,
-          price: parseFloat(psProduct.price || 0)
+          price: Number(product.price) || 0
         }
       });
     } catch (err) {

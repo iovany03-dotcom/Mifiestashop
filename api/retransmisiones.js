@@ -48,7 +48,7 @@ const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 const SITIO = 'https://www.mifiestashop.com';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const ESTADOS_SIN_PAGAR = ['Pendiente', 'Pendiente de pago', 'Error en el pago'];
+const ESTADOS_SIN_PAGAR = ['Pendiente', 'Pendiente de pago', 'Factura anticipada', 'Error en el pago'];
 const ESTADOS_PAGADOS = ['Pago aceptado', 'Pagado', 'En preparación', 'Enviado', 'Entregado'];
 const MAX_ENVIO = 40;
 
@@ -339,7 +339,7 @@ async function enviar(db, body, enviadoPor) {
       const tc = cupon ? textoCupon(cupon) : null;
       const liga = ligaRecuperar(dest.items, cupon && cupon.codigo);
       const nombre = String(dest.nombre || '').trim().split(/\s+/)[0] || '';
-      const texto = rellenar(mensaje, { nombre, cupon: tc ? tc.codigo : '', descuento: tc ? tc.descuento : '', vence: tc ? tc.vence : '', liga });
+      const texto = rellenar(mensaje, { nombre, cupon: tc ? tc.codigo : '', descuento: tc ? tc.descuento : '', vence: (tc && tc.vence) || 'cierre de esta promoción', liga });
 
       const log = {
         canal, tipo_origen: dest.tipo, referencia: dest.referencia, nombre: dest.nombre || null,
@@ -366,11 +366,14 @@ async function enviar(db, body, enviadoPor) {
             // {{n}} mandada como cadena vacía — pasa, por ejemplo, con un cupón sin fecha de
             // vencimiento (fechaMx(null) -> '') o un pedido/carrito sin nombre de cliente
             // guardado. Nunca se manda "" como parámetro; se rellena con algo real.
+            // "vence" cae en plantillas aprobadas con el texto fijo "válido hasta el {{n}}",
+            // así que el relleno tiene que seguir leyéndose bien después de "el" (antes decía
+            // literal "sin fecha límite", que quedaba "válido hasta el sin fecha límite").
             const campos = {
               nombre: nombre || 'Cliente',
               cupon: tc ? tc.codigo : '',
               descuento: tc ? tc.descuento : '',
-              vence: (tc && tc.vence) || 'sin fecha límite',
+              vence: (tc && tc.vence) || 'cierre de esta promoción',
               liga
             };
             const parametros = (Array.isArray(plantillaWa.mapping) ? plantillaWa.mapping : []).map(k => campos[k] || '-');

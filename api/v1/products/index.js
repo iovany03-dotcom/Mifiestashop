@@ -1,24 +1,15 @@
 // API pública /api/v1/products — lista de productos, autenticada con API key.
 // Scope requerido: products:read
 //
-// Precio y stock siempre vienen en vivo de PrestaShop (igual que el resto
-// del sitio); nombre/descripción/imágenes usan la versión migrada cuando
-// existe (ver productos_migrados) — así un socio nunca ve un precio
-// desactualizado, aunque el texto pueda venir de nuestra propia edición.
+// Sale de catalogo_productos (igual que el resto del sitio); nombre,
+// descripción e imágenes usan la versión migrada cuando existe (ver
+// productos_migrados).
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
-const { fetchCatalogoImages } = require('../../../lib/catalogo-productos.js');
-const { prestashopConectado, fetchCatalogoActivo } = require('../../../lib/prestashop.js');
+const { fetchCatalogoActivo } = require('../../../lib/catalogo-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const SITE_URL = 'https://www.mifiestashop.com';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
-
-function firstLangValue(field, fallback) {
-  let val = field;
-  if (Array.isArray(field)) { val = field[0]?.value; if (val === undefined) val = field[0]; }
-  else if (field && typeof field === 'object') { val = field.value !== undefined ? field.value : Object.values(field)[0]; }
-  if (typeof val !== 'string' || val === '') return fallback;
-  return val;
-}
 
 async function fetchMigratedById(ids) {
   if (!ids.length) return {};
@@ -46,109 +37,33 @@ module.exports = async function handler(req, res) {
   const auth = await authenticateApiRequest(req, 'products:read');
   if (!auth.ok) return sendApiError(res, auth.status, auth.error);
 
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
-
   const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
   const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
   const category = req.query.category;
   const search = (req.query.search || '').trim().toLowerCase();
 
-  // PrestaShop desconectado (default, ver lib/prestashop.js): mismos campos
-  // desde catalogo_productos (+ productos_migrados), sin consultar PrestaShop.
-  if (!prestashopConectado()) {
-    try {
-      const catFilter = category && /^\d+$/.test(String(category)) ? `&category_id=eq.${category}` : '';
-      const rows = await fetchCatalogoActivo('id,sku,name,description,description_short,price,category_id,link_rewrite,images,source', catFilter);
-      const migrated = await fetchMigratedById(rows.map(r => r.id));
-      let products = rows.map(r => {
-        const m = migrated[String(r.id)];
-        const images = Array.isArray(r.images) && r.images.length ? r.images : (m && Array.isArray(m.images) && m.images.length ? m.images : null);
-        return {
-          id: Number(r.id),
-          sku: m ? m.sku : (r.sku || undefined),
-          name: m ? m.name : (r.name || 'Producto'),
-          description: m && m.description ? m.description : (r.description_short || undefined),
-          price: Number(r.price) || 0,
-          category_id: Number(r.category_id) || undefined,
-          category_label: m ? m.category_label : undefined,
-          image: images ? images[0] : null,
-          url: r.source === 'prestashop' && r.link_rewrite ? `${baseUrl}/${r.id}-${r.link_rewrite}.html` : undefined
-        };
-      });
-      if (search) products = products.filter(p => (p.name || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
-      return res.status(200).json({ data: products.slice(offset, offset + limit), meta: { total: products.length, limit, offset } });
-    } catch (err) {
-      return sendApiError(res, 500, 'Error al consultar productos: ' + err.message, 'internal_error');
-    }
-  }
-
-  if (!apiKey) return sendApiError(res, 500, 'PS_API_KEY no configurado en Vercel.', 'not_configured');
-
   try {
-    const fields = '[id,name,reference,price,id_default_image,id_category_default,active,description_short,link_rewrite]';
-    let filters = 'filter[active]=1';
-    if (category) filters += `&filter[id_category_default]=${encodeURIComponent('[' + category + ']')}`;
-    // La key va en la URL (?ws_key=), no en el header Authorization: Basic
-    // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-    // header antes de llegar al webservice, así que siempre daba 401 aunque
-    // la key fuera válida y estuviera activa.
-
-    // Se pide más de lo pedido cuando hay texto de búsqueda: PrestaShop no
-    // soporta buscar por nombre vía este filtro, así que se filtra aquí
-    // sobre una ventana razonable en vez de sobre todo el catálogo.
-    const fetchLimit = search ? 1000 : limit;
-    const fetchOffset = search ? 0 : offset;
-    const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&${filters}&limit=${fetchOffset},${fetchLimit}&output_format=JSON&ws_key=${apiKey}`;
-    const r = await fetch(url);
-    if (!r.ok) return sendApiError(res, 502, `PrestaShop respondió ${r.status}.`, 'upstream_error');
-    const data = await r.json();
-    let rawProducts = Array.isArray(data.products) ? data.products : [];
-
-    const ids = rawProducts.map(p => p.id);
-    const [migrated, ownImages] = await Promise.all([fetchMigratedById(ids), fetchCatalogoImages(ids)]);
-
-    let products = rawProducts.map(p => {
-      const m = migrated[String(p.id)];
-      const name = m ? m.name : firstLangValue(p.name, 'Producto');
-      const linkRewrite = firstLangValue(p.link_rewrite, '');
-      const imgId = p.id_default_image;
-      const own = ownImages[String(p.id)];
-      const image = own ? own[0] : (m && Array.isArray(m.images) && m.images[0]
-        ? m.images[0]
-        : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : null));
+    const catFilter = category && /^\d+$/.test(String(category)) ? `&category_id=eq.${category}` : '';
+    const rows = await fetchCatalogoActivo('id,sku,name,description,description_short,price,category_id,link_rewrite,images,source', catFilter);
+    const migrated = await fetchMigratedById(rows.map(r => r.id));
+    let products = rows.map(r => {
+      const m = migrated[String(r.id)];
+      const images = Array.isArray(r.images) && r.images.length ? r.images : (m && Array.isArray(m.images) && m.images.length ? m.images : null);
       return {
-        id: Number(p.id),
-        sku: m ? m.sku : (p.reference || undefined),
-        name,
-        description: m && m.description ? m.description : firstLangValue(p.description_short, '').replace(/<[^>]*>/g, '').trim() || undefined,
-        price: parseFloat(p.price || 0),
-        category_id: Number(p.id_category_default) || undefined,
+        id: Number(r.id),
+        sku: m ? m.sku : (r.sku || undefined),
+        name: m ? m.name : (r.name || 'Producto'),
+        description: m && m.description ? m.description : (r.description_short || undefined),
+        price: Number(r.price) || 0,
+        category_id: Number(r.category_id) || undefined,
         category_label: m ? m.category_label : undefined,
-        image,
-        url: linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : undefined
+        image: images ? images[0] : null,
+        url: r.source === 'prestashop' && r.link_rewrite ? `${SITE_URL}/${r.id}-${r.link_rewrite}.html` : undefined
       };
     });
-
-    if (search) {
-      products = products.filter(p => (p.name || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
-      const total = products.length;
-      products = products.slice(offset, offset + limit);
-      return res.status(200).json({ data: products, meta: { total, limit, offset } });
-    }
-
-    // Conteo real del total (id-only, liviano) para poder paginar sin
-    // adivinar cuántas páginas quedan — PrestaShop no lo da directo.
-    let total = rawProducts.length;
-    try {
-      const countUrl = `${baseUrl}/api/products?display=${encodeURIComponent('[id]')}&${filters}&limit=0,5000&output_format=JSON&ws_key=${apiKey}`;
-      const cr = await fetch(countUrl);
-      const cdata = cr.ok ? await cr.json() : null;
-      if (cdata && Array.isArray(cdata.products)) total = cdata.products.length;
-    } catch (e) { /* se queda con el conteo de esta página */ }
-
-    res.status(200).json({ data: products, meta: { total, limit, offset } });
+    if (search) products = products.filter(p => (p.name || '').toLowerCase().includes(search) || (p.sku || '').toLowerCase().includes(search));
+    return res.status(200).json({ data: products.slice(offset, offset + limit), meta: { total: products.length, limit, offset } });
   } catch (err) {
-    sendApiError(res, 500, 'Error al consultar productos: ' + err.message, 'internal_error');
+    return sendApiError(res, 500, 'Error al consultar productos: ' + err.message, 'internal_error');
   }
 };

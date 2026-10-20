@@ -1,23 +1,7 @@
-// Vercel serverless function: fetches specific promo-package products (Jr/Estándar/VIP
-// bundles) live from PrestaShop, by id, for the CMS promotions pricing table. Price and
-// item list must always come from PrestaShop directly — hardcoding them in the static
-// CMS pages would go stale the moment a real price changes.
-//
-// Requires env vars:
-//   PS_BASE_URL   e.g. https://www.mifiestashop.com
-//   PS_API_KEY    the PrestaShop webservice key
-
-function firstLangValue(field, fallback) {
-  let val = field;
-  if (Array.isArray(field)) {
-    val = field[0]?.value;
-    if (val === undefined) val = field[0];
-  } else if (field && typeof field === 'object') {
-    val = field.value !== undefined ? field.value : Object.values(field)[0];
-  }
-  if (typeof val !== 'string' || val === '') return fallback;
-  return val;
-}
+// Vercel serverless function: paquetes de promoción (Jr/Estándar/VIP) por id, desde
+// catalogo_productos, para la tabla de precios de las páginas CMS de promociones. Precio
+// y lista de artículos salen siempre del catálogo — fijarlos en las páginas estáticas
+// dejaría de ser cierto en cuanto cambie un precio real.
 
 // The "Esta promo incluye" lead-in and the "*Stock sujeto a bodega*" disclaimer are
 // boilerplate around the real list, not items themselves — the card already renders
@@ -26,7 +10,7 @@ function isBoilerplateLine(line) {
   return /^esta promo (te )?incluye\b|^\*?\s*(stock|contenido)\s+sujeto\s+a/i.test(line.trim());
 }
 
-// A package's real content list usually comes as <li> bullets in the PrestaShop
+// A package's real content list usually comes as <li> bullets in the product
 // description; each <li> becomes one item. If the description has no list markup,
 // it falls back to one item per line/sentence so short prose still renders as a list.
 function itemsFromDescription(html) {
@@ -49,16 +33,15 @@ function pickItems(shortDesc, longDesc) {
 }
 
 // Last-resort fallback, transcribed straight from the live site at the owner's
-// request, for the rare product whose PrestaShop description has no real list at
-// all. The moment PrestaShop's own description is filled in, the live one wins.
+// request, for the rare product whose description has no real list at all. The
+// moment the product's own description is filled in, that one wins.
 const FALLBACK_ITEMS = {
   83589: ['200 Globos salchicha', '50 Pulseras luminosas cyalume', '2 Lentes gigante', '3 Collares hawaianos', '2 Antifaces de cartón metálico', '3 Micrófonos inflables', '3 Guitarras metálicas inflables', '2 Cornetas con mechudo', '2 Letreros selfie', '2 Antifaz carnaval', '2 Mandiles personalizados', '1 Sombrero novia hule espuma', '1 Sombrero novio hule espuma'],
   83552: ['5 Antifaz de cartón metálico', '5 Pelucas metálicas', '1 Globo salchicha (200 pzas)', '2 Micrófonos inflables chicos', '4 Guitarras metálicas inflables', '3 Bombines con peluca metálica', '2 Lentes batucada', '6 Collares de perla', '7 Diademas con pelitos', '2 Sombreros de palma', '1 Máscara de luchador', '5 Corbatas neón', '5 Moños neón', '5 Bombines neón', '2 Lentes gigantes neón', '6 Collares hawaianos neón', '1 Sombrero de hule espuma Novio', '1 Sombrero de hule espuma Novio', '5 Diademas con mechudo', '5 Letreros selfie boda', '1 Pulsera luminosa cyalume (90 pzas)', '4 Lentes luminosos cyalume', '1 Anillo luminoso LED (4 pzas)'],
   83591: ['8 Antifaz cartón metálico', '6 Peluca metálica', '1 Globo salchicha (200 pzas)', '5 Micrófono inflable chico', '5 Guitarra metálica inflable', '2 Peluca afro negra', '5 Mandil con frases divertidos', '4 Bombín con peluca metálica', '6 Lente batucada', '1 Corona Princesa', '5 Collar perla', '6 Diadema con pelitos', '2 Bombín con pelo', '3 Peluca corta', '4 Sombrero de palma', '2 Lente antifaz gigante', '6 Corbata neón', '6 Bombín neón', '4 Gorra neón', '5 Lente gigante neón', '10 Collar hawaiano', '6 Antifaz neón de PVC', '6 Corneta neón', '8 Sombrero Divertido de hule espuma', '1 Sombrero de hule espuma Novio', '1 Sombrero de hule espuma Novia', '8 Diadema con mechudo', '1 Espanta suegras (100 pzas)', '5 Antifaz Carnaval', '5 Letrero selfie boda', '1 Pulsera cyalume (90 pzas)', '5 Lente luminoso cyalume', '2 Coronas de flores luminosa LED', '2 Diadema conejo luminoso LED', '1 Anillo luminosa LED (4 pzas)', '4 Lente luminoso LED', '6 Anillo de goma luminoso LED', '5 Diadema luminosa cyalume']
 };
 
-const { fetchCatalogoByIds, fetchCatalogoImages } = require('../lib/catalogo-productos.js');
-const { prestashopConectado } = require('../lib/prestashop.js');
+const { fetchCatalogoByIds } = require('../lib/catalogo-productos.js');
 
 // catalogo_productos guarda la descripción ya sin HTML (con saltos de
 // línea). Cuando el encabezado "Esta promo incluye 🥳" venía en su propio
@@ -68,16 +51,14 @@ function splitPromoLead(text) {
   return String(text || '').replace(/^(\s*esta promo (?:te )?incluye[^\d\n]*?)(?=\d)/i, '$1\n');
 }
 
-// Los ids de PrestaShop caben en 32 bits; los productos propios (catalogo_productos)
-// usan ids mucho más grandes y no deben mandarse a PrestaShop.
+// Los ids que vienen de PrestaShop caben en 32 bits (y tienen su página
+// /{id}-{link_rewrite}.html); los productos propios usan ids mucho más grandes.
 const MAX_PS_ID = 4294967295;
+const SITE_URL = 'https://www.mifiestashop.com';
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
-
-  const baseUrl = process.env.PS_BASE_URL || 'https://www.mifiestashop.com';
-  const apiKey = process.env.PS_API_KEY;
 
   const ids = String(req.query.ids || '').split(',').map(s => s.trim()).filter(s => /^\d+$/.test(s));
   if (!ids.length) {
@@ -85,101 +66,25 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  // PrestaShop desconectado (default, ver lib/prestashop.js): paquetes desde
-  // catalogo_productos (precio y descripción sincronizados desde PrestaShop).
-  if (!prestashopConectado()) {
-    try {
-      const rows = await fetchCatalogoByIds(ids);
-      const byId = new Map(rows.map(r => [String(r.id), r]));
-      const packages = ids.filter(id => byId.has(id)).map(id => {
-        const row = byId.get(id);
-        const liveItems = pickItems(splitPromoLead(row.description_short), splitPromoLead(row.description));
-        const isPs = Number(row.id) <= MAX_PS_ID;
-        return {
-          id: Number(row.id),
-          name: row.name,
-          price: Number(row.price) || 0,
-          items: liveItems.length >= 2 ? liveItems : (FALLBACK_ITEMS[row.id] || liveItems),
-          img: (Array.isArray(row.images) && row.images[0]) || '',
-          linkRewrite: row.link_rewrite || '',
-          url: isPs && row.link_rewrite ? `${baseUrl}/${row.id}-${row.link_rewrite}.html` : undefined
-        };
-      });
-      res.status(200).json({ packages });
-    } catch (err) {
-      res.status(500).json({ error: 'Fallo al consultar los paquetes en Supabase', detail: String(err), packages: [] });
-    }
-    return;
-  }
-
-  if (!apiKey) {
-    res.status(400).json({ error: 'Falta variable de entorno PS_API_KEY en Vercel', packages: [] });
-    return;
-  }
-
-  const fields = '[id,name,price,id_default_image,description,description_short,link_rewrite,active]';
-  const psIds = ids.filter(id => Number(id) <= MAX_PS_ID);
-
   try {
-    let raw = [];
-    let psFailure = null;
-    if (psIds.length) {
-      // La key va en la URL (?ws_key=), no en el header Authorization: Basic
-      // — Daiscom (el proveedor) confirmó que Apache/Cloudflare eliminan ese
-      // header antes de llegar al webservice, así que siempre daba 401
-      // aunque la key fuera válida y estuviera activa.
-      const url = `${baseUrl}/api/products?display=${encodeURIComponent(fields)}&filter[id]=${encodeURIComponent('[' + psIds.join('|') + ']')}&limit=0,${psIds.length}&output_format=JSON&ws_key=${apiKey}`;
-      const r = await fetch(url);
-      if (!r.ok) {
-        psFailure = { status: r.status, detail: (await r.text()).slice(0, 500) };
-      } else {
-        const data = await r.json();
-        raw = Array.isArray(data.products) ? data.products : (data.products ? [data.products] : []);
-      }
-    }
-
-    const ownImages = await fetchCatalogoImages(raw.map(p => p.id));
-    const packages = raw.filter(p => p.active === '1' || p.active === 1).map(p => {
-      const name = firstLangValue(p.name, '');
-      const shortDesc = firstLangValue(p.description_short, '');
-      const longDesc = firstLangValue(p.description, '');
-      const linkRewrite = firstLangValue(p.link_rewrite, '');
-      const imgId = p.id_default_image;
-      const own = ownImages[String(p.id)];
-      const img = own ? own[0] : (imgId && imgId !== '0' ? `${baseUrl}/api/images/products/${p.id}/${imgId}?ws_key=${apiKey}` : '');
-      const liveItems = pickItems(shortDesc, longDesc);
+    const rows = await fetchCatalogoByIds(ids);
+    const byId = new Map(rows.map(r => [String(r.id), r]));
+    const packages = ids.filter(id => byId.has(id)).map(id => {
+      const row = byId.get(id);
+      const liveItems = pickItems(splitPromoLead(row.description_short), splitPromoLead(row.description));
+      const isPs = Number(row.id) <= MAX_PS_ID;
       return {
-        id: Number(p.id),
-        name,
-        price: parseFloat(p.price || 0),
-        items: liveItems.length >= 2 ? liveItems : (FALLBACK_ITEMS[p.id] || liveItems),
-        img,
-        linkRewrite,
-        url: linkRewrite ? `${baseUrl}/${p.id}-${linkRewrite}.html` : undefined
-      };
-    });
-
-    // Paquetes propios (catalogo_productos): los ids que PrestaShop no devolvió.
-    const found = new Set(packages.map(p => p.id));
-    (await fetchCatalogoByIds(ids.filter(id => !found.has(Number(id))))).forEach(row => {
-      packages.push({
         id: Number(row.id),
         name: row.name,
         price: Number(row.price) || 0,
-        items: pickItems(row.description_short || '', row.description || ''),
-        img: (row.images && row.images[0]) || row.legacy_image_url || '',
+        items: liveItems.length >= 2 ? liveItems : (FALLBACK_ITEMS[row.id] || liveItems),
+        img: (Array.isArray(row.images) && row.images[0]) || '',
         linkRewrite: row.link_rewrite || '',
-        url: undefined
-      });
+        url: isPs && row.link_rewrite ? `${SITE_URL}/${row.id}-${row.link_rewrite}.html` : undefined
+      };
     });
-
-    if (!packages.length && psFailure) {
-      res.status(502).json({ error: `PrestaShop API error ${psFailure.status}`, detail: psFailure.detail, packages: [] });
-      return;
-    }
-
     res.status(200).json({ packages });
   } catch (err) {
-    res.status(500).json({ error: 'Fallo al consultar API de Productos PrestaShop', detail: String(err), packages: [] });
+    res.status(500).json({ error: 'Fallo al consultar los paquetes en Supabase', detail: String(err), packages: [] });
   }
 };

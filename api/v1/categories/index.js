@@ -1,11 +1,9 @@
 // API pública /api/v1/categories — lista de categorías, autenticada con
 // API key. Scope requerido: categories:read
 //
-// Solo lectura: la escritura de categorías (jerarquía, nombres en varios
-// idiomas) es una de las partes más frágiles del webservice real de
-// PrestaShop, y este sitio ya sincroniza ps_categorias cada hora desde la
-// fuente real — no tiene caso duplicar esa responsabilidad aquí. Ver la
-// página de documentación para el detalle de esta decisión.
+// Solo lectura: la jerarquía de categorías (ps_categorias) define la
+// navegación y las ligas de toda la tienda, así que se administra solo
+// desde el panel. Ver la página de documentación.
 const { authenticateApiRequest, sendApiError } = require('../../../lib/api-auth.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';

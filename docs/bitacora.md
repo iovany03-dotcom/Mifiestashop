@@ -10,8 +10,16 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 - **Las páginas CMS (`cms-pages/`, `data/cms-runtime.json`) están publicadas a mano encima de una construcción vieja.** No correr `scripts/build-cms.cjs` completo sin revisar el diff: la fuente actual ya no genera cosas que sí traen las páginas publicadas (por ejemplo el aviso de mantenimiento) y reescribiría todo. Los cambios recientes se aplicaron con parches de una línea por página y también se dejaron en la plantilla del generador.
 - Al cambiar `assets/cms.css` hay que actualizar el `?v=` de `cms.css` en todas las páginas (hash sha256 de 12 caracteres del archivo con saltos de línea LF).
 - Archivos con saltos de línea CRLF en Windows: los reemplazos masivos con `node -e` fallan; usar la herramienta de edición o comparar con `git diff --ignore-space-at-eol`.
-- La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`). La constante `serviceKey` de `api/cron-sync-prestashop.js` es en realidad la llave anónima.
-- Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `PS_API_KEY`, `PS_BASE_URL`, `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`, `OPENAI_API_KEY` u `ANTHROPIC_API_KEY` (lectura de notas en Recepción de mercancía). Las variables nuevas solo aplican a despliegues nuevos.
+- La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`).
+- Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`, `OPENAI_API_KEY` u `ANTHROPIC_API_KEY` (lectura de notas en Recepción de mercancía). Las variables nuevas solo aplican a despliegues nuevos.
+
+## 2026-10-16
+
+- **Facturación: tickets del POS con IVA no se podían facturar** ("los productos suman $895.20 pero su total es $1,038.43"). Con "Aplicar IVA" el POS suma el 16% encima de los precios de los productos (subtotal + IVA = total), pero `api/facturama.js` comparaba esos precios, sin IVA, contra el total con IVA. Ahora, si el ticket trae IVA agregado y su subtotal + IVA cuadra con el total, los precios se pasan a "con IVA" antes de desglosar: el CFDI sale con el subtotal de los productos, el IVA del ticket y el total cobrado. Los tickets sin IVA (396 de 413) facturan igual que antes, y uno con IVA que no cuadra sigue bloqueado. Probado con el ticket real #POS-12278 (`tests/facturama.test.cjs`).
+
+## 2026-10-13
+
+- **PrestaShop desconectado por completo:** se quitaron el interruptor `PRESTASHOP_CONECTADO` y todos los caminos en vivo (productos, categorías, inventario, stock por sucursal, proveedores, ventas, ventas por producto, paquetes, páginas CMS, sitemap, checkout y API pública v1), la copia automática (`lib/sync-prestashop.js`, `api/cron-sync-prestashop.js`), el envío de ventas del POS (`api/pos-sync-prestashop.js`), el diagnóstico (`api/ps-diagnostico.js`) y la conexión directa al servidor (`lib/ps-http.js`). `lib/prestashop.js` pasó a `lib/catalogo-supabase.js` (solo lecturas de Supabase) y `lib/prestashop-pages.js` a `lib/paginas-respaldo.js` (solo textos de respaldo). Las tablas `ps_*` quedan como histórico. Las variables `PS_API_KEY`, `PS_BASE_URL`, `PS_ORIGIN_IP`, `PS_ORIGIN_CERT_NAME` y `PRESTASHOP_CONECTADO` de Vercel ya no las usa nada.
 
 ## 2026-10-20
 
@@ -66,7 +74,7 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 
 ## Pendientes y problemas conocidos
 
-1. **Seguridad:** `/api/promo-paquetes` incluye en la URL de la imagen la llave de PrestaShop (`ws_key=...`); es pública. Regenerar la llave y servir las imágenes sin exponerla.
+1. **Seguridad:** la llave del webservice de PrestaShop llegó a publicarse en URLs de imágenes; aunque el código ya no la usa, conviene desactivarla en PrestaShop.
 2. **Dirección de la página 288** conserva el error "pata" (`/content/288-articulos-pata-batucada-en-cdmx`). Corregirla exige elegir un slug que no choque con la 308 y redirigir el viejo.
 3. **Paquetes de batucada:** solo existe el Estándar; no hay Jr ni VIP en el catálogo.
 4. **Meta:** con transferencia o efectivo, Purchase se reporta al crear el pedido, antes de confirmar el pago. Solo Mercado Pago se reporta desde el servidor.

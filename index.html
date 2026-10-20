@@ -2118,6 +2118,7 @@
           </div>
           <div id="checkoutCouponMsg" class="hidden" style="font-size:12px; margin-top:6px;"></div>
         </div>
+        <div id="checkoutUpsellSection" class="hidden" style="margin-top:18px; border-top:1px dashed var(--border); padding-top:16px;"></div>
       </div>
     </div>
   </div>
@@ -4173,7 +4174,7 @@
             <h2>Catálogo de Productos</h2>
             <div style="display:flex; gap:10px;">
               <button class="btn primary" onclick="openEditProductModal(null)">Crear Nuevo Producto</button>
-              <button class="btn secondary" onclick="syncProductsFromPrestaShopAPI()">Actualizar Catálogo</button>
+              <button class="btn secondary" onclick="cargarCatalogoProductos()">Actualizar Catálogo</button>
             </div>
           </div>
           <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
@@ -4253,12 +4254,14 @@
         </div>
         <div id="factEstado" style="font-size:12.5px; color:var(--text-muted); margin-bottom:12px;">Consultando Facturama…</div>
         <div id="factForm" class="hidden" style="border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:16px;">
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-bottom:10px;">
-            <label style="font-size:12px;">Cargar de un pedido (opcional)<br>
-              <input id="factPedidoFolio" placeholder="Folio, ej. WEB-123" style="padding:8px; width:170px;"></label>
-            <select id="factPedidoOrigen" style="padding:8px;"><option value="online">Tienda en línea</option><option value="pos">POS</option></select>
-            <button class="btn" onclick="cargarPedidoFactura()">Cargar</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-bottom:6px;">
+            <label style="font-size:12px; font-weight:600;">Pedido o ticket a facturar <span style="color:#dc2626;">(obligatorio)</span><br>
+              <input id="factPedidoFolio" placeholder="Ej. WEB-123456 o #POS-53986" oninput="factFolioCambio()" onkeydown="if (event.key === 'Enter') { event.preventDefault(); cargarPedidoFactura(); }" style="padding:8px; width:220px; text-transform:uppercase;"></label>
+            <select id="factPedidoOrigen" style="padding:8px;" onchange="factFolioCambio(true)"><option value="online">Pedido de la tienda</option><option value="pos">Ticket del POS</option></select>
+            <button class="btn primary" onclick="cargarPedidoFactura()">Cargar</button>
           </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Toda factura queda ligada a su pedido o ticket. Los conceptos, el envío y el descuento salen tal cual de la venta (no se escriben a mano), y solo se facturan ventas pagadas (o pedidos en estado "Factura anticipada", que salen como pago diferido) que no tengan ya una factura vigente.</div>
+          <div id="factPedidoResumen" class="hidden" style="border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:12px;"></div>
           <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; margin-bottom:10px;">
             <input id="factRfc" placeholder="RFC del cliente" style="padding:8px; text-transform:uppercase;">
             <input id="factNombre" placeholder="Nombre / razón social (como en su constancia)" style="padding:8px;">
@@ -4268,11 +4271,8 @@
             <input id="factEmail" type="email" placeholder="Correo para enviarla (opcional)" style="padding:8px;">
             <select id="factFormaPago" style="padding:8px;"><option value="01">01 Efectivo</option><option value="03">03 Transferencia</option><option value="04">04 Tarjeta de crédito</option><option value="28">28 Tarjeta de débito</option><option value="99">99 Por definir</option></select>
           </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Conceptos (el precio es unitario <b>con IVA</b>):</div>
-          <div id="factItems"></div>
-          <button class="btn" style="margin-top:6px;" onclick="agregarConceptoFactura()">+ Concepto</button>
           <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <button class="btn primary" id="factEmitirBtn" onclick="emitirFactura()">Emitir factura</button>
+            <button class="btn primary" id="factEmitirBtn" onclick="emitirFactura()" disabled>Emitir factura</button>
             <button class="btn" onclick="document.getElementById('factForm').classList.add('hidden')">Cerrar</button>
             <span id="factMsg" style="font-size:12.5px;"></span>
           </div>
@@ -4377,8 +4377,8 @@
             <button class="btn primary" onclick="loadCmsPagesAdmin()">Recargar Páginas</button>
           </div>
           <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 16px;">
-            Páginas de contenido administradas desde PrestaShop. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
-            Las que ya fueron migradas a nuestro propio sistema (Vercel) están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva, ya no la de PrestaShop.
+            Páginas de contenido de la tienda. Las que aparecen en el footer de la tienda ("Ayuda") están marcadas.
+            Las que ya fueron migradas a nuestro propio sistema están marcadas como <span class="pill ok" style="margin:0 2px;">EN SISTEMA</span> — el botón "Ver en sistema" abre la versión nueva.
           </p>
           <div style="margin-bottom:14px;">
             <input type="search" id="cmsPagesAdminSearch" placeholder="Buscar por título o slug…" oninput="filterCmsPagesAdmin(this.value)" style="width:100%; max-width:360px; padding:9px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
@@ -4665,7 +4665,16 @@
           <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 12px;">Cada etiqueta lleva el nombre, el precio y, si aplica, el precio de mayoreo con las piezas mínimas, más un código de barras que el POS reconoce al escanear (el código de barras del producto o, si no tiene, su número de producto).</p>
           <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
             <input type="search" id="etqBuscar" placeholder="Buscar producto, SKU o código…" oninput="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; flex:1; min-width:200px;">
-            <select id="etqCategoria" onchange="etqRender()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;"><option value="">Todas las categorías</option></select>
+            <details id="etqCatDet" style="position:relative;">
+              <summary id="etqCatResumen" style="list-style:none; cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px; user-select:none;">Categorías: todas</summary>
+              <div style="position:absolute; z-index:30; top:calc(100% + 4px); left:0; width:300px; max-height:340px; overflow:auto; background:var(--card-bg); border:1px solid var(--border); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,.22); padding:8px;">
+                <div style="display:flex; gap:6px; margin-bottom:6px; position:sticky; top:0; background:var(--card-bg); padding-bottom:6px;">
+                  <button type="button" class="btn small" onclick="etqCatMarcar(true)">Marcar todas</button>
+                  <button type="button" class="btn small" onclick="etqCatMarcar(false)">Desmarcar todas</button>
+                </div>
+                <div id="etqCatLista"></div>
+              </div>
+            </details>
             <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloMayoreo" onchange="etqRender()"> Solo con mayoreo</label>
             <label style="font-size:12.5px; display:flex; align-items:center; gap:6px;"><input type="checkbox" id="etqSoloSel" onchange="etqRender()"> Ver solo seleccionados</label>
           </div>
@@ -5112,7 +5121,7 @@
                 <tr><th>Marca de Tiempo</th><th>Nivel</th><th>Módulo</th><th>Mensaje de Evento</th><th>Estado</th></tr>
               </thead>
               <tbody>
-                <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>API PrestaShop</td><td>Sincronización de productos ejecutada exitosamente.</td><td><span class="pill ok">Completado</span></td></tr>
+                <tr><td>2026-09-11 15:20:15</td><td>INFO</td><td>Catálogo</td><td>Catálogo de productos cargado correctamente.</td><td><span class="pill ok">Completado</span></td></tr>
                 <tr><td>2026-09-11 15:18:02</td><td>INFO</td><td>Sistema POS</td><td>Cobro de orden Ticket #1004 procesado correctamente.</td><td><span class="pill ok">Éxito</span></td></tr>
                 <tr><td>2026-09-11 14:45:20</td><td>WARN</td><td>Inventario</td><td>Alerta de Stock Bajo detectada en SKU VEL-CHI-01.</td><td><span class="pill warn">Alerta</span></td></tr>
                 <tr><td>2026-09-11 12:00:00</td><td>INFO</td><td>Supabase DB</td><td>Consulta a tabla gastos_generales realizada.</td><td><span class="pill ok">OK</span></td></tr>
@@ -5618,6 +5627,7 @@
         <select id="odStatusSelect" style="padding:8px 14px; border-radius:6px; border:1px solid var(--border); font-weight:700; font-size:14px; cursor:pointer;">
           <option value="Pendiente">Pendiente</option>
           <option value="Pendiente de pago">Pendiente de pago</option>
+          <option value="Factura anticipada">Factura anticipada</option>
           <option value="Pago aceptado">Pago aceptado</option>
           <option value="Error en el pago">Error en el pago</option>
           <option value="En preparación">En preparación</option>
@@ -5628,6 +5638,7 @@
         </select>
         <button class="btn" id="odUpdateStatusBtn" style="border-radius:6px; font-size:13px;" onclick="updateOrderDetailStatus()">Actualizar el estado</button>
         <button class="btn secondary" style="border-radius:6px; font-size:13px;" onclick="printOrderDetail()"> Imprimir pedido</button>
+        <button class="btn secondary hidden" id="odFacturarBtn" style="border-radius:6px; font-size:13px;" onclick="currentOrderObj && facturarDesdePedido(orderOrigen(currentOrderObj), currentOrderObj.id)">Facturar</button>
         <button class="btn secondary" id="odCancelBtn" style="border-radius:6px; font-size:13px; border-color:#f59e0b; color:#b45309;" onclick="cancelOrderDetail()">Cancelar pedido</button>
         <button class="btn secondary hidden" id="odDeleteBtn" style="border-radius:6px; font-size:13px; border-color:var(--bad); color:var(--bad);" onclick="deleteOrderDetail()">Borrar pedido</button>
         <span id="odOrigenNote" class="hidden" style="font-size:12px; color:var(--text-muted);"></span>
@@ -5775,6 +5786,11 @@
             <div style="border-top:1px dashed var(--border); padding-top:10px; font-size:13px;">
               <b>Nota del pedido:</b> <span id="odOrderNote" style="color:var(--text-secondary); font-size:12px; margin-left:6px;">—</span>
             </div>
+
+            <div style="border-top:1px dashed var(--border); padding-top:10px; margin-top:12px;">
+              <div style="font-size:13px; font-weight:700; margin-bottom:8px;">Historial de movimientos</div>
+              <div id="odHistorialBody" style="font-size:12px;"></div>
+            </div>
           </div>
 
           <!-- TAB CONTENT: DOCUMENTOS -->
@@ -5913,13 +5929,19 @@
       </div>
       <div>
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Método de pago:</label>
-        <select id="cpMetodoPago" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <select id="cpMetodoPago" onchange="cpToggleComprobante()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
           <option value="Pendiente de pago">Pendiente de pago</option>
           <option value="Efectivo">Efectivo</option>
           <option value="Transferencia">Transferencia</option>
           <option value="Tarjeta">Tarjeta</option>
         </select>
       </div>
+    </div>
+
+    <div id="cpComprobanteWrap" class="hidden" style="margin-bottom:14px; padding:12px; border:1px dashed var(--border); border-radius:8px;">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Foto del baucher o comprobante de pago <span style="color:#dc2626;">(obligatoria)</span>:</label>
+      <input type="file" id="cpComprobante" accept="image/*" onchange="cpVistaComprobante(this)" style="font-size:13px; max-width:100%;">
+      <img id="cpComprobanteVista" alt="Vista previa del baucher" class="hidden" style="display:block; margin-top:8px; max-width:100%; max-height:200px; border-radius:6px; border:1px solid var(--border);">
     </div>
 
     <div style="margin-bottom:14px;">
@@ -5971,10 +5993,11 @@
 
     <div style="margin-bottom:16px;">
       <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:6px;">Método de Pago:</label>
-      <div style="display:flex; gap:8px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
         <button class="btn primary" id="payMethodCash" onclick="setPayMethod('cash')">Efectivo</button>
         <button class="btn" id="payMethodCard" onclick="setPayMethod('card')">Tarjeta</button>
         <button class="btn" id="payMethodTransfer" onclick="setPayMethod('transfer')">Transferencia</button>
+        <button class="btn" id="payMethodML" onclick="setPayMethod('mercadolibre')">Mercado Libre</button>
       </div>
     </div>
 
@@ -7055,6 +7078,24 @@ function trackFunnel(evento, { productId, valor, datos, urgente } = {}) {
   if (!funnelTimer) funnelTimer = setTimeout(flushFunnel, 2000);
 }
 
+// Solo cuenta como visita cuando la página de verdad se ve en pantalla: la
+// app de Facebook/Instagram puede pre-cargar la página del anuncio antes de
+// que la persona lo toque (y algunos navegadores pre-renderizan ligas), y
+// esas cargas no las vio nadie.
+function whenPageVisible(fn) {
+  if (document.prerendering) {
+    document.addEventListener('prerenderingchange', () => whenPageVisible(fn), { once: true });
+    return;
+  }
+  if (document.visibilityState === 'visible') { fn(); return; }
+  const onVisible = () => {
+    if (document.visibilityState !== 'visible') return;
+    document.removeEventListener('visibilitychange', onVisible);
+    fn();
+  };
+  document.addEventListener('visibilitychange', onVisible);
+}
+
 function trackFunnelPageView() {
   const path = window.location.pathname;
   if (path === funnelLastPath) return;
@@ -7113,17 +7154,47 @@ function trackPixelEvent(eventName, params, eventId) {
   if (!metaPixelConfig.loaded && pixelPending.length < 50) pixelPending.push({ name: eventName, params: params || {}, eventId });
 }
 
+// "Agregar al carrito" se reporta (a Meta y al embudo) UNA vez por producto
+// en cada visita. Los mayoristas suelen dar clic muchas veces en "Agregar"
+// en vez de escribir la cantidad (se vieron sesiones con 299 clics en 9
+// minutos): cada clic se contaba como un "agregar al carrito" y Meta veía
+// ~10 veces más que los carritos reales (500–800 eventos al día contra
+// 30–60 carritos). Misma clave que las páginas CMS (assets/cms-pixel.js),
+// así un producto agregado en una página de batucada y luego en la tienda
+// cuenta una sola vez en la misma visita.
+const ATC_KEY = 'mf_atc';
+
+function addToCartYaReportado(productId) {
+  const s = funnelSession();
+  const sid = s ? s.sid : 'sin-sesion';
+  const id = String(productId);
+  try {
+    const guardado = JSON.parse(localStorage.getItem(ATC_KEY) || 'null');
+    const ids = guardado && guardado.sid === sid && Array.isArray(guardado.ids) ? guardado.ids : [];
+    if (ids.includes(id)) return true;
+    ids.push(id);
+    localStorage.setItem(ATC_KEY, JSON.stringify({ sid, ids: ids.slice(-300) }));
+  } catch (e) { /* sin localStorage: se reporta siempre, como antes */ }
+  return false;
+}
+
+function reportAddToCart(product, qty) {
+  if (addToCartYaReportado(product.id)) return;
+  const n = Math.max(1, parseInt(qty, 10) || 1);
+  trackPixelEvent('AddToCart', {
+    content_ids: [String(product.id)], content_name: product.name, content_type: 'product',
+    contents: [{ id: String(product.id), quantity: n }],
+    value: product.price * n, currency: 'MXN'
+  });
+}
+
 // Una sola pulsación de "Agregar" con cantidad N es UN evento AddToCart con
 // el valor total (precio × N) — antes el botón de la ficha llamaba esto N
 // veces y Meta contaba N agregados al carrito de 1 pieza cada uno.
 function addToCartTracked(product, qty) {
   const n = Math.max(1, parseInt(qty, 10) || 1);
   for (let i = 0; i < n; i++) addToCart(product);
-  trackPixelEvent('AddToCart', {
-    content_ids: [String(product.id)], content_name: product.name, content_type: 'product',
-    contents: [{ id: String(product.id), quantity: n }],
-    value: product.price * n, currency: 'MXN'
-  });
+  reportAddToCart(product, n);
 }
 
 // Buscar: se manda una vez por búsqueda distinta, con un pequeño retraso
@@ -8457,12 +8528,14 @@ function setPayMethod(method) {
   document.getElementById('payMethodCash').className = method === 'cash' ? 'btn primary' : 'btn';
   document.getElementById('payMethodCard').className = method === 'card' ? 'btn primary' : 'btn';
   document.getElementById('payMethodTransfer').className = method === 'transfer' ? 'btn primary' : 'btn';
+  document.getElementById('payMethodML').className = method === 'mercadolibre' ? 'btn primary' : 'btn';
   document.getElementById('cashDetailsArea').style.display = method === 'cash' ? 'block' : 'none';
 }
 
 function payMethodTicketLabel(method) {
   if (method === 'card') return 'Pago con Tarjeta';
   if (method === 'transfer') return 'Pago por Transferencia';
+  if (method === 'mercadolibre') return 'Mercado Libre';
   if (method === 'cash' || !method) return 'Pago En Efectivo';
   return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
 }
@@ -9958,7 +10031,7 @@ function renderStockTable(){
   `;}).join('');
 }
 
-// DYNAMIC PRODUCTS SYNC FROM PRESTASHOP & SUPABASE API
+// CATÁLOGO DE PRODUCTOS (SUPABASE)
 let liveProducts = [];
 
 // Catálogo COMPLETO (activos + inactivos) para el panel "Catálogo de
@@ -9998,12 +10071,12 @@ async function loadAdminCatalogProducts() {
 // tarda /api/productos, lo cual confundía a los clientes.
 let productsFirstLoadDone = false;
 
-async function syncProductsFromPrestaShopAPI(){
+async function cargarCatalogoProductos(){
   let loaded = false;
 
   try {
     // Sin filter[category], /api/productos trae como máximo `limit` productos
-    // (500 por default) en el orden que PrestaShop decida — con 1072
+    // (500 por default) — con 1072
     // productos activos, medio catálogo (los que caen después del 500)
     // quedaba invisible para el buscador y las categorías del inicio, aunque
     // sí aparecían en el catálogo completo paginado por categoría. 5000 es
@@ -10046,8 +10119,8 @@ async function syncProductsFromPrestaShopAPI(){
     console.log('Consultando Supabase DB como respaldo:', e.message);
   }
 
-  // Respaldo principal si PrestaShop no responde: la copia completa del
-  // catálogo en Supabase (catalogo_productos, llenada por el sync) con las
+  // Respaldo principal si /api/productos no responde: el catálogo completo
+  // en Supabase (catalogo_productos) leído directo, con las
   // fotos ya migradas (productos_migrados) — no la tabla vieja de costos,
   // que solo trae 250 productos.
   if (!loaded) {
@@ -10107,7 +10180,7 @@ async function syncProductsFromPrestaShopAPI(){
       // Solo se consulta la vista pública (sin costo de compra, precio a
       // distribuidor ni datos de competencia) — la tabla completa ya no es
       // legible sin la contraseña de edición, ni siquiera para este
-      // respaldo cuando falla PrestaShop.
+      // respaldo cuando falla /api/productos.
       const data = await sbGet('costos_productos_publico?select=id,nombre_generico,nombre_explicito,categoria,menudeo_precio,link_imagen,codigo_barra,codigo_pos,descripcion&limit=250');
       if (Array.isArray(data) && data.length > 0) {
         liveProducts = data.map(item => {
@@ -10154,7 +10227,7 @@ function catalogErrorHTML(pad) {
   return `<div style="grid-column:1/-1; padding:${pad}px; text-align:center; color:var(--danger, #dc2626);">
     <b>No se pudo cargar el catálogo de productos.</b><br>
     <span style="color:var(--text-muted); font-size:13px;">Revisa tu conexión e inténtalo de nuevo.</span><br>
-    <button class="btn small primary" style="margin-top:10px;" onclick="syncProductsFromPrestaShopAPI()">Reintentar</button>
+    <button class="btn small primary" style="margin-top:10px;" onclick="cargarCatalogoProductos()">Reintentar</button>
   </div>`;
 }
 
@@ -10571,7 +10644,7 @@ async function saveProductChanges() {
   }
 
   // Respaldo legado (costos_productos_publico) — solo lo lee el propio
-  // navegador cuando PrestaShop no responde, no el resto del sitio. Se deja
+  // navegador cuando /api/productos no responde, no el resto del sitio. Se deja
   // por compatibilidad, pero el guardado real ahora es catalogo_productos
   // (abajo), que sí es lo que /api/productos.js sirve al público.
   if (targetProd && targetProd.id) {
@@ -11674,7 +11747,7 @@ function rtRenderPreview() {
   // vista previa nunca debe mostrar lo que de verdad no se puede mandar.
   const nombre = (d && String(d.nombre || '').trim().split(/\s+/)[0]) || 'Cliente';
   const liga = 'https://www.mifiestashop.com/?carrito=…' + (c ? `&cupon=${c.codigo}` : '');
-  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: (c && c.vence) || 'sin fecha límite', liga };
+  const campos = { nombre, cupon: c ? c.codigo : '', descuento: c ? c.descuento : '', vence: (c && c.vence) || 'cierre de esta promoción', liga };
   const fill = t => String(t || '').replace(/\{(nombre|cupon|descuento|vence|liga)\}/g, (_, k) => campos[k]);
   const canal = rtCanal();
 
@@ -11692,7 +11765,7 @@ function rtRenderPreview() {
   if (c && !/\{cupon\}/.test(document.getElementById('rtMensaje').value) && canal === 'whatsapp') avisos.push('⚠ El mensaje de WhatsApp no incluye {cupon}: el cliente no verá el código (solo irá en la liga).');
   el.innerHTML = (canal === 'email' ? `<b>Asunto:</b> ${escapeHtml(fill(document.getElementById('rtAsunto').value))}\n\n` : '') +
     escapeHtml(mensaje) +
-    (canal === 'email' ? `\n\n${c ? `[Caja del cupón: ${escapeHtml(c.codigo)} · ${escapeHtml(c.descuento)} · válido hasta el ${escapeHtml(c.vence)}]\n` : ''}[Lista de productos que dejó]\n[Botón: Terminar mi compra]` : '') +
+    (canal === 'email' ? `\n\n${c ? `[Caja del cupón: ${escapeHtml(c.codigo)} · ${escapeHtml(c.descuento)}${c.vence ? ' · válido hasta el ' + escapeHtml(c.vence) : ''}]\n` : ''}[Lista de productos que dejó]\n[Botón: Terminar mi compra]` : '') +
     (avisos.length ? `\n\n<span style="color:#b45309;">${avisos.map(escapeHtml).join('\n')}</span>` : '');
 }
 
@@ -13267,7 +13340,7 @@ function addToClienteCart(pId) {
   addToCart({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
   updateStoreCartBadge();
   updateClienteCartUI();
-  trackPixelEvent('AddToCart', { content_ids: [String(prod.id)], content_name: prod.name, content_type: 'product', value: prod.price, currency: 'MXN' });
+  reportAddToCart(prod, 1);
 }
 
 function updateClienteCartUI() {
@@ -13553,7 +13626,7 @@ const DEFAULT_SUPPLIERS = [
   { id: 3, name: 'Pirotecnia Fría & Efectos Especiales', contact: 'Mtro. Alejandro Ruiz', phone: '+52 442 8899 0011', email: 'info@pirotecniafria.mx', status: 'Activo' }
 ];
 
-// API LOADERS FOR PRESTASHOP ENDPOINTS
+// API LOADERS (PEDIDOS, CLIENTES, CARRITOS)
 async function loadCategoriesFromAPI(){
   const tbody = document.getElementById('categoriesTableBody');
   if(!tbody) return;
@@ -13906,10 +13979,23 @@ async function loadOrdersFromAPI(){
   const skSelect = document.getElementById('skSelectOrder');
   if (skSelect && list.length > 0) {
     skSelect.innerHTML = '<option value="">-- Seleccionar Pedido Activo --</option>' +
-      list.map(o => `<option value="${escapeHtml(o.id)}">${escapeHtml(o.id)} - ${escapeHtml(o.customer)} (${fmtMoney(o.total)})</option>`).join('');
+      list.map(o => {
+        const pagado = isOrderStatusPaid(o.status);
+        const etiqueta = `${o.id} - ${o.customer} (${fmtMoney(o.total)})${pagado ? '' : ' — Pendiente de pago'}`;
+        return `<option value="${escapeHtml(o.id)}" ${pagado ? '' : 'disabled'}>${escapeHtml(etiqueta)}</option>`;
+      }).join('');
   }
 
   renderTopProductsTable();
+}
+
+// Estados que cuentan como "ya pagado" (mismos que pintan la pill verde en la
+// tabla de pedidos): se usan también para bloquear la generación de guías de
+// envío de un pedido que todavía no se ha cobrado.
+const ESTADOS_PEDIDO_PAGADO = ['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado', 'pago realizado'];
+
+function isOrderStatusPaid(status) {
+  return ESTADOS_PEDIDO_PAGADO.includes(String(status || '').toLowerCase());
 }
 
 // Color del estado: verde = pagado/enviado/entregado, rojo = cancelado o
@@ -13917,7 +14003,7 @@ async function loadOrdersFromAPI(){
 function orderStatusPillClass(status) {
   const s = String(status || '').toLowerCase();
   if (/cancelad|reembols|error/.test(s)) return 'bad';
-  if (['pago aceptado', 'entregado', 'pagado', 'enviado', 'facturado', 'pago realizado'].includes(s)) return 'ok';
+  if (isOrderStatusPaid(s)) return 'ok';
   return 'warn';
 }
 
@@ -14039,6 +14125,7 @@ function openOrderDetailModal(id){
   renderOdDetails(order, {});
   switchOdTab('estado');
   modal.classList.remove('hidden');
+  cargarHistorialPedido(order);
 
   if (order.rawId) {
     fetch('/api/pedido-detalle', {
@@ -14057,6 +14144,38 @@ function openOrderDetailModal(id){
         renderOdProductRows(null);
         renderOdDetails(order, { loaded: true });
       });
+  }
+}
+
+// ---- Historial de movimientos del pedido: quién, qué, día y hora ----
+function odFechaHora(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
+}
+async function cargarHistorialPedido(order) {
+  const box = document.getElementById('odHistorialBody');
+  if (!box || !order) return;
+  const base = `<div style="display:flex; gap:10px; padding:6px 0;"><span style="min-width:150px; color:var(--text-muted);">${escapeHtml(order.date || '—')}</span><span style="color:var(--text-secondary);">Pedido recibido</span></div>`;
+  if (orderOrigen(order) === 'prestashop') {
+    box.innerHTML = '<div style="color:var(--text-muted);">Pedido histórico de las cajas de PrestaShop: no tiene historial de movimientos.</div>' + base;
+    odText('tabOdEstado', 'Estado (1)');
+    return;
+  }
+  box.innerHTML = '<div style="color:var(--text-muted);">Cargando historial…</div>';
+  try {
+    const data = await pedidoAdminRequest({ accion: 'historial', origen: orderOrigen(order), folio: order.id });
+    if (currentOrderObj !== order) return; // se abrió otro pedido mientras tanto
+    const filas = data.historial || [];
+    const items = filas.map(h => `<div style="display:flex; gap:10px; padding:6px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;">
+        <span style="min-width:150px; color:var(--text-muted); font-variant-numeric:tabular-nums;">${escapeHtml(odFechaHora(h.created_at))}</span>
+        <span style="min-width:110px; font-weight:700;">${escapeHtml(h.usuario || '—')}</span>
+        <span style="flex:1; min-width:180px; color:var(--text-secondary);">${escapeHtml(h.detalle || h.accion || '')}</span>
+      </div>`).join('');
+    box.innerHTML = (items || '<div style="color:var(--text-muted); padding:4px 0;">Todavía no hay movimientos registrados (solo se guardan los cambios hechos desde ahora).</div>') + base;
+    odText('tabOdEstado', `Estado (${filas.length + 1})`);
+  } catch (e) {
+    if (currentOrderObj === order) box.innerHTML = `<div style="color:var(--danger, #c0392b);">No se pudo cargar el historial: ${escapeHtml(e.message)}</div>` + base;
   }
 }
 
@@ -14117,7 +14236,7 @@ function renderOdDetails(order, extra) {
   if (dateEl) { dateEl.value = String(order.deliveryDate || (ps && ps.delivery_date) || '').slice(0, 10); dateEl.disabled = !editable; }
   const saveBtn = document.getElementById('odSaveExtrasBtn');
   if (saveBtn) saveBtn.disabled = !editable;
-  odText('odExtrasNote', editable ? '' : (origen === 'prestashop' ? 'Pedido de las cajas de PrestaShop: se edita en PrestaShop.' : 'Venta del POS: no tiene nota ni fecha de entrega.'));
+  odText('odExtrasNote', editable ? '' : (origen === 'prestashop' ? 'Pedido histórico de las cajas de PrestaShop: solo lectura.' : 'Venta del POS: no tiene nota ni fecha de entrega.'));
   odText('odOrderNote', order.nota || (ps && ps.note) || '—');
 
   // Contacto
@@ -14148,7 +14267,7 @@ function renderOdDetails(order, extra) {
       const guia = order.trackingNumber || '';
       trans.innerHTML = `
         <div style="display:flex; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); flex-wrap:wrap;">
-          <span><b>Paquetería:</b> ${escapeHtml(carrier || (origen === 'prestashop' ? 'Ver en PrestaShop' : 'Sin paquetería'))}</span>
+          <span><b>Paquetería:</b> ${escapeHtml(carrier || (origen === 'prestashop' ? 'No registrada' : 'Sin paquetería'))}</span>
           <span><b>Costo:</b> ${envio > 0 ? odMoney(envio) : (carrier ? 'Gratis' : '—')}</span>
         </div>
         ${origen === 'online' ? `
@@ -14177,6 +14296,7 @@ function renderOdDetails(order, extra) {
       const motivo = mpStatusDetailText(order.mpStatusDetail);
       if (motivo && order.mpStatus !== 'approved') estadoPago += ` — ${motivo}`;
       if (order.paidAt) fecha = new Date(order.paidAt).toLocaleString('es-MX');
+      if (order.comprobanteUrl && /^https:\/\//.test(order.comprobanteUrl)) extraInfo = `<div style="font-size:11px;"><a href="${escapeHtml(order.comprobanteUrl)}" target="_blank" rel="noopener" style="color:var(--series-2);">Ver foto del baucher</a></div>`;
     } else if (origen === 'pos') {
       ref = order.id;
       estadoPago = 'Cobrado';
@@ -14258,6 +14378,7 @@ async function saveOrderDetailExtras(soloGuia) {
     if (soloGuia) order.trackingNumber = body.trackingNumber;
     else { order.nota = body.nota; order.deliveryDate = body.deliveryDate; odText('odOrderNote', body.nota || '—'); renderOrdersTableRows(); }
     odText(soloGuia ? 'odContactNote' : 'odExtrasNote', soloGuia ? 'Guía guardada.' : 'Guardado.');
+    cargarHistorialPedido(order);
   } catch (e) {
     alert(e.message);
   }
@@ -14297,6 +14418,8 @@ async function openCrearPedidoModal(){
   document.getElementById('cpEnvioCosto').value = 0;
   document.getElementById('cpTransportadora').value = 'Recolección en tienda';
   document.getElementById('cpMetodoPago').value = 'Pendiente de pago';
+  document.getElementById('cpComprobante').value = '';
+  cpToggleComprobante();
   document.getElementById('cpDireccionEnvio').value = '';
   document.getElementById('cpDireccionFacturacion').value = '';
   document.getElementById('cpMismaDireccionFacturacion').checked = true;
@@ -14442,10 +14565,41 @@ function cpRenderSummary(){
   document.getElementById('cpSumTotal').textContent = fmtMoney(total);
 }
 
+// Pedido manual ya pagado (efectivo, transferencia o tarjeta): la foto del baucher es obligatoria.
+// "Pendiente de pago" no tiene baucher todavía.
+function cpRequiereComprobante() { return document.getElementById('cpMetodoPago').value !== 'Pendiente de pago'; }
+function cpToggleComprobante() {
+  document.getElementById('cpComprobanteWrap').classList.toggle('hidden', !cpRequiereComprobante());
+}
+function cpVistaComprobante(input) {
+  const img = document.getElementById('cpComprobanteVista');
+  const file = input.files && input.files[0];
+  if (!file || !/^image\//.test(file.type)) { img.classList.add('hidden'); img.removeAttribute('src'); return; }
+  img.src = URL.createObjectURL(file);
+  img.classList.remove('hidden');
+}
+async function cpSubirComprobante(folio) {
+  const file = document.getElementById('cpComprobante').files[0];
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const azar = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('');
+  const path = `comprobantes/${folio}-${azar}.${ext}`;
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${path}`, {
+    method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type || 'image/jpeg' }, body: file
+  });
+  if (!r.ok) throw new Error('no se pudo subir la foto del baucher (' + r.status + ')');
+  return `${SUPABASE_URL}/storage/v1/object/public/assets/${path}`;
+}
+
 async function confirmCrearPedido(){
   const nombre = document.getElementById('cpCliente').value.trim();
   if (!nombre) return alert('Escribe el nombre del cliente.');
   if (cpItems.length === 0) return alert('Agrega al menos un producto.');
+  const fotoBaucher = document.getElementById('cpComprobante').files[0];
+  if (cpRequiereComprobante()) {
+    if (!fotoBaucher) return alert('Adjunta la foto del baucher o comprobante de pago: es obligatoria en pedidos manuales ya pagados.');
+    if (!/^image\//.test(fotoBaucher.type)) return alert('El baucher debe ser una foto (imagen).');
+    if (fotoBaucher.size > 10 * 1024 * 1024) return alert('La foto del baucher pesa más de 10 MB. Toma una más ligera.');
+  }
 
   const { subtotal, descuento, envio, total } = cpGetSummary();
   const mismaDireccion = document.getElementById('cpMismaDireccionFacturacion').checked;
@@ -14475,6 +14629,8 @@ async function confirmCrearPedido(){
   };
 
   try {
+    // La foto se sube primero: si falla, el pedido no se crea sin su baucher.
+    if (cpRequiereComprobante()) payload.comprobante_url = await cpSubirComprobante(folio);
     // No se usa sbInsert() aquí: esa función pide "return=representation"
     // (PostgREST intenta devolver la fila insertada), pero pedidos_online no
     // tiene política de SELECT para la llave anon (solo INSERT) — sin fila
@@ -14926,6 +15082,12 @@ function recError(e) {
     equivalencia_existente: 'Ese código ya está vinculado a otro producto para este proveedor. Solo un supervisor puede cambiarlo (queda en el historial).',
     linea_sin_identificar: 'Primero identifica el producto de este renglón (y confirma la lectura).',
     recepcion_cerrada: 'Esta recepción ya está cerrada, cancelada o procesándose.',
+    reparto_no_cuadra: 'Las piezas repartidas no suman lo que dice la nota.',
+    reparto_producto_repetido: 'Un producto está repetido en el reparto.',
+    reparto_minimo_dos: 'El reparto necesita al menos dos productos.',
+    reparto_invalido: 'Revisa el reparto: cada producto necesita piezas enteras mayores a 0.',
+    cantidad_no_entera: 'La cantidad de la nota por las piezas por unidad no es un número entero de piezas.',
+    linea_no_dividible: 'Solo se puede repartir un renglón de la nota.',
     linea_ingresada: 'Ese renglón ya entró al inventario; no se puede modificar.',
     faltan_piezas_por_caja: 'Indica cuántas piezas trae cada caja.',
     danadas_mayor_que_recibido: 'Las piezas dañadas no pueden ser más que las recibidas.',
@@ -15252,7 +15414,7 @@ function recHtmlLineas(d, L, cerrada) {
       <td>${l.renglon}${l.origen === 'adicional' ? '<div style="font-size:10px; color:#9333ea; font-weight:700;">NO DOCUMENTADA</div>' : ''}</td>
       <td style="font-family:monospace; font-weight:700; white-space:nowrap;">${escapeHtml(l.codigo || '—')}${l.descripcion ? `<div style="font-family:inherit; font-weight:400; font-size:11px; color:var(--text-muted);">${escapeHtml(l.descripcion)}</div>` : ''}
         ${l.revisar ? `<div style="font-family:inherit; font-weight:600; font-size:11px; color:#dc2626; white-space:normal;">${escapeHtml(l.revisar_motivo || 'Revisar')}</div>` : ''}</td>
-      <td style="text-align:right;">${l.origen === 'adicional' ? '—' : recNum(l.cantidad_nota)}${l.factor > 1 ? `<div style="font-size:11px; color:var(--text-muted);">× ${l.factor} = ${recNum(l.esperado_piezas)} pzs</div>` : ''}</td>
+      <td style="text-align:right;">${l.origen === 'adicional' ? '—' : recNum(l.cantidad_nota)}${l.factor > 1 ? `<div style="font-size:11px; color:var(--text-muted);">× ${l.factor} = ${recNum(l.esperado_piezas)} pzs</div>` : ''}${l.reparto ? `<div style="font-size:10px; color:#9333ea; font-weight:700;">PARTE DE ${recNum(l.reparto.cantidad_nota)} × ${l.reparto.factor} = ${recNum(l.reparto.cantidad_nota * l.reparto.factor)} PZS</div>` : ''}</td>
       <td style="text-align:right; white-space:nowrap;">${l.precio_unitario != null ? fmtMoney(l.precio_unitario) : '—'}
         ${costoVar !== null && Math.abs(costoVar) >= 10 ? `<div style="font-size:11px; font-weight:700; color:${costoVar > 0 ? '#dc2626' : '#16a34a'};">${costoVar > 0 ? '▲' : '▼'} ${Math.abs(costoVar).toFixed(0)}% vs ${fmtMoney(l.costo_anterior)}</div>` : ''}</td>
       <td style="text-align:right;">${l.importe != null ? fmtMoney(l.importe) : '—'}</td>
@@ -15267,7 +15429,7 @@ function recHtmlLineas(d, L, cerrada) {
         ${(l.evidencias || []).map((a, k) => `<a href="#" onclick="event.preventDefault(); recVerArchivo('${escapeHtml(a.path)}')" style="font-size:11px; display:block;">Evidencia ${k + 1}</a>`).join('')}</td>
       <td style="white-space:nowrap;">${abierta ? `
         <button class="btn small" onclick="recLineaForm(${l.id})" title="Corregir lo que leyó la IA">${l.revisar ? 'Revisar' : 'Editar'}</button>
-        <button class="btn small ${!l.id_product ? 'primary' : ''}" onclick="recVincular(${l.id})">${l.id_product ? 'Cambiar' : 'Vincular'}</button>
+        <button class="btn small ${!l.id_product ? 'primary' : ''}" onclick="recVincular(${l.id})">${l.reparto ? 'Reparto' : (l.id_product ? 'Cambiar' : 'Vincular')}</button>
         ${l.id_product && !l.revisar ? `<button class="btn small ${l.cantidad_recibida == null ? 'primary' : ''}" onclick="recConteo(${l.id})">Contar</button>` : ''}
         ${sup && l.cantidad_recibida != null && l.incidencia && !l.diferencia_resuelta ? `<button class="btn small" onclick="recResolver(${l.id})">Resolver</button>` : ''}
         <button class="btn small" onclick="recEliminarLinea(${l.id})" title="Quitar renglón">🗑</button>` : ''}</td>
@@ -15341,17 +15503,90 @@ function recVincular(id, sugeridos) {
       <label class="btn small" style="cursor:pointer;">📷 Identificar con foto<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="recVincFoto(this)"></label>
       <button class="btn small" onclick="recProductoNuevoForm()">+ Producto nuevo</button>
     </div>
+    <label style="display:flex; gap:6px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px;"><input type="checkbox" id="recVVarios" onchange="recVincModoVarios(this.checked)"> Son varios productos del catálogo (elige cuáles y cuántas piezas de cada uno)</label>
     <div id="recVRes" style="max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px;">${sugeridos ? recVincHtmlResultados(sugeridos, true) : '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'}</div>
+    <div id="recVVariosPanel" class="hidden" style="margin-top:10px;"></div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
-      <label>Presentación en la nota<select id="recVPres" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
-      <label>Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${l.factor || 1}" style="${REC_INPUT} width:100%;"></label>
+      <label id="recVPresLbl">Presentación en la nota<select id="recVPres" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
+      <label>Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${l.reparto ? l.reparto.factor : (l.factor || 1)}" oninput="recVariosPintar()" style="${REC_INPUT} width:100%;"></label>
     </div>
-    <p style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
-    <label style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
+    <p id="recVEjemplo" style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
+    <label id="recVGuardarLbl" style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo && !l.reparto ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
     <input type="hidden" id="recVSel">
     <div id="recVSelTxt" style="margin-top:10px; font-weight:700;"></div>
-    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" onclick="recVincGuardar()">Vincular</button></div>`);
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recVBtnOk" onclick="recVincGuardar()">Vincular</button></div>`);
+  recVarios = { activo: false, partes: [] };
+  if (l.reparto) {
+    recVarios.partes = (recActual.lineas || []).filter(x => x.reparto && x.reparto.grupo === l.reparto.grupo && x.id_product)
+      .map(x => ({ id: String(x.id_product), nombre: x.producto ? x.producto.name : '#' + x.id_product, piezas: Number(x.cantidad_nota) }));
+    document.getElementById('recVVarios').checked = true;
+    recVincModoVarios(true);
+  }
   setTimeout(() => document.getElementById('recVBuscar')?.focus(), 50);
+}
+
+// ---- Un renglón de la nota con varios productos del catálogo (rpc_recep_dividir) ----
+// Se eligen los productos y las piezas de cada uno hasta completar lo que dice la nota
+// (cantidad × piezas por unidad); cada producto queda como su propia línea para contarse e ingresarse.
+let recVarios = { activo: false, partes: [] };
+function recVariosTotal() {
+  const l = recLinea(recVincId);
+  const cant = l && l.reparto ? Number(l.reparto.cantidad_nota) : Number(l && l.cantidad_nota);
+  const factor = parseInt(document.getElementById('recVFactor')?.value, 10) || 0;
+  return cant > 0 && factor >= 1 ? cant * factor : 0;
+}
+function recVariosSuma() { return recVarios.partes.reduce((a, p) => a + (Number(p.piezas) || 0), 0); }
+function recVincModoVarios(on) {
+  recVarios.activo = !!on;
+  const l = recLinea(recVincId);
+  document.getElementById('recVVariosPanel').classList.toggle('hidden', !on);
+  ['recVPresLbl', 'recVEjemplo', 'recVGuardarLbl', 'recVSelTxt'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !!on));
+  document.getElementById('recVBtnOk').textContent = on ? 'Dividir renglón' : 'Vincular';
+  if (!on && l && l.reparto) { const g = document.getElementById('recVGuardar'); if (g) { g.checked = false; g.disabled = true; } }
+  recVariosPintar();
+}
+function recVariosAgregar(id, nombre) {
+  if (recVarios.partes.some(p => p.id === String(id))) { alert('Ese producto ya está en la lista.'); return; }
+  const falta = Math.max(0, recVariosTotal() - recVariosSuma());
+  recVarios.partes.push({ id: String(id), nombre: nombre || ('#' + id), piezas: falta > 0 ? falta : 1 });
+  recVariosPintar();
+}
+function recVariosPiezas(i, v) { const n = Math.max(0, Math.floor(Number(v) || 0)); if (recVarios.partes[i]) recVarios.partes[i].piezas = n; recVariosPintar(true); }
+function recVariosResto(i) {
+  const otros = recVarios.partes.reduce((a, p, k) => a + (k === i ? 0 : (Number(p.piezas) || 0)), 0);
+  recVarios.partes[i].piezas = Math.max(0, recVariosTotal() - otros);
+  recVariosPintar();
+}
+function recVariosQuitar(i) { recVarios.partes.splice(i, 1); recVariosPintar(); }
+function recVariosPintar(sinFilas) {
+  const panel = document.getElementById('recVVariosPanel');
+  if (!panel || !recVarios.activo) return;
+  const total = recVariosTotal(), suma = recVariosSuma(), falta = total - suma;
+  const ok = recVarios.partes.length >= 2 && falta === 0 && recVarios.partes.every(p => p.piezas > 0);
+  const resumen = `<div id="recVVariosResumen" style="font-weight:700; margin-top:8px; color:${falta === 0 ? '#16a34a' : falta < 0 ? '#dc2626' : '#d97706'};">
+      Asignadas ${recNum(suma)} de ${recNum(total)} piezas de la nota${falta > 0 ? ` · faltan ${recNum(falta)}` : falta < 0 ? ` · te pasaste por ${recNum(-falta)}` : ' · completo ✓'}</div>`;
+  if (sinFilas) { const r = document.getElementById('recVVariosResumen'); if (r) r.outerHTML = resumen; }
+  else {
+    panel.innerHTML = `<div style="font-size:12px; color:var(--text-muted); margin-bottom:6px;">Toca productos de la lista de arriba para agregarlos y pon las piezas de cada uno. Deben sumar exactamente lo que dice la nota.</div>
+      ${recVarios.partes.length ? recVarios.partes.map((p, i) => `<div style="display:flex; gap:8px; align-items:center; padding:4px 0; border-bottom:1px solid var(--border);">
+        <div style="flex:1; font-size:13px; font-weight:600;">${escapeHtml(p.nombre)}</div>
+        <input type="number" min="1" step="1" value="${p.piezas}" oninput="recVariosPiezas(${i}, this.value)" style="${REC_INPUT} width:90px;">
+        <button class="btn small" type="button" onclick="recVariosResto(${i})" title="Poner las piezas que faltan para completar la nota">Resto</button>
+        <button class="btn small" type="button" onclick="recVariosQuitar(${i})">✕</button></div>`).join('') : '<div style="color:var(--text-muted); font-size:13px;">Todavía no hay productos.</div>'}
+      ${resumen}`;
+  }
+  const b = document.getElementById('recVBtnOk'); if (b) b.disabled = !ok;
+}
+async function recVariosGuardar() {
+  const total = recVariosTotal();
+  if (recVarios.partes.length < 2 || recVariosSuma() !== total) { alert(`Las piezas deben sumar ${recNum(total)}.`); return; }
+  try {
+    const d = await recRpc('rpc_recep_dividir', {
+      p_recepcion_id: recActual.recepcion.id, p_linea_id: recVincId, p_factor: parseInt(document.getElementById('recVFactor').value, 10),
+      p_partes: recVarios.partes.map(p => ({ id_product: Number(p.id), piezas: p.piezas }))
+    });
+    recCerrarModal(); recMostrar(d);
+  } catch (e) { alert(recError(e)); }
 }
 function recVincHtmlResultados(lista, deIA) {
   if (!lista.length) return `<p style="padding:10px; color:var(--text-muted); margin:0;">${deIA ? 'La IA no encontró productos parecidos. Busca por nombre o registra uno nuevo.' : 'Sin resultados.'}</p>`;
@@ -15372,12 +15607,14 @@ function recVincBuscar() {
   cont.innerHTML = recVincHtmlResultados(res);
 }
 function recVincElegir(id, el) {
+  if (recVarios.activo) { recVariosAgregar(id, el ? el.dataset.nombre : ''); return; }
   document.getElementById('recVSel').value = id;
   document.querySelectorAll('#recVRes .mov-search-item').forEach(x => x.classList.remove('active'));
   if (el) el.classList.add('active');
   document.getElementById('recVSelTxt').textContent = `Seleccionado: ${el ? el.dataset.nombre : '#' + id}`;
 }
 async function recVincGuardar(reemplazar) {
+  if (recVarios.activo) { recVariosGuardar(); return; }
   const id = document.getElementById('recVSel').value;
   if (!id) { alert('Elige un producto de la lista.'); return; }
   const factor = parseInt(document.getElementById('recVFactor').value, 10);
@@ -15733,6 +15970,28 @@ function code128Svg(texto, alto) {
 
 let etqSeleccion = new Set();
 let etqListo = false;
+// Categorías con casilla para marcar/desmarcar: solo se listan los productos activos (los que se imprimen).
+const ETQ_SIN_CAT = '(Sin categoría)';
+let etqCats = [];            // [{ nombre, n }]
+let etqCatsSel = new Set();  // nombres marcados
+function etqListaCategorias() {
+  const cuenta = new Map();
+  adminCatalogDataset().filter(etqActivo).forEach(p => { const c = p.catLabel || ETQ_SIN_CAT; cuenta.set(c, (cuenta.get(c) || 0) + 1); });
+  return [...cuenta.entries()].map(([nombre, n]) => ({ nombre, n })).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+function etqCatPintar() {
+  const lista = document.getElementById('etqCatLista');
+  if (lista) lista.innerHTML = etqCats.map((c, i) => `<label style="display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:12.5px; cursor:pointer;">
+      <input type="checkbox" ${etqCatsSel.has(c.nombre) ? 'checked' : ''} onchange="etqCatToggle(${i}, this.checked)">
+      <span style="flex:1;">${escapeHtml(c.nombre)}</span><span style="color:var(--text-muted); font-size:11px;">${c.n}</span></label>`).join('');
+  const r = document.getElementById('etqCatResumen');
+  if (r) {
+    const m = etqCatsSel.size, t = etqCats.length;
+    r.textContent = m === t ? 'Categorías: todas' : (m === 0 ? 'Categorías: ninguna' : `Categorías: ${m} de ${t}`);
+  }
+}
+function etqCatToggle(i, on) { const c = etqCats[i]; if (!c) return; on ? etqCatsSel.add(c.nombre) : etqCatsSel.delete(c.nombre); etqCatPintar(); etqRender(); }
+function etqCatMarcar(todas) { etqCatsSel = new Set(todas ? etqCats.map(c => c.nombre) : []); etqCatPintar(); etqRender(); }
 function etqCodigo(p) { return (p.barcode && String(p.barcode).trim()) || String(p.id); }
 function etqMayoreo(p) {
   const pm = Number(p.priceMayoreo), desde = Number(p.priceMayoreoDesdeUnidades);
@@ -15745,20 +16004,22 @@ async function etqIniciar() {
   }
   if (!etqListo) {
     etqListo = true;
-    const cats = [...new Set(adminCatalogDataset().map(p => p.catLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
-    document.getElementById('etqCategoria').innerHTML = '<option value="">Todas las categorías</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    etqCats = etqListaCategorias();
+    etqCatsSel = new Set(etqCats.map(c => c.nombre));
+    etqCatPintar();
+    document.addEventListener('click', e => { const d = document.getElementById('etqCatDet'); if (d && d.open && !d.contains(e.target)) d.open = false; });
   }
   etqRender();
 }
 function etqActivo(p) { return p.active !== false && p.status !== 'Inactivo'; }
 function etqFiltrados() {
   const q = normalizeEs(document.getElementById('etqBuscar')?.value || '');
-  const cat = document.getElementById('etqCategoria')?.value || '';
+  const todasCats = etqCatsSel.size === etqCats.length;
   const soloMay = document.getElementById('etqSoloMayoreo')?.checked;
   const soloSel = document.getElementById('etqSoloSel')?.checked;
   return adminCatalogDataset().filter(etqActivo)
     .filter(p => !soloSel || etqSeleccion.has(String(p.id)))
-    .filter(p => !cat || p.catLabel === cat)
+    .filter(p => todasCats || etqCatsSel.has(p.catLabel || ETQ_SIN_CAT))
     .filter(p => !soloMay || etqMayoreo(p))
     .filter(p => !q || normalizeEs(p.name || '').includes(q) || normalizeEs(p.sku || '').includes(q) || String(p.barcode || '').includes(q) || String(p.id) === q)
     .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
@@ -16616,7 +16877,7 @@ function orderOrigen(o) {
   return o.channel === 'Sistema POS' ? 'pos' : 'online';
 }
 
-const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
+const OD_STATUS_OPTIONS = ['Pendiente', 'Pendiente de pago', 'Factura anticipada', 'Pago aceptado', 'Error en el pago', 'En preparación', 'Enviado', 'Entregado', 'Cancelado', 'Reembolsado'];
 
 // El selector antes siempre decía "Pago aceptado" (era su primera opción
 // fija); ahora muestra el estado real del pedido.
@@ -16651,9 +16912,12 @@ function renderOdStatus(order) {
   if (cancelBtn) cancelBtn.classList.toggle('hidden', cancelado);
   const delBtn = document.getElementById('odDeleteBtn');
   if (delBtn) delBtn.classList.toggle('hidden', esPs || !isSuperAdmin);
+  // Facturar: solo pedidos de la tienda y tickets del POS (la factura queda ligada a ellos).
+  const factBtn = document.getElementById('odFacturarBtn');
+  if (factBtn) factBtn.classList.toggle('hidden', esPs || cancelado || (currentStaffSession && !hasPermission('facturacion')));
   const note = document.getElementById('odOrigenNote');
   if (note) {
-    note.textContent = esPs ? 'Pedido de las cajas de PrestaShop: su estado se cambia en PrestaShop.' : '';
+    note.textContent = esPs ? 'Pedido histórico de las cajas de PrestaShop: solo lectura.' : '';
     note.classList.toggle('hidden', !esPs);
   }
 }
@@ -16692,6 +16956,7 @@ async function updateOrderDetailStatus() {
   try {
     const data = await pedidoAdminRequest({ accion: 'estado', origen: orderOrigen(order), folio: order.id, estado: status });
     applyOrderStatusLocally(order, data.estado);
+    cargarHistorialPedido(order);
     await refreshStockAfterOrderChange(data.piezasRegresadas);
     if (status === 'Cancelado') {
       notifyEvent('cancelled', 'Pedido cancelado', `El pedido ${order.id} fue cancelado${data.piezasRegresadas ? ` y se regresaron ${data.piezasRegresadas} piezas al stock` : ''}.`);
@@ -16720,6 +16985,7 @@ async function cancelOrderDetail() {
   try {
     const data = await pedidoAdminRequest({ accion: 'cancelar', origen: orderOrigen(order), folio: order.id });
     applyOrderStatusLocally(order, 'Cancelado');
+    cargarHistorialPedido(order);
     await refreshStockAfterOrderChange(data.piezasRegresadas);
     notifyEvent('cancelled', 'Pedido cancelado', `El pedido ${order.id} fue cancelado${data.piezasRegresadas ? ` y se regresaron ${data.piezasRegresadas} piezas al stock` : ''}.`);
     alert(`Pedido ${order.id} cancelado.` + (data.piezasRegresadas ? ` Se regresaron ${data.piezasRegresadas} piezas al stock.` : ' Este pedido no había descontado stock.'));
@@ -16976,9 +17242,8 @@ function resetStorefrontSeoTags() {
 }
 
 // URL propia de categoría (/{id}-{link_rewrite}, igual que productos pero
-// sin ".html") — linkRewrite viene de /api/categorias-tienda (ps_categorias
-// sincronizada de PrestaShop). Sin linkRewrite (categoría recién agregada,
-// aún sin sincronizar) se devuelve '' y el llamador no cambia la URL.
+// sin ".html") — linkRewrite viene de /api/categorias-tienda (ps_categorias).
+// Sin linkRewrite se devuelve '' y el llamador no cambia la URL.
 function categoryPathFor(c) {
   if (!c || !c.linkRewrite) return '';
   return `/${c.id}-${c.linkRewrite}`;
@@ -17111,7 +17376,7 @@ async function openCmsPage(slug, pushState) {
 
     body.innerHTML = `<div class="cms-page-content">${data.page.content}</div><div id="cmsPageRelatedGrid"></div>`;
 
-    if (liveProducts.length === 0) await syncProductsFromPrestaShopAPI();
+    if (liveProducts.length === 0) await cargarCatalogoProductos();
     renderRelatedProductsInto('cmsPageRelatedGrid', data.page.title, null, `Productos relacionados con ${data.page.title}`);
   } catch (e) {
     body.innerHTML = '<div style="text-align:center; color:#8b7d97; padding:60px 0;">No se pudo cargar esta página en este momento.</div>';
@@ -17162,7 +17427,7 @@ const LEGAL_PAGES = {
       </ul>
 
       <h3>4. Dónde se almacenan tus datos</h3>
-      <p>Tu cuenta, tus pedidos y tus datos de contacto se guardan de forma segura en Supabase, nuestra plataforma de base de datos. El catálogo de productos se sincroniza desde el sistema de nuestra tienda (PrestaShop). Los correos que te enviamos se procesan a través de nuestro proveedor de correo (Hostinger).</p>
+      <p>Tu cuenta, tus pedidos y tus datos de contacto se guardan de forma segura en Supabase, nuestra plataforma de base de datos. El catálogo de productos también se administra ahí. Los correos que te enviamos se procesan a través de nuestro proveedor de correo (Hostinger).</p>
 
       <h3>5. Con quién compartimos tus datos</h3>
       <ul>
@@ -18201,7 +18466,7 @@ async function renderBodaProductsGrid() {
   const container = document.getElementById('bodaProductsGrid');
   if (!container) return;
   if (liveProducts.length === 0) {
-    try { await syncProductsFromPrestaShopAPI(); } catch (e) {}
+    try { await cargarCatalogoProductos(); } catch (e) {}
   }
   const container2 = document.getElementById('bodaProductsGrid');
   if (!container2) return;
@@ -18254,11 +18519,6 @@ async function loadCmsPagesAdmin() {
     const data = await r.json();
     const pages = Array.isArray(data.pages) ? data.pages : [];
 
-    if (data.fallback) {
-      cmsPagesAdminCache = [];
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Configure PS_API_KEY en Vercel para ver las páginas de PrestaShop.</td></tr>';
-      return;
-    }
 
     // Títulos editados manualmente desde este mismo panel (cms_titulos_override
     // en Supabase) — /api/paginas siempre trae el título original de
@@ -18953,7 +19213,7 @@ let currentStorefrontCat = 'all';
 let currentStorefrontQuery = '';
 
 // Vista previa rápida de "Productos Destacados" en el home: en vez de dejar
-// el esqueleto de carga fijo hasta que syncProductsFromPrestaShopAPI() trae
+// el esqueleto de carga fijo hasta que cargarCatalogoProductos() trae
 // el catálogo completo (hasta 5000 productos, varios segundos), se pide en
 // paralelo un lote chico con &fast=1 (sin nombre/imagen migrados ni precio
 // de mayoreo real, sin el conteo total — todo eso llega igual con el sync
@@ -19536,6 +19796,58 @@ function renderRelatedProductsInto(containerId, sourceText, excludeId, heading){
     </div>
   `;
   initScrollReveal();
+}
+
+// Upsell en el checkout ("Antes de pagar, ¿agregamos algo más?"): sugiere
+// productos relacionados con lo que ya hay en el carrito, excluyendo lo que
+// el cliente ya agregó. Reutiliza el mismo scoring por palabras clave que
+// "También te puede interesar", solo que la fuente es el carrito completo
+// en vez de un solo producto.
+function findCheckoutUpsellProducts(limit){
+  if (cart.length === 0) return [];
+  const sourceText = cart.map(i => i.name).join(' ');
+  const cartIds = new Set(cart.map(i => String(i.id)));
+  return findRelatedProducts(sourceText, null, limit + cart.length)
+    .filter(p => !cartIds.has(String(p.id)))
+    .slice(0, limit);
+}
+
+function buildCheckoutUpsellItemHTML(p){
+  return `
+    <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f0e6ef;">
+      <img src="${p.img}" alt="${escapeHtml(p.name)}" style="width:48px; height:48px; object-fit:cover; border-radius:8px; background:var(--mf-cream); flex-shrink:0;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:12.5px; font-weight:700; color:#2e1065; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(p.name)}</div>
+        <div style="font-size:12px; color:var(--mf-orange); font-weight:800;">${fmtMoney(p.price)}</div>
+      </div>
+      <button type="button" onclick="addCheckoutUpsellItem('${p.id}')" style="border:1px solid var(--mf-pink); background:#fff5fa; color:var(--mf-pink); font-weight:700; font-size:12px; padding:6px 10px; border-radius:8px; cursor:pointer; white-space:nowrap; flex-shrink:0;">+ Agregar</button>
+    </div>`;
+}
+
+function renderCheckoutUpsell(){
+  const box = document.getElementById('checkoutUpsellSection');
+  if (!box) return;
+  const items = findCheckoutUpsellProducts(4);
+  if (items.length === 0) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.remove('hidden');
+  box.innerHTML = `
+    <h3 style="margin:0 0 6px; font-size:13.5px; color:#2e1065;">✨ Antes de pagar, ¿agregamos algo más?</h3>
+    <div>${items.map(buildCheckoutUpsellItemHTML).join('')}</div>
+  `;
+}
+
+function addCheckoutUpsellItem(id){
+  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
+  const p = dataset.find(pr => String(pr.id) === String(id));
+  if (!p) return;
+  addToCartTracked({ id: p.id, name: p.name, sku: p.sku, price: p.price, cat: p.cat || 'general', img: p.img }, 1);
+  updateStoreCartBadge();
+  renderCheckoutSummary();
+  renderCheckoutUpsell();
 }
 
 // "Existencia por sucursal" en la ficha de producto: se muestra solo si está
@@ -20144,6 +20456,7 @@ function goToStorefrontCheckout(){
   if (quoteBox) quoteBox.classList.add('hidden');
   prefillCheckoutFromCliente();
   renderCheckoutSummary();
+  renderCheckoutUpsell();
   showStorefrontPage('storefrontCheckoutPage');
   // Cupón que venía en la liga de un mensaje (Retransmisiones).
   const code = pendingCouponCode || (checkoutCoupon && checkoutCoupon.codigo);
@@ -21650,7 +21963,7 @@ function handleRecuperarCarrito() {
   return true;
 }
 
-syncProductsFromPrestaShopAPI().then(openProductDeepLinkIfPresent).then(() => {
+cargarCatalogoProductos().then(openProductDeepLinkIfPresent).then(() => {
   if (window.location.pathname === '/' && handleRecuperarCarrito()) return;
   const category = new URLSearchParams(window.location.search).get('categoria');
   if(category && /^\d+$/.test(category) && window.location.pathname === '/') openStorefrontCatalog(category);
@@ -21697,7 +22010,7 @@ handleEmailLink();
 handleMercadoPagoReturn();
 loadCmsPagesForFooter();
 loadMetaPixelConfig();
-trackFunnelPageView();
+whenPageVisible(trackFunnelPageView);
 populateCheckoutEstadoSelect();
 populateSkydropxEstadoSelects();
 
@@ -21861,7 +22174,7 @@ async function cargarFacturas() {
       const fecha = new Date(f.fecha).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' });
       const sb = f.entorno === 'sandbox' ? ' <span class="pill info" style="font-size:10px;">pruebas</span>' : '';
       const id = escapeHtml(f.facturama_id);
-      return `<tr><td>${fecha}</td><td style="font-size:11px;">${escapeHtml(f.uuid || '—')}${sb}</td><td>${escapeHtml(f.rfc)}</td><td>${escapeHtml(f.nombre)}</td><td>${escapeHtml(f.pedido_folio || '—')}</td><td>${fmtMoney(f.total)}</td><td>${est}</td>
+      return `<tr><td>${fecha}</td><td style="font-size:11px;">${escapeHtml(f.uuid || '—')}${sb}</td><td>${escapeHtml(f.rfc)}</td><td>${escapeHtml(f.nombre)}</td><td>${f.pedido_folio ? escapeHtml(f.pedido_folio) : '<span class="pill bad" title="Emitida antes de que fuera obligatorio ligarla a un pedido o ticket">Sin pedido</span>'}</td><td>${fmtMoney(f.total)}</td><td>${est}</td>
         <td style="white-space:nowrap;"><button class="btn" onclick="descargarFactura('${id}','pdf')">PDF</button> <button class="btn" onclick="descargarFactura('${id}','xml')">XML</button>${f.estado === 'cancelada' ? '' : ` <button class="btn" onclick="cancelarFactura('${id}')">Cancelar</button>`}</td></tr>`;
     }).join('') : '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Todavía no se ha emitido ninguna factura desde aquí.</td></tr>';
   } catch (err) {
@@ -21869,55 +22182,103 @@ async function cargarFacturas() {
   }
 }
 
-function agregarConceptoFactura(it) {
-  const div = document.createElement('div');
-  div.className = 'fact-item';
-  div.style.cssText = 'display:grid; grid-template-columns:3fr 1fr 1fr auto; gap:6px; margin-bottom:6px;';
-  div.innerHTML = '<input class="fi-name" placeholder="Descripción" style="padding:7px;"><input class="fi-qty" type="number" min="1" step="1" value="1" style="padding:7px;"><input class="fi-price" type="number" min="0" step="0.01" placeholder="Precio c/IVA" style="padding:7px;"><button class="btn" onclick="this.parentElement.remove()">✕</button>';
-  if (it) { div.querySelector('.fi-name').value = it.name || ''; div.querySelector('.fi-qty').value = it.qty || 1; div.querySelector('.fi-price').value = it.price || 0; div.dataset.sku = it.sku || ''; }
-  document.getElementById('factItems').appendChild(div);
+// La factura siempre va ligada a un pedido de la tienda o a un ticket del POS: primero se
+// carga la venta (api/facturama.js acción "pedido") y sus conceptos se muestran tal cual,
+// sin poder editarlos; el servidor los vuelve a sacar de la venta al timbrar.
+let factVenta = null;
+
+function factFolioCambio(desdeOrigen) {
+  const input = document.getElementById('factPedidoFolio');
+  // "#POS-…" o "POS-…" es un ticket del POS; lo demás, un pedido de la tienda.
+  if (!desdeOrigen && /^#?POS-/i.test(input.value.trim())) document.getElementById('factPedidoOrigen').value = 'pos';
+  else if (!desdeOrigen && /^[A-Z]+-\d/i.test(input.value.trim())) document.getElementById('factPedidoOrigen').value = 'online';
+  if (factVenta) {
+    factVenta = null;
+    document.getElementById('factPedidoResumen').classList.add('hidden');
+    document.getElementById('factEmitirBtn').disabled = true;
+  }
 }
 
 function abrirFacturaForm() {
   document.getElementById('factForm').classList.remove('hidden');
   document.getElementById('factMsg').textContent = '';
-  if (!document.querySelector('#factItems .fact-item')) agregarConceptoFactura();
+  setTimeout(() => document.getElementById('factPedidoFolio').focus(), 0);
+}
+
+// Abre la facturación con un pedido/ticket ya cargado (botón "Facturar" del detalle del pedido).
+async function facturarDesdePedido(origen, folio) {
+  if (typeof closeOrderDetailModal === 'function') closeOrderDetailModal();
+  switchView('facturacion');
+  abrirFacturaForm();
+  document.getElementById('factPedidoFolio').value = folio;
+  document.getElementById('factPedidoOrigen').value = origen === 'pos' ? 'pos' : 'online';
+  factVenta = null;
+  await cargarPedidoFactura();
+}
+
+function renderFactVenta() {
+  const box = document.getElementById('factPedidoResumen');
+  const v = factVenta;
+  if (!v) { box.classList.add('hidden'); return; }
+  const fecha = v.fecha ? new Date(v.fecha).toLocaleString('es-MX', { timeZone: 'America/Mexico_City', dateStyle: 'short', timeStyle: 'short' }) : '';
+  const filas = (v.conceptos || []).map(c => `<tr>
+      <td>${escapeHtml(c.name)}</td><td style="text-align:center;">${c.qty}</td><td style="text-align:right;">${fmtMoney(c.price)}</td>
+      <td style="text-align:right;">${c.descuento ? '−' + fmtMoney(c.descuento) : ''}</td>
+      <td style="text-align:right; font-weight:600;">${fmtMoney(c.price * c.qty - (c.descuento || 0))}</td></tr>`).join('');
+  box.innerHTML = `
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+      <div><b>${v.origen === 'pos' ? 'Ticket' : 'Pedido'} ${escapeHtml(v.folio)}</b> · ${escapeHtml(fecha)}${v.nombre ? ' · ' + escapeHtml(v.nombre) : ''}</div>
+      <div><span class="pill ${v.facturable ? 'ok' : 'bad'}">${escapeHtml(v.estado || '')}</span> <b>Total ${fmtMoney(v.total)}</b></div>
+    </div>
+    <div class="table-wrap" style="max-height:220px;"><table style="font-size:12.5px;">
+      <thead><tr><th>Concepto</th><th style="text-align:center;">Cant.</th><th style="text-align:right;">Precio c/IVA</th><th style="text-align:right;">Descuento</th><th style="text-align:right;">Importe</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Sin productos</td></tr>'}</tbody>
+    </table></div>
+    ${v.facturable ? '' : `<div style="color:#dc2626; font-size:12.5px; margin-top:8px; font-weight:600;">No se puede facturar: ${escapeHtml(v.motivo || '')}</div>`}`;
+  box.classList.remove('hidden');
+  document.getElementById('factEmitirBtn').disabled = !v.facturable;
 }
 
 async function cargarPedidoFactura() {
   const folio = document.getElementById('factPedidoFolio').value.trim(), msg = document.getElementById('factMsg');
-  if (!folio) { msg.textContent = 'Escribe el folio del pedido.'; return; }
+  msg.style.color = '';
+  factVenta = null;
+  renderFactVenta();
+  document.getElementById('factEmitirBtn').disabled = true;
+  if (!folio) { msg.textContent = 'Escribe el folio del pedido o del ticket.'; return; }
   msg.textContent = 'Buscando…';
   try {
     const d = await facturamaRequest({ accion: 'pedido', folio, origen: document.getElementById('factPedidoOrigen').value });
-    document.getElementById('factItems').innerHTML = '';
-    (d.pedido.items.length ? d.pedido.items : [null]).forEach(it => agregarConceptoFactura(it));
-    if (d.pedido.email) document.getElementById('factEmail').value = d.pedido.email;
-    if (d.pedido.nombre && !document.getElementById('factNombre').value) document.getElementById('factNombre').value = d.pedido.nombre;
-    msg.textContent = 'Pedido cargado. Completa los datos fiscales del cliente.';
-  } catch (e) { msg.textContent = e.message; }
+    factVenta = { ...d.pedido, conceptos: d.pedido.conceptos || d.pedido.items || [] };
+    document.getElementById('factPedidoFolio').value = factVenta.folio;
+    document.getElementById('factPedidoOrigen').value = factVenta.origen;
+    renderFactVenta();
+    if (factVenta.email && !document.getElementById('factEmail').value) document.getElementById('factEmail').value = factVenta.email;
+    msg.textContent = factVenta.facturable ? (factVenta.estado === 'Factura anticipada' ? 'Pedido en "Factura anticipada" (sin pago todavía): la factura saldrá con método PPD y forma de pago 99 (por definir). Completa los datos fiscales del cliente.' : 'Venta cargada. Completa los datos fiscales del cliente.') : '';
+  } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
 }
 
 async function emitirFactura() {
   const msg = document.getElementById('factMsg'), btn = document.getElementById('factEmitirBtn');
-  const items = [...document.querySelectorAll('#factItems .fact-item')].map(d => ({
-    name: d.querySelector('.fi-name').value.trim(), qty: Number(d.querySelector('.fi-qty').value), price: Number(d.querySelector('.fi-price').value), sku: d.dataset.sku || ''
-  })).filter(i => i.name || i.price);
   const v = id => document.getElementById(id).value.trim();
-  if (!confirm('¿Emitir esta factura? Una vez timbrada solo se puede cancelar con las reglas del SAT.')) return;
+  if (!factVenta || !factVenta.facturable) { msg.style.color = '#dc2626'; msg.textContent = 'Primero carga el pedido o ticket que vas a facturar.'; return; }
+  if (!confirm(`¿Emitir la factura del ${factVenta.origen === 'pos' ? 'ticket' : 'pedido'} ${factVenta.folio} por ${fmtMoney(factVenta.total)}? Una vez timbrada solo se puede cancelar con las reglas del SAT.`)) return;
   btn.disabled = true; msg.style.color = ''; msg.textContent = 'Timbrando…';
   try {
     const d = await facturamaRequest({
-      accion: 'emitir', origen: v('factPedidoFolio') ? document.getElementById('factPedidoOrigen').value : 'manual', pedidoFolio: v('factPedidoFolio'),
+      accion: 'emitir', origen: factVenta.origen, pedidoFolio: factVenta.folio,
       receptor: { rfc: v('factRfc'), nombre: v('factNombre'), cp: v('factCp'), regimen: v('factRegimen'), usoCfdi: v('factUso') },
-      email: v('factEmail'), formaPago: document.getElementById('factFormaPago').value, items,
+      email: v('factEmail'), formaPago: document.getElementById('factFormaPago').value,
       registradoPor: (typeof currentStaffSession !== 'undefined' && currentStaffSession && currentStaffSession.name) || 'Admin'
     });
     msg.style.color = '#16a34a';
     msg.textContent = 'Factura emitida' + (d.correoEnviado ? ' y enviada por correo.' : (d.correoEnviado === false ? ' (no se pudo enviar el correo).' : '.')) + (d.aviso ? ' ' + d.aviso : '');
+    // Ya quedó facturada: no se puede volver a timbrar la misma venta por error.
+    factVenta.facturable = false; factVenta.motivo = 'ya se facturó.';
+    renderFactVenta();
     cargarFacturas();
   } catch (e) { msg.style.color = '#dc2626'; msg.textContent = e.message; }
-  btn.disabled = false;
+  btn.disabled = !(factVenta && factVenta.facturable);
 }
 
 async function descargarFactura(id, formato) {
@@ -22061,6 +22422,16 @@ async function crearGuiaSkydropxReal() {
   const v = id => (document.getElementById(id)?.value || '').trim();
   if (!SK_RATE_SEL || !SK_RATE_SEL.rate_id || !SK_QUOTATION_ID) { alert('Primero cotiza y selecciona una tarifa (las tarifas caducan: si pasó mucho tiempo, cotiza de nuevo).'); return; }
   const orderId = v('skSelectOrder') || '#General';
+  // El <option> del pedido ya viene deshabilitado si no está pagado, pero se
+  // revalida aquí por si la lista cambió después de cargar el formulario:
+  // no se saca guía (no se cobra el saldo de Skydropx) de un pedido sin pagar.
+  if (orderId !== '#General') {
+    const pedido = loadedOrdersList.find(o => String(o.id) === orderId);
+    if (pedido && !isOrderStatusPaid(pedido.status)) {
+      alert(`El pedido ${orderId} todavía no está pagado (estado: "${pedido.status}"). Para generar su guía de envío, primero debe quedar en un estado de pago aceptado.`);
+      return;
+    }
+  }
   const origen = { nombre: v('skOrigNombre'), empresa: v('skOrigEmpresa'), telefono: v('skOrigTel'), email: v('skOrigEmail'), calle: v('skOrigCalle'), referencia: 'Bodega' };
   const destino = { nombre: v('skDestNombre'), empresa: v('skDestEmpresa'), telefono: v('skDestTel'), email: v('skDestEmail'), calle: v('skDestCalle'), referencia: v('skReference') };
   const faltan = [['Nombre del remitente', origen.nombre], ['Teléfono del remitente', origen.telefono], ['Correo del remitente', origen.email], ['Calle del remitente', origen.calle],

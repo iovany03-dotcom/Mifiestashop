@@ -64,11 +64,31 @@ addEventListener('pagehide',flush);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flush();});
 
 // ---- Acciones ----
-funnel('visita');
+// La visita cuenta solo cuando la página se ve en pantalla: la app de
+// Facebook/Instagram puede pre-cargar la página del anuncio antes de que la
+// persona lo toque (94% de las visitas a estas páginas no hacían nada más).
+function whenVisible(fn){
+  if(document.prerendering){document.addEventListener('prerenderingchange',()=>whenVisible(fn),{once:true});return;}
+  if(document.visibilityState==='visible'){fn();return;}
+  const h=()=>{if(document.visibilityState!=='visible')return;document.removeEventListener('visibilitychange',h);fn();};
+  document.addEventListener('visibilitychange',h);
+}
+whenVisible(()=>funnel('visita'));
+
+// "Agregar al carrito" se reporta una vez por producto en cada visita (misma
+// clave mf_atc que la tienda, ver reportAddToCart en index.html): cada clic
+// repetido en "Agregar" se contaba como otro agregado y Meta veía ~10 veces
+// más que los carritos reales.
+function yaReportado(id){
+  const s=session();const sid=s?s.sid:'sin-sesion';id=String(id);
+  try{const g=JSON.parse(ls('mf_atc')||'null');const ids=g&&g.sid===sid&&Array.isArray(g.ids)?g.ids:[];
+    if(ids.includes(id))return true;ids.push(id);ls('mf_atc',JSON.stringify({sid,ids:ids.slice(-300)}));}catch{}
+  return false;
+}
 
 // Agregar al carrito (lo avisa assets/cms-cart.js al guardar en el carrito).
 addEventListener('cms-add-to-cart',ev=>{
-  const d=ev.detail||{};if(!d.id)return;
+  const d=ev.detail||{};if(!d.id||yaReportado(d.id))return;
   track('AddToCart',{content_ids:[String(d.id)],content_name:d.name,content_type:'product',value:d.price,currency:'MXN',contents:[{id:String(d.id),quantity:1}]});
   funnel('agregar_carrito',{productId:String(d.id),valor:d.price,datos:{nombre:String(d.name||''),cantidad:1}});
 });
