@@ -6755,6 +6755,25 @@ function getSessionCredsParams(){
     p_staff_pin: staff ? staff.pin : null
   };
 }
+function haySesionPanel(){ const c = getSessionCredsParams(); return !!(c.p_admin_password || (c.p_staff_email && c.p_staff_pin)); }
+// Rutas /api con datos privados (ver lib/sesion-panel.js): el panel les manda su sesión en el
+// header x-mfs-sesion. Sin sesión responden 401, así que la tienda pública no las llama.
+// /api/productos también: con sesión trae el costo de compra (sin ella, la tienda no lo recibe).
+const API_PRIVADAS = /^\/api\/(clientes|ventas|ventas-productos|pedidos|pedidos-online|carritos|inventario|proveedores|busquedas|enviar-correo|productos)(\?|$)/;
+(function () {
+  const fetchOriginal = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    try {
+      const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+      if (url.origin === location.origin && API_PRIVADAS.test(url.pathname + url.search) && haySesionPanel()) {
+        const headers = new Headers((init && init.headers) || (typeof input !== 'string' && input.headers) || {});
+        headers.set('x-mfs-sesion', btoa(unescape(encodeURIComponent(JSON.stringify(getSessionCredsParams())))));
+        init = { ...(init || {}), headers };
+      }
+    } catch (e) {}
+    return fetchOriginal(input, init);
+  };
+})();
 
 // ================= PERSONAL & PERMISOS DE EQUIPO =================
 const PERMISSION_GROUPS = [
@@ -10083,7 +10102,8 @@ async function cargarCatalogoProductos(){
     // quedaba invisible para el buscador y las categorías del inicio, aunque
     // sí aparecían en el catálogo completo paginado por categoría. 5000 es
     // el mismo tope ya usado en el resto de este endpoint para "traer todo".
-    const r = await fetch('/api/productos?limit=5000');
+    // Con sesión del panel se pide en otra URL (no comparte caché con la tienda) y trae el costo.
+    const r = await fetch('/api/productos?limit=5000' + (haySesionPanel() ? '&panel=1' : ''));
     if (r.ok) {
       const data = await r.json();
       if (data.products && data.products.length > 0) {
@@ -17207,7 +17227,19 @@ async function handleAdminLogin() {
   }
 }
 
+let datosPanelCargados = false;
+function cargarDatosPanel() {
+  if (datosPanelCargados || !haySesionPanel() || !document.getElementById('adminDashboardWrapper')) return;
+  datosPanelCargados = true;
+  loadHistVentasLive();
+  loadCustomersFromAPI();
+  loadOrdersFromAPI();
+  loadRealProductSales();
+  loadCartsFromAPI();
+  loadSuppliersFromAPI();
+}
 function showAdminDashboard() {
+  cargarDatosPanel();
   const sf = document.getElementById('view-storefront');
   const portal = document.getElementById('view-cliente-portal');
   const dash = document.getElementById('adminDashboardWrapper');
@@ -21910,7 +21942,6 @@ async function loadHistVentasLive() {
 // INITIALIZE ALL
 applyPeriod('dia');
 drawHistVentasCharts();
-loadHistVentasLive();
 drawStateChart();
 drawStockChart();
 renderStockTable();
@@ -22010,11 +22041,9 @@ if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
 loadCategoriesFromAPI();
 if (document.getElementById('catalogTableBody')) loadAdminCatalogProducts();
-loadCustomersFromAPI();
-loadOrdersFromAPI();
-loadRealProductSales();
-loadCartsFromAPI();
-loadSuppliersFromAPI();
+// Clientes, pedidos, ventas, carritos y proveedores son datos privados: solo se piden con sesión
+// del panel (las rutas responden 401 sin ella). Si no hay sesión aún, se cargan al entrar.
+cargarDatosPanel();
 loadSavedTicketConfig();
 loadNotificationPrefs();
 loadClienteSession();

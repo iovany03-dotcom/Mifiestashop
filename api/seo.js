@@ -8,6 +8,9 @@
 //   productos { buscar, problema, limite }       puntaje SEO de cada producto activo
 //   optimizar_ia { ids[] }          propuesta de título, meta descripción y descripción (no guarda)
 //   guardar_producto { id, meta_title, meta_description, descripcion? }
+//   categorias { buscar }           puntaje SEO de cada categoría (título, meta, introducción, FAQ)
+//   categoria_ia { id }             propuesta de título, meta, introducción de 150-300 palabras y FAQ (no guarda)
+//   guardar_categoria { id, meta_title, meta_description, descripcion, faq }
 //   gsc { dias, dimension, buscar }  consultas o páginas de Google con comparación
 //   oportunidades { dias }          palabras casi en primera página y páginas con poco CTR
 //   keywords / keyword_agregar { keyword, url } / keyword_quitar { keyword }
@@ -202,6 +205,103 @@ async function guardarProducto({ id, meta_title, meta_description, descripcion }
   return { guardado: true, id: pid, por: s.nombre };
 }
 
+// ---------- categorías: título, meta descripción, texto de introducción y preguntas frecuentes ----------
+const texto = h => String(h || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+const palabras = h => (texto(h).match(/\S+/g) || []).length;
+
+function puntajeCategoria(c) {
+  const problemas = [];
+  const mt = String(c.meta_title || '').trim(), md = String(c.meta_description || '').trim();
+  if (!mt) problemas.push('Sin título SEO'); else if (mt.length > 60) problemas.push('Título SEO muy largo');
+  if (!md) problemas.push('Sin meta descripción'); else if (md.length < 110 || md.length > 165) problemas.push('Meta descripción de largo incorrecto');
+  const w = palabras(c.description);
+  if (w < 50) problemas.push('Sin texto de introducción'); else if (w < 150) problemas.push('Introducción corta (menos de 150 palabras)');
+  if (!Array.isArray(c.faq) || c.faq.length < 3) problemas.push('Sin preguntas frecuentes');
+  return { puntaje: Math.max(0, 100 - problemas.length * 25), problemas, palabras: w };
+}
+
+async function categorias({ buscar }) {
+  const [cats, prods] = await Promise.all([
+    sbTodo('/rest/v1/ps_categorias?select=id,name,link_rewrite,active,id_parent,description,meta_title,meta_description,faq,seo_updated_at&active=is.true&order=id.asc'),
+    sbTodo('/rest/v1/catalogo_productos?select=category_id&active=is.true')
+  ]);
+  const cuenta = new Map();
+  for (const p of prods) cuenta.set(p.category_id, (cuenta.get(p.category_id) || 0) + 1);
+  const q = String(buscar || '').toLowerCase().trim();
+  const filas = cats.filter(c => ![1, 2].includes(Number(c.id)) && (!q || String(c.name).toLowerCase().includes(q)))
+    .map(c => ({ ...c, productos: cuenta.get(c.id) || 0, url: `${ORIGEN}/${c.id}-${c.link_rewrite}`, ...puntajeCategoria(c) }))
+    .sort((a, b) => b.productos - a.productos);
+  return { categorias: filas, promedio: promedio(filas.filter(c => c.productos > 0).map(c => c.puntaje)) };
+}
+
+const ESQUEMA_CATEGORIA = {
+  type: 'object', additionalProperties: false, required: ['palabra_clave', 'meta_title', 'meta_description', 'intro_html', 'faq'],
+  properties: {
+    palabra_clave: { type: 'string', description: 'Búsqueda principal en Google para esta categoría.' },
+    meta_title: { type: 'string', description: 'Máximo 55 caracteres, sin el nombre de la tienda.' },
+    meta_description: { type: 'string', description: '120 a 155 caracteres.' },
+    intro_html: { type: 'string', description: 'Texto de 150 a 300 palabras en HTML simple (<p>, <h2>, <ul><li>, <strong>).' },
+    faq: {
+      type: 'array', description: '4 a 6 preguntas frecuentes reales de clientes sobre esta categoría.',
+      items: { type: 'object', additionalProperties: false, required: ['pregunta', 'respuesta'], properties: { pregunta: { type: 'string' }, respuesta: { type: 'string', description: '1 a 3 frases, texto plano.' } } }
+    }
+  }
+};
+
+async function categoriaIA({ id }) {
+  const cid = Number(id);
+  if (!Number.isSafeInteger(cid)) throw new HttpError(400, 'Categoría inválida.');
+  const [c] = await sb(`/rest/v1/ps_categorias?select=id,name,description,meta_title,meta_description,faq&id=eq.${cid}`);
+  if (!c) throw new HttpError(404, 'No existe esa categoría.');
+  const prods = await sb(`/rest/v1/catalogo_productos?select=name,price,price_mayoreo,price_mayoreo_desde_unidades&category_id=eq.${cid}&active=is.true&order=id.desc&limit=40`);
+  const precios = prods.map(p => Number(p.price)).filter(n => n > 0);
+  const { generarJson } = require('../lib/recepcion-ia.js');
+  const d = await generarJson({
+    nombre: 'seo_categoria', esquema: ESQUEMA_CATEGORIA, maxTokens: 8000, esfuerzo: 'low',
+    sistema: `Eres especialista en SEO de comercio electrónico en México para Mi Fiestashop (artículos para fiesta, batucada, bodas, XV años, cumpleaños; venta por menudeo y mayoreo, envíos a todo México, tiendas en CDMX, Puebla y Querétaro).
+Escribe en español de México el contenido de la página de UNA categoría:
+- palabra_clave: la búsqueda principal que haría un cliente (ej. "globos para fiesta mayoreo").
+- meta_title: máximo 55 caracteres, empieza con la palabra clave; sin el nombre de la tienda.
+- meta_description: 120 a 155 caracteres que inviten al clic (variedad, mayoreo, envío a todo México).
+- intro_html: 150 a 300 palabras útiles para el cliente: qué encuentra, para qué fiestas o eventos, ideas de uso y cómo elegir; un <h2> como máximo; menciona algunos productos de la lista por su tipo, sin copiar nombres raros.
+- faq: 4 a 6 preguntas que de verdad haría un cliente (mayoreo, envíos, uso, cómo elegir); respuestas cortas y prácticas.
+NUNCA inventes precios exactos, tiempos de entrega, medidas, materiales, garantías ni políticas que no estén en la información. Para envíos y mayoreo habla en general ("hacemos envíos a todo México", "hay precio de mayoreo en muchos productos"). Sin emojis.`,
+    contenido: [{ type: 'text', text: JSON.stringify({
+      categoria: c.name,
+      texto_actual: texto(c.description).slice(0, 1500) || null,
+      productos_ejemplo: prods.slice(0, 40).map(p => p.name),
+      total_productos: prods.length,
+      rango_precios_mxn: precios.length ? [Math.min(...precios), Math.max(...precios)] : null,
+      hay_mayoreo: prods.some(p => Number(p.price_mayoreo) > 0)
+    }) }]
+  });
+  return {
+    id: cid, nombre: c.name, palabra_clave: String(d.palabra_clave || '').slice(0, 80),
+    meta_title: String(d.meta_title || '').slice(0, 70), meta_description: String(d.meta_description || '').slice(0, 170),
+    intro_html: limpiarHtml(d.intro_html).slice(0, 8000),
+    faq: limpiarFaq(d.faq)
+  };
+}
+
+function limpiarFaq(faq) {
+  return (Array.isArray(faq) ? faq : []).map(x => ({
+    pregunta: texto(x && x.pregunta).slice(0, 200), respuesta: texto(x && x.respuesta).slice(0, 800)
+  })).filter(x => x.pregunta && x.respuesta).slice(0, 10);
+}
+
+async function guardarCategoria({ id, meta_title, meta_description, descripcion, faq }, s) {
+  const cid = Number(id);
+  if (!Number.isSafeInteger(cid)) throw new HttpError(400, 'Categoría inválida.');
+  const cambio = { seo_updated_at: new Date().toISOString() };
+  if (meta_title !== undefined) cambio.meta_title = String(meta_title).replace(/\s*\|\s*Mi Fiestashop\s*$/i, '').trim().slice(0, 70) || null;
+  if (meta_description !== undefined) cambio.meta_description = String(meta_description).replace(/\s+/g, ' ').trim().slice(0, 170) || null;
+  if (descripcion !== undefined) cambio.description = limpiarHtml(descripcion) || null;
+  if (faq !== undefined) { const f = limpiarFaq(faq); cambio.faq = f.length ? f : null; }
+  const [c] = await sb(`/rest/v1/ps_categorias?id=eq.${cid}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(cambio) });
+  if (!c) throw new HttpError(404, 'No existe esa categoría.');
+  return { guardado: true, id: cid, por: s.nombre, ...puntajeCategoria(c) };
+}
+
 // ---------- Google Search Console ----------
 async function gsc({ dias, dimension, buscar }) {
   const n = [7, 28, 90, 180, 365].includes(Number(dias)) ? Number(dias) : 28;
@@ -296,6 +396,9 @@ module.exports = async function handler(req, res) {
       case 'productos': data = await productos(b); break;
       case 'optimizar_ia': data = await optimizarIA(b); break;
       case 'guardar_producto': data = await guardarProducto(b, s); break;
+      case 'categorias': data = await categorias(b); break;
+      case 'categoria_ia': data = await categoriaIA(b); break;
+      case 'guardar_categoria': data = await guardarCategoria(b, s); break;
       case 'gsc': data = await gsc(b); break;
       case 'oportunidades': data = await oportunidades(b); break;
       case 'keywords': data = await keywords(); break;

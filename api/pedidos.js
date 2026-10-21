@@ -1,7 +1,7 @@
 // Vercel serverless function: lee los pedidos desde nuestra propia copia en
 // Supabase (ps_pedidos), el histórico que quedó de PrestaShop.
+const { exigirSesion } = require('../lib/sesion-panel.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 // Las cuentas de cajero en PrestaShop se llaman "Caja Puebla", "Caja
 // Queretaro", "Caja CDMX" — de ahí se deriva la sucursal real de cada
@@ -12,9 +12,11 @@ function sucursalFromEmployee(employeeName) {
   return m ? m[1].trim() : null;
 }
 
+const LLAVE_SERVICIO = () => process.env.SUPABASE_SERVICE_ROLE_KEY;
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!(await exigirSesion(req, res))) return;
 
   const limit = parseInt(req.query.limit, 10) || 3000;
 
@@ -32,7 +34,7 @@ module.exports = async function handler(req, res) {
       const url = `${SUPABASE_URL}/rest/v1/ps_pedidos?select=${select}&order=id.desc`;
       const r = await fetch(url, {
         headers: {
-          apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          apikey: LLAVE_SERVICIO(), Authorization: `Bearer ${LLAVE_SERVICIO()}`,
           Range: `${from}-${to}`
         }
       });
