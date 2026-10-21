@@ -170,7 +170,7 @@ async function resolveProduct(id) {
 // (p. ej. /145-promociones -> /290-promociones) se redirigen.
 async function resolveCategory(id, slug) {
   if (id === '1' || id === '2') return { redirect: CATALOGO_RAIZ };
-  const rows = await sb(`ps_categorias?id=eq.${id}&select=id,name,active,link_rewrite,description,meta_title,meta_description`);
+  const rows = await sb(`ps_categorias?id=eq.${id}&select=id,name,active,link_rewrite,description,meta_title,meta_description,faq`);
   if (!rows) return { unknown: true };
   const c = rows[0];
   if (!c || !c.name || !c.active) {
@@ -184,6 +184,7 @@ async function resolveCategory(id, slug) {
   const prods = await sb(`catalogo_productos?category_id=eq.${c.id}&active=eq.true&select=id,name,price,link_rewrite,barcode&order=id.desc&limit=60`) || [];
   const ssr = {
     tipo: 'categoria', id: c.id, name: c.name, descripcion: c.description || '',
+    faq: (Array.isArray(c.faq) ? c.faq : []).filter(x => x && x.pregunta && x.respuesta).slice(0, 10),
     productos: prods.filter(x => x.name && x.link_rewrite).map(x => ({ name: x.name, price: Number(x.price) || 0, path: productoPath(x.id, x.link_rewrite, x.barcode, c.link_rewrite) }))
   };
   return {
@@ -326,6 +327,12 @@ function introCategoria(ssr) {
   return `<div class="ssr-categoria-productos">${lista}</div>`;
 }
 
+// Igual que faqCategoriaHtml en index.html (la tienda la vuelve a dibujar igual al cargar).
+function faqCategoria(ssr) {
+  if (!ssr.faq.length) return '';
+  return `<h2>Preguntas frecuentes sobre ${escapeAttr(ssr.name)}</h2>` + ssr.faq.map(x => `<details><summary>${escapeAttr(x.pregunta)}</summary><p>${escapeAttr(x.respuesta)}</p></details>`).join('');
+}
+
 function catalogoProductosJsonLd(ssr, pageUrl) {
   const json = JSON.stringify({
     '@context': 'https://schema.org',
@@ -334,7 +341,8 @@ function catalogoProductosJsonLd(ssr, pageUrl) {
         mainEntity: { '@type': 'ItemList', numberOfItems: ssr.productos.length, itemListElement: ssr.productos.slice(0, 30).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${ORIGEN_SEO}${p.path}`, name: p.name })) } },
       { '@type': 'BreadcrumbList', itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${ORIGEN_SEO}/` },
-        { '@type': 'ListItem', position: 2, name: ssr.name, item: pageUrl }] }
+        { '@type': 'ListItem', position: 2, name: ssr.name, item: pageUrl }] },
+      ...(ssr.faq.length ? [{ '@type': 'FAQPage', mainEntity: ssr.faq.map(x => ({ '@type': 'Question', name: x.pregunta, acceptedAnswer: { '@type': 'Answer', text: x.respuesta } })) }] : [])
     ]
   });
   return json.replace(/</g, '\\u003c');
@@ -447,7 +455,8 @@ export default async function middleware(request) {
           .replace('<div id="storefrontStoreContainer">', '<div id="storefrontStoreContainer" class="hidden">')
           .replace('class="store-container hidden" id="storefrontCatalogPage"', 'class="store-container" id="storefrontCatalogPage"')
           .replace('<h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>', `<h1 id="catalogSearchTitle" class="catalog-search-title">${escapeAttr(ssr.name)}</h1><div id="catalogCatIntro" class="catalog-cat-intro">${htmlSeguro(ssr.descripcion)}</div>`)
-          .replace('<div class="store-prods-grid" id="catalogGrid"></div>', `<div class="store-prods-grid" id="catalogGrid">${introCategoria(ssr)}</div>`);
+          .replace('<div class="store-prods-grid" id="catalogGrid"></div>', `<div class="store-prods-grid" id="catalogGrid">${introCategoria(ssr)}</div>`)
+          .replace('<section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>', `<section id="catalogCatFaq" class="catalog-cat-faq${ssr.faq.length ? '' : ' hidden'}">${faqCategoria(ssr)}</section>`);
       }
     } catch (e) { /* si algo falla se manda el HTML con las etiquetas ya puestas */ }
 

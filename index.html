@@ -989,6 +989,13 @@
   }
   .store-search-suggest-all:hover { background: #faf7fb; }
   .catalog-search-title { font-size: 1.4rem; font-weight: 800; color: #2e1065; margin: 0 0 12px; overflow-wrap: anywhere; }
+  .catalog-cat-intro { color: #4b3f5c; line-height: 1.6; margin: 0 0 16px; }
+  .catalog-cat-intro h2 { font-size: 1.1rem; color: #2e1065; margin: 14px 0 6px; }
+  .catalog-cat-faq { margin-top: 32px; }
+  .catalog-cat-faq h2 { font-size: 1.2rem; color: #2e1065; margin: 0 0 10px; }
+  .catalog-cat-faq details { border: 1px solid #eadff5; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: #fff; }
+  .catalog-cat-faq summary { font-weight: 700; color: #2e1065; cursor: pointer; }
+  .catalog-cat-faq details p { margin: 8px 0 0; color: #4b3f5c; line-height: 1.55; }
   .store-header-left {
     display: flex; align-items: center; gap: 30px;
   }
@@ -2170,6 +2177,7 @@
         <div id="catalogStatus" style="font-size:13px; color:#8b7d97; margin-bottom:14px;"></div>
         <div class="store-prods-grid" id="catalogGrid"></div>
         <div class="catalog-pager" id="catalogPagerBottom" style="margin-top:24px; justify-content:center;"></div>
+        <section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>
       </div>
     </div>
   </div>
@@ -5012,6 +5020,7 @@
           <button class="btn small primary" data-seotab="resumen" onclick="seoTab('resumen')">Resumen</button>
           <button class="btn small" data-seotab="paginas" onclick="seoTab('paginas')">Páginas</button>
           <button class="btn small" data-seotab="productos" onclick="seoTab('productos')">Productos</button>
+          <button class="btn small" data-seotab="categorias" onclick="seoTab('categorias')">Categorías</button>
           <button class="btn small" data-seotab="google" onclick="seoTab('google')">Google: palabras clave</button>
           <button class="btn small" data-seotab="velocidad" onclick="seoTab('velocidad')">Velocidad</button>
           <button class="btn small" data-seotab="config" onclick="seoTab('config')">Configuración</button>
@@ -14742,6 +14751,7 @@ async function seoTab(t) {
     if (t === 'resumen') await seoResumen(c);
     else if (t === 'paginas') await seoPaginas(c);
     else if (t === 'productos') await seoProductosVista(c);
+    else if (t === 'categorias') await seoCategoriasVista(c);
     else if (t === 'google') await seoGoogle(c);
     else if (t === 'velocidad') await seoVelocidad(c);
     else seoConfigVista(c);
@@ -14956,6 +14966,96 @@ async function seoGuardar(id) {
     b.textContent = '✓ Guardado';
     delete seoPropuestas[id];
     const fila = document.getElementById('seoPRow' + id); if (fila) fila.style.opacity = '.45';
+  } catch (e) { alert(e.message); b.disabled = false; }
+}
+
+// ---------- Categorías: título, meta descripción, introducción y preguntas frecuentes ----------
+let seoCats = [];
+const seoCatProp = {};
+const SEO_INPUT = 'width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);';
+async function seoCategoriasVista(c) {
+  c.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+      <input id="seoCBuscar" type="search" placeholder="Buscar categoría" onkeydown="if(event.key==='Enter') seoCargarCategorias()" style="${SEO_INPUT} flex:1; min-width:200px; width:auto;">
+      <label style="font-size:12px; display:flex; gap:6px; align-items:center;"><input type="checkbox" id="seoCConProd" checked onchange="seoCargarCategorias()"> Solo con productos</label>
+    </div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Cada categoría necesita un título y una meta descripción para Google, un texto de introducción de 150 a 300 palabras y preguntas frecuentes. La IA lo propone; tú revisas y guardas. Se ve en la página de la categoría, arriba de los productos (introducción) y al final (preguntas).</p>
+    <div id="seoCTabla">Cargando…</div>`;
+  seoCargarCategorias();
+}
+async function seoCargarCategorias() {
+  const t = document.getElementById('seoCTabla');
+  t.innerHTML = 'Cargando…';
+  try {
+    const d = await seoApi('categorias', { buscar: document.getElementById('seoCBuscar').value.trim() });
+    seoCats = d.categorias;
+    const lista = document.getElementById('seoCConProd').checked ? seoCats.filter(x => x.productos > 0) : seoCats;
+    t.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">${lista.length} categorías · puntaje promedio ${d.promedio ?? '—'}.</p>` +
+      seoTabla(['Puntaje', 'Categoría', 'Título SEO / Meta descripción', 'Contenido', 'Problemas', ''], lista.map(x => `<tr id="seoCRow${x.id}">
+        <td>${seoPuntaje(x.puntaje)}</td>
+        <td><b>${escapeHtml(x.name)}</b><div style="font-size:11px; color:var(--text-muted);">#${x.id} · ${x.productos} productos · <a href="${escapeHtml(x.url)}" target="_blank" rel="noopener">ver</a></div></td>
+        <td style="font-size:12px; max-width:300px;"><div>${x.meta_title ? escapeHtml(x.meta_title) : '<i style="color:#d97706;">sin título SEO</i>'}</div><div style="color:var(--text-muted);">${x.meta_description ? escapeHtml(x.meta_description) : '<i style="color:#d97706;">sin meta descripción</i>'}</div></td>
+        <td style="font-size:12px;">${x.palabras} palabras<br>${Array.isArray(x.faq) ? x.faq.length : 0} preguntas</td>
+        <td style="font-size:11px;">${x.problemas.map(escapeHtml).join('<br>') || '✅'}</td>
+        <td><button class="btn small" onclick="seoEditarCategoria(${x.id})">Editar</button></td></tr>`).join(''), 'Sin categorías con ese filtro.');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+function seoFaqFila(x) {
+  return `<div class="seoFaqFila" style="border:1px solid var(--border); border-radius:8px; padding:8px; margin-bottom:6px;">
+    <input class="seoFaqP" placeholder="Pregunta" value="${escapeHtml(x.pregunta || '')}" style="${SEO_INPUT} font-weight:700; margin-bottom:4px;">
+    <textarea class="seoFaqR" rows="2" placeholder="Respuesta" style="${SEO_INPUT}">${escapeHtml(x.respuesta || '')}</textarea>
+    <div style="text-align:right;"><button class="btn small" onclick="this.closest('.seoFaqFila').remove()">Quitar</button></div></div>`;
+}
+function seoContarPalabras() {
+  const el = document.getElementById('seoCIntro'); if (!el) return;
+  const n = (el.innerText.match(/\S+/g) || []).length;
+  document.getElementById('seoCIntroN').innerHTML = `${n} palabras ${n >= 150 && n <= 300 ? '✅' : '<span style="color:#d97706;">(ideal: 150 a 300)</span>'}`;
+}
+function seoEditarCategoria(id) {
+  const x = seoCats.find(c => c.id === id) || { id };
+  const v = seoCatProp[id] || {};
+  const tit = v.meta_title ?? x.meta_title ?? '', des = v.meta_description ?? x.meta_description ?? '';
+  const intro = v.intro_html ?? x.description ?? '';
+  const faq = v.faq ?? (Array.isArray(x.faq) ? x.faq : []);
+  recAbrirModal(`SEO de la categoría: ${x.name || '#' + id}`, `
+    ${v.palabra_clave ? `<p style="font-size:12px; margin-top:0;">Palabra clave propuesta: <b>${escapeHtml(v.palabra_clave)}</b></p>` : ''}
+    ${seoConfig && seoConfig.ia ? `<button class="btn small" onclick="seoCategoriaIA(${id})">✨ Proponer todo con IA</button>` : ''}
+    <label style="display:block; margin-top:8px; font-size:12px;">Título SEO (<span id="seoCTL">${tit.length}</span>/55; se agrega "| Mi Fiestashop")
+      <input id="seoCT" value="${escapeHtml(tit)}" oninput="document.getElementById('seoCTL').textContent=this.value.length; seoCatGoogle(${id})" style="${SEO_INPUT}"></label>
+    <label style="display:block; margin-top:8px; font-size:12px;">Meta descripción (<span id="seoCDL">${des.length}</span>/155)
+      <textarea id="seoCD" rows="2" oninput="document.getElementById('seoCDL').textContent=this.value.length; seoCatGoogle(${id})" style="${SEO_INPUT}">${escapeHtml(des)}</textarea></label>
+    <div id="seoCG" style="margin:8px 0; padding:10px; border-radius:8px; background:#fff; font-family:Arial, sans-serif;"></div>
+    <div style="font-size:12px; margin-top:8px;">Texto de introducción · <span id="seoCIntroN"></span></div>
+    <div id="seoCIntro" contenteditable="true" oninput="seoContarPalabras()" style="border:1px solid var(--border); border-radius:8px; padding:8px; font-size:13px; min-height:80px; max-height:260px; overflow:auto; margin-top:4px;">${seoHtmlSeguro(intro)}</div>
+    <div style="font-size:12px; margin-top:12px;">Preguntas frecuentes</div>
+    <div id="seoCFaq">${faq.map(seoFaqFila).join('')}</div>
+    <button class="btn small" onclick="document.getElementById('seoCFaq').insertAdjacentHTML('beforeend', seoFaqFila({}))">+ Agregar pregunta</button>
+    <div style="text-align:right; margin-top:10px;"><button class="btn primary" id="seoCBG" onclick="seoGuardarCategoria(${id})">Guardar</button></div>`);
+  seoCatGoogle(id);
+  seoContarPalabras();
+}
+function seoCatGoogle(id) {
+  const x = seoCats.find(c => c.id === id) || {};
+  const t = (document.getElementById('seoCT').value || '').trim(), d = (document.getElementById('seoCD').value || '').trim();
+  const titulo = `${t || x.name} | Mi Fiestashop`;
+  document.getElementById('seoCG').innerHTML = `<div style="font-size:12px; color:#202124;">mifiestashop.com › ${escapeHtml(x.link_rewrite || '')}</div>
+    <div style="font-size:18px; color:#1a0dab; line-height:1.3;">${escapeHtml(titulo.length > 60 ? titulo.slice(0, 58) + '…' : titulo)}</div>
+    <div style="font-size:13px; color:#4d5156;">${escapeHtml(d.length > 158 ? d.slice(0, 155) + '…' : d || 'Sin descripción: Google mostrará un fragmento cualquiera de la página.')}</div>`;
+}
+async function seoCategoriaIA(id) {
+  document.getElementById('recModalCuerpo').innerHTML = '<p>La IA está escribiendo la introducción y las preguntas… (unos 30 segundos)</p>';
+  try { seoCatProp[id] = await seoApi('categoria_ia', { id }); seoEditarCategoria(id); }
+  catch (e) { document.getElementById('recModalCuerpo').innerHTML = seoError(e); }
+}
+async function seoGuardarCategoria(id) {
+  const b = document.getElementById('seoCBG'); b.disabled = true;
+  const faq = [...document.querySelectorAll('#seoCFaq .seoFaqFila')].map(f => ({ pregunta: f.querySelector('.seoFaqP').value.trim(), respuesta: f.querySelector('.seoFaqR').value.trim() })).filter(f => f.pregunta && f.respuesta);
+  try {
+    const r = await seoApi('guardar_categoria', { id, meta_title: document.getElementById('seoCT').value, meta_description: document.getElementById('seoCD').value, descripcion: document.getElementById('seoCIntro').innerHTML, faq });
+    b.textContent = `✓ Guardado · puntaje ${r.puntaje}`;
+    delete seoCatProp[id];
+    const x = seoCats.find(c => c.id === id);
+    if (x) Object.assign(x, { meta_title: document.getElementById('seoCT').value, meta_description: document.getElementById('seoCD').value, description: document.getElementById('seoCIntro').innerHTML, faq, puntaje: r.puntaje, problemas: r.problemas, palabras: r.palabras });
+    const fila = document.getElementById('seoCRow' + id); if (fila) fila.style.opacity = '.45';
   } catch (e) { alert(e.message); b.disabled = false; }
 }
 
@@ -19577,6 +19677,12 @@ function catalogPageFromLiveProducts(offset) {
 
 let catalogLoadSeq = 0;
 
+function faqCategoriaHtml(faq, nombre) {
+  const lista = (Array.isArray(faq) ? faq : []).filter(x => x && x.pregunta && x.respuesta);
+  if (!lista.length) return '';
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return `<h2>Preguntas frecuentes sobre ${esc(nombre || 'esta categoría')}</h2>` + lista.map(x => `<details><summary>${esc(x.pregunta)}</summary><p>${esc(x.respuesta)}</p></details>`).join('');
+}
 async function loadCatalogPage(){
   const grid = document.getElementById('catalogGrid');
   const statusEl = document.getElementById('catalogStatus');
@@ -19603,6 +19709,13 @@ async function loadCatalogPage(){
     if (searching) intro.innerHTML = '';
     else if (catActual) intro.innerHTML = catActual.description || '';
     intro.classList.toggle('hidden', !intro.innerHTML.trim());
+    // Preguntas frecuentes de la categoría (módulo SEO); el servidor también las manda armadas.
+    const faqEl = document.getElementById('catalogCatFaq');
+    if (faqEl) {
+      if (searching) faqEl.innerHTML = '';
+      else if (catActual) faqEl.innerHTML = faqCategoriaHtml(catActual.faq, catActual.name);
+      faqEl.classList.toggle('hidden', !faqEl.innerHTML.trim());
+    }
   }
   document.querySelector('#storefrontCatalogPage .catalog-layout')?.classList.toggle('searching', searching);
   if (searching && !(productsFirstLoadDone && liveProducts.length > 0)) {

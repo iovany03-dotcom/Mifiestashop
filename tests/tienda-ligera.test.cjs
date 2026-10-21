@@ -30,7 +30,7 @@ function mockFetch() {
     const json = d => new Response(JSON.stringify(d), { status: 200, headers: { 'content-type': 'application/json' } });
     if (u.includes('/catalogo_productos?id=eq.')) return json([PRODUCTO]);
     if (u.includes('/catalogo_productos?category_id=eq.')) return json([{ id: 83334, name: 'Corbata tricolor', price: 9, link_rewrite: 'corbata-tricolor', barcode: '8625553470916' }]);
-    if (u.includes('/ps_categorias?id=eq.')) return json([{ id: 271, name: 'Fiesta Mexicana', link_rewrite: 'fiesta-mexicana', active: true, description: '<p>Todo para tu fiesta mexicana.</p>' }]);
+    if (u.includes('/ps_categorias?id=eq.')) return json([{ id: 271, name: 'Fiesta Mexicana', link_rewrite: 'fiesta-mexicana', active: true, description: '<p>Todo para tu fiesta mexicana.</p>', faq: [{ pregunta: '¿Venden al mayoreo?', respuesta: 'Sí, <b>hay</b> precio de mayoreo.' }] }]);
     if (u.includes('/productos_migrados')) return json([]);
     return json([]);
   };
@@ -64,6 +64,8 @@ test('inicio, producto y categoría salen ligeros, con un solo H1 y el código a
         assert.match(html, /Todo para tu fiesta mexicana/);
         assert.match(html, /href="\/fiesta-mexicana\/83334-corbata-tricolor-8625553470916\.html"/);
         assert.match(html, /"@type":"CollectionPage"/);
+        assert.match(html, /"@type":"FAQPage"/);
+        assert.match(html, /<details><summary>¿Venden al mayoreo\?<\/summary><p>Sí, &lt;b>hay&lt;\/b> precio de mayoreo\.<\/p><\/details>/);
       }
     }
   } finally { global.fetch = prev; }

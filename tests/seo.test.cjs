@@ -131,3 +131,42 @@ test('PageSpeed: lee calificaciones, métricas y oportunidades', async () => {
     assert.equal(r.detalle.oportunidades[0].titulo, 'Reduce el JavaScript sin usar');
   } finally { global.fetch = prev; }
 });
+
+test('categorías: la IA propone y guardar limpia el HTML y las preguntas frecuentes', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  const handler = require('../api/seo.js');
+  const ia = require('../lib/recepcion-ia.js');
+  const prevIA = ia.generarJson;
+  let pedidoIA = null;
+  ia.generarJson = async o => { pedidoIA = o; return { palabra_clave: 'globos para fiesta', meta_title: 'Globos para fiesta al mayoreo', meta_description: 'x'.repeat(140), intro_html: '<h2 onclick="x()">Globos</h2><p>Hola</p><script>alert(1)</script>', faq: [{ pregunta: '¿Hay mayoreo?', respuesta: '<b>Sí</b>, en muchos.' }, { pregunta: '', respuesta: 'vacía' }] }; };
+  const llamadas = [];
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url); llamadas.push({ u, opts });
+    const r = d => ({ ok: true, status: 200, text: async () => JSON.stringify(d) });
+    if (u.includes('seo_sesion')) return r([{ nombre: 'Admin', permitido: true }]);
+    if (u.includes('ps_categorias') && opts.method === 'PATCH') return r([{ id: 269, ...JSON.parse(opts.body) }]);
+    if (u.includes('ps_categorias')) return r([{ id: 269, name: 'Globos', description: null }]);
+    if (u.includes('catalogo_productos')) return r([{ name: 'Globo rojo', price: 10, price_mayoreo: 8 }, { name: 'Globo azul', price: 30 }]);
+    return r(null);
+  };
+  try {
+    let res = response();
+    await handler({ method: 'POST', body: { accion: 'categoria_ia', creds: {}, id: 269 } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.intro_html, '<h2>Globos</h2><p>Hola</p>');
+    assert.deepEqual(res.data.faq, [{ pregunta: '¿Hay mayoreo?', respuesta: 'Sí , en muchos.' }]);
+    const datosIA = JSON.parse(pedidoIA.contenido[0].text);
+    assert.deepEqual(datosIA.rango_precios_mxn, [10, 30]);
+    assert.equal(datosIA.hay_mayoreo, true);
+
+    res = response();
+    const intro = '<p>' + 'palabra '.repeat(160) + '</p><img src=x onerror=y>';
+    await handler({ method: 'POST', body: { accion: 'guardar_categoria', creds: {}, id: 269, meta_title: 'Globos para fiesta | Mi Fiestashop', meta_description: 'y'.repeat(130), descripcion: intro, faq: [{ pregunta: 'a?', respuesta: 'b' }, { pregunta: 'c?', respuesta: 'd' }, { pregunta: 'e?', respuesta: 'f' }] } }, res);
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    const patch = JSON.parse(llamadas.find(l => l.u.includes('ps_categorias') && l.opts.method === 'PATCH').opts.body);
+    assert.equal(patch.meta_title, 'Globos para fiesta');
+    assert.ok(!patch.description.includes('onerror'));
+    assert.equal(patch.faq.length, 3);
+    assert.equal(res.data.puntaje, 100);
+  } finally { global.fetch = prev; ia.generarJson = prevIA; }
+});
