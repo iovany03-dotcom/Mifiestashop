@@ -5411,6 +5411,9 @@
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="orders:write"> Pedidos: crear/editar</label>
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="customers:read"> Clientes: leer</label>
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="blog:write"> Blog: escribir y publicar</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="inventory:read"> Inventario: consultar (existencias y movimientos)</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="inventory:write"> Inventario: crear borradores de movimientos</label>
+            <label style="display:flex; align-items:center; gap:6px;" title="Permite aprobar un borrador y aplicarlo al inventario, sin que lo revise una persona en el panel."><input type="checkbox" class="apiKeyScope" value="inventory:approve"> Inventario: aprobar y aplicar movimientos ⚠️</label>
           </div>
         </div>
         <div id="apiKeyModalMsg" class="hidden" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; text-align:center;"></div>
@@ -5550,6 +5553,11 @@
           </div>
           <div id="editProdCompHint" style="font-size:11.5px; color:var(--text-muted); margin-bottom:8px;"></div>
           <div id="editProdCompML" style="margin-bottom:12px;"></div>
+
+          <div style="padding:10px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); margin-bottom:12px;">
+            <label style="display:flex; gap:8px; align-items:center; font-size:13px; font-weight:700; cursor:pointer;"><input type="checkbox" id="editProdRegalo"> 🎁 Como regalo</label>
+            <div style="font-size:11.5px; color:var(--text-muted); margin-top:4px;">Si lo activas, en el Punto de venta este producto se puede agregar al carrito como <b>regalo a cambio de una reseña</b> (sale a $0 en el ticket y descuenta del inventario). Después adjuntas la reseña del cliente en el detalle del pedido.</div>
+          </div>
 
           <div id="editProdVentasBox" style="padding:10px 12px; border-radius:8px; background:var(--card-bg); border:1px solid var(--border); font-size:12.5px; color:var(--text-secondary);">
             <b style="color:var(--text-primary);">Ventas mensuales estimadas:</b> <span id="editProdVentasTxt">—</span>
@@ -5739,6 +5747,7 @@
               </tbody>
             </table>
           </div>
+            <div id="odRegalosBox" class="hidden" style="margin-top:12px; padding:12px; border-radius:10px; border:1px dashed #9333ea; background:rgba(147,51,234,.05);"></div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:var(--text-muted); margin-bottom:14px; flex-wrap:wrap; gap:10px;">
             <div>Artículos por página: <b>100 </b></div>
@@ -8156,6 +8165,7 @@ function switchView(viewName) {
   const target = document.getElementById('view-' + viewName);
   if (target) target.classList.remove('hidden');
   if (viewName === 'facturacion' && typeof cargarFacturas === 'function') cargarFacturas();
+  if (viewName === 'pos' && typeof posAsegurarRegalos === 'function') posAsegurarRegalos();
   if (viewName === 'envios' && typeof cargarSaldoSkydropx === 'function') { cargarSaldoSkydropx(); cargarEnviosSkydropx(); }
 
   // Update header text
@@ -8259,6 +8269,7 @@ function renderProducts(category = 'all', query = '') {
       <div>
         <div class="p-title">${p.name}</div>
         <div class="p-sku">SKU: ${p.sku}</div>
+        ${esRegaloResena(p.id) ? '<div style="font-size:10.5px; color:#9333ea; font-weight:700;">🎁 Regalo por reseña</div>' : ''}
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
@@ -8304,9 +8315,34 @@ function applyWholesalePricing(item) {
   // volumen (ver wholesaleNoteHTML) — sin esto, un precio pensado solo
   // para clientes de mayoreo/distribuidores se le cobraba de menos a
   // cualquier cliente general (tienda pública o POS) desde la 1a pieza.
-  item.price = (threshold > 1 && Number.isFinite(wholesalePrice) && wholesalePrice > 0 && item.qty >= threshold)
+  item.price = (threshold > 1 && Number.isFinite(wholesalePrice) && wholesalePrice > 0 && item.qty - Math.min(item.qty, Number(item.regaloQty) || 0) >= threshold)
     ? wholesalePrice
     : item.basePrice;
+}
+
+// ¿Este producto está marcado "Como regalo" en el editor? La marca vive en el catálogo del panel
+// (adminCatalogProducts, /api/productos-admin); el POS vende con el catálogo público, que no la trae.
+function esRegaloResena(id) {
+  const p = adminCatalogProducts.find(x => String(x.id) === String(id));
+  return !!(p && p.regaloResena);
+}
+async function posAsegurarRegalos() {
+  if (!adminCatalogProducts.length) { await loadAdminCatalogProducts(); }
+  if (adminCatalogProducts.length) { updateCartUI(); const g = document.getElementById('posProductGrid'); if (g && typeof renderProducts === 'function') renderProducts(document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all', document.getElementById('posSearchInput')?.value || ''); }
+}
+
+// Regalo por reseña (POS): item.regaloQty = piezas de esta línea que se dan de regalo ($0). Solo
+// productos marcados "Como regalo" en el editor (product.regaloResena). Se descuentan del inventario igual.
+function cartPagadas(i) { return i.qty - Math.min(i.qty, Math.max(0, Number(i.regaloQty) || 0)); }
+function cartLineTotal(i) { return i.price * cartPagadas(i); }
+function cartSubtotal() { return cart.reduce((s, i) => s + cartLineTotal(i), 0); }
+function cartRegaloQty(id, delta) {
+  const item = cart.find(i => i.id == id);
+  if (!item || !item.regaloResena) return;
+  item.regaloQty = Math.min(item.qty, Math.max(0, (Number(item.regaloQty) || 0) + delta));
+  if (!item.regaloQty) delete item.regaloQty;
+  applyWholesalePricing(item);
+  updateCartUI();
 }
 
 function addToCart(product) {
@@ -8331,7 +8367,7 @@ function updateCartQty(id, delta) {
   if (item) {
     item.qty += delta;
     if (item.qty <= 0) cart = cart.filter(i => i.id != id);
-    else applyWholesalePricing(item);
+    else { if (item.regaloQty > item.qty) item.regaloQty = item.qty; applyWholesalePricing(item); }
   }
   updateCartUI();
 }
@@ -8343,7 +8379,7 @@ function setCartQty(id, value) {
   const item = cart.find(i => i.id == id);
   if (!item) return;
   if (!Number.isFinite(qty) || qty <= 0) cart = cart.filter(i => i.id != id);
-  else { item.qty = qty; applyWholesalePricing(item); }
+  else { item.qty = qty; if (item.regaloQty > qty) item.regaloQty = qty; applyWholesalePricing(item); }
   updateCartUI();
 }
 
@@ -8374,8 +8410,12 @@ function updateCartUI() {
   let subtotal = 0;
 
   cart.forEach(item => {
-    const lineTotal = item.price * item.qty;
+    item.regaloResena = esRegaloResena(item.id);
+    const lineTotal = cartLineTotal(item);
     subtotal += lineTotal;
+    const rq = Math.min(item.qty, Number(item.regaloQty) || 0);
+    const regaloHtml = item.regaloResena ? `<div style="font-size:11.5px; margin-top:3px; ${rq ? 'color:#9333ea; font-weight:700;' : 'color:var(--text-muted);'}">🎁 ${rq ? `Regalo por reseña: ${rq} pza${rq === 1 ? '' : 's'} a $0` : 'Disponible como regalo por reseña'}
+        <button class="ci-btn" style="width:auto; padding:0 6px; font-size:11px;" onclick="cartRegaloQty(${item.id}, 1)" ${rq >= item.qty ? 'disabled' : ''}>+ regalo</button>${rq ? ` <button class="ci-btn" style="width:auto; padding:0 6px; font-size:11px;" onclick="cartRegaloQty(${item.id}, -1)">− regalo</button>` : ''}</div>` : '';
 
     const div = document.createElement('div');
     div.className = 'cart-item';
@@ -8383,6 +8423,7 @@ function updateCartUI() {
       <div class="ci-info">
         <div class="ci-name">${item.name}</div>
         <div class="ci-price">${fmtMoney(item.price)} c/u</div>
+        ${regaloHtml}
       </div>
       <div class="ci-qty">
         <button class="ci-btn" onclick="updateCartQty(${item.id}, -1)">-</button>
@@ -8405,7 +8446,7 @@ function updateCartUI() {
 
 // CHECKOUT & TICKET MODAL
 function getCartTotalNum() {
-  const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+  const subtotal = cartSubtotal();
   const applyIva = isIvaApplied();
   return applyIva ? subtotal * 1.16 : subtotal;
 }
@@ -8460,7 +8501,7 @@ async function generateQuotePdf() {
     const almacenSelect = document.getElementById('posWarehouseSelect');
     const sucursal = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
 
-    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const subtotal = cartSubtotal();
     const applyIva = isIvaApplied();
     const iva = applyIva ? subtotal * 0.16 : 0;
     const total = subtotal + iva;
@@ -8498,7 +8539,7 @@ async function generateQuotePdf() {
     tableHeader();
 
     cart.forEach((item, idx) => {
-      const nameLines = doc.splitTextToSize(String(item.name || ''), 88);
+      const nameLines = doc.splitTextToSize(String(item.name || '') + (item.regaloQty > 0 ? ` (${Math.min(item.qty, item.regaloQty)} de regalo)` : ''), 88);
       const codeLines = doc.splitTextToSize(String(item.sku || item.id || ''), 28).slice(0, 2);
       const rowH = Math.max(nameLines.length, codeLines.length) * 4.4 + 3;
       if (y + rowH > BOTTOM) { doc.addPage(); y = 20; tableHeader(); }
@@ -8507,7 +8548,7 @@ async function generateQuotePdf() {
       doc.setFontSize(9); doc.text(nameLines, COL.name, y);
       doc.text(fmtMoney(item.price), COL.unit, y, { align: 'right' });
       doc.text(String(item.qty), COL.qty, y, { align: 'center' });
-      doc.text(fmtMoney(item.price * item.qty), COL.amt, y, { align: 'right' });
+      doc.text(fmtMoney(cartLineTotal(item)), COL.amt, y, { align: 'right' });
       y += rowH;
     });
 
@@ -8588,14 +8629,15 @@ async function confirmPOSSale() {
   const change = Math.max(0, given - total);
   const folio = '#POS-' + Math.floor(10000 + Math.random() * 90000);
 
-  const subtotal = cart.reduce((s, i) => s + (i.price * i.qty), 0);
+  const subtotal = cartSubtotal();
   const iva = isIvaApplied() ? subtotal * 0.16 : 0;
   const customerSelect = document.getElementById('posCustomerSelect');
   const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
   const almacenSelect = document.getElementById('posWarehouseSelect');
   const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
   // product_id: permite sumar esta venta en las ventas por producto (api/ventas-productos.js).
-  const cartSnapshot = cart.map(i => ({ product_id: i.id, name: i.name, sku: i.sku || i.id, qty: i.qty, price: i.price }));
+  // Los regalos por reseña van en su propia línea (regalo:true, $0) para poder adjuntarles después la reseña.
+  const cartSnapshot = cartLineasTicket(cart);
 
   // Populate Ticket Modal
   document.getElementById('tFolio').textContent = folio;
@@ -8632,7 +8674,7 @@ async function confirmPOSSale() {
   // Record sales per product item
   const currentMonthStr = new Date().toISOString().slice(0, 7);
   cart.forEach(item => {
-    recordSaleForProduct(item.sku || item.id, item.qty, item.price, currentMonthStr);
+    if (cartPagadas(item) > 0) recordSaleForProduct(item.sku || item.id, cartPagadas(item), item.price, currentMonthStr);
   });
   renderTopProductsTable();
 
@@ -8700,10 +8742,22 @@ function closeTicketModal() {
   document.getElementById('ticketModal').classList.add('hidden');
 }
 
+// Líneas planas del ticket: una línea pagada y, si hay, una línea de regalo ($0) por producto del carrito.
+function cartLineasTicket(items) {
+  const out = [];
+  items.forEach(i => {
+    const regalo = Math.min(i.qty, Math.max(0, Number(i.regaloQty) || 0));
+    if (i.qty - regalo > 0) out.push({ product_id: i.id, name: i.name, sku: i.sku || i.id, qty: i.qty - regalo, price: i.price });
+    if (regalo > 0) out.push({ product_id: i.id, name: i.name, sku: i.sku || i.id, qty: regalo, price: 0, regalo: true, precio_regular: i.basePrice != null ? i.basePrice : i.price });
+  });
+  return out;
+}
+
 function buildTicketItemsHTML(items) {
-  return items.map(i => {
+  const planas = items.some(i => i.regaloQty > 0) ? cartLineasTicket(items) : items;
+  return planas.map(i => {
     const lineTotal = fmtMoney(i.price * i.qty);
-    const name = escapeHtml(i.name || '');
+    const name = escapeHtml(i.name || '') + (i.regalo ? ' 🎁 REGALO por reseña' : '');
     const cod = escapeHtml(i.sku || i.id || '');
     return `
     <tr>
@@ -10537,6 +10591,7 @@ function fillProductPrivadosForm(prod) {
     document.getElementById('editProdComp' + i + 'Enlace').value = c.enlace || '';
   });
   document.getElementById('editProdCodProv').value = prod ? (prod.codigoProveedor || '') : '';
+  const chkRegalo = document.getElementById('editProdRegalo'); if (chkRegalo) chkRegalo.checked = !!(prod && prod.regaloResena);
   const f = prod && prod.costoCompraActualizado ? new Date(prod.costoCompraActualizado) : null;
   document.getElementById('editProdCostoFecha').value = f ? f.toLocaleDateString('es-MX', { timeZone: 'America/Mexico_City', day: '2-digit', month: 'short', year: 'numeric' }) : '';
   recalcUtilidad();
@@ -10608,6 +10663,7 @@ async function saveProductChanges() {
   const prodUrl = (document.getElementById('editProdUrl')?.value || '').trim() || `https://mifiestashop.com/producto/${sku}`;
   const desc = (document.getElementById('editProdDesc')?.value || '').trim();
   const codigoProveedor = (document.getElementById('editProdCodProv')?.value || '').trim();
+  const regaloResena = !!document.getElementById('editProdRegalo')?.checked;
   const competencia = readProductCompetencia();
 
   if (!name || !sku) {
@@ -10633,6 +10689,7 @@ async function saveProductChanges() {
       targetProd.priceDistribuidor = priceDistribuidor;
       targetProd.costoCompra = costoCompra;
       targetProd.codigoProveedor = codigoProveedor;
+      targetProd.regaloResena = regaloResena;
       targetProd.competencia = [...competencia, ...compDeML(targetProd)];
       targetProd.status = status;
       targetProd.img = img;
@@ -10655,6 +10712,7 @@ async function saveProductChanges() {
       priceDistribuidor: priceDistribuidor,
       costoCompra: costoCompra,
       codigoProveedor: codigoProveedor,
+      regaloResena: regaloResena,
       competencia: competencia,
       status: status,
       img: img,
@@ -10714,7 +10772,7 @@ async function saveProductChanges() {
           id: wasNew ? null : targetProd.id,
           sku, barcode, name, description: desc,
           price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
-          codigoProveedor, competencia,
+          codigoProveedor, competencia, regaloResena,
           categoryLabel: cat, active: status !== 'Inactivo', img,
           lowStockThreshold: targetProd.lowStockThreshold
         }
@@ -13971,7 +14029,7 @@ async function loadOrdersFromAPI(){
         createdAtIso: t.created_at || null,
         createdBy: t.registrado_por || null,
         shop: 'Mi Fiestashop',
-        items: Array.isArray(t.items) ? t.items.map(i => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty })) : [],
+        items: Array.isArray(t.items) ? t.items.map((i, idx) => ({ name: i.name, sku: i.sku, qty: i.qty, price: i.price, total: i.price * i.qty, regalo: i.regalo === true, resena: i.resena || null, linea: idx })) : [],
         rawId: null,
         _sortDate: new Date(t.created_at).getTime()
       }));
@@ -14112,6 +14170,89 @@ function renderOdProductRows(items){
   }
   const countEl = document.getElementById('odProdCountTitle');
   if (countEl) countEl.textContent = `Productos (${items ? items.length : 0})`;
+  renderOdRegalos(items);
+}
+
+// Regalos por reseña de un ticket del POS: cada uno queda "pendiente" hasta adjuntar la reseña que
+// dejó el cliente (liga, comentario y/o captura). api/pedido-admin.js, acción resena_regalo.
+function renderOdRegalos(items) {
+  const box = document.getElementById('odRegalosBox');
+  if (!box) return;
+  const regalos = (items || []).filter(it => it.regalo);
+  box.classList.toggle('hidden', !regalos.length);
+  if (!regalos.length) { box.innerHTML = ''; return; }
+  box.innerHTML = `<div style="font-weight:800; margin-bottom:6px;">🎁 Regalos por reseña</div>` + regalos.map(it => {
+    const r = it.resena;
+    return `<div style="display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding:6px 0; border-top:1px solid var(--border);">
+      <div><b>${escapeHtml(it.name)}</b> × ${it.qty}
+        <div style="font-size:12px; margin-top:2px; color:${r ? '#16a34a' : '#d97706'}; font-weight:700;">${r ? '✓ Reseña recibida' : '⏳ Pendiente de reseña'}</div>
+        ${r ? `<div style="font-size:12px; color:var(--text-secondary);">${r.url ? `<a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">Ver reseña</a> · ` : ''}${r.imagen ? `<a href="${escapeHtml(r.imagen)}" target="_blank" rel="noopener">Ver captura</a> · ` : ''}${r.comentario ? `“${escapeHtml(r.comentario)}” · ` : ''}adjuntada por ${escapeHtml(r.por || '')} el ${r.fecha ? new Date(r.fecha).toLocaleDateString('es-MX') : ''}</div>` : ''}</div>
+      <div style="display:flex; gap:6px;"><button class="btn small ${r ? '' : 'primary'}" onclick="odResenaForm(${it.linea})">${r ? 'Editar reseña' : 'Adjuntar reseña'}</button>${r ? `<button class="btn small" onclick="odResenaQuitar(${it.linea})">Quitar</button>` : ''}</div></div>`;
+  }).join('');
+}
+let odResenaLinea = null;
+function odResenaForm(linea) {
+  const it = ((currentOrderObj && currentOrderObj.items) || []).find(x => x.linea === linea);
+  if (!it) return;
+  odResenaLinea = linea;
+  const r = it.resena || {};
+  let m = document.getElementById('odResenaModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'odResenaModal';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div class="modal" style="max-width:480px; padding:20px;">
+      <h3 style="margin-top:0;">Reseña del regalo: ${escapeHtml(it.name)}</h3>
+      <p style="font-size:12.5px; color:var(--text-secondary); margin-top:0;">Pega la liga de la reseña, escribe lo que dijo el cliente y/o sube la captura. Con una de las tres basta.</p>
+      <label style="font-size:12px; font-weight:600;">Liga de la reseña (https://…)<input id="odResUrl" type="url" value="${escapeHtml(r.url || '')}" style="width:100%; padding:8px; margin:4px 0 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+      <label style="font-size:12px; font-weight:600;">Comentario del cliente<textarea id="odResComentario" rows="3" style="width:100%; padding:8px; margin:4px 0 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">${escapeHtml(r.comentario || '')}</textarea></label>
+      <label style="font-size:12px; font-weight:600;">Captura de la reseña (foto)${r.imagen ? ` · <a href="${escapeHtml(r.imagen)}" target="_blank" rel="noopener">ya hay una</a> (sube otra para cambiarla)` : ''}<input id="odResImagen" type="file" accept="image/*" style="display:block; margin:4px 0 12px;"></label>
+      <div id="odResMsg" style="font-size:12.5px; color:#dc2626; min-height:16px;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;"><button class="btn" onclick="document.getElementById('odResenaModal').classList.add('hidden')">Cancelar</button><button class="btn primary" id="odResBtn" onclick="odResenaGuardar()">Guardar reseña</button></div>
+    </div>`;
+  m.classList.remove('hidden');
+}
+async function odResenaApi(extra) {
+  const o = currentOrderObj;
+  const r = await fetch('/api/pedido-admin', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...getSessionCredsParams(), accion: 'resena_regalo', origen: 'pos', folio: o.id, linea: odResenaLinea, ...extra })
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+  return d;
+}
+function odResenaActualizarLocal(resena) {
+  const it = ((currentOrderObj && currentOrderObj.items) || []).find(x => x.linea === odResenaLinea);
+  if (it) it.resena = resena;
+  const t = ticketHistorialCache.find(x => x.folio === currentOrderObj.id);
+  if (t && Array.isArray(t.items) && t.items[odResenaLinea]) { if (resena) t.items[odResenaLinea].resena = resena; else delete t.items[odResenaLinea].resena; }
+  renderOdRegalos(currentOrderObj.items);
+}
+async function odResenaGuardar() {
+  const msg = document.getElementById('odResMsg'), btn = document.getElementById('odResBtn');
+  msg.textContent = '';
+  const file = document.getElementById('odResImagen').files[0];
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try {
+    let imagen;
+    if (file) {
+      if (!/^image\//.test(file.type)) throw new Error('La captura debe ser una foto.');
+      const f = await recLeerArchivo(file, 1600, 0.82);
+      imagen = { media_type: f.media_type, data: f.data };
+    }
+    const d = await odResenaApi({ url: document.getElementById('odResUrl').value.trim(), comentario: document.getElementById('odResComentario').value.trim(), imagen });
+    odResenaActualizarLocal(d.resena);
+    document.getElementById('odResenaModal').classList.add('hidden');
+  } catch (e) { msg.textContent = e.message; }
+  btn.disabled = false; btn.textContent = 'Guardar reseña';
+}
+async function odResenaQuitar(linea) {
+  if (!confirm('¿Quitar la reseña adjunta? El regalo vuelve a quedar pendiente de reseña.')) return;
+  odResenaLinea = linea;
+  try { await odResenaApi({ quitar: true }); odResenaActualizarLocal(null); } catch (e) { alert(e.message); }
 }
 
 function openOrderDetailModal(id){
@@ -18959,7 +19100,8 @@ const API_KEY_SCOPE_LABELS = {
   'categories:read': 'Categorías: leer',
   'orders:read': 'Pedidos: leer', 'orders:write': 'Pedidos: crear/editar',
   'customers:read': 'Clientes: leer',
-  'blog:write': 'Blog: escribir y publicar'
+  'blog:write': 'Blog: escribir y publicar',
+  'inventory:read': 'Inventario: consultar', 'inventory:write': 'Inventario: crear borradores', 'inventory:approve': 'Inventario: aprobar y aplicar'
 };
 let apiKeysAdminCache = [];
 

@@ -21,6 +21,8 @@
 //
 //   - datos:     nota interna, fecha de entrega y guía (pedidos de la tienda).
 //   - historial: lista el historial de movimientos del pedido (cualquier origen).
+//   - resena_regalo: (solo tickets del POS) adjunta o quita la reseña que dejó el cliente por un producto de regalo.
+//               { linea (posición en items), url?, comentario?, imagen?: {media_type, data (base64)}, quitar? }
 //
 // Cada estado, cancelación, borrado y cambio de datos se anota en pedido_historial (lib/pedido-historial.js)
 // con el nombre de quien lo hizo (sacado de la sesión en el servidor) y la fecha y hora.
@@ -179,6 +181,48 @@ module.exports = async function handler(req, res) {
       if (patch.tracking_number !== undefined && (antes.tracking_number || null) !== patch.tracking_number) cambios.push(`Guía de rastreo: ${antes.tracking_number || '—'} → ${patch.tracking_number || '—'}`);
       const historialRegistrado = await historial.registrar(serviceRoleKey, cambios.map(detalle => ({ folio, origen, accion: 'datos', detalle, usuario })));
       res.status(200).json({ ok: true, historialRegistrado });
+      return;
+    }
+
+    // Reseña por un regalo del POS: el ticket lleva líneas con regalo:true (ver confirmPOSSale); aquí se
+    // adjunta después la reseña que dejó el cliente (liga, comentario y/o captura) o se quita.
+    if (accion === 'resena_regalo') {
+      if (origen !== 'pos') { res.status(400).json({ error: 'Los regalos por reseña son de los tickets del POS.' }); return; }
+      const rows = await api(`pos_tickets?folio=eq.${encodeURIComponent(folio)}&select=items&limit=1`);
+      const items = Array.isArray(rows) && rows[0] && Array.isArray(rows[0].items) ? rows[0].items : null;
+      if (!items) { res.status(404).json({ error: 'Ticket no encontrado.' }); return; }
+      const idx = Number(body.linea);
+      if (!Number.isInteger(idx) || !items[idx] || items[idx].regalo !== true) { res.status(400).json({ error: 'Esa línea no es un regalo por reseña.' }); return; }
+      const it = items[idx];
+      if (body.quitar === true) {
+        delete it.resena;
+        await api(`pos_tickets?folio=eq.${encodeURIComponent(folio)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ items }) });
+        const historialRegistrado = await historial.registrar(serviceRoleKey, { folio, origen, accion: 'resena_regalo', usuario, detalle: `Se quitó la reseña del regalo "${it.name}"` });
+        res.status(200).json({ ok: true, resena: null, historialRegistrado });
+        return;
+      }
+      const url = String(body.url || '').trim();
+      const comentario = String(body.comentario || '').trim().slice(0, 1000);
+      if (url && !/^https:\/\/[^\s"'<>]+$/i.test(url)) { res.status(400).json({ error: 'La liga de la reseña debe empezar con https://' }); return; }
+      let imagen = it.resena && it.resena.imagen || null;
+      if (body.imagen && body.imagen.data) {
+        const tipo = String(body.imagen.media_type || '');
+        const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[tipo];
+        if (!ext) { res.status(400).json({ error: 'La captura debe ser JPG, PNG o WEBP.' }); return; }
+        const bytes = Buffer.from(String(body.imagen.data), 'base64');
+        if (!bytes.length || bytes.length > 3 * 1024 * 1024) { res.status(400).json({ error: 'La captura debe pesar menos de 3 MB.' }); return; }
+        const ruta = `resenas/${folio.replace(/[^A-Za-z0-9-]/g, '')}-${Date.now().toString(36)}.${ext}`;
+        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${ruta}`, {
+          method: 'POST', headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, 'Content-Type': tipo }, body: bytes
+        });
+        if (!up.ok) { res.status(502).json({ error: `No se pudo guardar la captura (HTTP ${up.status}).` }); return; }
+        imagen = `${SUPABASE_URL}/storage/v1/object/public/assets/${ruta}`;
+      }
+      if (!url && !comentario && !imagen) { res.status(400).json({ error: 'Agrega la liga, el comentario o la captura de la reseña.' }); return; }
+      it.resena = { url: url || null, comentario: comentario || null, imagen, por: usuario, fecha: new Date().toISOString() };
+      await api(`pos_tickets?folio=eq.${encodeURIComponent(folio)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ items }) });
+      const historialRegistrado = await historial.registrar(serviceRoleKey, { folio, origen, accion: 'resena_regalo', usuario, detalle: `Reseña adjunta por el regalo "${it.name}"` });
+      res.status(200).json({ ok: true, resena: it.resena, historialRegistrado });
       return;
     }
 

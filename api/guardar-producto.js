@@ -169,6 +169,8 @@ module.exports = async function handler(req, res) {
   // (un navegador con la versión anterior del editor) no se tocan. La fecha del último cambio del costo
   // de compra se fija aquí al detectar que el costo cambió respecto a lo guardado.
   const privado = {};
+  // "Como regalo": el producto se puede dar de regalo en el POS a cambio de una reseña del cliente.
+  if ('regaloResena' in producto) privado.regalo_resena = producto.regaloResena === true;
   if ('codigoProveedor' in producto) privado.codigo_proveedor = String(producto.codigoProveedor || '').trim().slice(0, 100) || null;
   if ('competencia' in producto) {
     // El editor solo manda los competidores capturados a mano; los que encontró la búsqueda

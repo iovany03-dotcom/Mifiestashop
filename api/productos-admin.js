@@ -53,7 +53,7 @@ module.exports = async function handler(req, res) {
     if (serviceKey) {
       try {
         for (let from = 0; ; from += 1000) {
-          const pr = await fetch(`${SUPABASE_URL}/rest/v1/producto_privado?select=id,codigo_proveedor,competencia,costo_compra_actualizado_at&order=id.asc`, {
+          const pr = await fetch(`${SUPABASE_URL}/rest/v1/producto_privado?select=id,codigo_proveedor,competencia,costo_compra_actualizado_at,regalo_resena&order=id.asc`, {
             headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, Range: `${from}-${from + 999}` }
           });
           if (!pr.ok) break;
@@ -70,6 +70,7 @@ module.exports = async function handler(req, res) {
         prod.codigoProveedor = priv.codigo_proveedor || '';
         prod.competencia = Array.isArray(priv.competencia) ? priv.competencia : [];
         prod.costoCompraActualizado = priv.costo_compra_actualizado_at || null;
+        prod.regaloResena = priv.regalo_resena === true;
       }
       return prod;
     });

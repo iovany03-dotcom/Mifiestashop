@@ -24,6 +24,7 @@ test('guardar-producto: guarda código de proveedor y hasta 3 competidores (sani
     await require('../api/guardar-producto.js')({ method: 'POST', body: { p_admin_password: 'x', producto: {
       id: 83101, sku: 'S', name: 'Vela', price: 10, costoCompra: 8,
       codigoProveedor: '  PRV-1 ',
+      regaloResena: true,
       competencia: [
         { nombre: 'Mercado Libre', precio: '12.345', enlace: 'https://ml.com/x' },
         { nombre: '', precio: null, enlace: '' },
@@ -36,13 +37,14 @@ test('guardar-producto: guarda código de proveedor y hasta 3 competidores (sani
     assert.equal(res.data.aviso, undefined);
     assert.equal(privado.id, 83101);
     assert.equal(privado.codigo_proveedor, 'PRV-1');
+    assert.equal(privado.regalo_resena, true, 'marca "Como regalo" (privada, igual que el código de proveedor)');
     assert.deepEqual(privado.competencia, [
       { nombre: 'Mercado Libre', precio: 12.35, enlace: 'https://ml.com/x' },
       { nombre: 'Amazon', precio: 11, enlace: '' }
     ]);
     assert.ok(privado.costo_compra_actualizado_at, 'el costo cambió (7.5 -> 8): se fija la fecha');
     // lo privado nunca viaja a catalogo_productos (legible con la llave pública)
-    for (const k of ['codigo_proveedor', 'competencia', 'costoCompraActualizado']) assert.equal(k in catalogo, false);
+    for (const k of ['codigo_proveedor', 'competencia', 'costoCompraActualizado', 'regalo_resena', 'regaloResena']) assert.equal(k in catalogo, false);
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 

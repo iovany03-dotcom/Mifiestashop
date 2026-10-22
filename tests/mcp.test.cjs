@@ -130,3 +130,183 @@ test('subir_imagen acepta data URL y rechaza lo que no es imagen', async () => {
     assert.equal(res.body.result.isError, true);
   } finally { global.fetch = prev; }
 });
+
+// ---------- Inventario ----------
+function mockInventario(scopes, { stock = {}, documento = null } = {}) {
+  const llamadas = [];
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    llamadas.push({ u, opts });
+    const json = d => ({ ok: true, status: 200, json: async () => d, text: async () => '' });
+    if (u.includes('/rest/v1/api_keys?key_hash')) return json([{ id: 1, nombre: 'ChatGPT', scopes, activo: true }]);
+    if (u.includes('/rest/v1/api_keys?id=')) return json(null);
+    if (u.includes('/rpc/stock_totales')) {
+      const ids = JSON.parse(opts.body).p_ids;
+      return json(ids.flatMap(id => Object.entries(stock[id] || {}).map(([almacen, cantidad]) => ({ id_product: id, almacen, cantidad }))));
+    }
+    if (u.includes('/rpc/mov_doc_save_core')) {
+      const b = JSON.parse(opts.body);
+      if (b.p_tipo === 'entrada' && !/^(devolucion|correccion|conteo):/.test(b.p_motivo || '')) return { ok: false, status: 400, json: async () => ({}), text: async () => '{"message":"INGRESO NO PERMITIDO. Para registrar mercancía..."}' };
+      return json({ id: 9, folio: 'SAL-261022-0001', tipo: b.p_tipo, estado: 'borrador', origen: b.p_origen, destino: b.p_destino, motivo: b.p_motivo, items: b.p_items, creado_por: b.p_por });
+    }
+    if (u.includes('/rpc/mov_doc_approve_core')) { const b = JSON.parse(opts.body); return json({ ...documento, estado: 'aprobado', aprobado_por: b.p_por }); }
+    if (u.includes('/rest/v1/mov_documentos?select=*&folio=')) return json(documento ? [documento] : []);
+    if (u.includes('/rest/v1/catalogo_productos')) return json([{ id: 5, name: 'Collar hawaiano', sku: 'COL', active: true }, { id: 6, name: 'Bombín', sku: 'BOM', active: true }]);
+    return json([]);
+  };
+  return llamadas;
+}
+async function llamarTool(name, args) {
+  const res = await llamar({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } });
+  return res.body.result;
+}
+
+test('inventario: las herramientas se ven según el permiso de la llave', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  try {
+    mockInventario(['inventory:read']);
+    let res = await llamar({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
+    assert.deepEqual(res.body.result.tools.map(t => t.name).sort(), ['consultar_inventario', 'listar_movimientos_inventario', 'listar_recepciones', 'ver_recepcion']);
+    mockInventario(['inventory:read', 'inventory:write']);
+    res = await llamar({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
+    assert.ok(res.body.result.tools.some(t => t.name === 'crear_movimiento_inventario'));
+    assert.ok(!res.body.result.tools.some(t => t.name === 'aprobar_movimiento_inventario'), 'aprobar necesita su propio permiso');
+    const r = await llamarTool('aprobar_movimiento_inventario', { folio: 'SAL-1-0001', confirmar: true });
+    assert.equal(r.isError, true); assert.match(r.content[0].text, /inventory:approve/);
+  } finally { global.fetch = prev; }
+});
+
+test('inventario: consultar existencias por sucursal', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  mockInventario(['inventory:read'], { stock: { 5: { rumania: 10, puebla: 3, queretaro: 0 } } });
+  try {
+    const r = await llamarTool('consultar_inventario', { ids: [5] });
+    const p = r.structuredContent.productos[0];
+    assert.deepEqual(p.existencias, { 'CDMX Rumania': 10, Puebla: 3, Querétaro: 0 });
+    assert.equal(p.total, 13);
+  } finally { global.fetch = prev; }
+});
+
+test('inventario: crear un borrador de salida/traspaso avisa si pide más de lo que hay y quién lo creó', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  const llamadas = mockInventario(['inventory:write'], { stock: { 5: { puebla: 2 } } });
+  try {
+    const r = await llamarTool('crear_movimiento_inventario', { tipo: 'traspaso', desde: 'Puebla', hacia: 'CDMX', motivo: 'Surtir Rumania', partidas: [{ id_product: 5, cantidad: 4 }] });
+    assert.equal(r.isError, undefined, JSON.stringify(r));
+    assert.equal(r.structuredContent.estado, 'borrador');
+    assert.match(r.structuredContent.advertencias_existencias[0], /pides 4 y en Puebla hay 2/);
+    const save = llamadas.find(l => l.u.includes('/rpc/mov_doc_save_core'));
+    const b = JSON.parse(save.opts.body);
+    assert.equal(b.p_origen, 'puebla'); assert.equal(b.p_destino, 'rumania'); assert.equal(b.p_por, 'Asistente (MCP: ChatGPT)');
+    assert.deepEqual(b.p_items.map(i => [i.id_product, i.qty, i.name]), [[5, 4, 'Collar hawaiano']]);
+    assert.ok(!llamadas.some(l => l.u.includes('/rpc/mov_doc_approve_core')), 'crear nunca aprueba');
+  } finally { global.fetch = prev; }
+});
+
+test('inventario: validaciones (sucursal, cantidades, ajuste de entrada sin tipo, producto inexistente)', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  mockInventario(['inventory:write']);
+  try {
+    const mal = async (a, re) => { const r = await llamarTool('crear_movimiento_inventario', a); assert.equal(r.isError, true, JSON.stringify(a)); assert.match(r.content[0].text, re); };
+    await mal({ tipo: 'salida', desde: 'Mérida', motivo: 'x', partidas: [{ id_product: 5, cantidad: 1 }] }, /sucursal no válida/);
+    await mal({ tipo: 'salida', desde: 'puebla', motivo: 'merma', partidas: [{ id_product: 5, cantidad: 0 }] }, /cantidad entera/);
+    await mal({ tipo: 'salida', desde: 'puebla', motivo: 'merma', partidas: [{ id_product: 5, cantidad: 1.5 }] }, /cantidad entera/);
+    await mal({ tipo: 'ajuste_entrada', hacia: 'puebla', motivo: 'Se encontraron 3', partidas: [{ id_product: 5, cantidad: 3 }] }, /tipo_ajuste/);
+    await mal({ tipo: 'ajuste_entrada', hacia: 'puebla', tipo_ajuste: 'conteo', motivo: 'ok', partidas: [{ id_product: 5, cantidad: 3 }] }, /al menos 5/);
+    await mal({ tipo: 'salida', desde: 'puebla', motivo: 'merma', partidas: [{ id_product: 999, cantidad: 1 }] }, /No existen estos productos: 999/);
+    await mal({ tipo: 'compra', desde: 'puebla', motivo: 'x', partidas: [{ id_product: 5, cantidad: 1 }] }, /salida, traspaso o ajuste_entrada/);
+  } finally { global.fetch = prev; }
+});
+
+test('inventario: aprobar exige confirmar, respeta el stock y aplica el borrador', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  const doc = { id: 9, folio: 'SAL-261022-0001', tipo: 'salida', estado: 'borrador', origen: 'puebla', destino: null, motivo: 'merma', creado_por: 'Asistente (MCP: ChatGPT)', items: [{ id_product: 5, qty: 3, name: 'Collar hawaiano' }] };
+  try {
+    let llamadas = mockInventario(['inventory:approve'], { stock: { 5: { puebla: 10 } }, documento: doc });
+    let r = await llamarTool('aprobar_movimiento_inventario', { folio: doc.folio });
+    assert.match(r.content[0].text, /confirmar=true/);
+    assert.ok(!llamadas.some(l => l.u.includes('/rpc/mov_doc_approve_core')));
+    r = await llamarTool('aprobar_movimiento_inventario', { folio: doc.folio, confirmar: true });
+    assert.equal(r.isError, undefined, JSON.stringify(r));
+    assert.equal(r.structuredContent.aprobado, true);
+    assert.equal(JSON.parse(llamadas.find(l => l.u.includes('/rpc/mov_doc_approve_core')).opts.body).p_por, 'Asistente (MCP: ChatGPT)');
+    // sin existencia suficiente no aprueba
+    llamadas = mockInventario(['inventory:approve'], { stock: { 5: { puebla: 1 } }, documento: doc });
+    r = await llamarTool('aprobar_movimiento_inventario', { folio: doc.folio, confirmar: true });
+    assert.equal(r.isError, true); assert.match(r.content[0].text, /No hay existencia suficiente en Puebla/);
+    assert.ok(!llamadas.some(l => l.u.includes('/rpc/mov_doc_approve_core')));
+    // ya aprobado
+    mockInventario(['inventory:approve'], { documento: { ...doc, estado: 'aprobado' } });
+    r = await llamarTool('aprobar_movimiento_inventario', { folio: doc.folio, confirmar: true });
+    assert.match(r.content[0].text, /ya está aprobado/);
+  } finally { global.fetch = prev; }
+});
+
+// ---------- Recepciones (entradas de compra) ----------
+function mockRecepcion(scopes, { lineas, estado = 'pendiente_autorizacion', autorizar } = {}) {
+  const llamadas = [];
+  const base = { id: 7, folio: 'REC-261020-0003', almacen: 'rumania', estado, nota_folio: '0051', nota_total: 4505, proveedor: 'KARLA sombrero' };
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    llamadas.push({ u, opts });
+    const json = d => ({ ok: true, status: 200, json: async () => d, text: async () => '' });
+    if (u.includes('/rest/v1/api_keys?key_hash')) return json([{ id: 1, nombre: 'ChatGPT', scopes, activo: true }]);
+    if (u.includes('/rest/v1/api_keys?id=')) return json(null);
+    if (u.includes('/rest/v1/recepciones?select=id,estado&folio=')) return json([{ id: 7, estado }]);
+    if (u.includes('/rest/v1/recepciones?select=')) return json([{ id: 7, folio: base.folio, almacen: 'rumania', estado, nota_folio: '0051', nota_total: 4505, creado_por: 'Halil', proveedor_id: 3 }]);
+    if (u.includes('/rest/v1/proveedores_compra')) return json([{ id: 3, nombre: 'KARLA sombrero' }]);
+    if (u.includes('/rpc/recep_json')) return json({ recepcion: base, lineas });
+    if (u.includes('/rpc/recep_autorizar_core')) {
+      if (autorizar instanceof Error) return { ok: false, status: 400, json: async () => ({}), text: async () => JSON.stringify({ message: autorizar.message }) };
+      return json(autorizar == null ? 2 : autorizar);
+    }
+    return json([]);
+  };
+  return llamadas;
+}
+const LINEAS = [
+  { id: 20, renglon: 1, codigo: '0051', producto: { name: 'Sombrero A' }, id_product: 1, cantidad_nota: 53, esperado_piezas: 106, cantidad_recibida: 106, danadas: 0, diferencia: 0, incidencia: false },
+  { id: 21, renglon: 1, codigo: '0051', producto: { name: 'Sombrero B' }, id_product: 2, cantidad_nota: 10, esperado_piezas: 10, cantidad_recibida: null, danadas: 0, incidencia: false }
+];
+
+test('recepciones: listar y ver el detalle con el estado de cada renglón', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  mockRecepcion(['inventory:read'], { lineas: LINEAS });
+  try {
+    let r = await llamarTool('listar_recepciones', {});
+    assert.equal(r.structuredContent.recepciones[0].proveedor, 'KARLA sombrero');
+    r = await llamarTool('ver_recepcion', { folio: 'REC-261020-0003' });
+    assert.deepEqual(r.structuredContent.renglones.map(x => x.estado), ['listo para ingresar', 'falta contar']);
+    r = await llamarTool('ver_recepcion', { folio: 'x' });
+    assert.equal(r.isError, true);
+  } finally { global.fetch = prev; }
+});
+
+test('recepciones: autorizar el ingreso exige permiso, confirmar y respeta las reglas de la base', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  try {
+    mockRecepcion(['inventory:read', 'inventory:write'], { lineas: LINEAS });
+    let r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.match(r.content[0].text, /inventory:approve/);
+
+    let llamadas = mockRecepcion(['inventory:approve'], { lineas: LINEAS });
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003' });
+    assert.match(r.content[0].text, /confirmar=true/);
+    assert.ok(!llamadas.some(l => l.u.includes('/rpc/recep_autorizar_core')));
+
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.equal(r.isError, undefined, JSON.stringify(r));
+    assert.equal(r.structuredContent.renglones_ingresados, 2);
+    const b = JSON.parse(llamadas.find(l => l.u.includes('/rpc/recep_autorizar_core')).opts.body);
+    assert.deepEqual([b.p_id, b.p_lineas, b.p_por], [7, null, 'Asistente (MCP: ChatGPT)']);
+    assert.deepEqual(r.structuredContent.pendientes.map(p => p.id_linea), [20, 21], 'el detalle se lee otra vez; aquí el mock no marca ingresados');
+
+    mockRecepcion(['inventory:approve'], { lineas: LINEAS, autorizar: new Error('nada_que_ingresar') });
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.equal(r.isError, true); assert.match(r.content[0].text, /No hay renglones listos/);
+
+    mockRecepcion(['inventory:approve'], { lineas: LINEAS, estado: 'conciliada' });
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.match(r.content[0].text, /conciliada/);
+  } finally { global.fetch = prev; }
+});
