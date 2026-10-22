@@ -5,7 +5,9 @@
 // Autenticación: una llave de API del panel (API para Desarrolladores, "mfs_live_…"), en el header
 //   Authorization: Bearer mfs_live_…   o en la URL   https://www.mifiestashop.com/mcp/mfs_live_…
 // (la URL con la llave es para ChatGPT/Claude web, que no dejan poner headers). Los permisos de la
-// llave limitan las herramientas: products:read, products:write, categories:read, blog:write.
+// llave limitan las herramientas: products:read, products:write, categories:read, blog:write,
+// inventory:read (consultar existencias y movimientos), inventory:write (crear borradores de movimientos)
+// e inventory:approve (aprobar un borrador y aplicarlo al inventario).
 const crypto = require('node:crypto');
 const { authenticateApiRequest } = require('../lib/api-auth.js');
 const { slugify, sanitizeHtml, sbBlog } = require('../lib/blog.js');
@@ -101,6 +103,165 @@ function resumenProducto(p) {
   };
 }
 const CAMPOS = 'id,sku,barcode,name,description,description_short,price,price_mayoreo,price_mayoreo_desde_unidades,category_id,category_label,images,active,link_rewrite,source';
+
+
+// ---- Inventario ----
+// Existencias = ps_stock (base) + movimientos del kardex (pos_stock_moves), igual que el panel (función
+// stock_totales). Las entradas de COMPRA no se hacen aquí: solo entran por Recepción de mercancía (con nota
+// escaneada). Aquí se crean borradores de salida, traspaso o ajuste de entrada (devolución, corrección o
+// conteo); un supervisor los aprueba en el panel (Movimientos → Historial) o, si la llave tiene el permiso
+// inventory:approve, con aprobar_movimiento_inventario.
+const ALMACENES = ['rumania', 'puebla', 'queretaro'];
+const NOMBRE_ALMACEN = { rumania: 'CDMX Rumania', puebla: 'Puebla', queretaro: 'Querétaro' };
+function almacenDe(v, campo) {
+  const n = String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
+  if (/rumania|cdmx|popocatepetl/.test(n)) return 'rumania';
+  if (n.includes('puebla')) return 'puebla';
+  if (n.includes('queretaro')) return 'queretaro';
+  throw new ToolError(`${campo}: sucursal no válida ("${v}"). Usa rumania (CDMX), puebla o queretaro.`);
+}
+async function existencias(ids) {
+  const lim = [...new Set(ids.map(Number))].filter(Number.isSafeInteger);
+  const out = {};
+  lim.forEach(id => { out[id] = { rumania: 0, puebla: 0, queretaro: 0 }; });
+  if (!lim.length) return out;
+  const rows = await sbJson('/rest/v1/rpc/stock_totales', { method: 'POST', body: JSON.stringify({ p_ids: lim }) });
+  (rows || []).forEach(r => { if (out[r.id_product] && ALMACENES.includes(r.almacen)) out[r.id_product][r.almacen] = Number(r.cantidad) || 0; });
+  return out;
+}
+const ERRORES_MOV = {
+  tipo_invalido: 'Tipo de movimiento no válido.', sin_productos: 'Faltan las partidas (productos y cantidades).',
+  bodega_invalida: 'Sucursal de origen/destino no válida.', partida_invalida: 'Cada partida necesita id_product y una cantidad entera mayor a 0 (máximo 99,999).',
+  no_borrador: 'Ese movimiento ya no es un borrador (ya se aprobó).', no_encontrado: 'No se encontró ese movimiento.',
+  demasiadas_partidas: 'Demasiadas partidas en un solo movimiento (máximo 500).'
+};
+function errorMovimiento(e) {
+  const m = String(e && e.message || '');
+  for (const [k, v] of Object.entries(ERRORES_MOV)) if (m.includes(k)) return new ToolError(v);
+  if (/INGRESO NO PERMITIDO/i.test(m)) return new ToolError('INGRESO NO PERMITIDO: la mercancía comprada solo entra por Recepción de mercancía (con la nota del proveedor). Por aquí solo se pueden hacer ajustes de entrada por devolución, corrección o conteo.');
+  return e;
+}
+function resumenMovimiento(d) {
+  return { folio: d.folio, tipo: d.tipo, estado: d.estado, desde: d.origen ? NOMBRE_ALMACEN[d.origen] : undefined, hacia: d.destino ? NOMBRE_ALMACEN[d.destino] : undefined,
+    motivo: d.motivo, partidas: (d.items || []).map(i => ({ id_product: i.id_product, nombre: i.name, cantidad: i.qty })),
+    creado_por: d.creado_por, aprobado_por: d.aprobado_por || undefined };
+}
+const PROPIEDADES_PARTIDAS = { type: 'array', minItems: 1, maxItems: 100, items: { type: 'object', required: ['id_product', 'cantidad'], properties: { id_product: { type: 'integer', description: 'id del producto (de buscar_productos)' }, cantidad: { type: 'integer', minimum: 1, description: 'Piezas (entero)' } } } };
+
+const TOOLS_INVENTARIO = [
+  {
+    name: 'consultar_inventario', scope: 'inventory:read',
+    description: 'Existencias de uno o varios productos por sucursal (CDMX Rumania, Puebla, Querétaro). Manda ids de producto o un texto para buscar por nombre.',
+    inputSchema: { type: 'object', properties: { ids: { type: 'array', items: { type: 'integer' }, maxItems: 50 }, texto: { type: 'string', description: 'Nombre o SKU a buscar' }, limite: { type: 'integer', minimum: 1, maximum: 30 } } },
+    annotations: { readOnlyHint: true },
+    async run(a) {
+      let prods;
+      if (Array.isArray(a.ids) && a.ids.length) {
+        const ids = a.ids.map(Number).filter(Number.isSafeInteger).slice(0, 50);
+        prods = await sbJson(`/rest/v1/catalogo_productos?select=id,name,sku,active&id=in.(${ids.join(',')})`);
+      } else {
+        const t = String(a.texto || '').replace(/[%*,()]/g, ' ').trim().slice(0, 80);
+        if (!t) throw new ToolError('Manda ids de producto o un texto para buscar.');
+        const q = encodeURIComponent(`*${t}*`);
+        prods = await sbJson(`/rest/v1/catalogo_productos?select=id,name,sku,active&or=(name.ilike.${q},sku.ilike.${q})&order=name.asc&limit=${Math.min(parseInt(a.limite, 10) || 15, 30)}`);
+      }
+      const ex = await existencias(prods.map(p => p.id));
+      return { productos: prods.map(p => ({ id: p.id, nombre: p.name, activo: p.active !== false,
+        existencias: { 'CDMX Rumania': ex[p.id].rumania, Puebla: ex[p.id].puebla, Querétaro: ex[p.id].queretaro }, total: ex[p.id].rumania + ex[p.id].puebla + ex[p.id].queretaro })) };
+    }
+  },
+  {
+    name: 'listar_movimientos_inventario', scope: 'inventory:read',
+    description: 'Lista movimientos de inventario (borradores pendientes de aprobar o ya aprobados): folio, tipo, sucursales, motivo y partidas.',
+    inputSchema: { type: 'object', properties: { estado: { type: 'string', enum: ['borrador', 'aprobado'], description: 'Por defecto borrador (pendientes)' }, limite: { type: 'integer', minimum: 1, maximum: 50 } } },
+    annotations: { readOnlyHint: true },
+    async run(a) {
+      const estado = a.estado === 'aprobado' ? 'aprobado' : 'borrador';
+      const rows = await sbJson(`/rest/v1/mov_documentos?select=*&estado=eq.${estado}&order=creado_at.desc&limit=${Math.min(parseInt(a.limite, 10) || 20, 50)}`);
+      return { total: rows.length, movimientos: rows.map(resumenMovimiento) };
+    }
+  },
+  {
+    name: 'crear_movimiento_inventario', scope: 'inventory:write',
+    description: 'Crea un BORRADOR de movimiento de inventario; no cambia las existencias hasta que se apruebe. tipo "salida" (merma, regalo, consumo…: pide desde y motivo), "traspaso" (desde una sucursal hacia otra) o "ajuste_entrada" (devolución, corrección o conteo: pide hacia, tipo_ajuste y motivo de al menos 5 letras). Las compras NO se registran aquí: entran por Recepción de mercancía. Sucursales: rumania (CDMX), puebla, queretaro.',
+    inputSchema: {
+      type: 'object', required: ['tipo', 'partidas'],
+      properties: {
+        tipo: { type: 'string', enum: ['salida', 'traspaso', 'ajuste_entrada'] },
+        desde: { type: 'string', description: 'Sucursal de origen (salida y traspaso)' },
+        hacia: { type: 'string', description: 'Sucursal de destino (traspaso y ajuste_entrada)' },
+        tipo_ajuste: { type: 'string', enum: ['devolucion', 'correccion', 'conteo'], description: 'Solo para ajuste_entrada' },
+        motivo: { type: 'string', description: 'Motivo claro (se guarda en el movimiento)' },
+        partidas: PROPIEDADES_PARTIDAS
+      }
+    },
+    annotations: { destructiveHint: false },
+    async run(a, ctx) {
+      const tipo = ['salida', 'traspaso', 'ajuste_entrada'].includes(a.tipo) ? a.tipo : null;
+      if (!tipo) throw new ToolError('tipo debe ser salida, traspaso o ajuste_entrada.');
+      const origen = tipo === 'ajuste_entrada' ? null : almacenDe(a.desde, 'desde');
+      const destino = tipo === 'salida' ? null : almacenDe(a.hacia, 'hacia');
+      const detalle = String(a.motivo || '').trim().slice(0, 250);
+      if (!detalle) throw new ToolError('Falta el motivo.');
+      let motivo = detalle;
+      if (tipo === 'ajuste_entrada') {
+        if (!['devolucion', 'correccion', 'conteo'].includes(a.tipo_ajuste)) throw new ToolError('Un ajuste de entrada necesita tipo_ajuste: devolucion, correccion o conteo.');
+        if (detalle.length < 5) throw new ToolError('El motivo del ajuste debe tener al menos 5 caracteres.');
+        motivo = `${a.tipo_ajuste}: ${detalle}`;
+      }
+      const partidas = Array.isArray(a.partidas) ? a.partidas.slice(0, 100) : [];
+      if (!partidas.length) throw new ToolError('Faltan las partidas.');
+      const items = partidas.map(p => ({ id_product: Number(p.id_product), qty: Number(p.cantidad) }));
+      if (items.some(i => !Number.isSafeInteger(i.id_product) || !Number.isInteger(i.qty) || i.qty <= 0)) throw new ToolError(ERRORES_MOV.partida_invalida);
+      const prods = await sbJson(`/rest/v1/catalogo_productos?select=id,name,sku&id=in.(${items.map(i => i.id_product).join(',')})`);
+      const porId = new Map(prods.map(p => [p.id, p]));
+      const falta = items.filter(i => !porId.has(i.id_product)).map(i => i.id_product);
+      if (falta.length) throw new ToolError(`No existen estos productos: ${falta.join(', ')}.`);
+      items.forEach(i => { i.name = porId.get(i.id_product).name; i.sku = porId.get(i.id_product).sku; });
+      let advertencias = [];
+      if (origen) {
+        const ex = await existencias(items.map(i => i.id_product));
+        advertencias = items.filter(i => i.qty > ex[i.id_product][origen]).map(i => `${i.name}: pides ${i.qty} y en ${NOMBRE_ALMACEN[origen]} hay ${ex[i.id_product][origen]}.`);
+      }
+      let doc;
+      try {
+        doc = await sbJson('/rest/v1/rpc/mov_doc_save_core', { method: 'POST', body: JSON.stringify({ p_id: null, p_tipo: tipo === 'ajuste_entrada' ? 'entrada' : tipo, p_origen: origen, p_destino: destino, p_motivo: motivo, p_items: items, p_por: `Asistente (MCP: ${ctx.key.nombre})` }) });
+      } catch (e) { throw errorMovimiento(e); }
+      return { creado: true, ...resumenMovimiento(doc), advertencias_existencias: advertencias.length ? advertencias : undefined,
+        siguiente_paso: 'Es un borrador: el inventario NO ha cambiado. Un supervisor lo aprueba en el panel (Movimientos de inventario → Historial → Aprobar)' + (tieneScope(ctx.key.scopes, 'inventory:approve') ? ', o puedes aprobarlo con aprobar_movimiento_inventario si el usuario lo confirma.' : '.') };
+    }
+  },
+  {
+    name: 'aprobar_movimiento_inventario', scope: 'inventory:approve',
+    description: 'Aprueba un borrador de movimiento (por su folio) y lo APLICA al inventario: no se puede deshacer desde aquí (solo revirtiéndolo en el panel). Úsalo únicamente cuando el usuario lo pida de forma explícita, mostrándole antes el movimiento; manda confirmar=true. Las salidas y traspasos se rechazan si no hay existencia suficiente.',
+    inputSchema: { type: 'object', required: ['folio', 'confirmar'], properties: { folio: { type: 'string', description: 'Folio del borrador, ej. SAL-261022-0001' }, confirmar: { type: 'boolean', description: 'true = el usuario confirmó aplicar este movimiento' } } },
+    annotations: { destructiveHint: true },
+    async run(a, ctx) {
+      if (a.confirmar !== true) throw new ToolError('Para aprobar necesito confirmar=true, después de que el usuario confirme el movimiento.');
+      const folio = String(a.folio || '').trim();
+      if (!/^[A-Z]{2,3}-[A-Za-z0-9-]{3,40}$/.test(folio)) throw new ToolError('Folio inválido.');
+      const [d] = await sbJson(`/rest/v1/mov_documentos?select=*&folio=eq.${encodeURIComponent(folio)}`);
+      if (!d) throw new ToolError('No se encontró ese movimiento.');
+      if (d.estado !== 'borrador') throw new ToolError(`Ese movimiento ya está ${d.estado}.`);
+      const origen = d.tipo === 'entrada' ? null : d.origen;
+      if (origen) {
+        const necesita = {};
+        (d.items || []).forEach(i => { necesita[i.id_product] = (necesita[i.id_product] || 0) + Number(i.qty); });
+        const ex = await existencias(Object.keys(necesita));
+        const corto = (d.items || []).filter((i, k, arr) => arr.findIndex(x => x.id_product === i.id_product) === k && necesita[i.id_product] > (ex[i.id_product] || {})[origen]);
+        if (corto.length) throw new ToolError(`No hay existencia suficiente en ${NOMBRE_ALMACEN[origen]} para: ` + corto.map(i => `${i.name} (necesita ${necesita[i.id_product]}, hay ${ex[i.id_product][origen]})`).join('; ') + '.');
+      }
+      let aprobado;
+      try {
+        aprobado = await sbJson('/rest/v1/rpc/mov_doc_approve_core', { method: 'POST', body: JSON.stringify({ p_id: d.id, p_por: `Asistente (MCP: ${ctx.key.nombre})` }) });
+      } catch (e) { throw errorMovimiento(e); }
+      const ids = (aprobado.items || []).map(i => i.id_product);
+      const ex = await existencias(ids);
+      return { aprobado: true, ...resumenMovimiento(aprobado),
+        existencias_ahora: (aprobado.items || []).map(i => ({ nombre: i.name, 'CDMX Rumania': ex[i.id_product].rumania, Puebla: ex[i.id_product].puebla, Querétaro: ex[i.id_product].queretaro })) };
+    }
+  }
+];
 
 // ---- Herramientas ----
 const TOOLS = [
@@ -337,14 +498,15 @@ const TOOLS = [
       if (!p) throw new ToolError('No existe un artículo con ese id.');
       return { guardado: true, id: p.id, estado: p.estado, url: `${ORIGIN}/blog/${p.slug}`, visible: p.estado === 'publicado' && new Date(p.publicado_at) <= new Date() };
     }
-  }
+  },
+  ...TOOLS_INVENTARIO
 ];
 
-const INSTRUCCIONES = 'Herramientas de Mi Fiestashop (artículos para fiestas, México). Precios en pesos MXN por pieza. Antes de crear un producto busca si ya existe con buscar_productos. Los productos nuevos quedan ocultos salvo que el usuario pida publicarlos. Para el blog escribe en español de México, con <h2> por sección y enlaces a productos de la tienda. Para cambiar una foto usa cambiar_foto_producto (adjunta el archivo o manda la imagen en imagen_base64); no hace falta subirla antes a otro sitio.';
+const INSTRUCCIONES = 'Herramientas de Mi Fiestashop (artículos para fiestas, México). Precios en pesos MXN por pieza. Antes de crear un producto busca si ya existe con buscar_productos. Los productos nuevos quedan ocultos salvo que el usuario pida publicarlos. Para el blog escribe en español de México, con <h2> por sección y enlaces a productos de la tienda. Inventario: consulta existencias con consultar_inventario; para cambiarlo crea un borrador con crear_movimiento_inventario (salida, traspaso o ajuste de entrada; las compras entran solo por Recepción de mercancía) y nunca lo apruebes sin que el usuario lo confirme. Para cambiar una foto usa cambiar_foto_producto (adjunta el archivo o manda la imagen en imagen_base64); no hace falta subirla antes a otro sitio.';
 
 function tieneScope(scopes, s) { return scopes.includes('*') || scopes.includes(s); }
 
-async function atender(msg, scopes) {
+async function atender(msg, scopes, key) {
   const { id, method, params } = msg || {};
   const ok = result => ({ jsonrpc: '2.0', id, result });
   const err = (code, message) => ({ jsonrpc: '2.0', id: id ?? null, error: { code, message } });
@@ -356,7 +518,7 @@ async function atender(msg, scopes) {
     return ok({
       protocolVersion: PROTOCOLOS.includes(pedida) ? pedida : PROTOCOLOS[0],
       capabilities: { tools: { listChanged: false } },
-      serverInfo: { name: 'mifiestashop', title: 'Mi Fiestashop', version: '1.0.0' },
+      serverInfo: { name: 'mifiestashop', title: 'Mi Fiestashop', version: '1.1.0' },
       instructions: INSTRUCCIONES
     });
   }
@@ -369,7 +531,7 @@ async function atender(msg, scopes) {
     if (!tool) return err(-32602, `Herramienta desconocida: ${params && params.name}`);
     if (!tieneScope(scopes, tool.scope)) return ok({ isError: true, content: [{ type: 'text', text: `Esta llave no tiene el permiso "${tool.scope}". Créala de nuevo en el panel (API para Desarrolladores) con ese permiso.` }] });
     try {
-      const data = await tool.run((params && params.arguments) || {});
+      const data = await tool.run((params && params.arguments) || {}, { key });
       return ok({ content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: data });
     } catch (e) {
       return ok({ isError: true, content: [{ type: 'text', text: e instanceof ToolError ? e.message : `Error interno: ${e.message}` }] });
@@ -399,12 +561,12 @@ module.exports = async function handler(req, res) {
   if (!body) { res.status(400).json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'JSON inválido' } }); return; }
 
   if (Array.isArray(body)) {
-    const out = (await Promise.all(body.map(m => atender(m, scopes)))).filter(Boolean);
+    const out = (await Promise.all(body.map(m => atender(m, scopes, auth.key)))).filter(Boolean);
     if (!out.length) { res.status(202).end(); return; }
     res.status(200).json(out);
     return;
   }
-  const out = await atender(body, scopes);
+  const out = await atender(body, scopes, auth.key);
   if (!out) { res.status(202).end(); return; }
   res.status(200).json(out);
 };

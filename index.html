@@ -5411,6 +5411,9 @@
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="orders:write"> Pedidos: crear/editar</label>
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="customers:read"> Clientes: leer</label>
             <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="blog:write"> Blog: escribir y publicar</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="inventory:read"> Inventario: consultar (existencias y movimientos)</label>
+            <label style="display:flex; align-items:center; gap:6px;"><input type="checkbox" class="apiKeyScope" value="inventory:write"> Inventario: crear borradores de movimientos</label>
+            <label style="display:flex; align-items:center; gap:6px;" title="Permite aprobar un borrador y aplicarlo al inventario, sin que lo revise una persona en el panel."><input type="checkbox" class="apiKeyScope" value="inventory:approve"> Inventario: aprobar y aplicar movimientos ⚠️</label>
           </div>
         </div>
         <div id="apiKeyModalMsg" class="hidden" style="color:#ef4444; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); padding:10px; border-radius:8px; font-size:13px; margin-bottom:14px; text-align:center;"></div>
@@ -19097,7 +19100,8 @@ const API_KEY_SCOPE_LABELS = {
   'categories:read': 'Categorías: leer',
   'orders:read': 'Pedidos: leer', 'orders:write': 'Pedidos: crear/editar',
   'customers:read': 'Clientes: leer',
-  'blog:write': 'Blog: escribir y publicar'
+  'blog:write': 'Blog: escribir y publicar',
+  'inventory:read': 'Inventario: consultar', 'inventory:write': 'Inventario: crear borradores', 'inventory:approve': 'Inventario: aprobar y aplicar'
 };
 let apiKeysAdminCache = [];
 
