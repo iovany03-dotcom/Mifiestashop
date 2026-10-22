@@ -19138,7 +19138,9 @@ function renderApiKeysAdminTable(rows) {
       </td>
       <td style="font-size:12px; color:var(--text-muted);">${k.last_used_at ? new Date(k.last_used_at).toLocaleString('es-MX') : 'Nunca'}</td>
       <td style="text-align:center; white-space:nowrap;">
-        <button class="btn small secondary" onclick="toggleApiKeyActivo(${k.id}, false)" ${k.activo ? '' : 'disabled'}>Revocar</button>
+        ${k.activo
+          ? `<button class="btn small secondary" onclick="toggleApiKeyActivo(${k.id}, false)">Revocar</button>`
+          : `<button class="btn small secondary" onclick="eliminarApiKey(${k.id})" title="Esta llave ya está revocada (no funciona). Eliminarla la quita de la lista para siempre.">Eliminar</button>`}
       </td>
     </tr>`).join('');
 }
@@ -19196,6 +19198,19 @@ async function saveApiKey() {
 function copyRevealedApiKey() {
   if (!lastRevealedApiKey) return;
   navigator.clipboard?.writeText(lastRevealedApiKey).catch(() => {});
+}
+
+async function eliminarApiKey(id) {
+  const k = apiKeysAdminCache.find(x => String(x.id) === String(id));
+  if (!confirm(`¿Eliminar la llave "${k ? k.nombre : id}"? Ya está revocada, así que no funciona; al eliminarla desaparece de la lista y no se puede recuperar.`)) return;
+  try {
+    await sbRpc('rpc_api_key_eliminar', { ...getSessionCredsParams(), p_id: id });
+    apiKeysAdminCache = apiKeysAdminCache.filter(x => String(x.id) !== String(id));
+    renderApiKeysAdminTable(apiKeysAdminCache);
+  } catch (e) {
+    alert(/llave_activa/.test(String(e.message)) ? 'Esa llave está activa: primero revócala.' : 'No se pudo eliminar: ' + e.message);
+    loadApiKeysAdmin();
+  }
 }
 
 async function toggleApiKeyActivo(id, activo) {
