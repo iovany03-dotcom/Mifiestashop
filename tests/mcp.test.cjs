@@ -166,7 +166,7 @@ test('inventario: las herramientas se ven según el permiso de la llave', async 
   try {
     mockInventario(['inventory:read']);
     let res = await llamar({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
-    assert.deepEqual(res.body.result.tools.map(t => t.name).sort(), ['consultar_inventario', 'listar_movimientos_inventario']);
+    assert.deepEqual(res.body.result.tools.map(t => t.name).sort(), ['consultar_inventario', 'listar_movimientos_inventario', 'listar_recepciones', 'ver_recepcion']);
     mockInventario(['inventory:read', 'inventory:write']);
     res = await llamar({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
     assert.ok(res.body.result.tools.some(t => t.name === 'crear_movimiento_inventario'));
@@ -239,5 +239,74 @@ test('inventario: aprobar exige confirmar, respeta el stock y aplica el borrador
     mockInventario(['inventory:approve'], { documento: { ...doc, estado: 'aprobado' } });
     r = await llamarTool('aprobar_movimiento_inventario', { folio: doc.folio, confirmar: true });
     assert.match(r.content[0].text, /ya está aprobado/);
+  } finally { global.fetch = prev; }
+});
+
+// ---------- Recepciones (entradas de compra) ----------
+function mockRecepcion(scopes, { lineas, estado = 'pendiente_autorizacion', autorizar } = {}) {
+  const llamadas = [];
+  const base = { id: 7, folio: 'REC-261020-0003', almacen: 'rumania', estado, nota_folio: '0051', nota_total: 4505, proveedor: 'KARLA sombrero' };
+  global.fetch = async (url, opts = {}) => {
+    const u = decodeURIComponent(String(url));
+    llamadas.push({ u, opts });
+    const json = d => ({ ok: true, status: 200, json: async () => d, text: async () => '' });
+    if (u.includes('/rest/v1/api_keys?key_hash')) return json([{ id: 1, nombre: 'ChatGPT', scopes, activo: true }]);
+    if (u.includes('/rest/v1/api_keys?id=')) return json(null);
+    if (u.includes('/rest/v1/recepciones?select=id,estado&folio=')) return json([{ id: 7, estado }]);
+    if (u.includes('/rest/v1/recepciones?select=')) return json([{ id: 7, folio: base.folio, almacen: 'rumania', estado, nota_folio: '0051', nota_total: 4505, creado_por: 'Halil', proveedor_id: 3 }]);
+    if (u.includes('/rest/v1/proveedores_compra')) return json([{ id: 3, nombre: 'KARLA sombrero' }]);
+    if (u.includes('/rpc/recep_json')) return json({ recepcion: base, lineas });
+    if (u.includes('/rpc/recep_autorizar_core')) {
+      if (autorizar instanceof Error) return { ok: false, status: 400, json: async () => ({}), text: async () => JSON.stringify({ message: autorizar.message }) };
+      return json(autorizar == null ? 2 : autorizar);
+    }
+    return json([]);
+  };
+  return llamadas;
+}
+const LINEAS = [
+  { id: 20, renglon: 1, codigo: '0051', producto: { name: 'Sombrero A' }, id_product: 1, cantidad_nota: 53, esperado_piezas: 106, cantidad_recibida: 106, danadas: 0, diferencia: 0, incidencia: false },
+  { id: 21, renglon: 1, codigo: '0051', producto: { name: 'Sombrero B' }, id_product: 2, cantidad_nota: 10, esperado_piezas: 10, cantidad_recibida: null, danadas: 0, incidencia: false }
+];
+
+test('recepciones: listar y ver el detalle con el estado de cada renglón', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  mockRecepcion(['inventory:read'], { lineas: LINEAS });
+  try {
+    let r = await llamarTool('listar_recepciones', {});
+    assert.equal(r.structuredContent.recepciones[0].proveedor, 'KARLA sombrero');
+    r = await llamarTool('ver_recepcion', { folio: 'REC-261020-0003' });
+    assert.deepEqual(r.structuredContent.renglones.map(x => x.estado), ['listo para ingresar', 'falta contar']);
+    r = await llamarTool('ver_recepcion', { folio: 'x' });
+    assert.equal(r.isError, true);
+  } finally { global.fetch = prev; }
+});
+
+test('recepciones: autorizar el ingreso exige permiso, confirmar y respeta las reglas de la base', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  try {
+    mockRecepcion(['inventory:read', 'inventory:write'], { lineas: LINEAS });
+    let r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.match(r.content[0].text, /inventory:approve/);
+
+    let llamadas = mockRecepcion(['inventory:approve'], { lineas: LINEAS });
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003' });
+    assert.match(r.content[0].text, /confirmar=true/);
+    assert.ok(!llamadas.some(l => l.u.includes('/rpc/recep_autorizar_core')));
+
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.equal(r.isError, undefined, JSON.stringify(r));
+    assert.equal(r.structuredContent.renglones_ingresados, 2);
+    const b = JSON.parse(llamadas.find(l => l.u.includes('/rpc/recep_autorizar_core')).opts.body);
+    assert.deepEqual([b.p_id, b.p_lineas, b.p_por], [7, null, 'Asistente (MCP: ChatGPT)']);
+    assert.deepEqual(r.structuredContent.pendientes.map(p => p.id_linea), [20, 21], 'el detalle se lee otra vez; aquí el mock no marca ingresados');
+
+    mockRecepcion(['inventory:approve'], { lineas: LINEAS, autorizar: new Error('nada_que_ingresar') });
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.equal(r.isError, true); assert.match(r.content[0].text, /No hay renglones listos/);
+
+    mockRecepcion(['inventory:approve'], { lineas: LINEAS, estado: 'conciliada' });
+    r = await llamarTool('autorizar_ingreso_recepcion', { folio: 'REC-261020-0003', confirmar: true });
+    assert.match(r.content[0].text, /conciliada/);
   } finally { global.fetch = prev; }
 });

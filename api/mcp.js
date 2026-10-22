@@ -133,7 +133,10 @@ const ERRORES_MOV = {
   tipo_invalido: 'Tipo de movimiento no válido.', sin_productos: 'Faltan las partidas (productos y cantidades).',
   bodega_invalida: 'Sucursal de origen/destino no válida.', partida_invalida: 'Cada partida necesita id_product y una cantidad entera mayor a 0 (máximo 99,999).',
   no_borrador: 'Ese movimiento ya no es un borrador (ya se aprobó).', no_encontrado: 'No se encontró ese movimiento.',
-  demasiadas_partidas: 'Demasiadas partidas en un solo movimiento (máximo 500).'
+  demasiadas_partidas: 'Demasiadas partidas en un solo movimiento (máximo 500).',
+  recepcion_cerrada: 'Esa recepción ya está cerrada, cancelada o procesándose.',
+  nada_que_ingresar: 'No hay renglones listos para ingresar: falta identificar el producto, contar, o resolver diferencias/dañadas (eso lo hace un supervisor en el panel).',
+  linea_no_lista: 'Alguno de los renglones pedidos no está listo para ingresar (falta identificar, contar o resolver diferencias).'
 };
 function errorMovimiento(e) {
   const m = String(e && e.message || '');
@@ -147,6 +150,35 @@ function resumenMovimiento(d) {
     creado_por: d.creado_por, aprobado_por: d.aprobado_por || undefined };
 }
 const PROPIEDADES_PARTIDAS = { type: 'array', minItems: 1, maxItems: 100, items: { type: 'object', required: ['id_product', 'cantidad'], properties: { id_product: { type: 'integer', description: 'id del producto (de buscar_productos)' }, cantidad: { type: 'integer', minimum: 1, description: 'Piezas (entero)' } } } };
+
+// Recepción completa (cabecera + renglones) por folio, con la función recep_json del panel.
+async function recepcionPorFolio(folio) {
+  const f = String(folio || '').trim();
+  if (!/^REC-[0-9A-Za-z-]{4,30}$/.test(f)) throw new ToolError('Folio de recepción inválido (ej. REC-261020-0003).');
+  const [r] = await sbJson(`/rest/v1/recepciones?select=id,estado&folio=eq.${encodeURIComponent(f)}`);
+  if (!r) throw new ToolError('No se encontró esa recepción.');
+  const j = await sbJson('/rest/v1/rpc/recep_json', { method: 'POST', body: JSON.stringify({ p_id: r.id }) });
+  return { ...r, json: j };
+}
+function estadoRenglon(l) {
+  if (l.ingresado_at) return 'ingresado';
+  if (!l.id_product || l.revisar) return 'falta identificar el producto';
+  if (l.cantidad_recibida == null) return 'falta contar';
+  if (l.incidencia && !l.diferencia_resuelta) return 'diferencia o dañadas sin resolver (supervisor)';
+  return 'listo para ingresar';
+}
+function detalleRecepcion(r) {
+  const j = r.json || {}, c = j.recepcion || {};
+  return {
+    recepcion: { folio: c.folio, proveedor: c.proveedor, sucursal: NOMBRE_ALMACEN[c.almacen] || c.almacen, estado: c.estado, nota: c.nota_folio || undefined, total_nota: c.nota_total != null ? Number(c.nota_total) : undefined },
+    renglones: (j.lineas || []).map(l => ({
+      id_linea: l.id, renglon: l.renglon, codigo: l.codigo, descripcion: l.descripcion || undefined, producto: l.producto ? l.producto.name : undefined,
+      cantidad_nota: l.cantidad_nota != null ? Number(l.cantidad_nota) : undefined, piezas_esperadas: l.esperado_piezas != null ? Number(l.esperado_piezas) : undefined,
+      piezas_contadas: l.cantidad_recibida != null ? Number(l.cantidad_recibida) : undefined, danadas: Number(l.danadas) || 0, diferencia: l.diferencia != null ? Number(l.diferencia) : undefined,
+      ingresado: !!l.ingresado_at, estado: estadoRenglon(l)
+    }))
+  };
+}
 
 const TOOLS_INVENTARIO = [
   {
@@ -233,7 +265,7 @@ const TOOLS_INVENTARIO = [
   },
   {
     name: 'aprobar_movimiento_inventario', scope: 'inventory:approve',
-    description: 'Aprueba un borrador de movimiento (por su folio) y lo APLICA al inventario: no se puede deshacer desde aquí (solo revirtiéndolo en el panel). Úsalo únicamente cuando el usuario lo pida de forma explícita, mostrándole antes el movimiento; manda confirmar=true. Las salidas y traspasos se rechazan si no hay existencia suficiente.',
+    description: 'Aprueba un borrador de movimiento (salida, traspaso o ajuste de entrada, por su folio) y lo APLICA al inventario: no se puede deshacer desde aquí (solo revirtiéndolo en el panel). Úsalo únicamente cuando el usuario lo pida de forma explícita, mostrándole antes el movimiento; manda confirmar=true. Las salidas y traspasos se rechazan si no hay existencia suficiente.',
     inputSchema: { type: 'object', required: ['folio', 'confirmar'], properties: { folio: { type: 'string', description: 'Folio del borrador, ej. SAL-261022-0001' }, confirmar: { type: 'boolean', description: 'true = el usuario confirmó aplicar este movimiento' } } },
     annotations: { destructiveHint: true },
     async run(a, ctx) {
@@ -259,6 +291,44 @@ const TOOLS_INVENTARIO = [
       const ex = await existencias(ids);
       return { aprobado: true, ...resumenMovimiento(aprobado),
         existencias_ahora: (aprobado.items || []).map(i => ({ nombre: i.name, 'CDMX Rumania': ex[i.id_product].rumania, Puebla: ex[i.id_product].puebla, Querétaro: ex[i.id_product].queretaro })) };
+    }
+  },
+  {
+    name: 'listar_recepciones', scope: 'inventory:read',
+    description: 'Recepciones de mercancía (compras con nota del proveedor): folio, proveedor, sucursal, estado y total de la nota. Por defecto las que aún no se ingresan al inventario.',
+    inputSchema: { type: 'object', properties: { estado: { type: 'string', enum: ['pendientes', 'pendiente_autorizacion', 'con_diferencias', 'pendiente_conteo', 'pendiente_identificacion', 'parcial', 'conciliada', 'cancelada'], description: 'Por defecto "pendientes" (todas las abiertas)' }, limite: { type: 'integer', minimum: 1, maximum: 50 } } },
+    annotations: { readOnlyHint: true },
+    async run(a) {
+      const est = a.estado && a.estado !== 'pendientes' ? `estado=eq.${encodeURIComponent(String(a.estado).replace(/[^a-z_]/g, ''))}` : 'estado=in.(borrador,procesando,pendiente_identificacion,pendiente_conteo,con_diferencias,pendiente_autorizacion,parcial)';
+      const rows = await sbJson(`/rest/v1/recepciones?select=id,folio,almacen,estado,nota_folio,nota_fecha,nota_total,creado_por,created_at,proveedor_id&${est}&order=id.desc&limit=${Math.min(parseInt(a.limite, 10) || 20, 50)}`);
+      const provs = rows.length ? await sbJson(`/rest/v1/proveedores_compra?select=id,nombre&id=in.(${[...new Set(rows.map(r => r.proveedor_id))].join(',')})`) : [];
+      const nombre = new Map(provs.map(p => [p.id, p.nombre]));
+      return { total: rows.length, recepciones: rows.map(r => ({ folio: r.folio, proveedor: nombre.get(r.proveedor_id) || '', sucursal: NOMBRE_ALMACEN[r.almacen] || r.almacen, estado: r.estado, nota: r.nota_folio || undefined, total_nota: r.nota_total != null ? Number(r.nota_total) : undefined, creada_por: r.creado_por })) };
+    }
+  },
+  {
+    name: 'ver_recepcion', scope: 'inventory:read',
+    description: 'Detalle de una recepción de mercancía por su folio: renglones de la nota, producto vinculado, piezas esperadas, contadas, dañadas, diferencia y si ya ingresó al inventario.',
+    inputSchema: { type: 'object', required: ['folio'], properties: { folio: { type: 'string', description: 'Ej. REC-261020-0003' } } },
+    annotations: { readOnlyHint: true },
+    async run(a) { return detalleRecepcion(await recepcionPorFolio(a.folio)); }
+  },
+  {
+    name: 'autorizar_ingreso_recepcion', scope: 'inventory:approve',
+    description: 'Autoriza el ingreso al inventario de una recepción de mercancía (la compra con su nota): entra lo contado menos lo dañado de los renglones que ya están identificados, contados y sin diferencias pendientes. Úsalo solo cuando el usuario lo pida de forma explícita, mostrándole antes el detalle (ver_recepcion); manda confirmar=true. No resuelve diferencias ni cuenta: eso se hace en el panel.',
+    inputSchema: { type: 'object', required: ['folio', 'confirmar'], properties: { folio: { type: 'string' }, confirmar: { type: 'boolean', description: 'true = el usuario confirmó el ingreso' }, renglones: { type: 'array', items: { type: 'integer' }, description: 'ids de línea (campo id_linea de ver_recepcion) para ingresar solo algunos; si se omite entran todos los que estén listos' } } },
+    annotations: { destructiveHint: true },
+    async run(a, ctx) {
+      if (a.confirmar !== true) throw new ToolError('Para autorizar necesito confirmar=true, después de que el usuario confirme el ingreso.');
+      const r = await recepcionPorFolio(a.folio);
+      if (['cancelada', 'conciliada'].includes(r.estado)) throw new ToolError(`Esa recepción ya está ${r.estado === 'conciliada' ? 'conciliada (todo ingresado)' : 'cancelada'}.`);
+      const lineas = Array.isArray(a.renglones) && a.renglones.length ? a.renglones.map(Number).filter(Number.isSafeInteger) : null;
+      let n;
+      try {
+        n = await sbJson('/rest/v1/rpc/recep_autorizar_core', { method: 'POST', body: JSON.stringify({ p_id: r.id, p_lineas: lineas, p_por: `Asistente (MCP: ${ctx.key.nombre})` }) });
+      } catch (e) { throw errorMovimiento(e); }
+      const d = detalleRecepcion(await recepcionPorFolio(a.folio));
+      return { autorizado: true, renglones_ingresados: n, recepcion: d.recepcion, pendientes: d.renglones.filter(x => !x.ingresado).map(x => ({ id_linea: x.id_linea, codigo: x.codigo, producto: x.producto, falta: x.estado })) };
     }
   }
 ];
@@ -502,7 +572,7 @@ const TOOLS = [
   ...TOOLS_INVENTARIO
 ];
 
-const INSTRUCCIONES = 'Herramientas de Mi Fiestashop (artículos para fiestas, México). Precios en pesos MXN por pieza. Antes de crear un producto busca si ya existe con buscar_productos. Los productos nuevos quedan ocultos salvo que el usuario pida publicarlos. Para el blog escribe en español de México, con <h2> por sección y enlaces a productos de la tienda. Inventario: consulta existencias con consultar_inventario; para cambiarlo crea un borrador con crear_movimiento_inventario (salida, traspaso o ajuste de entrada; las compras entran solo por Recepción de mercancía) y nunca lo apruebes sin que el usuario lo confirme. Para cambiar una foto usa cambiar_foto_producto (adjunta el archivo o manda la imagen en imagen_base64); no hace falta subirla antes a otro sitio.';
+const INSTRUCCIONES = 'Herramientas de Mi Fiestashop (artículos para fiestas, México). Precios en pesos MXN por pieza. Antes de crear un producto busca si ya existe con buscar_productos. Los productos nuevos quedan ocultos salvo que el usuario pida publicarlos. Para el blog escribe en español de México, con <h2> por sección y enlaces a productos de la tienda. Inventario: consulta existencias con consultar_inventario; para cambiarlo crea un borrador con crear_movimiento_inventario (salida, traspaso o ajuste de entrada). Las compras con nota del proveedor se revisan con listar_recepciones / ver_recepcion y, si el usuario lo pide, se ingresan con autorizar_ingreso_recepcion y nunca lo apruebes sin que el usuario lo confirme. Para cambiar una foto usa cambiar_foto_producto (adjunta el archivo o manda la imagen en imagen_base64); no hace falta subirla antes a otro sitio.';
 
 function tieneScope(scopes, s) { return scopes.includes('*') || scopes.includes(s); }
 
