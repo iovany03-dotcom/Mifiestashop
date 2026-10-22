@@ -9,11 +9,13 @@
 //
 // Requiere la variable de entorno SUPABASE_SERVICE_ROLE_KEY (ya configurada
 // en Vercel para api/mp-webhook.js).
+const { exigirSesion } = require('../lib/sesion-panel.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!(await exigirSesion(req, res))) return;
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) {

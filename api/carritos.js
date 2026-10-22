@@ -11,8 +11,8 @@
 // lectura, a partir de la fecha de actualización y de si tiene folio de
 // pedido — no se guarda estático, porque "abandonado" depende de cuánto
 // tiempo ha pasado, no de un valor fijo.
+const { exigirSesion } = require('../lib/sesion-panel.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 function computeStatus(dateUpd, orderReference) {
   const hoursSinceUpdate = (Date.now() - new Date(dateUpd).getTime()) / 36e5;
@@ -27,7 +27,7 @@ async function fetchPsCarritos() {
   // PrestaShop es compartida y antes se colaban carritos vacíos de otras
   // tiendas (se veían como "Invitado" en $0).
   const url = `${SUPABASE_URL}/rest/v1/ps_carritos?select=${select}&id_shop=eq.50&order=id.desc`;
-  const r = await fetch(url, { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+  const r = await fetch(url, { headers: { apikey: LLAVE_SERVICIO(), Authorization: `Bearer ${LLAVE_SERVICIO()}` } });
   if (!r.ok) throw new Error(`Supabase error ${r.status}`);
   const rawCarts = await r.json();
 
@@ -77,9 +77,11 @@ async function fetchCarritosWeb(serviceRoleKey) {
   });
 }
 
+const LLAVE_SERVICIO = () => process.env.SUPABASE_SERVICE_ROLE_KEY;
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!(await exigirSesion(req, res))) return;
 
   try {
     const [psCarts, webCarts] = await Promise.all([

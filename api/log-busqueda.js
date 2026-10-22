@@ -38,7 +38,8 @@ module.exports = async function handler(req, res) {
     const r = await fetch(`${SUPABASE_URL}/rest/v1/busquedas_tienda`, {
       method: 'POST',
       headers: {
-        apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        // busquedas_tienda ya no se deja escribir ni leer con la llave anon.
+        apikey: process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY, Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_ANON_KEY}`,
         'Content-Type': 'application/json', Prefer: 'return=minimal'
       },
       body: JSON.stringify({ query, results_count: resultsCount })

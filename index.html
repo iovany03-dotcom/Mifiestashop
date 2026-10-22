@@ -84,7 +84,7 @@
      al servir una página de producto (ver middleware.js); si esto se
      mantiene vacío, applyProductSeoTags() en el cliente lo llena igual al
      cargar, así que nunca queda JSON inválido dentro de la etiqueta. -->
-<script id="ldJsonProduct" type="application/ld+json"></script>
+<script id="ldJsonProduct" type="application/ld+json">{"@context":"https://schema.org"}</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -989,6 +989,13 @@
   }
   .store-search-suggest-all:hover { background: #faf7fb; }
   .catalog-search-title { font-size: 1.4rem; font-weight: 800; color: #2e1065; margin: 0 0 12px; overflow-wrap: anywhere; }
+  .catalog-cat-intro { color: #4b3f5c; line-height: 1.6; margin: 0 0 16px; }
+  .catalog-cat-intro h2 { font-size: 1.1rem; color: #2e1065; margin: 14px 0 6px; }
+  .catalog-cat-faq { margin-top: 32px; }
+  .catalog-cat-faq h2 { font-size: 1.2rem; color: #2e1065; margin: 0 0 10px; }
+  .catalog-cat-faq details { border: 1px solid #eadff5; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: #fff; }
+  .catalog-cat-faq summary { font-weight: 700; color: #2e1065; cursor: pointer; }
+  .catalog-cat-faq details p { margin: 8px 0 0; color: #4b3f5c; line-height: 1.55; }
   .store-header-left {
     display: flex; align-items: center; gap: 30px;
   }
@@ -2170,6 +2177,7 @@
         <div id="catalogStatus" style="font-size:13px; color:#8b7d97; margin-bottom:14px;"></div>
         <div class="store-prods-grid" id="catalogGrid"></div>
         <div class="catalog-pager" id="catalogPagerBottom" style="margin-top:24px; justify-content:center;"></div>
+        <section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>
       </div>
     </div>
   </div>
@@ -2299,29 +2307,29 @@
       <div class="store-footer-col">
         <h4>Categorías</h4>
         <ul>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('269');">Globos</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('273');">Batucada</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('287');">Boda</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('279');">Decoración</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('311');">Despedida de Soltera</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('304');">Diademas</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('271');">Fiesta Mexicana</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('294');">Graduaciones</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('274');">Halloween</a></li>
+          <li><a href="/269-globos" onclick="event.preventDefault(); openStorefrontCatalog('269');">Globos</a></li>
+          <li><a href="/273-batucada" onclick="event.preventDefault(); openStorefrontCatalog('273');">Batucada</a></li>
+          <li><a href="/287-boda" onclick="event.preventDefault(); openStorefrontCatalog('287');">Boda</a></li>
+          <li><a href="/279-decoracion" onclick="event.preventDefault(); openStorefrontCatalog('279');">Decoración</a></li>
+          <li><a href="/311-despedida-de-soltera" onclick="event.preventDefault(); openStorefrontCatalog('311');">Despedida de Soltera</a></li>
+          <li><a href="/304-diademas" onclick="event.preventDefault(); openStorefrontCatalog('304');">Diademas</a></li>
+          <li><a href="/271-fiesta-mexicana" onclick="event.preventDefault(); openStorefrontCatalog('271');">Fiesta Mexicana</a></li>
+          <li><a href="/294-graduaciones" onclick="event.preventDefault(); openStorefrontCatalog('294');">Graduaciones</a></li>
+          <li><a href="/274-halloween" onclick="event.preventDefault(); openStorefrontCatalog('274');">Halloween</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
         <h4>Más Categorías</h4>
         <ul>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('296');">Infantiles</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('303');">Lentes</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('268');">Luminosos</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('285');">Navidad</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('280');">Pirotecnia Fría</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('270');">Velas</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('286');">Año Nuevo</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('305');">Sombreros</a></li>
-          <li><a href="#" onclick="event.preventDefault(); openStorefrontCatalog('307');">XV Años</a></li>
+          <li><a href="/296-infantiles" onclick="event.preventDefault(); openStorefrontCatalog('296');">Infantiles</a></li>
+          <li><a href="/303-lentes" onclick="event.preventDefault(); openStorefrontCatalog('303');">Lentes</a></li>
+          <li><a href="/268-luminosos" onclick="event.preventDefault(); openStorefrontCatalog('268');">Luminosos</a></li>
+          <li><a href="/285-navidad" onclick="event.preventDefault(); openStorefrontCatalog('285');">Navidad</a></li>
+          <li><a href="/280-pirotecnia" onclick="event.preventDefault(); openStorefrontCatalog('280');">Pirotecnia Fría</a></li>
+          <li><a href="/270-velas" onclick="event.preventDefault(); openStorefrontCatalog('270');">Velas</a></li>
+          <li><a href="/286-ano-nuevo" onclick="event.preventDefault(); openStorefrontCatalog('286');">Año Nuevo</a></li>
+          <li><a href="/305-sombreros" onclick="event.preventDefault(); openStorefrontCatalog('305');">Sombreros</a></li>
+          <li><a href="/307-xv-anos" onclick="event.preventDefault(); openStorefrontCatalog('307');">XV Años</a></li>
         </ul>
       </div>
       <div class="store-footer-col">
@@ -2831,7 +2839,7 @@
         <a class="submenu-link" data-view="param-tienda-general">General</a>
         <a class="submenu-link" data-view="param-tienda-pedidos">Configuración de Pedidos</a>
         <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
-        <a class="submenu-link" data-view="param-tienda-seo">Tráfico & SEO</a>
+        <a class="submenu-link" data-view="param-tienda-seo">SEO: análisis y ranking</a>
         <a class="submenu-link" data-view="param-tienda-buscar">Buscar</a>
       </div>
     </div>
@@ -4998,29 +5006,26 @@
     <!-- 6. TRÁFICO & SEO -->
     <section id="view-param-tienda-seo" class="view-panel hidden">
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-          <h2>Tráfico & Optimización SEO</h2>
-          <button class="btn primary" onclick="alert('Configuración SEO guardada con éxito.')">Guardar Meta Tags</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Meta Etiquetas Globales</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Título Meta Principal:</b> <input type="text" value="Mi Fiestashop | Artículos de Fiesta, Globos y Decoración en México" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label><b>Meta Descripción:</b> <textarea style="width:100%; height:70px; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-family:inherit;">Tienda líder en globos metálicos, látex, pirotecnia fría, veladoras y desechables. Envíos rápidos a todo México.</textarea></label>
-              <label><b>Palabras Clave (Keywords):</b> <input type="text" value="globos, pirotecnia, desechables, velas, fiesta, puebla, cdmx" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-            </div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0;">SEO: análisis y posicionamiento en Google</h2>
+            <p style="margin:6px 0 0; font-size:13px; color:var(--text-secondary); max-width:820px;">
+              Revisa cada página como la ve Google, califica el catálogo, sigue tus posiciones reales en Google (Search Console),
+              mide la velocidad y optimiza títulos y descripciones con IA.
+            </p>
           </div>
-
-          <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-2);">Indexación & Analítica</h3>
-            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
-              <label><b>Estado en Motores de Búsqueda:</b> <span class="pill ok">Indizable (Google Ready)</span></label>
-              <label><b>Google Analytics / Tag Manager ID:</b> <input type="text" value="G-MIFIEMX2026" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
-              <label style="display:flex; align-items:center; gap:8px; margin-top:8px;"><input type="checkbox" checked> Generar mapa del sitio (sitemap.xml) automáticamente</label>
-            </div>
-          </div>
+          <button class="btn small" onclick="seoTab(seoTabActual)">Actualizar</button>
         </div>
+        <div style="display:flex; gap:6px; margin:16px 0 12px; flex-wrap:wrap;">
+          <button class="btn small primary" data-seotab="resumen" onclick="seoTab('resumen')">Resumen</button>
+          <button class="btn small" data-seotab="paginas" onclick="seoTab('paginas')">Páginas</button>
+          <button class="btn small" data-seotab="productos" onclick="seoTab('productos')">Productos</button>
+          <button class="btn small" data-seotab="categorias" onclick="seoTab('categorias')">Categorías</button>
+          <button class="btn small" data-seotab="google" onclick="seoTab('google')">Google: palabras clave</button>
+          <button class="btn small" data-seotab="velocidad" onclick="seoTab('velocidad')">Velocidad</button>
+          <button class="btn small" data-seotab="config" onclick="seoTab('config')">Configuración</button>
+        </div>
+        <div id="seoCuerpo"><p style="color:var(--text-muted);">Cargando…</p></div>
       </div>
     </section>
 
@@ -6759,6 +6764,25 @@ function getSessionCredsParams(){
     p_staff_pin: staff ? staff.pin : null
   };
 }
+function haySesionPanel(){ const c = getSessionCredsParams(); return !!(c.p_admin_password || (c.p_staff_email && c.p_staff_pin)); }
+// Rutas /api con datos privados (ver lib/sesion-panel.js): el panel les manda su sesión en el
+// header x-mfs-sesion. Sin sesión responden 401, así que la tienda pública no las llama.
+// /api/productos también: con sesión trae el costo de compra (sin ella, la tienda no lo recibe).
+const API_PRIVADAS = /^\/api\/(clientes|ventas|ventas-productos|pedidos|pedidos-online|carritos|inventario|proveedores|busquedas|enviar-correo|productos)(\?|$)/;
+(function () {
+  const fetchOriginal = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    try {
+      const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+      if (url.origin === location.origin && API_PRIVADAS.test(url.pathname + url.search) && haySesionPanel()) {
+        const headers = new Headers((init && init.headers) || (typeof input !== 'string' && input.headers) || {});
+        headers.set('x-mfs-sesion', btoa(unescape(encodeURIComponent(JSON.stringify(getSessionCredsParams())))));
+        init = { ...(init || {}), headers };
+      }
+    } catch (e) {}
+    return fetchOriginal(input, init);
+  };
+})();
 
 // ================= PERSONAL & PERMISOS DE EQUIPO =================
 const PERMISSION_GROUPS = [
@@ -6805,7 +6829,7 @@ const PERMISSION_GROUPS = [
     { key: 'param-tienda-general', label: 'General' },
     { key: 'param-tienda-pedidos', label: 'Config. Pedidos' },
     { key: 'param-tienda-productos', label: 'Config. Productos' },
-    { key: 'param-tienda-seo', label: 'Tráfico & SEO' },
+    { key: 'param-tienda-seo', label: 'SEO: análisis, posiciones en Google y optimización de productos' },
     { key: 'param-tienda-buscar', label: 'Buscar' }
   ]},
   { group: 'Parámetros Avanzados', items: [
@@ -7522,8 +7546,8 @@ function renderMetaPixelAdminForm() {
 }
 
 // GATE & ACCESS CONTROL
-document.getElementById('gateBtn').addEventListener('click', checkGate);
-document.getElementById('gatePw').addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkGate(); });
+document.getElementById('gateBtn')?.addEventListener('click', checkGate);
+document.getElementById('gatePw')?.addEventListener('keydown', (e)=>{ if(e.key==='Enter') checkGate(); });
 
 async function checkGate(){
   const pw = document.getElementById('gatePw').value;
@@ -7941,7 +7965,7 @@ function updateCalcUtilidad() {
   }
 }
 
-document.getElementById('modalSave').addEventListener('click', async ()=>{
+document.getElementById('modalSave')?.addEventListener('click', async ()=>{
   const status = document.getElementById('modalStatus');
   const inputs = document.querySelectorAll('#modalBody input[data-field]');
   const body = {};
@@ -7958,10 +7982,10 @@ document.getElementById('modalSave').addEventListener('click', async ()=>{
   } catch(e){ status.textContent = 'Error: ' + e.message; }
 });
 
-document.getElementById('prodSearch').addEventListener('input', ()=>{ prodPage=0; loadProductos(); });
-document.getElementById('prodCat').addEventListener('change', ()=>{ prodPage=0; loadProductos(); });
-document.getElementById('prodPrev').addEventListener('click', ()=>{ if(prodPage>0){ prodPage--; loadProductos(); } });
-document.getElementById('prodNext').addEventListener('click', ()=>{ prodPage++; loadProductos(); });
+document.getElementById('prodSearch')?.addEventListener('input', ()=>{ prodPage=0; loadProductos(); });
+document.getElementById('prodCat')?.addEventListener('change', ()=>{ prodPage=0; loadProductos(); });
+document.getElementById('prodPrev')?.addEventListener('click', ()=>{ if(prodPage>0){ prodPage--; loadProductos(); } });
+document.getElementById('prodNext')?.addEventListener('click', ()=>{ prodPage++; loadProductos(); });
 
 // Sin productos de demostración: si el catálogo real no carga, se muestra un error (ver catalogLoadError).
 const PRODUCTS_DATA = [];
@@ -8162,7 +8186,7 @@ function switchView(viewName) {
     'param-tienda-general': ['Parámetros de la Tienda', 'General, pagos por transferencia y contacto'],
     'param-tienda-pedidos': ['Parámetros de la Tienda', 'Configuración de Pedidos'],
     'param-tienda-productos': ['Parámetros de la Tienda', 'Configuración de Productos'],
-    'param-tienda-seo': ['Parámetros de la Tienda', 'Tráfico & SEO'],
+    'param-tienda-seo': ['SEO', 'Análisis de páginas, productos y posiciones en Google'],
     'param-tienda-buscar': ['Parámetros de la Tienda', 'Motor de Búsqueda'],
     'param-avanzados-rendimiento': ['Parámetros Avanzados', 'Rendimiento, caché y registros'],
     'param-avanzados-correo': ['Parámetros Avanzados', 'SMTP y plantillas de correo'],
@@ -8192,6 +8216,7 @@ function switchView(viewName) {
   if (viewName === 'competencia') loadCompetenciaView();
   if (viewName === 'etiquetas') etqIniciar();
   if (viewName === 'recepcion') recIniciar();
+  if (viewName === 'param-tienda-seo') seoIniciar();
   if (viewName === 'blog') blogMostrarLista();
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
@@ -8336,6 +8361,7 @@ function updateCartUI() {
   saveCartToStorage();
   scheduleCartSave();
   const container = document.getElementById('cartItemsContainer');
+  if (!container) return; // tienda pública: el carrito del punto de venta no está en la página
   if (cart.length === 0) {
     container.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--text-muted); font-size:13px;">El carrito está vacío.<br>Haz clic en los productos para agregarlos.</div>`;
     document.getElementById('cartSubtotal').textContent = '$0.00';
@@ -9761,6 +9787,7 @@ function renderVentasPorTienda(rows, msg){
 }
 
 async function loadVentas(from, to){
+  if (!document.getElementById('kpiRev')) return; // tienda pública: el panel no está en la página
   const loading = document.getElementById('ventasLoading');
   const errBox = document.getElementById('ventasError');
   if(loading) loading.classList.remove('hidden');
@@ -10084,7 +10111,8 @@ async function cargarCatalogoProductos(){
     // quedaba invisible para el buscador y las categorías del inicio, aunque
     // sí aparecían en el catálogo completo paginado por categoría. 5000 es
     // el mismo tope ya usado en el resto de este endpoint para "traer todo".
-    const r = await fetch('/api/productos?limit=5000');
+    // Con sesión del panel se pide en otra URL (no comparte caché con la tienda) y trae el costo.
+    const r = await fetch('/api/productos?limit=5000' + (haySesionPanel() ? '&panel=1' : ''));
     if (r.ok) {
       const data = await r.json();
       if (data.products && data.products.length > 0) {
@@ -10222,7 +10250,7 @@ async function cargarCatalogoProductos(){
   renderProducts('all');
   renderCatalogTable('all');
   renderInventarioTable();
-  renderStorefrontProducts('all');
+  renderStorefrontProducts('all', '', false, true);
   renderTopProductsTable();
 }
 
@@ -14680,6 +14708,468 @@ async function confirmCrearPedido(){
   }
 }
 
+// ---- SEO: análisis y posicionamiento (api/seo.js, api/cron-seo.js, lib/seo-*.js) ----
+let seoTabActual = 'resumen';
+let seoConfig = null;
+let seoProductos = [];
+let seoPropuestas = {};
+let seoAudFilas = [];
+// HTML de la IA: sin scripts ni atributos de eventos (el servidor vuelve a limpiarlo al guardar).
+function seoHtmlSeguro(h) {
+  return String(h || '').replace(/<\s*(script|style|iframe|object|embed)[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/javascript:/gi, '');
+}
+const SEO_NIVEL = { critico: ['Crítico', '#dc2626'], alto: ['Alto', '#ea580c'], medio: ['Medio', '#d97706'], bajo: ['Bajo', '#6b7280'] };
+const SEO_TIPO = { inicio: 'Inicio', producto: 'Producto', cms: 'Página', blog: 'Blog', articulo: 'Artículo', otra: 'Categoría/otra' };
+
+async function seoApi(accion, datos) {
+  const r = await fetch('/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...datos }) });
+  const d = await r.json().catch(() => ({ ok: false, error: `Error del servidor (HTTP ${r.status})` }));
+  if (!d.ok) throw new Error(d.error || 'Error');
+  return d;
+}
+const seoColor = n => (n == null ? '#6b7280' : n >= 85 ? '#16a34a' : n >= 65 ? '#d97706' : '#dc2626');
+const seoNum = v => (v == null ? '—' : Number(v).toLocaleString('es-MX', { maximumFractionDigits: 1 }));
+function seoPuntaje(n, grande) {
+  return `<span style="display:inline-flex; align-items:center; justify-content:center; min-width:${grande ? 86 : 38}px; height:${grande ? 86 : 26}px; border-radius:${grande ? '50%' : '8px'}; border:${grande ? 6 : 2}px solid ${seoColor(n)}; color:${seoColor(n)}; font-weight:800; font-size:${grande ? 28 : 13}px;">${n == null ? '—' : Math.round(n)}</span>`;
+}
+function seoNivel(n) { const [t, c] = SEO_NIVEL[n] || [n, '#6b7280']; return `<span style="font-size:10px; font-weight:800; color:#fff; background:${c}; padding:2px 7px; border-radius:999px;">${t}</span>`; }
+function seoError(e) { return `<p style="color:#dc2626;">${escapeHtml(e.message || String(e))}</p>`; }
+function seoTabla(cab, filas, vacio) {
+  return `<div style="overflow-x:auto;"><table style="width:100%; font-size:13px;"><thead><tr>${cab.map(c => `<th style="text-align:left;">${c}</th>`).join('')}</tr></thead><tbody>${filas || `<tr><td colspan="${cab.length}" style="color:var(--text-muted); padding:14px;">${vacio || 'Sin datos.'}</td></tr>`}</tbody></table></div>`;
+}
+function seoCorta(url) { return String(url).replace('https://www.mifiestashop.com', '') || '/'; }
+
+function seoIniciar() { seoTab(seoTabActual); }
+async function seoTab(t) {
+  seoTabActual = t;
+  document.querySelectorAll('[data-seotab]').forEach(b => { b.className = 'btn small' + (b.dataset.seotab === t ? ' primary' : ''); });
+  const c = document.getElementById('seoCuerpo');
+  c.innerHTML = '<p style="color:var(--text-muted);">Cargando…</p>';
+  try {
+    if (!seoConfig) seoConfig = await seoApi('config', {});
+    if (t === 'resumen') await seoResumen(c);
+    else if (t === 'paginas') await seoPaginas(c);
+    else if (t === 'productos') await seoProductosVista(c);
+    else if (t === 'categorias') await seoCategoriasVista(c);
+    else if (t === 'google') await seoGoogle(c);
+    else if (t === 'velocidad') await seoVelocidad(c);
+    else seoConfigVista(c);
+  } catch (e) { c.innerHTML = seoError(e); }
+}
+
+// ---------- Resumen ----------
+async function seoResumen(c) {
+  c.innerHTML = '<p style="color:var(--text-muted);">Revisando el sitio (robots, sitemap, redirecciones, catálogo y auditorías)… unos segundos.</p>';
+  const d = await seoApi('resumen', {});
+  const kpi = (t, v, s, col) => `<div class="card" style="margin:0; padding:12px; flex:1; min-width:150px;"><div style="font-size:12px; color:var(--text-muted);">${t}</div><div style="font-size:24px; font-weight:800; ${col ? `color:${col};` : ''}">${v}</div>${s ? `<div style="font-size:11px; color:var(--text-muted);">${s}</div>` : ''}</div>`;
+  const g = d.gsc;
+  const delta = (a, b, menorMejor) => {
+    if (a == null || b == null || !b) return '';
+    const p = (a - b) / b * 100; const bueno = menorMejor ? p < 0 : p > 0;
+    return ` <span style="color:${bueno ? '#16a34a' : '#dc2626'}; font-size:11px;">${p > 0 ? '▲' : '▼'} ${Math.abs(p).toFixed(0)}%</span>`;
+  };
+  const gscHtml = !g.configurado
+    ? `<div class="card" style="margin:0; padding:12px; border:1px dashed #d3007b;"><b>Conecta Google Search Console</b> para ver tus posiciones reales en Google, clics e impresiones. <a href="#" onclick="event.preventDefault(); seoTab('config')" style="color:#d3007b; font-weight:700;">Cómo conectarlo →</a></div>`
+    : g.error ? `<p style="color:#dc2626;">Search Console: ${escapeHtml(g.error)}</p>`
+    : `<div style="display:flex; gap:10px; flex-wrap:wrap;">
+        ${kpi('Clics desde Google (28 días)', seoNum(g.actual && g.actual.clics) + delta(g.actual && g.actual.clics, g.anterior && g.anterior.clics), 'vs. 28 días anteriores')}
+        ${kpi('Impresiones', seoNum(g.actual && g.actual.impresiones) + delta(g.actual && g.actual.impresiones, g.anterior && g.anterior.impresiones))}
+        ${kpi('CTR', (g.actual ? g.actual.ctr : '—') + '%')}
+        ${kpi('Posición promedio', seoNum(g.actual && g.actual.posicion) + delta(g.actual && g.actual.posicion, g.anterior && g.anterior.posicion, true), 'menos es mejor')}
+      </div>`;
+  const hist = d.historial || [];
+  const primero = hist[0], ultimo = hist[hist.length - 1];
+  c.innerHTML = `
+    <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:14px;">
+      ${seoPuntaje(d.puntaje_global, true)}
+      <div><div style="font-size:18px; font-weight:800;">Puntaje SEO del sitio</div>
+        <div style="font-size:13px; color:var(--text-secondary);">Páginas ${seoNum(d.paginas.puntaje)} · Productos ${seoNum(d.productos.puntaje)} · Técnico ${seoNum(d.tecnico.puntaje)}</div>
+        ${primero && ultimo && primero !== ultimo ? `<div style="font-size:12px; color:var(--text-muted);">Desde el ${escapeHtml(primero.fecha)}: páginas ${seoNum(primero.puntaje_paginas)} → ${seoNum(ultimo.puntaje_paginas)}, productos ${seoNum(primero.puntaje_productos)} → ${seoNum(ultimo.puntaje_productos)}</div>` : ''}
+        <div style="font-size:12px; color:var(--text-muted);">${d.paginas.auditadas} páginas auditadas${d.paginas.ultima ? ` · última revisión ${new Date(d.paginas.ultima).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}` : ''} · se revisan solas cada hora</div></div>
+    </div>
+    ${gscHtml}
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:12px 0;">
+      ${kpi('Productos activos', d.productos.total)}
+      ${kpi('Sin título SEO', d.productos.sin_meta_title, 'Google usa solo el nombre', d.productos.sin_meta_title ? '#d97706' : '')}
+      ${kpi('Sin meta descripción', d.productos.sin_meta_description, '', d.productos.sin_meta_description ? '#d97706' : '')}
+      ${kpi('Descripción corta', d.productos.descripcion_corta, 'menos de 120 palabras')}
+    </div>
+    <h3 style="margin:18px 0 6px;">Qué arreglar primero</h3>
+    ${seoTabla(['Impacto', 'Problema', 'Páginas', 'Cómo arreglarlo'], d.problemas.map(p => `<tr><td>${seoNivel(p.nivel)}</td><td>${escapeHtml(p.mensaje.replace(/\(\d[^)]*\)/, ''))}</td><td><a href="#" onclick="event.preventDefault(); seoTabActual='paginas'; seoPaginas(document.getElementById('seoCuerpo'), '${p.codigo}')">${p.veces}</a></td><td style="font-size:12px;">${escapeHtml(p.sugerencia || '')}</td></tr>`).join(''), d.paginas.auditadas ? '¡Sin problemas!' : 'Todavía no hay auditorías: se hacen solas cada hora o ve a la pestaña Páginas → "Auditar".')}
+    <h3 style="margin:18px 0 6px;">Revisión técnica</h3>
+    ${seoTabla(['', 'Revisión', 'Resultado', 'Qué hacer'], d.tecnico.checks.map(k => `<tr><td style="font-size:16px;">${k.ok ? '✅' : '❌'}</td><td><b>${escapeHtml(k.nombre)}</b></td><td style="font-size:12px;">${escapeHtml(k.detalle)}</td><td style="font-size:12px;">${k.ok ? '' : escapeHtml(k.sugerencia)}</td></tr>`).join(''))}
+    <h3 style="margin:18px 0 6px;">Problemas más comunes en productos</h3>
+    ${seoTabla(['Impacto', 'Problema', 'Productos', ''], d.problemas_productos.map(p => `<tr><td>${seoNivel(p.nivel)}</td><td>${escapeHtml(p.mensaje.replace(/\(\d[^)]*\)/, '').replace(/\d+ palabras/, 'pocas palabras'))}</td><td>${p.veces}</td><td><button class="btn small" onclick="seoTabActual='productos'; seoProductosVista(document.getElementById('seoCuerpo'), '${p.codigo}')">Ver y optimizar</button></td></tr>`).join(''))}
+    <h3 style="margin:18px 0 6px;">Páginas con peor puntaje</h3>
+    ${seoTabla(['Puntaje', 'Página', 'Tipo', 'Principal problema'], d.peores.map(p => `<tr><td>${seoPuntaje(p.puntaje)}</td><td><a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(seoCorta(p.url))}</a></td><td>${SEO_TIPO[p.tipo] || p.tipo}</td><td style="font-size:12px;">${escapeHtml(p.problema || '')}</td></tr>`).join(''))}`;
+}
+
+// ---------- Páginas ----------
+async function seoPaginas(c, problema) {
+  c.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <input id="seoUrl" type="url" placeholder="https://www.mifiestashop.com/…" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); flex:1; min-width:260px;">
+      <button class="btn primary" id="seoBtnAud" onclick="seoAuditarUna()">Auditar esta página</button>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+      <select id="seoFTipo" onchange="seoCargarAuditorias()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Todos los tipos</option>${Object.entries(SEO_TIPO).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <input id="seoFBuscar" type="search" placeholder="Filtrar por URL" onkeydown="if(event.key==='Enter') seoCargarAuditorias()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      <input type="hidden" id="seoFProblema" value="${escapeHtml(problema || '')}">
+      ${problema ? `<span style="font-size:12px;">Filtrando por un problema · <a href="#" onclick="event.preventDefault(); document.getElementById('seoFProblema').value=''; seoCargarAuditorias()">quitar filtro</a></span>` : ''}
+    </div>
+    <div id="seoAudRes"></div><div id="seoAudTabla">Cargando…</div>`;
+  seoCargarAuditorias();
+}
+async function seoCargarAuditorias() {
+  const t = document.getElementById('seoAudTabla');
+  try {
+    const d = await seoApi('auditorias', { tipo: document.getElementById('seoFTipo').value || null, buscar: document.getElementById('seoFBuscar').value.trim() || null, problema: document.getElementById('seoFProblema').value || null });
+    seoAudFilas = d.auditorias;
+    t.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">${d.total} páginas (peores primero). Todo el sitemap se vuelve a revisar solo cada día.</p>` +
+      seoTabla(['Puntaje', 'Página', 'Tipo', 'Problemas', 'Revisada', ''], d.auditorias.map((a, i) => `<tr>
+        <td>${seoPuntaje(a.puntaje)}</td><td><a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(seoCorta(a.url)).slice(0, 70)}</a>
+          <div style="font-size:11px; color:var(--text-muted);">${escapeHtml((a.datos && a.datos.titulo) || '').slice(0, 80)}</div></td>
+        <td>${SEO_TIPO[a.tipo] || a.tipo}</td>
+        <td style="font-size:12px;">${(a.problemas || []).slice(0, 3).map(p => `${seoNivel(p.nivel)} ${escapeHtml(p.mensaje)}`).join('<br>')}${(a.problemas || []).length > 3 ? `<br><span style="color:var(--text-muted);">+${a.problemas.length - 3} más</span>` : ''}</td>
+        <td style="font-size:11px; white-space:nowrap;">${new Date(a.auditado_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td>
+        <td><button class="btn small" onclick="seoDetalle(seoAudFilas[${i}])">Ver</button></td></tr>`).join(''), 'Todavía no hay páginas auditadas. Audita una arriba o espera la revisión automática (cada hora).');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+async function seoAuditarUna() {
+  const u = document.getElementById('seoUrl').value.trim();
+  if (!u) return;
+  const b = document.getElementById('seoBtnAud'); b.disabled = true; b.textContent = 'Auditando…';
+  try {
+    const d = await seoApi('auditar', { urls: [u] });
+    seoDetalle({ ...d.resultados[0], auditado_at: new Date().toISOString() }, document.getElementById('seoAudRes'));
+    seoCargarAuditorias();
+  } catch (e) { document.getElementById('seoAudRes').innerHTML = seoError(e); }
+  b.disabled = false; b.textContent = 'Auditar esta página';
+}
+function seoDetalle(a, destino) {
+  const d = a.datos || {};
+  const html = `<div class="card" style="padding:14px; margin:10px 0;">
+    <div style="display:flex; gap:12px; align-items:center;">${seoPuntaje(a.puntaje, true)}<div><b>${escapeHtml(seoCorta(a.url))}</b>
+      <div style="font-size:12px; color:var(--text-muted);">${SEO_TIPO[d.tipo] || ''} · HTTP ${d.status || '—'} · ${d.ms ? (d.ms / 1000).toFixed(1) + ' s' : ''} · ${d.bytes ? Math.round(d.bytes / 1024) + ' KB' : ''}</div>
+      <div style="font-size:12px;">${seoConfig && seoConfig.gsc ? `<a href="#" onclick="event.preventDefault(); seoInspeccionar('${escapeHtml(a.url)}', this)">¿Google la tiene indexada?</a> · ` : ''}<a href="#" onclick="event.preventDefault(); seoMedirVelocidad('${escapeHtml(a.url)}')">Medir velocidad</a></div></div></div>
+    <div style="display:grid; grid-template-columns:140px 1fr; gap:4px 12px; font-size:13px; margin:12px 0;">
+      <b>Título</b><span>${escapeHtml(d.titulo || '—')} <span style="color:var(--text-muted);">(${(d.titulo || '').length})</span></span>
+      <b>Descripción</b><span>${escapeHtml(d.descripcion || '—')} <span style="color:var(--text-muted);">(${(d.descripcion || '').length})</span></span>
+      <b>Canónica</b><span style="word-break:break-all;">${escapeHtml(d.canonical || '—')}</span>
+      <b>H1</b><span>${escapeHtml((d.h1 || []).join(' | ') || '—')}</span>
+      <b>Datos estructurados</b><span>${escapeHtml((d.jsonld || []).join(', ') || 'ninguno')}</span>
+      <b>Imágenes</b><span>${d.imagenes ?? '—'} (${d.imagenes_sin_alt ?? 0} sin alt)</span>
+    </div>
+    ${seoTabla(['Impacto', 'Problema', 'Cómo arreglarlo'], (a.problemas || []).map(p => `<tr><td>${seoNivel(p.nivel)}</td><td>${escapeHtml(p.mensaje)}</td><td style="font-size:12px;">${escapeHtml(p.sugerencia || '')}</td></tr>`).join(''), '¡Sin problemas!')}
+    <div id="seoInsp"></div></div>`;
+  if (destino) destino.innerHTML = html;
+  else { recAbrirModal('Auditoría de la página', html); }
+}
+async function seoInspeccionar(url, el) {
+  const box = document.getElementById('seoInsp');
+  box.innerHTML = '<p>Consultando a Google…</p>';
+  try {
+    const r = await seoApi('inspeccionar', { url });
+    const ok = r.veredicto === 'PASS';
+    box.innerHTML = `<div style="margin-top:10px; padding:10px; border-radius:8px; background:${ok ? 'rgba(22,163,74,.1)' : 'rgba(220,38,38,.08)'};"><b>${ok ? '✅ Google la tiene indexada' : '⚠ No está indexada'}</b> · ${escapeHtml(r.cobertura || '')}<br>
+      <span style="font-size:12px;">Último rastreo: ${r.ultimo_rastreo ? new Date(r.ultimo_rastreo).toLocaleString('es-MX') : '—'} · Canónica según Google: ${escapeHtml(r.canonica_google || '—')}</span>
+      ${r.enlace ? `<br><a href="${escapeHtml(r.enlace)}" target="_blank" rel="noopener" style="font-size:12px;">Abrir en Search Console</a>` : ''}</div>`;
+  } catch (e) { box.innerHTML = seoError(e); }
+}
+
+// ---------- Productos ----------
+async function seoProductosVista(c, problema) {
+  c.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+      <input id="seoPBuscar" type="search" placeholder="Buscar producto" onkeydown="if(event.key==='Enter') seoCargarProductos()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); flex:1; min-width:200px;">
+      <select id="seoPProblema" onchange="seoCargarProductos()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+        <option value="">Todos (peores primero)</option><option value="sin_meta_title">Sin título SEO</option><option value="sin_meta_description">Sin meta descripción</option>
+        <option value="descripcion_muy_corta">Descripción muy corta</option><option value="descripcion_corta">Descripción corta</option><option value="una_foto">Solo 1 foto</option><option value="sin_categoria">Sin categoría</option>
+      </select>
+      <button class="btn primary" onclick="seoOptimizarSeleccion()" ${seoConfig && seoConfig.ia ? '' : 'disabled title="Falta la llave de IA"'}>✨ Optimizar seleccionados con IA</button>
+    </div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">La IA propone título, meta descripción y descripción; tú revisas, editas y guardas. Nada se cambia sin que presiones Guardar. Se optimizan de 3 en 3.</p>
+    <div id="seoPTabla">Cargando…</div>`;
+  if (problema) document.getElementById('seoPProblema').value = problema;
+  seoCargarProductos();
+}
+async function seoCargarProductos() {
+  const t = document.getElementById('seoPTabla');
+  t.innerHTML = 'Cargando…';
+  try {
+    const d = await seoApi('productos', { buscar: document.getElementById('seoPBuscar').value.trim(), problema: document.getElementById('seoPProblema').value, limite: 300 });
+    seoProductos = d.productos;
+    t.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">${d.total} productos${d.total > d.productos.length ? ` (se muestran los ${d.productos.length} peores)` : ''}.</p>` +
+      seoTabla(['<input type="checkbox" onchange="document.querySelectorAll(\'.seoPSel\').forEach((x,i)=>{ if(i<3) x.checked=this.checked })" title="Primeros 3">', 'Puntaje', 'Producto', 'Título SEO / Meta descripción', 'Problemas', ''], d.productos.map(p => `<tr id="seoPRow${p.id}">
+        <td><input type="checkbox" class="seoPSel" value="${p.id}"></td><td>${seoPuntaje(p.puntaje)}</td>
+        <td><div style="display:flex; gap:8px; align-items:center;">${p.imagen ? `<img src="${escapeHtml(p.imagen)}" style="width:38px; height:38px; object-fit:cover; border-radius:6px;">` : ''}<div><b>${escapeHtml(p.nombre)}</b><div style="font-size:11px; color:var(--text-muted);">#${p.id} · ${escapeHtml(p.categoria || '')} · ${p.palabras} palabras · ${p.fotos} fotos</div></div></div></td>
+        <td style="font-size:12px; max-width:320px;"><div>${p.meta_title ? escapeHtml(p.meta_title) : '<i style="color:#d97706;">sin título SEO</i>'}</div><div style="color:var(--text-muted);">${p.meta_description ? escapeHtml(p.meta_description) : '<i style="color:#d97706;">sin meta descripción</i>'}</div></td>
+        <td style="font-size:11px;">${p.problemas.slice(0, 3).map(x => `${seoNivel(x.nivel)} ${escapeHtml(x.mensaje)}`).join('<br>')}</td>
+        <td><button class="btn small" onclick="seoEditar(${p.id})">Editar</button></td></tr>`).join(''), 'Ningún producto con ese filtro. 🎉');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+async function seoOptimizarSeleccion() {
+  const ids = [...document.querySelectorAll('.seoPSel:checked')].map(x => Number(x.value)).slice(0, 3);
+  if (!ids.length) { alert('Marca de 1 a 3 productos.'); return; }
+  recAbrirModal('Optimizar con IA', `<p>La IA está escribiendo títulos y descripciones para ${ids.length} productos… (de 30 segundos a 1 minuto)</p>`);
+  try {
+    const d = await seoApi('optimizar_ia', { ids });
+    d.propuestas.forEach(p => { seoPropuestas[p.id] = p; });
+    seoMostrarPropuestas(d.propuestas.map(p => p.id));
+  } catch (e) { document.getElementById('recModalCuerpo').innerHTML = seoError(e); }
+}
+function seoFormProducto(p, prop) {
+  const v = prop || {};
+  const tit = v.meta_title ?? p.meta_title, des = v.meta_description ?? p.meta_description;
+  return `<div class="card" style="padding:12px; margin-bottom:12px;" id="seoForm${p.id}">
+    <b>${escapeHtml(p.nombre)}</b> <span style="font-size:11px; color:var(--text-muted);">#${p.id}${v.palabra_clave ? ` · palabra clave: <b>${escapeHtml(v.palabra_clave)}</b>` : ''}</span>
+    <label style="display:block; margin-top:8px; font-size:12px;">Título SEO (<span id="seoTL${p.id}">${(tit || '').length}</span>/55; se agrega "| Mi Fiestashop")
+      <input id="seoT${p.id}" value="${escapeHtml(tit || '')}" oninput="document.getElementById('seoTL${p.id}').textContent=this.value.length; seoVistaGoogle(${p.id})" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"></label>
+    <label style="display:block; margin-top:8px; font-size:12px;">Meta descripción (<span id="seoDL${p.id}">${(des || '').length}</span>/155)
+      <textarea id="seoD${p.id}" rows="2" oninput="document.getElementById('seoDL${p.id}').textContent=this.value.length; seoVistaGoogle(${p.id})" style="width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">${escapeHtml(des || '')}</textarea></label>
+    <div id="seoG${p.id}" style="margin:8px 0; padding:10px; border-radius:8px; background:#fff; font-family:Arial, sans-serif;"></div>
+    ${v.descripcion_html ? `<label style="display:flex; gap:6px; align-items:center; font-size:12px;"><input type="checkbox" id="seoUsarDesc${p.id}" checked> Reemplazar también la descripción del producto por esta:</label>
+      <div id="seoDesc${p.id}" contenteditable="true" style="border:1px solid var(--border); border-radius:8px; padding:8px; font-size:13px; max-height:220px; overflow:auto; margin-top:4px;">${seoHtmlSeguro(v.descripcion_html)}</div>` : ''}
+    <div style="text-align:right; margin-top:8px;"><button class="btn primary" id="seoBG${p.id}" onclick="seoGuardar(${p.id})">Guardar</button></div></div>`;
+}
+function seoVistaGoogle(id) {
+  const t = (document.getElementById('seoT' + id).value || '').trim();
+  const d = (document.getElementById('seoD' + id).value || '').trim();
+  const p = seoProductos.find(x => x.id === id) || {};
+  const titulo = `${t || p.nombre} | Mi Fiestashop`;
+  document.getElementById('seoG' + id).innerHTML = `<div style="font-size:12px; color:#202124;">mifiestashop.com</div>
+    <div style="font-size:18px; color:#1a0dab; line-height:1.3;">${escapeHtml(titulo.length > 60 ? titulo.slice(0, 58) + '…' : titulo)}</div>
+    <div style="font-size:13px; color:#4d5156;">${escapeHtml(d.length > 158 ? d.slice(0, 155) + '…' : d || 'Sin descripción: Google mostrará un fragmento cualquiera de la página.')}</div>`;
+}
+function seoMostrarPropuestas(ids) {
+  const html = ids.map(id => seoFormProducto(seoProductos.find(p => p.id === id) || { id, nombre: (seoPropuestas[id] || {}).nombre || '#' + id }, seoPropuestas[id])).join('');
+  recAbrirModal('Revisa y guarda', `<p style="font-size:12px; color:var(--text-muted); margin-top:0;">Así se verá en Google. Corrige lo que quieras antes de guardar; la IA no inventa medidas ni materiales, pero revisa que todo sea correcto.</p>${html}`);
+  ids.forEach(seoVistaGoogle);
+}
+function seoEditar(id) {
+  const p = seoProductos.find(x => x.id === id);
+  recAbrirModal('SEO del producto', seoFormProducto(p, seoPropuestas[id]) + (seoConfig.ia ? `<button class="btn small" onclick="seoOptimizarUno(${id})">✨ Proponer con IA</button>` : ''));
+  seoVistaGoogle(id);
+}
+async function seoOptimizarUno(id) {
+  document.getElementById('recModalCuerpo').innerHTML = '<p>La IA está escribiendo…</p>';
+  try { const d = await seoApi('optimizar_ia', { ids: [id] }); d.propuestas.forEach(p => { seoPropuestas[p.id] = p; }); seoEditar(id); }
+  catch (e) { document.getElementById('recModalCuerpo').innerHTML = seoError(e); }
+}
+async function seoGuardar(id) {
+  const b = document.getElementById('seoBG' + id); b.disabled = true;
+  const usar = document.getElementById('seoUsarDesc' + id);
+  try {
+    await seoApi('guardar_producto', {
+      id, meta_title: document.getElementById('seoT' + id).value, meta_description: document.getElementById('seoD' + id).value,
+      descripcion: usar && usar.checked ? document.getElementById('seoDesc' + id).innerHTML : undefined
+    });
+    b.textContent = '✓ Guardado';
+    delete seoPropuestas[id];
+    const fila = document.getElementById('seoPRow' + id); if (fila) fila.style.opacity = '.45';
+  } catch (e) { alert(e.message); b.disabled = false; }
+}
+
+// ---------- Categorías: título, meta descripción, introducción y preguntas frecuentes ----------
+let seoCats = [];
+const seoCatProp = {};
+const SEO_INPUT = 'width:100%; padding:8px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);';
+async function seoCategoriasVista(c) {
+  c.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; align-items:center;">
+      <input id="seoCBuscar" type="search" placeholder="Buscar categoría" onkeydown="if(event.key==='Enter') seoCargarCategorias()" style="${SEO_INPUT} flex:1; min-width:200px; width:auto;">
+      <label style="font-size:12px; display:flex; gap:6px; align-items:center;"><input type="checkbox" id="seoCConProd" checked onchange="seoCargarCategorias()"> Solo con productos</label>
+    </div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">Cada categoría necesita un título y una meta descripción para Google, un texto de introducción de 150 a 300 palabras y preguntas frecuentes. La IA lo propone; tú revisas y guardas. Se ve en la página de la categoría, arriba de los productos (introducción) y al final (preguntas).</p>
+    <div id="seoCTabla">Cargando…</div>`;
+  seoCargarCategorias();
+}
+async function seoCargarCategorias() {
+  const t = document.getElementById('seoCTabla');
+  t.innerHTML = 'Cargando…';
+  try {
+    const d = await seoApi('categorias', { buscar: document.getElementById('seoCBuscar').value.trim() });
+    seoCats = d.categorias;
+    const lista = document.getElementById('seoCConProd').checked ? seoCats.filter(x => x.productos > 0) : seoCats;
+    t.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">${lista.length} categorías · puntaje promedio ${d.promedio ?? '—'}.</p>` +
+      seoTabla(['Puntaje', 'Categoría', 'Título SEO / Meta descripción', 'Contenido', 'Problemas', ''], lista.map(x => `<tr id="seoCRow${x.id}">
+        <td>${seoPuntaje(x.puntaje)}</td>
+        <td><b>${escapeHtml(x.name)}</b><div style="font-size:11px; color:var(--text-muted);">#${x.id} · ${x.productos} productos · <a href="${escapeHtml(x.url)}" target="_blank" rel="noopener">ver</a></div></td>
+        <td style="font-size:12px; max-width:300px;"><div>${x.meta_title ? escapeHtml(x.meta_title) : '<i style="color:#d97706;">sin título SEO</i>'}</div><div style="color:var(--text-muted);">${x.meta_description ? escapeHtml(x.meta_description) : '<i style="color:#d97706;">sin meta descripción</i>'}</div></td>
+        <td style="font-size:12px;">${x.palabras} palabras<br>${Array.isArray(x.faq) ? x.faq.length : 0} preguntas</td>
+        <td style="font-size:11px;">${x.problemas.map(escapeHtml).join('<br>') || '✅'}</td>
+        <td><button class="btn small" onclick="seoEditarCategoria(${x.id})">Editar</button></td></tr>`).join(''), 'Sin categorías con ese filtro.');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+function seoFaqFila(x) {
+  return `<div class="seoFaqFila" style="border:1px solid var(--border); border-radius:8px; padding:8px; margin-bottom:6px;">
+    <input class="seoFaqP" placeholder="Pregunta" value="${escapeHtml(x.pregunta || '')}" style="${SEO_INPUT} font-weight:700; margin-bottom:4px;">
+    <textarea class="seoFaqR" rows="2" placeholder="Respuesta" style="${SEO_INPUT}">${escapeHtml(x.respuesta || '')}</textarea>
+    <div style="text-align:right;"><button class="btn small" onclick="this.closest('.seoFaqFila').remove()">Quitar</button></div></div>`;
+}
+function seoContarPalabras() {
+  const el = document.getElementById('seoCIntro'); if (!el) return;
+  const n = (el.innerText.match(/\S+/g) || []).length;
+  document.getElementById('seoCIntroN').innerHTML = `${n} palabras ${n >= 150 && n <= 300 ? '✅' : '<span style="color:#d97706;">(ideal: 150 a 300)</span>'}`;
+}
+function seoEditarCategoria(id) {
+  const x = seoCats.find(c => c.id === id) || { id };
+  const v = seoCatProp[id] || {};
+  const tit = v.meta_title ?? x.meta_title ?? '', des = v.meta_description ?? x.meta_description ?? '';
+  const intro = v.intro_html ?? x.description ?? '';
+  const faq = v.faq ?? (Array.isArray(x.faq) ? x.faq : []);
+  recAbrirModal(`SEO de la categoría: ${x.name || '#' + id}`, `
+    ${v.palabra_clave ? `<p style="font-size:12px; margin-top:0;">Palabra clave propuesta: <b>${escapeHtml(v.palabra_clave)}</b></p>` : ''}
+    ${seoConfig && seoConfig.ia ? `<button class="btn small" onclick="seoCategoriaIA(${id})">✨ Proponer todo con IA</button>` : ''}
+    <label style="display:block; margin-top:8px; font-size:12px;">Título SEO (<span id="seoCTL">${tit.length}</span>/55; se agrega "| Mi Fiestashop")
+      <input id="seoCT" value="${escapeHtml(tit)}" oninput="document.getElementById('seoCTL').textContent=this.value.length; seoCatGoogle(${id})" style="${SEO_INPUT}"></label>
+    <label style="display:block; margin-top:8px; font-size:12px;">Meta descripción (<span id="seoCDL">${des.length}</span>/155)
+      <textarea id="seoCD" rows="2" oninput="document.getElementById('seoCDL').textContent=this.value.length; seoCatGoogle(${id})" style="${SEO_INPUT}">${escapeHtml(des)}</textarea></label>
+    <div id="seoCG" style="margin:8px 0; padding:10px; border-radius:8px; background:#fff; font-family:Arial, sans-serif;"></div>
+    <div style="font-size:12px; margin-top:8px;">Texto de introducción · <span id="seoCIntroN"></span></div>
+    <div id="seoCIntro" contenteditable="true" oninput="seoContarPalabras()" style="border:1px solid var(--border); border-radius:8px; padding:8px; font-size:13px; min-height:80px; max-height:260px; overflow:auto; margin-top:4px;">${seoHtmlSeguro(intro)}</div>
+    <div style="font-size:12px; margin-top:12px;">Preguntas frecuentes</div>
+    <div id="seoCFaq">${faq.map(seoFaqFila).join('')}</div>
+    <button class="btn small" onclick="document.getElementById('seoCFaq').insertAdjacentHTML('beforeend', seoFaqFila({}))">+ Agregar pregunta</button>
+    <div style="text-align:right; margin-top:10px;"><button class="btn primary" id="seoCBG" onclick="seoGuardarCategoria(${id})">Guardar</button></div>`);
+  seoCatGoogle(id);
+  seoContarPalabras();
+}
+function seoCatGoogle(id) {
+  const x = seoCats.find(c => c.id === id) || {};
+  const t = (document.getElementById('seoCT').value || '').trim(), d = (document.getElementById('seoCD').value || '').trim();
+  const titulo = `${t || x.name} | Mi Fiestashop`;
+  document.getElementById('seoCG').innerHTML = `<div style="font-size:12px; color:#202124;">mifiestashop.com › ${escapeHtml(x.link_rewrite || '')}</div>
+    <div style="font-size:18px; color:#1a0dab; line-height:1.3;">${escapeHtml(titulo.length > 60 ? titulo.slice(0, 58) + '…' : titulo)}</div>
+    <div style="font-size:13px; color:#4d5156;">${escapeHtml(d.length > 158 ? d.slice(0, 155) + '…' : d || 'Sin descripción: Google mostrará un fragmento cualquiera de la página.')}</div>`;
+}
+async function seoCategoriaIA(id) {
+  document.getElementById('recModalCuerpo').innerHTML = '<p>La IA está escribiendo la introducción y las preguntas… (unos 30 segundos)</p>';
+  try { seoCatProp[id] = await seoApi('categoria_ia', { id }); seoEditarCategoria(id); }
+  catch (e) { document.getElementById('recModalCuerpo').innerHTML = seoError(e); }
+}
+async function seoGuardarCategoria(id) {
+  const b = document.getElementById('seoCBG'); b.disabled = true;
+  const faq = [...document.querySelectorAll('#seoCFaq .seoFaqFila')].map(f => ({ pregunta: f.querySelector('.seoFaqP').value.trim(), respuesta: f.querySelector('.seoFaqR').value.trim() })).filter(f => f.pregunta && f.respuesta);
+  try {
+    const r = await seoApi('guardar_categoria', { id, meta_title: document.getElementById('seoCT').value, meta_description: document.getElementById('seoCD').value, descripcion: document.getElementById('seoCIntro').innerHTML, faq });
+    b.textContent = `✓ Guardado · puntaje ${r.puntaje}`;
+    delete seoCatProp[id];
+    const x = seoCats.find(c => c.id === id);
+    if (x) Object.assign(x, { meta_title: document.getElementById('seoCT').value, meta_description: document.getElementById('seoCD').value, description: document.getElementById('seoCIntro').innerHTML, faq, puntaje: r.puntaje, problemas: r.problemas, palabras: r.palabras });
+    const fila = document.getElementById('seoCRow' + id); if (fila) fila.style.opacity = '.45';
+  } catch (e) { alert(e.message); b.disabled = false; }
+}
+
+// ---------- Google: palabras clave ----------
+async function seoGoogle(c) {
+  if (!seoConfig.gsc) { c.innerHTML = `<div class="card" style="padding:14px; border:1px dashed #d3007b;"><b>Search Console no está conectado.</b> Es la fuente oficial de Google con tus posiciones, clics e impresiones reales. <a href="#" onclick="event.preventDefault(); seoTab('config')" style="color:#d3007b; font-weight:700;">Conéctalo aquí →</a></div>`; return; }
+  c.innerHTML = `<h3 style="margin:0 0 6px;">Palabras clave que sigues</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"><input id="seoKw" placeholder='ej. "artículos para batucada"' style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); flex:1; min-width:220px;"><button class="btn small primary" onclick="seoKwAgregar()">+ Seguir palabra</button></div>
+    <div id="seoKwTabla">Cargando…</div>
+    <h3 style="margin:18px 0 6px;">Oportunidades</h3><div id="seoOpp">Cargando…</div>
+    <h3 style="margin:18px 0 6px;">Búsquedas en Google</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+      <select id="seoGDim" onchange="seoCargarGsc()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="query">Por búsqueda</option><option value="page">Por página</option></select>
+      <select id="seoGDias" onchange="seoCargarGsc()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="7">7 días</option><option value="28" selected>28 días</option><option value="90">3 meses</option><option value="365">12 meses</option></select>
+      <input id="seoGBuscar" type="search" placeholder="Contiene…" onkeydown="if(event.key==='Enter') seoCargarGsc()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+      <button class="btn small" onclick="seoEnviarSitemap()">Enviar sitemap a Google</button>
+    </div><div id="seoGTabla">Cargando…</div>`;
+  seoCargarKw(); seoCargarOpp(); seoCargarGsc();
+}
+const seoPos = (a, b) => { if (a == null) return '—'; if (b == null) return seoNum(a); const d = b - a; return `${seoNum(a)} ${Math.abs(d) >= 0.5 ? `<span style="color:${d > 0 ? '#16a34a' : '#dc2626'}; font-size:11px;">${d > 0 ? '▲' : '▼'}${Math.abs(d).toFixed(1)}</span>` : ''}`; };
+async function seoCargarKw(d) {
+  const t = document.getElementById('seoKwTabla');
+  try {
+    d = d || await seoApi('keywords', {});
+    t.innerHTML = seoTabla(['Palabra clave', 'Posición (28 días)', 'Clics', 'Impresiones', 'Evolución', ''], d.keywords.map(k => {
+      const s = (k.serie || []).filter(x => x.posicion != null);
+      const evo = s.length ? s.filter((x, i) => i % Math.max(1, Math.floor(s.length / 6)) === 0 || i === s.length - 1).map(x => seoNum(x.posicion)).join(' → ') : 'se registra cada día';
+      return `<tr><td><b>${escapeHtml(k.keyword)}</b></td><td>${k.posicion != null ? `<b style="color:${k.posicion <= 3 ? '#16a34a' : k.posicion <= 10 ? '#d97706' : '#dc2626'};">${seoNum(k.posicion)}</b>` : '<span style="color:var(--text-muted);">fuera del top 100 o sin búsquedas</span>'}</td><td>${seoNum(k.clics)}</td><td>${seoNum(k.impresiones)}</td><td style="font-size:12px;">${evo}</td><td><button class="btn small" onclick="seoKwQuitar('${escapeHtml(k.keyword).replace(/'/g, "\\'")}')">Quitar</button></td></tr>`;
+    }).join(''), 'Agrega las búsquedas en las que quieres aparecer (ej. "artículos para fiesta mayoreo", "batucada cdmx").');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+async function seoKwAgregar() {
+  const k = document.getElementById('seoKw').value.trim(); if (!k) return;
+  try { seoCargarKw(await seoApi('keyword_agregar', { keyword: k })); document.getElementById('seoKw').value = ''; } catch (e) { alert(e.message); }
+}
+async function seoKwQuitar(k) { if (!confirm(`¿Dejar de seguir "${k}"?`)) return; try { seoCargarKw(await seoApi('keyword_quitar', { keyword: k })); } catch (e) { alert(e.message); } }
+async function seoCargarOpp() {
+  const t = document.getElementById('seoOpp');
+  try {
+    const d = await seoApi('oportunidades', { dias: 28 });
+    t.innerHTML = `<p style="font-size:13px; margin:0 0 6px;"><b>Casi en la primera página</b> (posición 4–20): con un mejor título, descripción y más contenido pueden subir al top 3, donde están la mayoría de los clics.</p>` +
+      seoTabla(['Búsqueda', 'Posición', 'Impresiones', 'Clics', 'Página'], d.casi_primera_pagina.slice(0, 25).map(r => `<tr><td><b>${escapeHtml(r.consulta)}</b></td><td>${seoNum(r.posicion)}</td><td>${seoNum(r.impresiones)}</td><td>${seoNum(r.clics)}</td><td style="font-size:12px;"><a href="${escapeHtml(r.pagina)}" target="_blank" rel="noopener">${escapeHtml(seoCorta(r.pagina)).slice(0, 60)}</a></td></tr>`).join(''), 'Sin oportunidades por ahora (o aún no hay suficientes datos).') +
+      `<p style="font-size:13px; margin:12px 0 6px;"><b>Muchas impresiones, pocos clics</b>: Google sí las muestra pero la gente no hace clic. Mejora el título y la meta descripción.</p>` +
+      seoTabla(['Página', 'Posición', 'Impresiones', 'CTR', 'CTR esperado'], d.ctr_bajo.slice(0, 20).map(r => `<tr><td style="font-size:12px;"><a href="${escapeHtml(r.pagina)}" target="_blank" rel="noopener">${escapeHtml(seoCorta(r.pagina)).slice(0, 70)}</a></td><td>${seoNum(r.posicion)}</td><td>${seoNum(r.impresiones)}</td><td style="color:#dc2626;">${r.ctr}%</td><td>~${r.ctr_esperado}%</td></tr>`).join(''), 'Ninguna página con CTR bajo.');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+async function seoCargarGsc() {
+  const t = document.getElementById('seoGTabla');
+  t.innerHTML = 'Cargando…';
+  try {
+    const d = await seoApi('gsc', { dimension: document.getElementById('seoGDim').value, dias: document.getElementById('seoGDias').value, buscar: document.getElementById('seoGBuscar').value.trim() || null });
+    t.innerHTML = seoTabla([d.dimension === 'page' ? 'Página' : 'Búsqueda', 'Clics', 'Impresiones', 'CTR', 'Posición', ''], d.filas.slice(0, 300).map(r => `<tr>
+      <td>${d.dimension === 'page' ? `<a href="${escapeHtml(r.clave)}" target="_blank" rel="noopener" style="font-size:12px;">${escapeHtml(seoCorta(r.clave)).slice(0, 80)}</a>` : `<b>${escapeHtml(r.clave)}</b>`}</td>
+      <td>${seoNum(r.clics)}</td><td>${seoNum(r.impresiones)}</td><td>${r.ctr}%</td><td>${seoPos(r.posicion, r.posicion_antes)}</td>
+      <td>${d.dimension === 'query' ? `<button class="btn small" onclick="document.getElementById('seoKw').value='${escapeHtml(r.clave).replace(/'/g, "\\'")}'; seoKwAgregar()">Seguir</button>` : ''}</td></tr>`).join(''), 'Sin datos en este periodo.') +
+      '<p style="font-size:11px; color:var(--text-muted);">La flecha compara la posición con el periodo anterior. Google publica los datos con 2–3 días de retraso.</p>';
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+async function seoEnviarSitemap() { try { await seoApi('enviar_sitemap', {}); alert('Sitemap enviado a Google.'); } catch (e) { alert(e.message); } }
+
+// ---------- Velocidad ----------
+async function seoVelocidad(c) {
+  c.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <input id="seoVUrl" value="https://www.mifiestashop.com/" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); flex:1; min-width:260px;">
+      <select id="seoVEst" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="mobile">Celular</option><option value="desktop">Computadora</option></select>
+      <button class="btn primary" id="seoVBtn" onclick="seoMedirVelocidad()">Medir velocidad</button></div>
+    ${seoConfig.pagespeed_key ? '' : '<p style="font-size:12px; color:#d97706;">Sin PAGESPEED_API_KEY Google permite muy pocas mediciones al día. Ve a Configuración para agregarla (es gratis).</p>'}
+    <div id="seoVRes"></div><h3 style="margin:16px 0 6px;">Mediciones anteriores</h3><div id="seoVHist">Cargando…</div>`;
+  seoCargarVelocidad();
+}
+async function seoCargarVelocidad() {
+  const t = document.getElementById('seoVHist');
+  try {
+    const d = await seoApi('velocidad', {});
+    t.innerHTML = seoTabla(['Fecha', 'Página', 'Dispositivo', 'Rendimiento', 'SEO (Lighthouse)', 'LCP', 'CLS', 'TBT'], d.mediciones.map(m => `<tr><td style="font-size:12px;">${new Date(m.medido_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}</td><td style="font-size:12px;">${escapeHtml(seoCorta(m.url)).slice(0, 50)}</td><td>${m.estrategia === 'mobile' ? 'Celular' : 'PC'}</td><td>${seoPuntaje(m.performance)}</td><td>${seoPuntaje(m.seo)}</td><td>${m.lcp_ms ? (m.lcp_ms / 1000).toFixed(1) + ' s' : '—'}</td><td>${m.cls ?? '—'}</td><td>${m.tbt_ms != null ? m.tbt_ms + ' ms' : '—'}</td></tr>`).join(''), 'Todavía no hay mediciones.');
+  } catch (e) { t.innerHTML = seoError(e); }
+}
+async function seoMedirVelocidad(url) {
+  if (url) { seoTabActual = 'velocidad'; await seoTab('velocidad'); document.getElementById('seoVUrl').value = url; recCerrarModal(); }
+  const b = document.getElementById('seoVBtn'); b.disabled = true; b.textContent = 'Midiendo… (hasta 40 s)';
+  const r = document.getElementById('seoVRes');
+  try {
+    const m = await seoApi('pagespeed', { url: document.getElementById('seoVUrl').value.trim(), estrategia: document.getElementById('seoVEst').value });
+    const bueno = (v, a, b2) => v == null ? '#6b7280' : v <= a ? '#16a34a' : v <= b2 ? '#d97706' : '#dc2626';
+    r.innerHTML = `<div class="card" style="padding:14px;"><div style="display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+        <div style="text-align:center;">${seoPuntaje(m.performance, true)}<div style="font-size:12px;">Rendimiento</div></div>
+        <div style="text-align:center;">${seoPuntaje(m.seo, true)}<div style="font-size:12px;">SEO</div></div>
+        <div style="text-align:center;">${seoPuntaje(m.accesibilidad, true)}<div style="font-size:12px;">Accesibilidad</div></div>
+        <div style="font-size:13px; line-height:1.8;">LCP (carga principal): <b style="color:${bueno(m.lcp_ms, 2500, 4000)};">${m.lcp_ms ? (m.lcp_ms / 1000).toFixed(1) + ' s' : '—'}</b><br>CLS (saltos): <b style="color:${bueno(m.cls, 0.1, 0.25)};">${m.cls ?? '—'}</b><br>TBT (bloqueo): <b style="color:${bueno(m.tbt_ms, 200, 600)};">${m.tbt_ms ?? '—'} ms</b></div></div>
+      ${m.detalle.oportunidades.length ? `<h4 style="margin:12px 0 4px;">Qué la haría más rápida</h4><ul style="margin:0; padding-left:18px; font-size:13px;">${m.detalle.oportunidades.map(o => `<li>${escapeHtml(o.titulo)}${o.ahorro_ms ? ` — ahorra ~${(o.ahorro_ms / 1000).toFixed(1)} s` : ''}</li>`).join('')}</ul>` : ''}</div>`;
+    seoCargarVelocidad();
+  } catch (e) { r.innerHTML = seoError(e); }
+  b.disabled = false; b.textContent = 'Medir velocidad';
+}
+
+// ---------- Configuración ----------
+function seoConfigVista(c) {
+  const k = seoConfig;
+  const est = (ok, t) => `<span style="font-weight:700; color:${ok ? '#16a34a' : '#d97706'};">${ok ? '✓ ' : '○ '}${t}</span>`;
+  c.innerHTML = `
+    <div class="card" style="padding:14px; margin-bottom:12px;"><h3 style="margin-top:0;">1. Google Search Console ${est(k.gsc, k.gsc ? 'conectado' : 'sin conectar')}</h3>
+      ${k.gsc ? `<p style="font-size:13px;">Propiedad: <b>${escapeHtml(k.sitio)}</b> · cuenta: <code>${escapeHtml(k.cuenta || '')}</code></p>` : ''}
+      <ol style="font-size:13px; line-height:1.7; padding-left:18px;">
+        <li>Entra a <b>search.google.com/search-console</b> con la cuenta de Google del negocio y agrega la propiedad <b>Dominio</b> <code>mifiestashop.com</code> (Google te da un registro TXT para el DNS; si ya la tienes, sáltate esto).</li>
+        <li>En <b>console.cloud.google.com</b>: crea un proyecto → <i>APIs y servicios</i> → habilita <b>Google Search Console API</b> → <i>Credenciales</i> → <b>Crear cuenta de servicio</b> → en la cuenta, pestaña <i>Claves</i> → <b>Agregar clave → JSON</b> (se descarga un archivo).</li>
+        <li>En Search Console → <i>Configuración</i> → <i>Usuarios y permisos</i> → <b>Agregar usuario</b> con el correo de la cuenta de servicio (termina en <code>iam.gserviceaccount.com</code>), permiso <b>Propietario</b> (para poder enviar el sitemap) o Completo.</li>
+        <li>En Vercel → <i>Settings → Environment Variables</i>: <code>GSC_SERVICE_ACCOUNT_JSON</code> = todo el contenido del archivo JSON (Sensitive). Si tu propiedad es de tipo URL en vez de Dominio, agrega también <code>GSC_SITE</code> = <code>https://www.mifiestashop.com/</code>. Luego <b>Redeploy</b>.</li>
+      </ol></div>
+    <div class="card" style="padding:14px; margin-bottom:12px;"><h3 style="margin-top:0;">2. Medición de velocidad ${est(k.pagespeed_key, k.pagespeed_key ? 'con llave' : 'sin llave (muy limitada)')}</h3>
+      <p style="font-size:13px;">En el mismo proyecto de console.cloud.google.com habilita <b>PageSpeed Insights API</b> → <i>Credenciales → Crear credenciales → Clave de API</i>. Ponla en Vercel como <code>PAGESPEED_API_KEY</code> y haz Redeploy. Es gratis (25,000 mediciones al día).</p></div>
+    <div class="card" style="padding:14px;"><h3 style="margin-top:0;">3. IA para títulos y descripciones ${est(k.ia, k.ia ? 'lista' : 'sin llave')}</h3>
+      <p style="font-size:13px;">Usa la misma llave de ChatGPT de la recepción de mercancía (<code>OPENAI_API_KEY</code>).</p></div>`;
+}
+
 // ---- Recepción Inteligente de Mercancía ----
 // Reglas en la base (docs/supabase-recepcion.sql): sin nota procesada no hay renglones ni
 // ingreso; el inventario solo sube con rpc_recep_autorizar (supervisor) y cada entrada queda
@@ -16837,7 +17327,19 @@ async function handleAdminLogin() {
   }
 }
 
+let datosPanelCargados = false;
+function cargarDatosPanel() {
+  if (datosPanelCargados || !haySesionPanel() || !document.getElementById('adminDashboardWrapper')) return;
+  datosPanelCargados = true;
+  loadHistVentasLive();
+  loadCustomersFromAPI();
+  loadOrdersFromAPI();
+  loadRealProductSales();
+  loadCartsFromAPI();
+  loadSuppliersFromAPI();
+}
 function showAdminDashboard() {
+  cargarDatosPanel();
   const sf = document.getElementById('view-storefront');
   const portal = document.getElementById('view-cliente-portal');
   const dash = document.getElementById('adminDashboardWrapper');
@@ -18878,12 +19380,17 @@ async function loadStorefrontFeaturedPreview(){
   }
 }
 
-function renderStorefrontProducts(cat = 'all', query = '', keepPage) {
+// fondo = true: solo se actualiza la cuadrícula de la portada (p. ej. al terminar de cargar el
+// catálogo), sin sacar al cliente de la página donde está — antes eso regresaba a la portada a
+// quien entraba directo a una categoría como /290-promociones.
+function renderStorefrontProducts(cat = 'all', query = '', keepPage, fondo) {
   const grid = document.getElementById('storefrontProductGrid');
   if (!grid) return;
 
-  hideStorefrontPages();
-  resetStorefrontSeoTags();
+  if (!fondo) {
+    hideStorefrontPages();
+    resetStorefrontSeoTags();
+  }
 
   if (!keepPage) {
     currentStorefrontCat = cat;
@@ -19107,7 +19614,7 @@ function renderCatalogSidebar(){
   list.innerHTML = `
     <li><a class="${catalogState.catId === 'all' && !catalogState.query ? 'active' : ''}" href="/266-productos" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); selectCatalogCategory('all');">Todos los productos</a></li>
     ` + catalogCategories.map(c => `
-    <li><a class="${String(catalogState.catId) === String(c.id) && !catalogState.query ? 'active' : ''}" onclick="selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
+    <li><a class="${String(catalogState.catId) === String(c.id) && !catalogState.query ? 'active' : ''}" href="${categoryPathFor(c) || '#'}" onclick="event.preventDefault(); selectCatalogCategory('${c.id}')">${c.name}<span class="count">${c.count}</span></a></li>
   `).join('');
 }
 
@@ -19170,6 +19677,12 @@ function catalogPageFromLiveProducts(offset) {
 
 let catalogLoadSeq = 0;
 
+function faqCategoriaHtml(faq, nombre) {
+  const lista = (Array.isArray(faq) ? faq : []).filter(x => x && x.pregunta && x.respuesta);
+  if (!lista.length) return '';
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  return `<h2>Preguntas frecuentes sobre ${esc(nombre || 'esta categoría')}</h2>` + lista.map(x => `<details><summary>${esc(x.pregunta)}</summary><p>${esc(x.respuesta)}</p></details>`).join('');
+}
 async function loadCatalogPage(){
   const grid = document.getElementById('catalogGrid');
   const statusEl = document.getElementById('catalogStatus');
@@ -19184,9 +19697,25 @@ async function loadCatalogPage(){
 
   const searching = !!catalogState.query;
   const titleEl = document.getElementById('catalogSearchTitle');
+  // Fuera de una búsqueda, el título (H1) es el nombre de la categoría y debajo va su
+  // presentación (ps_categorias.description); el servidor ya los manda armados (middleware.js).
+  const catActual = !searching && catalogState.catId !== 'all' ? catalogCategories.find(c => String(c.id) === String(catalogState.catId)) : null;
   if (titleEl) {
-    titleEl.textContent = searching ? `Resultados para “${catalogState.query}”` : '';
-    titleEl.classList.toggle('hidden', !searching);
+    const titulo = searching ? `Resultados para “${catalogState.query}”` : (catActual ? catActual.name : '');
+    if (titulo || !titleEl.textContent || searching) titleEl.textContent = titulo;
+    titleEl.classList.toggle('hidden', !titleEl.textContent);
+    let intro = document.getElementById('catalogCatIntro');
+    if (!intro) { intro = document.createElement('div'); intro.id = 'catalogCatIntro'; intro.className = 'catalog-cat-intro'; titleEl.after(intro); }
+    if (searching) intro.innerHTML = '';
+    else if (catActual) intro.innerHTML = catActual.description || '';
+    intro.classList.toggle('hidden', !intro.innerHTML.trim());
+    // Preguntas frecuentes de la categoría (módulo SEO); el servidor también las manda armadas.
+    const faqEl = document.getElementById('catalogCatFaq');
+    if (faqEl) {
+      if (searching) faqEl.innerHTML = '';
+      else if (catActual) faqEl.innerHTML = faqCategoriaHtml(catActual.faq, catActual.name);
+      faqEl.classList.toggle('hidden', !faqEl.innerHTML.trim());
+    }
   }
   document.querySelector('#storefrontCatalogPage .catalog-layout')?.classList.toggle('searching', searching);
   if (searching && !(productsFirstLoadDone && liveProducts.length > 0)) {
@@ -19331,7 +19860,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
       </div>
       <div>
         <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
-        <h2 style="margin:6px 0 10px; font-size:22px; color:#2e1065;">${p.name}</h2>
+        <${qtyId === 'storefrontPageQty' ? 'h1' : 'h2'} style="margin:6px 0 10px; font-size:22px; color:#2e1065;">${p.name}</${qtyId === 'storefrontPageQty' ? 'h1' : 'h2'}>
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-orange);">${fmtMoney(p.price)}</div>
         ${wholesaleNoteHTML(p)}
         <p style="color:#5b4a68; line-height:1.5; font-size:14px; margin-top:14px;">${desc}</p>
@@ -21526,7 +22055,6 @@ async function loadHistVentasLive() {
 // INITIALIZE ALL
 applyPeriod('dia');
 drawHistVentasCharts();
-loadHistVentasLive();
 drawStateChart();
 drawStockChart();
 renderStockTable();
@@ -21626,11 +22154,9 @@ if (document.getElementById('cartItemsContainer')) updateCartUI();
 if (document.getElementById('clienteCartItemsList')) updateClienteCartUI();
 loadCategoriesFromAPI();
 if (document.getElementById('catalogTableBody')) loadAdminCatalogProducts();
-loadCustomersFromAPI();
-loadOrdersFromAPI();
-loadRealProductSales();
-loadCartsFromAPI();
-loadSuppliersFromAPI();
+// Clientes, pedidos, ventas, carritos y proveedores son datos privados: solo se piden con sesión
+// del panel (las rutas responden 401 sin ella). Si no hay sesión aún, se cargan al entrar.
+cargarDatosPanel();
 loadSavedTicketConfig();
 loadNotificationPrefs();
 loadClienteSession();

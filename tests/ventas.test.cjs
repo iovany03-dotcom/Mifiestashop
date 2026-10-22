@@ -1,4 +1,6 @@
 const test=require('node:test'),assert=require('node:assert/strict');
+// Las rutas de ventas/proveedores piden sesión del panel (lib/sesion-panel.js): aquí se simula una válida.
+require('../lib/sesion-panel.js').sesionPanel = async () => ({ nombre: 'Prueba', es_admin: true, permisos: [] });
 // Pedidos históricos de ps_pedidos; sin llave de servicio no se suman los de
 // pedidos_online ni los tickets del POS (esos están en ventas-tickets.test.cjs).
 delete process.env.SUPABASE_SERVICE_ROLE_KEY;

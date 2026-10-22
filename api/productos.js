@@ -1,6 +1,7 @@
 // Vercel serverless function: catálogo de productos, servido 100% desde
 // Supabase (lib/productos-supabase.js) — PrestaShop ya no se consulta.
 const { productosDesdeSupabase } = require('../lib/productos-supabase.js');
+const { sesionPanel, credsDe } = require('../lib/sesion-panel.js');
 
 const SITE_URL = 'https://www.mifiestashop.com';
 
@@ -18,5 +19,9 @@ module.exports = async function handler(req, res) {
   const requestedIds = idsMode ? [...new Set(req.query.ids.split(',').map(s => s.trim()).filter(s => /^\d+$/.test(s)))].slice(0, 60) : [];
   const sortKey = req.query.sort;
 
-  await productosDesdeSupabase(req, res, { limit, offset, category, sortKey, idsMode, requestedIds, baseUrl: SITE_URL });
+  // El panel manda su sesión (header x-mfs-sesion) y recibe además el costo de compra.
+  let incluirCosto = false;
+  if (credsDe(req)) { try { await sesionPanel(req); incluirCosto = true; } catch (e) {} }
+  if (incluirCosto) res.setHeader('Cache-Control', 'private, no-store');
+  await productosDesdeSupabase(req, res, { limit, offset, category, sortKey, idsMode, requestedIds, baseUrl: SITE_URL, incluirCosto });
 };

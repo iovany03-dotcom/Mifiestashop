@@ -3,6 +3,8 @@
 // viejas en Vercel — el mock de fetch truena si alguien pide algo a
 // https://ps.test.
 const test = require('node:test'), assert = require('node:assert/strict');
+// Las rutas de ventas/proveedores piden sesión del panel (lib/sesion-panel.js): aquí se simula una válida.
+require('../lib/sesion-panel.js').sesionPanel = async () => ({ nombre: 'Prueba', es_admin: true, permisos: [] });
 
 process.env.PS_API_KEY = 'llave-secreta';
 process.env.PS_BASE_URL = 'https://ps.test';

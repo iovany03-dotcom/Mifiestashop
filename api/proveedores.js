@@ -1,13 +1,15 @@
 // Vercel serverless function: lista de proveedores (ps_proveedores en Supabase).
+const { exigirSesion } = require('../lib/sesion-panel.js');
 const { sbGetAll } = require('../lib/catalogo-supabase.js');
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!(await exigirSesion(req, res))) return;
 
   // ps_proveedores solo tiene nombre y estado (lo que traía PrestaShop).
   try {
-    const rows = await sbGetAll('ps_proveedores?select=id,name,active&order=id.asc');
+    const rows = await sbGetAll('ps_proveedores?select=id,name,active&order=id.asc', { privado: true });
     const suppliers = rows.map(s => ({
       id: s.id,
       name: s.name || `Proveedor #${s.id}`,

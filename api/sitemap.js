@@ -22,9 +22,14 @@ module.exports = async function handler(req, res) {
   try {
     const [rows, cats] = await Promise.all([
       fetchCatalogoActivo('id,link_rewrite,barcode,category_id', '&source=eq.prestashop'),
-      sbGetAll('ps_categorias?select=id,link_rewrite&order=id.asc').catch(() => [])
+      sbGetAll('ps_categorias?select=id,link_rewrite,active&order=id.asc').catch(() => [])
     ]);
     const catRw = new Map(cats.map(c => [String(c.id), c.link_rewrite]));
+    // Categorías activas con productos (/{id}-{link_rewrite}, ver middleware.js); las vacías
+    // quedan fuera para no mandar a Google páginas sin contenido. 1 y 2 son raíces internas.
+    const conProductos = new Set(rows.map(p => String(p.category_id)));
+    cats.filter(c => c.active && c.link_rewrite && c.id > 2 && (conProductos.has(String(c.id)) || c.id === 266))
+      .forEach(c => urls.push({ loc: `${siteOrigin}/${c.id}-${c.link_rewrite}`, priority: '0.9' }));
     rows.forEach(p => {
       const path = productoPath({ id: p.id, linkRewrite: p.link_rewrite, ean13: p.barcode, categoryRewrite: catRw.get(String(p.category_id)) });
       if (path) urls.push({ loc: `${siteOrigin}${path}`, priority: '0.8' });

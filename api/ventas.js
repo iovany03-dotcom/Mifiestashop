@@ -5,6 +5,7 @@
 
 // La tienda de cada pedido es el empleado (caja) que lo registró. Sin
 // empleado = tienda en línea; cualquier otro empleado se agrupa en "Otros".
+const { exigirSesion } = require('../lib/sesion-panel.js');
 const { sbGetAll } = require('../lib/catalogo-supabase.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -33,7 +34,9 @@ function storeOf(order) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
+  // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!(await exigirSesion(req, res))) return;
 
   const { from, to } = req.query;
   if (!from || !to) {
@@ -53,7 +56,8 @@ module.exports = async function handler(req, res) {
     // date_add se guarda con la hora local de la tienda.
     const orders = await sbGetAll(
       `ps_pedidos?select=id,total_paid,date_add,id_employee&valid=is.true&or=(id_currency.eq.3,id_currency.is.null)` +
-      `&date_add=gte.${encodeURIComponent(fromDt)}&date_add=lte.${encodeURIComponent(toDt)}&order=id.asc`
+      `&date_add=gte.${encodeURIComponent(fromDt)}&date_add=lte.${encodeURIComponent(toDt)}&order=id.asc`,
+      { privado: true }
     );
     // Pedidos de la tienda propia (checkout público / manuales / API) en
     // pedidos_online: cuentan los que tienen pago validado; la fecha se toma

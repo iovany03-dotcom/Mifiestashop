@@ -19,7 +19,7 @@
 // no está migrado, la categoría no existe, o algo falla, se deja pasar el
 // HTML sin tocar — nunca rompe la carga de la página.
 export const config = {
-  matcher: ['/:id(\\d+)-:slug*', '/:cat/:id(\\d+)-:slug*'],
+  matcher: ['/', '/:id(\\d+)-:slug*', '/:cat/:id(\\d+)-:slug*'],
 };
 
 import cmsManifest from './data/cms-manifest.json';
@@ -34,7 +34,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BYPASS_HEADER = 'x-mfs-mw-bypass';
 
 function stripHtml(str) {
-  return String(str || '').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return String(str || '').replace(/<\s*(script|style)[\s\S]*?<\s*\/\s*\1\s*>/gi, ' ').replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 function escapeAttr(str) {
@@ -58,21 +58,44 @@ function replaceAttr(html, selector, attr, newValue) {
 // Arma el JSON-LD Product (Schema.org) como texto seguro para incrustar en
 // un <script>: escapa "<" para que ni una descripción con ese caracter
 // pueda cerrar la etiqueta antes de tiempo (</script> dentro del string).
-// Sin "offers"/precio a propósito: el precio vive siempre en vivo en
-// PrestaShop (nunca se migró, ver api/productos.js), y traerlo aquí
-// añadiría al middleware la misma dependencia lenta que ya nos dejó sin
-// catálogo una vez en esta sesión — no vale la pena para un middleware que
-// tiene que responder rápido en cada carga de página de producto.
-function buildProductJsonLd(name, sku, desc, images) {
-  const json = JSON.stringify({
-    '@context': 'https://schema.org',
+// El precio sale de catalogo_productos (la fuente desde que se desconectó PrestaShop), en la
+// misma consulta: no agrega llamadas. Con "offers" Google puede mostrar el precio en los
+// resultados; BreadcrumbList muestra Inicio › Categoría en vez de la URL.
+function buildProductJsonLd(name, sku, desc, images, extra = {}) {
+  const { price, pageUrl, barcode, categoria } = extra;
+  const producto = {
     '@type': 'Product',
     name,
     sku: sku || undefined,
+    gtin13: gtin13Valido(barcode) ? String(barcode) : undefined,
+    brand: { '@type': 'Brand', name: 'Mi Fiestashop' },
     description: desc,
     image: images.map(url => ({ '@type': 'ImageObject', url, width: 800, height: 800 }))
+  };
+  if (Number(price) > 0) {
+    producto.offers = {
+      '@type': 'Offer', price: Number(price).toFixed(2), priceCurrency: 'MXN',
+      availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition',
+      url: pageUrl || undefined, seller: { '@type': 'Organization', name: 'Mi Fiestashop' }
+    };
+  }
+  const migas = [{ '@type': 'ListItem', position: 1, name: 'Inicio', item: `${ORIGEN_SEO}/` }];
+  if (categoria && categoria.name && categoria.path) migas.push({ '@type': 'ListItem', position: 2, name: categoria.name, item: `${ORIGEN_SEO}${categoria.path}` });
+  migas.push({ '@type': 'ListItem', position: migas.length + 1, name, item: pageUrl || undefined });
+  const json = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [producto, { '@type': 'BreadcrumbList', itemListElement: migas }]
   });
   return json.replace(/</g, '\\u003c');
+}
+const ORIGEN_SEO = 'https://www.mifiestashop.com';
+// Solo se declara el GTIN si el dígito verificador cuadra: muchos códigos de barras del
+// catálogo son internos y un GTIN inválido es un error en Google Merchant / resultados.
+function gtin13Valido(c) {
+  const s = String(c || '');
+  if (!/^\d{13}$/.test(s)) return false;
+  const suma = s.slice(0, 12).split('').reduce((t, d, i) => t + Number(d) * (i % 2 ? 3 : 1), 0);
+  return (10 - (suma % 10)) % 10 === Number(s[12]);
 }
 
 // Consulta a Supabase con la llave pública. null = falla nuestra (red o
@@ -101,11 +124,11 @@ const CATALOGO_RAIZ = '/266-productos';
 // false } si el id no es de la tienda, { redirect } si está desactivado
 // (a su categoría, como hace PrestaShop) o { canonicalPath, seo }.
 async function resolveProduct(id) {
-  const rows = await sb(`catalogo_productos?id=eq.${id}&select=id,name,sku,link_rewrite,barcode,category_id,active,description_short,description,images,meta_title,meta_description`);
+  const rows = await sb(`catalogo_productos?id=eq.${id}&select=id,name,sku,link_rewrite,barcode,category_id,active,description_short,description,images,meta_title,meta_description,price,price_mayoreo,price_mayoreo_desde_unidades`);
   if (!rows) return { unknown: true };
   const p = rows[0];
   if (!p) return { exists: false };
-  const cats = p.category_id ? await sb(`ps_categorias?id=eq.${p.category_id}&select=id,link_rewrite,active`) : [];
+  const cats = p.category_id ? await sb(`ps_categorias?id=eq.${p.category_id}&select=id,name,link_rewrite,active`) : [];
   const cat = cats && cats[0];
   if (!p.active) {
     return { redirect: cat && cat.active && cat.link_rewrite ? `/${cat.id}-${cat.link_rewrite}` : CATALOGO_RAIZ };
@@ -128,7 +151,16 @@ async function resolveProduct(id) {
       title: `${(p.meta_title && p.meta_title.trim()) || name} | Mi Fiestashop`,
       desc,
       image: images[0] || null,
-      jsonLd: buildProductJsonLd(name, (m && m.sku) || p.sku, desc, images)
+      ssr: {
+        tipo: 'producto', name, price: Number(p.price) || 0, images,
+        mayoreo: Number(p.price_mayoreo) > 0 && Number(p.price_mayoreo) < Number(p.price) && p.price_mayoreo_desde_unidades > 1 ? { precio: Number(p.price_mayoreo), desde: p.price_mayoreo_desde_unidades } : null,
+        descripcion: (m && m.description) || p.description || p.description_short || '',
+        categoria: cat && cat.active && cat.link_rewrite ? { name: cat.name, path: `/${cat.id}-${cat.link_rewrite}` } : null
+      },
+      jsonLd: buildProductJsonLd(name, (m && m.sku) || p.sku, desc, images, {
+        price: p.price, barcode: p.barcode, pageUrl: `${ORIGEN_SEO}${canonicalPath}`,
+        categoria: cat && cat.active && cat.link_rewrite ? { name: cat.name, path: `/${cat.id}-${cat.link_rewrite}` } : null
+      })
     }
   };
 }
@@ -138,7 +170,7 @@ async function resolveProduct(id) {
 // (p. ej. /145-promociones -> /290-promociones) se redirigen.
 async function resolveCategory(id, slug) {
   if (id === '1' || id === '2') return { redirect: CATALOGO_RAIZ };
-  const rows = await sb(`ps_categorias?id=eq.${id}&select=id,name,active,link_rewrite,description,meta_title,meta_description`);
+  const rows = await sb(`ps_categorias?id=eq.${id}&select=id,name,active,link_rewrite,description,meta_title,meta_description,faq`);
   if (!rows) return { unknown: true };
   const c = rows[0];
   if (!c || !c.name || !c.active) {
@@ -148,9 +180,17 @@ async function resolveCategory(id, slug) {
     }
     return { exists: false };
   }
+  // Productos de la categoría (para la lista en el HTML y el ItemList de Google).
+  const prods = await sb(`catalogo_productos?category_id=eq.${c.id}&active=eq.true&select=id,name,price,link_rewrite,barcode&order=id.desc&limit=60`) || [];
+  const ssr = {
+    tipo: 'categoria', id: c.id, name: c.name, descripcion: c.description || '',
+    faq: (Array.isArray(c.faq) ? c.faq : []).filter(x => x && x.pregunta && x.respuesta).slice(0, 10),
+    productos: prods.filter(x => x.name && x.link_rewrite).map(x => ({ name: x.name, price: Number(x.price) || 0, path: productoPath(x.id, x.link_rewrite, x.barcode, c.link_rewrite) }))
+  };
   return {
     exists: true,
     canonicalPath: c.link_rewrite ? `/${c.id}-${c.link_rewrite}` : null,
+    ssr,
     seo: {
       title: `${(c.meta_title && c.meta_title.trim()) || c.name} | Mi Fiestashop`,
       desc: (stripHtml(c.meta_description) || stripHtml(c.description) || `Compra ${c.name} al mayoreo y menudeo en Mi Fiestashop. Envío a todo México.`).slice(0, 160),
@@ -201,6 +241,125 @@ function goneFacet(url) {
   });
 }
 
+
+// ---------------------------------------------------------------- tienda ligera
+// index.html trae la tienda Y todo el panel de administración (1.2 MB). El panel se sirve aparte
+// en /admin (api/admin-page.js, el index.html completo), así que a las páginas de la tienda se les
+// quita el marcado del panel y sus ventanas, y el código (un solo <script> de ~800 KB) se manda como
+// archivo aparte /app/<hash>.js (api/app-js.js) que el navegador guarda en caché: cada página pesa
+// ~170 KB y Google lee solo la tienda. El hash cambia con cada versión del código.
+const MODALES_ADMIN = ['apiKeyModal', 'editProductModal', 'orderDetailModal', 'crearPedidoModal', 'checkoutModal', 'ticketModal',
+  'ticketHistorialModal', 'salidasCajaModal', 'abrirCajaModal', 'cerrarCajaModal', 'ticketConfigModal', 'cajaHistorialModal',
+  'salidaFotoModal', 'personalModal', 'cmsPageAdminModal', 'promoAdminModal', 'emailTemplatePreviewModal', 'prodModalOverlay',
+  'recModal', 'traspasoModal', 'movHistoryModal'];
+
+// Quita el elemento con ese id (y todo su contenido) contando etiquetas abiertas/cerradas.
+function quitarElemento(html, id) {
+  const i = html.indexOf(`id="${id}"`);
+  if (i < 0) return html;
+  const ini = html.lastIndexOf('<', i);
+  const tag = (/^<([a-zA-Z0-9]+)/.exec(html.slice(ini)) || [])[1];
+  if (!tag) return html;
+  const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+  re.lastIndex = ini;
+  let prof = 0, m;
+  while ((m = re.exec(html))) {
+    prof += m[1] ? -1 : 1;
+    if (prof === 0) return html.slice(0, ini) + html.slice(m.index + m[0].length);
+  }
+  return html;
+}
+
+let appCache = { clave: null, hash: null };
+async function hashTexto(t) {
+  const buf = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(t));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 12);
+}
+
+async function tiendaLigera(html) {
+  // El script grande: el único <script> sin atributos de más de 100 KB.
+  const re = /<script>([\s\S]*?)<\/script>/g;
+  let m, grande = null;
+  while ((m = re.exec(html))) if (m[1].length > 100000) { grande = m; break; }
+  if (!grande) return html; // estructura inesperada: no se toca nada
+  const clave = `${grande[1].length}:${grande[1].slice(0, 200)}:${grande[1].slice(-200)}`;
+  if (appCache.clave !== clave) appCache = { clave, hash: await hashTexto(grande[1]) };
+  let h = html.slice(0, grande.index) + `<script src="/app/${appCache.hash}.js"></script>` + html.slice(grande.index + grande[0].length);
+  h = quitarElemento(h, 'adminDashboardWrapper');
+  for (const id of MODALES_ADMIN) h = quitarElemento(h, id);
+  return h;
+}
+
+// Un solo H1 por página: el de la página. Los demás títulos fijos de la tienda bajan a H2/p.
+// tipo: 'inicio' (se queda el H1 de la portada), 'producto' (el H1 es el nombre) o 'categoria'
+// (el H1 es el título del catálogo).
+function unSoloH1(html, tipo) {
+  if (tipo !== 'inicio') html = html.replace('<h1 class="sr-only">', '<p class="sr-only">').replace(/(<p class="sr-only">[^<]*)<\/h1>/, '$1</p>');
+  if (tipo !== 'categoria') html = html.replace('<h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>', '<h2 id="catalogSearchTitle" class="catalog-search-title hidden"></h2>');
+  return html
+    .replace('<h1 style="color:#2e1065; margin-bottom:8px;">Contacto</h1>', '<h2 style="color:#2e1065; margin-bottom:8px; font-size:2em;">Contacto</h2>')
+    .replace(/<h1 id="cmsPageHeroTitle"([^>]*)><\/h1>/, '<h2 id="cmsPageHeroTitle"$1></h2>');
+}
+
+function htmlSeguro(h) {
+  return String(h || '')
+    .replace(/<\s*(script|style|iframe|object|embed|form)[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\/?(script|iframe|object|embed|form|input|button)[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/javascript:/gi, '');
+}
+const dinero = n => `$${Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Ficha del producto ya armada en el HTML (Google y el cliente la ven sin esperar al JavaScript;
+// la tienda la vuelve a dibujar igual, con existencias y botón de compra, al cargar).
+function fichaProducto(ssr) {
+  const migas = `<nav class="ssr-migas" aria-label="Migas de pan" style="font-size:13px; margin:0 0 12px;"><a href="/">Inicio</a>${ssr.categoria ? ` › <a href="${escapeAttr(ssr.categoria.path)}">${escapeAttr(ssr.categoria.name)}</a>` : ''} › <span>${escapeAttr(ssr.name)}</span></nav>`;
+  const fotos = ssr.images.slice(0, 4).map((u, i) => `<img src="${escapeAttr(u)}" alt="${escapeAttr(ssr.name)}${i ? ` — foto ${i + 1}` : ''}" width="${i ? 120 : 480}" height="${i ? 120 : 480}" style="max-width:100%; height:auto; border-radius:12px; object-fit:cover;"${i ? ' loading="lazy"' : ' fetchpriority="high"'}>`).join(' ');
+  return `${migas}<article class="ssr-producto"><h1 style="font-size:1.6rem; margin:0 0 10px;">${escapeAttr(ssr.name)}</h1>
+<div>${fotos}</div>
+${ssr.price > 0 ? `<p style="font-size:1.5rem; font-weight:800; color:#2e1065; margin:12px 0 4px;">${dinero(ssr.price)} MXN</p>` : ''}
+${ssr.mayoreo ? `<p style="margin:0 0 10px;">Mayoreo: ${dinero(ssr.mayoreo.precio)} c/u desde ${ssr.mayoreo.desde} piezas</p>` : ''}
+<div class="ssr-descripcion">${htmlSeguro(ssr.descripcion)}</div></article>`;
+}
+
+function introCategoria(ssr) {
+  const lista = ssr.productos.length ? `<ul class="ssr-lista" style="columns:2; font-size:13px; padding-left:18px;">${ssr.productos.map(p => `<li><a href="${escapeAttr(p.path)}">${escapeAttr(p.name)}</a>${p.price > 0 ? ` — ${dinero(p.price)}` : ''}</li>`).join('')}</ul>` : '';
+  return `<div class="ssr-categoria-productos">${lista}</div>`;
+}
+
+// Igual que faqCategoriaHtml en index.html (la tienda la vuelve a dibujar igual al cargar).
+function faqCategoria(ssr) {
+  if (!ssr.faq.length) return '';
+  return `<h2>Preguntas frecuentes sobre ${escapeAttr(ssr.name)}</h2>` + ssr.faq.map(x => `<details><summary>${escapeAttr(x.pregunta)}</summary><p>${escapeAttr(x.respuesta)}</p></details>`).join('');
+}
+
+function catalogoProductosJsonLd(ssr, pageUrl) {
+  const json = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'CollectionPage', name: ssr.name, url: pageUrl, description: stripHtml(ssr.descripcion).slice(0, 300) || undefined,
+        mainEntity: { '@type': 'ItemList', numberOfItems: ssr.productos.length, itemListElement: ssr.productos.slice(0, 30).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: `${ORIGEN_SEO}${p.path}`, name: p.name })) } },
+      { '@type': 'BreadcrumbList', itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${ORIGEN_SEO}/` },
+        { '@type': 'ListItem', position: 2, name: ssr.name, item: pageUrl }] },
+      ...(ssr.faq.length ? [{ '@type': 'FAQPage', mainEntity: ssr.faq.map(x => ({ '@type': 'Question', name: x.pregunta, acceptedAnswer: { '@type': 'Answer', text: x.respuesta } })) }] : [])
+    ]
+  });
+  return json.replace(/</g, '\\u003c');
+}
+
+async function servirInicio(url, request) {
+  const bypassHeaders = new Headers(request.headers);
+  bypassHeaders.set(BYPASS_HEADER, '1');
+  const origin = await fetch(url.toString(), { headers: bypassHeaders });
+  if (!origin.ok || !(origin.headers.get('content-type') || '').includes('text/html')) return origin;
+  const html = unSoloH1(await tiendaLigera(await origin.text()), 'inicio');
+  const headers = new Headers(origin.headers);
+  headers.delete('content-length'); headers.delete('content-encoding');
+  headers.set('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=600');
+  return new Response(html, { status: 200, headers });
+}
+
 export default async function middleware(request) {
   if (request.headers.get(BYPASS_HEADER)) return; // ya es la re-petición interna: no reprocesar
 
@@ -213,6 +372,9 @@ export default async function middleware(request) {
   // 410 al instante, sin consultar Supabase ni cargar la tienda (y le dice
   // a Google que esas ligas ya no existen).
   if (isPrestashopFacetQuery(url.searchParams)) return goneFacet(url);
+  if (url.pathname === '/') {
+    try { return await servirInicio(url, request); } catch (e) { return; }
+  }
   // Fotos con la liga vieja de PrestaShop (/{id_imagen}-large_default/x.jpg):
   // no hay forma de saber a qué producto corresponden — 404 real en vez de
   // la portada.
@@ -272,9 +434,31 @@ export default async function middleware(request) {
       html = replaceAttr(html, 'property="og:image"', 'content', image);
       html = replaceAttr(html, 'name="twitter:image"', 'content', image);
     }
-    if (jsonLd) {
-      html = html.replace(/(<script id="ldJsonProduct"[^>]*>)[^<]*(<\/script>)/, `$1${jsonLd}$2`);
+    const ssr = r.ssr || (r.seo && r.seo.ssr) || null;
+    const ld = jsonLd || (ssr && ssr.tipo === 'categoria' ? catalogoProductosJsonLd(ssr, pageUrl) : null);
+    if (ld) {
+      html = html.replace(/(<script id="ldJsonProduct"[^>]*>)[^<]*(<\/script>)/, `$1${ld}$2`);
     }
+
+    // Tienda ligera + contenido ya armado en el HTML.
+    try {
+      html = unSoloH1(await tiendaLigera(html), ssr && ssr.tipo === 'categoria' ? 'categoria' : 'producto');
+      if (ssr && ssr.tipo === 'producto') {
+        html = html
+          .replace('<div class="store-hero" id="storefrontHero"', '<div class="store-hero hidden" id="storefrontHero"')
+          .replace('<div id="storefrontStoreContainer">', '<div id="storefrontStoreContainer" class="hidden">')
+          .replace('class="store-container hidden" id="storefrontProductPage"', 'class="store-container" id="storefrontProductPage"')
+          .replace('<div id="storefrontProductPageBody"></div>', `<div id="storefrontProductPageBody">${fichaProducto(ssr)}</div>`);
+      } else if (ssr && ssr.tipo === 'categoria') {
+        html = html
+          .replace('<div class="store-hero" id="storefrontHero"', '<div class="store-hero hidden" id="storefrontHero"')
+          .replace('<div id="storefrontStoreContainer">', '<div id="storefrontStoreContainer" class="hidden">')
+          .replace('class="store-container hidden" id="storefrontCatalogPage"', 'class="store-container" id="storefrontCatalogPage"')
+          .replace('<h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>', `<h1 id="catalogSearchTitle" class="catalog-search-title">${escapeAttr(ssr.name)}</h1><div id="catalogCatIntro" class="catalog-cat-intro">${htmlSeguro(ssr.descripcion)}</div>`)
+          .replace('<div class="store-prods-grid" id="catalogGrid"></div>', `<div class="store-prods-grid" id="catalogGrid">${introCategoria(ssr)}</div>`)
+          .replace('<section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>', `<section id="catalogCatFaq" class="catalog-cat-faq${ssr.faq.length ? '' : ' hidden'}">${faqCategoria(ssr)}</section>`);
+      }
+    } catch (e) { /* si algo falla se manda el HTML con las etiquetas ya puestas */ }
 
     return finalize(html, origin, origin.status);
   } catch (e) {

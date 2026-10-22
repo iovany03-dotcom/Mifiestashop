@@ -3,12 +3,13 @@
 // copiado en Supabase (vista ps_ventas_producto_mes) más los tickets del POS
 // propio (pos_ventas_producto_mes).
 
-const { sbGetAll, SUPABASE_URL, SUPABASE_ANON_KEY } = require('../lib/catalogo-supabase.js');
+const { exigirSesion } = require('../lib/sesion-panel.js');
+const { sbGetAll, SUPABASE_URL } = require('../lib/catalogo-supabase.js');
 
 // Pedidos válidos en pesos en ps_pedidos (solo el conteo, sin traer filas).
 async function countValidOrders() {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/ps_pedidos?select=id&valid=is.true&or=(id_currency.eq.3,id_currency.is.null)&limit=1`, {
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, Prefer: 'count=exact' }
+    headers: { apikey: LLAVE_SERVICIO(), Authorization: `Bearer ${LLAVE_SERVICIO()}`, Prefer: 'count=exact' }
   });
   const range = r.headers.get('content-range') || '';
   return parseInt(range.split('/')[1], 10) || 0;
@@ -38,15 +39,17 @@ async function posVentasPorProducto() {
   }
 }
 
+const LLAVE_SERVICIO = () => process.env.SUPABASE_SERVICE_ROLE_KEY;
 module.exports = async function handler(req, res) {
-  res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
+  res.setHeader('Cache-Control', 'private, no-store');
+  if (!(await exigirSesion(req, res))) return;
 
   // ps_ventas_producto_mes: líneas de ps_pedidos válidos en pesos, ya
   // agregadas por producto y mes en la base de datos.
   try {
     const [psRows, ordersProcessed, pos] = await Promise.all([
-      sbGetAll('ps_ventas_producto_mes?select=product_id,month,product_name,product_reference,units,revenue,lines&order=product_id.asc,month.asc'),
+      sbGetAll('ps_ventas_producto_mes?select=product_id,month,product_name,product_reference,units,revenue,lines&order=product_id.asc,month.asc', { privado: true }),
       countValidOrders(),
       posVentasPorProducto()
     ]);

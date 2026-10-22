@@ -56,6 +56,8 @@ const PREVIEW_SAMPLE_DATA = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const { exigirSesion } = require('../lib/sesion-panel.js');
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -97,6 +99,10 @@ module.exports = async function handler(req, res) {
     res.status(400).json({ error: 'Tipo de correo no permitido para envío' });
     return;
   }
+  // Desde la tienda pública solo se manda la bienvenida al boletín (a quien se suscribe). Los
+  // demás (pedido, envío, bienvenida) los manda el panel: con sesión, para que nadie use el
+  // correo de la tienda para enviar mensajes falsos.
+  if (tipo !== 'suscripcion' && !(await exigirSesion(req, res))) return;
 
   // Los datos bancarios de un pedido por transferencia los pone el servidor
   // (ajustes_pago); lo que venga del navegador en "transferencia" se ignora.
