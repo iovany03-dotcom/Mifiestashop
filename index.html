@@ -7230,7 +7230,7 @@ function reportAddToCart(product, qty) {
 // veces y Meta contaba N agregados al carrito de 1 pieza cada uno.
 function addToCartTracked(product, qty) {
   const n = Math.max(1, parseInt(qty, 10) || 1);
-  for (let i = 0; i < n; i++) addToCart(product);
+  for (let i = 0; i < n; i++) addToCartCore(product);
   reportAddToCart(product, n);
 }
 
@@ -8345,7 +8345,33 @@ function cartRegaloQty(id, delta) {
   updateCartUI();
 }
 
+// Producto marcado "Como regalo": al tocarlo se elige si se vende (cobrado) o sale de regalo ($0).
 function addToCart(product) {
+  if (!esRegaloResena(product.id)) return addToCartCore(product);
+  document.getElementById('posRegaloElegir')?.remove();
+  const ov = document.createElement('div');
+  ov.id = 'posRegaloElegir';
+  ov.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:10000; display:flex; align-items:center; justify-content:center; padding:16px;';
+  ov.innerHTML = `<div style="background:var(--card-bg, #fff); color:inherit; border-radius:14px; padding:20px; max-width:340px; width:100%; text-align:center;">
+      <div style="font-weight:700; margin-bottom:4px;">${escapeHtml(product.name)}</div>
+      <div style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">¿Se vende o se entrega como regalo por reseña?</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn primary" style="flex:1;" data-r="venta">Vender ${fmtMoney(product.price)}</button>
+        <button class="btn secondary" style="flex:1;" data-r="regalo">🎁 Regalo $0</button>
+      </div>
+      <button class="btn small secondary" style="margin-top:10px;" data-r="x">Cancelar</button>
+    </div>`;
+  ov.addEventListener('click', e => {
+    const r = e.target.closest('[data-r]')?.dataset.r;
+    if (!r && e.target !== ov) return;
+    ov.remove();
+    if (r === 'venta') addToCartCore(product);
+    else if (r === 'regalo') { addToCartCore(product); cartRegaloQty(product.id, 1); }
+  });
+  document.body.appendChild(ov);
+}
+
+function addToCartCore(product) {
   const existing = cart.find(item => item.id === product.id);
   if (existing) {
     existing.qty++;
@@ -13427,7 +13453,7 @@ function addToClienteCart(pId) {
   // inserta el id sin comillas y llega como número aunque el id real sea texto.
   const prod = dataset.find(p => p.id == pId);
   if(!prod) return;
-  addToCart({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
+  addToCartCore({ id: prod.id, name: prod.name, sku: prod.sku, price: prod.price, cat: prod.cat || 'general', img: prod.img });
   updateStoreCartBadge();
   updateClienteCartUI();
   reportAddToCart(prod, 1);
@@ -13532,7 +13558,7 @@ function repeatCustomerOrder(folio) {
   }
   items.forEach(item => {
     for (let i = 0; i < (item.qty || 1); i++) {
-      addToCart({ id: item.id, name: item.name, sku: item.sku || '', price: item.price, cat: 'general', img: '' });
+      addToCartCore({ id: item.id, name: item.name, sku: item.sku || '', price: item.price, cat: 'general', img: '' });
     }
   });
   updateStoreCartBadge();
