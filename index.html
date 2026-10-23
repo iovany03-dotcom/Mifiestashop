@@ -10324,6 +10324,7 @@ function renderDynamicCatPills(){
   catsSet.forEach(c => {
     html += `<button class="cat-pill" data-cat="${c.toLowerCase()}">${c}</button>`;
   });
+  html += `<button class="cat-pill" data-cat="__regalos">🎁 Regalos</button>`;
   container.innerHTML = html;
 }
 
@@ -13611,7 +13612,7 @@ function renderProducts(category = 'all', query = '') {
   const filterByStock = POS_STOCK_WAREHOUSES.includes(whKey);
 
   const matchedByFilters = dataset.filter(p => {
-    const matchCat = category === 'all' || p.cat === category.toLowerCase();
+    const matchCat = category === 'all' || (category === '__regalos' ? esRegaloResena(p.id) : p.cat === category.toLowerCase());
     const matchQ = !query || normalizeEs(p.name).includes(normalizeEs(query)) || normalizeEs(p.sku).includes(normalizeEs(query)) || (p.barcode && p.barcode.includes(query)) || String(p.id) === query.trim();
     return matchCat && matchQ;
   });
@@ -13642,6 +13643,7 @@ function renderProducts(category = 'all', query = '') {
       <div>
         <div class="p-title">${escapeHtml(p.name)}</div>
         <div class="p-sku">SKU / Cód: ${escapeHtml(p.sku)}</div>
+        ${esRegaloResena(p.id) ? '<div style="font-size:10.5px; color:#9333ea; font-weight:700;">🎁 Regalo por reseña</div>' : ''}
       </div>
       <div class="p-bottom">
         <div class="p-price">${fmtMoney(p.price)}</div>
