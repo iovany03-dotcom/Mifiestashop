@@ -141,6 +141,10 @@
       "destination": "/api/app-js?h=:hash"
     },
     {
+      "source": "/facturar",
+      "destination": "/facturar.html"
+    },
+    {
       "source": "/mcp",
       "destination": "/api/mcp"
     },

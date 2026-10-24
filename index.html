@@ -6106,6 +6106,8 @@
       <div class="ticket-divider"></div>
       <div class="t-center ticket-thanks" id="tFooterMsg">Gracias por Tu Compra</div>
       <div class="t-center ticket-sub">www.mifiestashop.com</div>
+      <!-- Solo en tickets con IVA (los únicos que el cliente puede facturar en /facturar, ver api/autofactura.js). -->
+      <div class="t-center ticket-sub hidden" id="tFacturaMsg" style="margin-top:6px;">¿Necesitas factura? Entra a<br><b>mifiestashop.com/facturar</b><br>con tu número de ticket y el total.</div>
       <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
     </div>
 
@@ -8670,7 +8672,7 @@ async function confirmPOSSale() {
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = clienteNombre;
   document.getElementById('tSubtotal').textContent = fmtMoney(subtotal);
-  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0); document.getElementById('tFacturaMsg')?.classList.toggle('hidden', iva <= 0);
   document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
@@ -8879,7 +8881,7 @@ function reprintTicket(folio, total) {
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = 'Cliente POS';
   document.getElementById('tSubtotal').textContent = fmtMoney(total);
-  document.getElementById('tIvaRow').classList.add('hidden');
+  document.getElementById('tIvaRow').classList.add('hidden'); document.getElementById('tFacturaMsg')?.classList.add('hidden');
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(total);
   document.getElementById('tChange').textContent = '$0.00';
@@ -9384,7 +9386,7 @@ function viewPosTicketFromHistorial(id) {
   document.getElementById('tFecha').textContent = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = t.cliente || 'Cliente POS';
   document.getElementById('tSubtotal').textContent = fmtMoney(t.subtotal != null ? t.subtotal : t.total);
-  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0); document.getElementById('tFacturaMsg')?.classList.toggle('hidden', iva <= 0);
   document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(t.total);
   document.getElementById('tPaid').textContent = fmtMoney(t.pago_recibido || t.total);
