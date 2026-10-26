@@ -251,7 +251,9 @@ function goneFacet(url) {
 const MODALES_ADMIN = ['apiKeyModal', 'editProductModal', 'orderDetailModal', 'crearPedidoModal', 'checkoutModal', 'ticketModal',
   'ticketHistorialModal', 'salidasCajaModal', 'abrirCajaModal', 'cerrarCajaModal', 'ticketConfigModal', 'cajaHistorialModal',
   'salidaFotoModal', 'personalModal', 'cmsPageAdminModal', 'promoAdminModal', 'emailTemplatePreviewModal', 'prodModalOverlay',
-  'recModal', 'traspasoModal', 'movHistoryModal'];
+  'recModal', 'traspasoModal', 'movHistoryModal',
+  // Acceso al panel: solo se abre en /admin, que recibe el HTML completo (api/admin-page.js).
+  'loginModal'];
 
 // Quita el elemento con ese id (y todo su contenido) contando etiquetas abiertas/cerradas.
 function quitarElemento(html, id) {
@@ -293,6 +295,32 @@ async function tiendaLigera(html) {
 // Un solo H1 por página: el de la página. Los demás títulos fijos de la tienda bajan a H2/p.
 // tipo: 'inicio' (se queda el H1 de la portada), 'producto' (el H1 es el nombre) o 'categoria'
 // (el H1 es el título del catálogo).
+// Rango [inicio, fin) del elemento con ese id (mismo conteo de etiquetas que quitarElemento).
+function rangoElemento(html, id) {
+  const i = html.indexOf(`id="${id}"`);
+  if (i < 0) return null;
+  const ini = html.lastIndexOf('<', i);
+  const tag = (/^<([a-zA-Z0-9]+)/.exec(html.slice(ini)) || [])[1];
+  if (!tag) return null;
+  const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'gi');
+  re.lastIndex = ini;
+  let prof = 0, m;
+  while ((m = re.exec(html))) { prof += m[1] ? -1 : 1; if (prof === 0) return [ini, m.index + m[0].length]; }
+  return null;
+}
+
+// Producto y categoría: los <h2> fuera de los bloques propios de la página pasan a
+// <div role="heading" class="t2"> (se ven igual, ver .t2 en index.html) para que Google no tome
+// "Productos Destacados", "Nuestras Sucursales", "Contacto"… como subtítulos de cada producto.
+function soloH2Propios(html, conservar) {
+  const rangos = conservar.map(id => rangoElemento(html, id)).filter(Boolean);
+  return html.replace(/<h2\b([^>]*)>([\s\S]*?)<\/h2>/gi, (todo, attrs, dentro, pos) => {
+    if (rangos.some(([a, b]) => pos >= a && pos < b)) return todo;
+    const a = /\bclass\s*=\s*"/i.test(attrs) ? attrs.replace(/\bclass\s*=\s*"/i, 'class="t2 ') : `${attrs} class="t2"`;
+    return `<div role="heading" aria-level="2"${a}>${dentro}</div>`;
+  });
+}
+
 function unSoloH1(html, tipo) {
   if (tipo !== 'inicio') html = html.replace('<h1 class="sr-only">', '<p class="sr-only">').replace(/(<p class="sr-only">[^<]*)<\/h1>/, '$1</p>');
   if (tipo !== 'categoria') html = html.replace('<h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>', '<h2 id="catalogSearchTitle" class="catalog-search-title hidden"></h2>');
@@ -458,6 +486,8 @@ export default async function middleware(request) {
           .replace('<div class="store-prods-grid" id="catalogGrid"></div>', `<div class="store-prods-grid" id="catalogGrid">${introCategoria(ssr)}</div>`)
           .replace('<section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>', `<section id="catalogCatFaq" class="catalog-cat-faq${ssr.faq.length ? '' : ' hidden'}">${faqCategoria(ssr)}</section>`);
       }
+      // Los H2 de las secciones del inicio, contacto, etc. (ocultas aquí) no son de esta página.
+      if (ssr) html = soloH2Propios(html, ['catalogCatIntro', 'catalogCatFaq']);
     } catch (e) { /* si algo falla se manda el HTML con las etiquetas ya puestas */ }
 
     return finalize(html, origin, origin.status);

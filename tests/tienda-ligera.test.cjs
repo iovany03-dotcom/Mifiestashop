@@ -52,6 +52,10 @@ test('inicio, producto y categoría salen ligeros, con un solo H1 y el código a
       assert.ok(!html.includes('id="traspasoModal"'), `${tipo}: no debe llevar ventanas del panel`);
       assert.ok(html.includes(`<script src="/app/${hash}.js"></script>`), `${tipo}: el hash del código debe coincidir con /api/app-js`);
       assert.equal((html.match(/<h1[\s>]/g) || []).length, 1, `${tipo}: un solo H1`);
+      assert.ok(!html.includes('id="loginModal"'), `${tipo}: sin el acceso al panel`);
+      // En producto y categoría solo quedan los H2 propios (introducción y preguntas de la categoría).
+      if (tipo === 'producto') assert.equal((html.match(/<h2[\s>]/g) || []).length, 0, 'producto: sin H2 ajenos');
+      if (tipo === 'categoria') assert.deepEqual((html.match(/<h2[^>]*>[^<]*/g) || []).map(x => x.replace(/<h2[^>]*>/, '')), ['Preguntas frecuentes sobre Fiesta Mexicana'], 'categoría: solo el H2 de sus preguntas');
       if (tipo === 'producto') {
         assert.match(html, /<h1[^>]*>Corbata tricolor<\/h1>/);
         assert.match(html, /\$9\.00 MXN/);
