@@ -15804,6 +15804,13 @@ function recVincular(id, sugeridos) {
     </div>
     <p id="recVEjemplo" style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
     <label id="recVGuardarLbl" style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo && !l.reparto ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
+    ${(() => {
+      const otros = (recActual.lineas || []).filter(x => x.id !== l.id && !x.id_product && !x.reparto && !x.ingresado_at && x.origen !== 'adicional');
+      return otros.length ? `<div id="recVOtrosLbl" style="margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:8px 10px;">
+        <div style="font-size:13px; font-weight:700; margin-bottom:4px;">Es el mismo producto en otros renglones (códigos distintos o ilegibles)</div>
+        ${otros.map(x => `<label style="display:flex; gap:6px; align-items:center; font-size:12.5px;"><input type="checkbox" class="recVOtro" value="${x.id}"> Renglón ${x.renglon} · ${escapeHtml(x.codigo || 'sin código')} · ${recNum(x.cantidad_nota)} × ${x.precio_unitario != null ? fmtMoney(x.precio_unitario) : '—'}</label>`).join('')}
+      </div>` : '';
+    })()}
     <input type="hidden" id="recVSel">
     <div id="recVSelTxt" style="margin-top:10px; font-weight:700;"></div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recVBtnOk" onclick="recVincGuardar()">Vincular</button></div>`);
@@ -15832,7 +15839,7 @@ function recVincModoVarios(on) {
   recVarios.activo = !!on;
   const l = recLinea(recVincId);
   document.getElementById('recVVariosPanel').classList.toggle('hidden', !on);
-  ['recVPresLbl', 'recVEjemplo', 'recVGuardarLbl', 'recVSelTxt'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !!on));
+  ['recVPresLbl', 'recVEjemplo', 'recVGuardarLbl', 'recVSelTxt', 'recVOtrosLbl'].forEach(id => document.getElementById(id)?.classList.toggle('hidden', !!on));
   document.getElementById('recVBtnOk').textContent = on ? 'Dividir renglón' : 'Vincular';
   if (!on && l && l.reparto) { const g = document.getElementById('recVGuardar'); if (g) { g.checked = false; g.disabled = true; } }
   recVariosPintar();
@@ -15911,13 +15918,30 @@ async function recVincGuardar(reemplazar) {
   if (!id) { alert('Elige un producto de la lista.'); return; }
   const factor = parseInt(document.getElementById('recVFactor').value, 10);
   if (!(factor >= 1)) { alert('Las piezas por unidad deben ser 1 o más.'); return; }
+  const pres = document.getElementById('recVPres').value;
+  const guardar = document.getElementById('recVGuardar').checked;
   try {
-    const d = await recRpc('rpc_recep_vincular', {
+    let d = await recRpc('rpc_recep_vincular', {
       p_recepcion_id: recActual.recepcion.id, p_linea_id: recVincId, p_id_product: Number(id),
-      p_presentacion: document.getElementById('recVPres').value, p_factor: factor,
-      p_guardar_equivalencia: document.getElementById('recVGuardar').checked, p_reemplazar: !!reemplazar
+      p_presentacion: pres, p_factor: factor,
+      p_guardar_equivalencia: guardar, p_reemplazar: !!reemplazar
     });
+    // Mismo producto en otros renglones: se vinculan con la misma presentación; la equivalencia solo
+    // se guarda si el renglón trae un código legible.
+    const otros = [...document.querySelectorAll('.recVOtro:checked')].map(c => Number(c.value));
+    const fallos = [];
+    for (const lid of otros) {
+      try {
+        const lo = recLinea(lid);
+        d = await recRpc('rpc_recep_vincular', {
+          p_recepcion_id: recActual.recepcion.id, p_linea_id: lid, p_id_product: Number(id),
+          p_presentacion: pres, p_factor: factor,
+          p_guardar_equivalencia: guardar && !!(lo && lo.codigo && !lo.revisar), p_reemplazar: false
+        });
+      } catch (e2) { fallos.push(recError(e2)); }
+    }
     recCerrarModal(); recMostrar(d);
+    if (fallos.length) alert(`No se pudieron vincular ${fallos.length} renglón(es): ${fallos[0]}`);
   } catch (e) {
     const msg = recError(e);
     if (/equivalencia_existente/.test(String(e.detail || e.message)) && recActual.soy_supervisor && !reemplazar) {
