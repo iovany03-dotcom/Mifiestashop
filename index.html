@@ -5025,6 +5025,7 @@
           <button class="btn small" data-seotab="paginas" onclick="seoTab('paginas')">Páginas</button>
           <button class="btn small" data-seotab="productos" onclick="seoTab('productos')">Productos</button>
           <button class="btn small" data-seotab="categorias" onclick="seoTab('categorias')">Categorías</button>
+          <button class="btn small" data-seotab="masivo" onclick="seoTab('masivo')">✨ Optimización masiva</button>
           <button class="btn small" data-seotab="google" onclick="seoTab('google')">Google: palabras clave</button>
           <button class="btn small" data-seotab="velocidad" onclick="seoTab('velocidad')">Velocidad</button>
           <button class="btn small" data-seotab="config" onclick="seoTab('config')">Configuración</button>
@@ -14927,6 +14928,7 @@ async function seoTab(t) {
     else if (t === 'paginas') await seoPaginas(c);
     else if (t === 'productos') await seoProductosVista(c);
     else if (t === 'categorias') await seoCategoriasVista(c);
+    else if (t === 'masivo') await seoMasivoVista(c);
     else if (t === 'google') await seoGoogle(c);
     else if (t === 'velocidad') await seoVelocidad(c);
     else seoConfigVista(c);
@@ -15142,6 +15144,109 @@ async function seoGuardar(id) {
     delete seoPropuestas[id];
     const fila = document.getElementById('seoPRow' + id); if (fila) fila.style.opacity = '.45';
   } catch (e) { alert(e.message); b.disabled = false; }
+}
+
+// ---------- Optimización masiva: la IA propone (api/cron-seo-ia.js) y aquí se aprueba por lotes ----------
+let seoMasivoItems = [];
+const SEO_MASIVO_ESTADOS = { propuesto: 'Por revisar', pendiente: 'En espera de la IA', aprobado: 'Aprobados', rechazado: 'Rechazados', error: 'Con error' };
+async function seoMasivoVista(c) {
+  c.innerHTML = `<div id="seoMResumen" style="margin-bottom:10px;">Cargando…</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+      <select id="seoMEstado" onchange="seoMasivoCargar()" style="${SEO_INPUT} width:auto;">${Object.entries(SEO_MASIVO_ESTADOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <label style="font-size:12px; display:flex; gap:6px; align-items:center;"><input type="checkbox" id="seoMTodos" onchange="document.querySelectorAll('.seoMSel').forEach(x => x.checked = this.checked)"> Marcar todos</label>
+      <span id="seoMAcciones"></span>
+    </div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">La IA trabaja sola cada 10 minutos, empezando por los productos más vendidos, y deja aquí sus propuestas. Revisa, corrige si hace falta (puedes editar el título, la meta y la descripción directo en cada tarjeta) y aprueba. Nada cambia en la tienda hasta que apruebas, y cada aprobación se puede deshacer.</p>
+    <div id="seoMLista">Cargando…</div>`;
+  await seoMasivoResumen();
+  await seoMasivoCargar();
+}
+async function seoMasivoResumen() {
+  try {
+    const r = await seoApi('cola_resumen', {});
+    const u = r.ultima;
+    document.getElementById('seoMResumen').innerHTML = `<div style="display:flex; gap:10px; flex-wrap:wrap;">
+      ${[['propuesto', 'Por revisar', '#d3007b'], ['pendiente', 'En espera de la IA', '#7c3aed'], ['aprobado', 'Aprobados', '#15803d'], ['rechazado', 'Rechazados', '#6b7280'], ['error', 'Con error', '#dc2626']].map(([k, t, col]) => `<div class="card" style="margin:0; padding:10px 14px; min-width:110px; cursor:pointer;" onclick="document.getElementById('seoMEstado').value='${k}'; seoMasivoCargar()"><div style="font-size:22px; font-weight:800; color:${col};">${r[k] || 0}</div><div style="font-size:12px;">${t}</div></div>`).join('')}
+    </div><div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${u ? `Última corrida de la IA: ${new Date(u.last_synced_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} · ${escapeHtml(u.ultimo_resultado || '')}` : 'La IA todavía no ha corrido: empieza sola en los próximos 10 minutos.'}</div>`;
+  } catch (e) { document.getElementById('seoMResumen').innerHTML = seoError(e); }
+}
+function seoMasivoTarjeta(it) {
+  const p = it.propuesta || {}, a = it.actual;
+  const editable = it.estado === 'propuesto';
+  const campo = (id, val, filas) => editable
+    ? (filas ? `<textarea id="${id}" rows="${filas}" style="${SEO_INPUT} font-size:12px;">${escapeHtml(val || '')}</textarea>` : `<input id="${id}" value="${escapeHtml(val || '')}" style="${SEO_INPUT} font-size:12px;">`)
+    : `<div style="font-size:12px;">${escapeHtml(val || '—')}</div>`;
+  return `<div class="card" style="padding:12px; margin-bottom:10px;" id="seoMCard${it.id}">
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+      <input type="checkbox" class="seoMSel" value="${it.id}">
+      ${it.imagen ? `<img src="${escapeHtml(it.imagen)}" style="width:44px; height:44px; object-fit:cover; border-radius:6px;">` : ''}
+      <div style="flex:1;"><b>${escapeHtml(it.nombre)}</b><div style="font-size:11px; color:var(--text-muted);">#${it.id} · ${escapeHtml(it.categoria)} · ${it.prioridad ? `${Math.round(it.prioridad)} piezas vendidas` : 'sin ventas registradas'}${p.palabra_clave ? ` · palabra clave: <b>${escapeHtml(p.palabra_clave)}</b>` : ''}</div></div>
+      ${editable ? `<button class="btn small primary" onclick="seoMasivoAprobar([${it.id}])">Aprobar</button><button class="btn small" onclick="seoMasivoRechazar([${it.id}])">Rechazar</button>` : ''}
+      ${it.estado === 'aprobado' ? `<button class="btn small" onclick="seoMasivoDeshacer(${it.id})">Deshacer</button>` : ''}
+      ${['rechazado', 'error'].includes(it.estado) ? `<button class="btn small" onclick="seoMasivoReintentar([${it.id}])">Volver a pedir a la IA</button>` : ''}
+    </div>
+    ${it.error ? `<p style="color:#dc2626; font-size:12px; margin:0 0 6px;">${escapeHtml(it.error)}</p>` : ''}
+    ${it.estado === 'pendiente' ? '<p style="font-size:12px; color:var(--text-muted); margin:0;">La IA todavía no lo procesa.</p>' : `
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div><div style="font-size:11px; font-weight:700; color:var(--text-muted);">AHORA</div>
+        <div style="font-size:12px;"><b>Título:</b> ${escapeHtml(a.meta_title || '(sin título SEO)')}</div>
+        <div style="font-size:12px;"><b>Meta:</b> ${escapeHtml(a.meta_description || '(sin meta descripción)')}</div>
+        <div style="font-size:12px; color:var(--text-muted); max-height:90px; overflow:auto;">${seoHtmlSeguro(a.descripcion_html) || '(sin descripción)'}</div></div>
+      <div><div style="font-size:11px; font-weight:700; color:#d3007b;">${editable ? 'PROPUESTA (puedes editarla)' : 'PROPUESTA'}</div>
+        <div style="font-size:12px;"><b>Título</b> <span style="color:var(--text-muted);">(${(p.meta_title || '').length}/55)</span></div>${campo('seoMT' + it.id, p.meta_title)}
+        <div style="font-size:12px; margin-top:4px;"><b>Meta</b> <span style="color:var(--text-muted);">(${(p.meta_description || '').length}/155)</span></div>${campo('seoMD' + it.id, p.meta_description, 2)}
+        <div style="font-size:12px; margin-top:4px;"><b>Descripción</b></div>
+        <div id="seoMH${it.id}" ${editable ? 'contenteditable="true"' : ''} style="border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:12px; max-height:180px; overflow:auto;">${seoHtmlSeguro(p.descripcion_html || '')}</div></div>
+    </div>`}
+  </div>`;
+}
+async function seoMasivoCargar() {
+  const est = document.getElementById('seoMEstado').value;
+  const l = document.getElementById('seoMLista');
+  l.innerHTML = 'Cargando…';
+  document.getElementById('seoMTodos').checked = false;
+  document.getElementById('seoMAcciones').innerHTML = est === 'propuesto'
+    ? `<button class="btn small primary" onclick="seoMasivoAprobar(seoMasivoMarcados())">✓ Aprobar marcados</button> <button class="btn small" onclick="seoMasivoRechazar(seoMasivoMarcados())">Rechazar marcados</button>`
+    : (['rechazado', 'error'].includes(est) ? `<button class="btn small" onclick="seoMasivoReintentar(seoMasivoMarcados())">Volver a pedir a la IA</button>` : '');
+  try {
+    const d = await seoApi('cola_lista', { estado: est, limite: 30 });
+    seoMasivoItems = d.items;
+    l.innerHTML = d.items.length ? d.items.map(seoMasivoTarjeta).join('') : `<p style="color:var(--text-muted);">${est === 'propuesto' ? 'No hay propuestas por revisar ahora. La IA deja nuevas cada 10 minutos.' : 'Nada en esta lista.'}</p>`;
+  } catch (e) { l.innerHTML = seoError(e); }
+}
+function seoMasivoMarcados() { return [...document.querySelectorAll('.seoMSel:checked')].map(x => Number(x.value)); }
+async function seoMasivoAprobar(ids) {
+  if (!ids.length) { alert('Marca al menos una propuesta.'); return; }
+  if (ids.length > 1 && !confirm(`¿Aprobar ${ids.length} propuestas? Se cambiarán en la tienda (se puede deshacer una por una).`)) return;
+  const ediciones = {};
+  ids.forEach(id => {
+    const t = document.getElementById('seoMT' + id), d = document.getElementById('seoMD' + id), h = document.getElementById('seoMH' + id);
+    if (t) ediciones[id] = { meta_title: t.value, meta_description: d.value, descripcion_html: h.innerHTML };
+  });
+  try {
+    const r = await seoApi('cola_aprobar', { ids, ediciones });
+    ids.forEach(id => { const c = document.getElementById('seoMCard' + id); if (c) c.remove(); });
+    if (r.fallidos.length) alert(`No se pudieron guardar ${r.fallidos.length}: ${r.fallidos.map(f => '#' + f.id + ' ' + f.error).join('; ')}`);
+    seoMasivoResumen();
+    if (!document.querySelector('.seoMSel')) seoMasivoCargar();
+  } catch (e) { alert(e.message); }
+}
+async function seoMasivoRechazar(ids) {
+  if (!ids.length) { alert('Marca al menos una propuesta.'); return; }
+  try {
+    await seoApi('cola_rechazar', { ids });
+    ids.forEach(id => { const c = document.getElementById('seoMCard' + id); if (c) c.remove(); });
+    seoMasivoResumen();
+    if (!document.querySelector('.seoMSel')) seoMasivoCargar();
+  } catch (e) { alert(e.message); }
+}
+async function seoMasivoDeshacer(id) {
+  if (!confirm('¿Regresar el producto a como estaba antes? La propuesta vuelve a "Por revisar".')) return;
+  try { await seoApi('cola_deshacer', { id }); seoMasivoResumen(); seoMasivoCargar(); } catch (e) { alert(e.message); }
+}
+async function seoMasivoReintentar(ids) {
+  if (!ids.length) { alert('Marca al menos un producto.'); return; }
+  try { await seoApi('cola_reintentar', { ids }); seoMasivoResumen(); seoMasivoCargar(); } catch (e) { alert(e.message); }
 }
 
 // ---------- Categorías: título, meta descripción, introducción y preguntas frecuentes ----------

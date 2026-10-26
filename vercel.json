@@ -15,6 +15,10 @@
     {
       "path": "/api/cron-seo",
       "schedule": "40 * * * *"
+    },
+    {
+      "path": "/api/cron-seo-ia",
+      "schedule": "*/10 * * * *"
     }
   ],
   "functions": {
@@ -123,6 +127,9 @@
       "includeFiles": "index.html"
     },
     "api/seo.js": {
+      "maxDuration": 300
+    },
+    "api/cron-seo-ia.js": {
       "maxDuration": 300
     },
     "api/cron-seo.js": {
