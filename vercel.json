@@ -1757,15 +1757,15 @@
       "destination": "/api/robots"
     },
     {
-      "source": "/:id(\\d+)-:slug*.html",
+      "source": "/:p(\\d+-[^/]*\\.html)",
       "destination": "/index.html"
     },
     {
-      "source": "/:cat([a-zA-Z0-9-]+)/:id(\\d+)-:slug*.html",
+      "source": "/:cat([a-zA-Z0-9-]+)/:p(\\d+-[^/]*\\.html)",
       "destination": "/index.html"
     },
     {
-      "source": "/:id(\\d+)-:slug*",
+      "source": "/:p(\\d+-[^/]+)",
       "destination": "/index.html"
     },
     {
