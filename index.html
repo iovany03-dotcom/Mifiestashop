@@ -15906,15 +15906,18 @@ function recVincular(id, sugeridos) {
       <button class="btn small" onclick="recProductoNuevoForm()">+ Producto nuevo</button>
       ${(recActual.recepcion.archivos || []).filter(a => a.tipo === 'nota').map(a => `<button class="btn small" onclick="recVerArchivo('${escapeHtml(a.path)}')">📄 Ver nota${a.pagina ? ' p. ' + a.pagina : ''}</button>`).join('')}
     </div>
-    <label style="display:flex; gap:6px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px;"><input type="checkbox" id="recVVarios" onchange="recVincModoVarios(this.checked)"> Son varios productos del catálogo (elige cuáles y cuántas piezas de cada uno)</label>
     <div id="recVRes" style="max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px;">${sugeridos ? recVincHtmlResultados(sugeridos, true) : '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'}</div>
+    <div id="recVSelTxt" style="margin-top:8px; font-weight:700;"></div>
+    <label id="recVGuardarLbl" style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo && !l.reparto ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
+    <details id="recVMas" style="margin-top:10px;" ${(l.reparto || (l.factor || 1) > 1) ? 'open' : ''}>
+      <summary style="cursor:pointer; font-size:13px; font-weight:700;">Más opciones${(l.factor || 1) > 1 ? ` <span style="color:#dc2626;">(ojo: ${l.factor} piezas por unidad)</span>` : ''}</summary>
+    <label style="display:flex; gap:6px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px;"><input type="checkbox" id="recVVarios" onchange="recVincModoVarios(this.checked)"> Son varios productos del catálogo (elige cuáles y cuántas piezas de cada uno)</label>
     <div id="recVVariosPanel" class="hidden" style="margin-top:10px;"></div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
       <label id="recVPresLbl">Presentación en la nota<select id="recVPres" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
       <label>Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${l.reparto ? l.reparto.factor : (l.factor || 1)}" oninput="recVariosPintar()" style="${REC_INPUT} width:100%;"></label>
     </div>
     <p id="recVEjemplo" style="font-size:12px; color:var(--text-muted); margin:6px 0;">Ej.: si la nota dice "5" cajas y cada caja trae 20 piezas, pon presentación "caja" y 20. El inventario siempre se lleva en piezas.</p>
-    <label id="recVGuardarLbl" style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo && !l.reparto ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
     ${(() => {
       const otros = (recActual.lineas || []).filter(x => x.id !== l.id && !x.id_product && !x.reparto && !x.ingresado_at && x.origen !== 'adicional');
       return otros.length ? `<div id="recVOtrosLbl" style="margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:8px 10px;">
@@ -15922,8 +15925,8 @@ function recVincular(id, sugeridos) {
         ${otros.map(x => `<label style="display:flex; gap:6px; align-items:center; font-size:12.5px;"><input type="checkbox" class="recVOtro" value="${x.id}"> Renglón ${x.renglon} · ${escapeHtml(x.codigo || 'sin código')} · ${recNum(x.cantidad_nota)} × ${x.precio_unitario != null ? fmtMoney(x.precio_unitario) : '—'}</label>`).join('')}
       </div>` : '';
     })()}
+    </details>
     <input type="hidden" id="recVSel">
-    <div id="recVSelTxt" style="margin-top:10px; font-weight:700;"></div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recVBtnOk" onclick="recVincGuardar()">Vincular</button></div>`);
   recVarios = { activo: false, partes: [] };
   if (l.reparto) {
