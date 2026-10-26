@@ -170,3 +170,16 @@ test('categorías: la IA propone y guardar limpia el HTML y las preguntas frecue
     assert.equal(res.data.puntaje, 100);
   } finally { global.fetch = prev; ia.generarJson = prevIA; }
 });
+
+test('auditor: categorías se reconocen y solo cuenta el contenido propio de la página', () => {
+  assert.equal(tipoDePagina('https://www.mifiestashop.com/292-sombreros-de-tela'), 'categoria');
+  const relleno = '<p>' + 'texto repetido del sitio '.repeat(200) + '</p>';
+  const prod = `<html><head><title>x</title></head><body>${relleno}<article class="ssr-producto"><h1>Globo</h1><p>Globo rojo.</p></article></body></html>`;
+  const a = auditarHtml(prod, { url: 'https://www.mifiestashop.com/globos/1-globo.html', status: 200, ms: 1, bytes: 1 });
+  assert.ok(a.datos.palabras < 10, `cuenta ${a.datos.palabras} palabras`);
+  assert.ok(a.problemas.some(p => p.codigo === 'poco_contenido'));
+  const cat = `<html><body>${relleno}<h1 id="catalogSearchTitle">Globos</h1><div id="catalogCatIntro" class="catalog-cat-intro"><p>${'palabra '.repeat(160)}</p></div><section id="catalogCatFaq"></section></body></html>`;
+  const c = auditarHtml(cat, { url: 'https://www.mifiestashop.com/269-globos', status: 200, ms: 1, bytes: 1 });
+  assert.equal(c.datos.tipo, 'categoria');
+  assert.ok(!c.problemas.some(p => p.codigo === 'poco_contenido'));
+});

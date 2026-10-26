@@ -759,6 +759,10 @@
   }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
   .modal-header h2 { margin: 0; font-size: 18px; }
+  /* Títulos de ventanas (carrito, pago, inicio de sesión…): se ven como H2 pero no lo son, para que
+     no cuenten como subtítulos de cada página en Google. */
+  .t2 { display: block; font-size: 1.5em; font-weight: 700; margin: 0.83em 0; }
+  .modal-header .t2 { margin: 0; font-size: 18px; }
 
   /* TICKET PREVIEW */
   .ticket-paper {
@@ -841,7 +845,7 @@
   }
 
   .cms-page-content { color: #4a3a5a; line-height: 1.7; font-size: 0.95rem; }
-  .cms-page-content h1, .cms-page-content h2, .cms-page-content h3 { color: #2e1065; margin-top: 26px; margin-bottom: 10px; }
+  .cms-page-content h1, .cms-page-content h2, .cms-page-content .t2, .cms-page-content h3 { color: #2e1065; margin-top: 26px; margin-bottom: 10px; }
   .cms-page-content p { margin: 0 0 14px; }
   .cms-page-content ul, .cms-page-content ol { margin: 0 0 14px; padding-left: 22px; }
   .cms-page-content li { margin-bottom: 6px; }
@@ -1141,7 +1145,7 @@
   .store-section-title {
     display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
   }
-  .store-section-title h2 {
+  .store-section-title h2, .store-section-title .t2 {
     font-size: 1.5rem; font-weight: 800; margin: 0; color: #2e1065; display: flex; align-items: center; gap: 10px;
   }
 
@@ -1667,7 +1671,7 @@
         #tpi3 .tpi3-head-text{ max-width:600px; }
         #tpi3 .tpi3-eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:.72rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--plum); background:var(--paper); padding:7px 14px 7px 10px; border-radius:999px; margin:0 0 18px; }
         #tpi3 .tpi3-eyebrow i{ width:7px; height:7px; border-radius:50%; background:var(--purple); flex-shrink:0; display:block; }
-        #tpi3 h2{ font-family:'Fredoka',system-ui,sans-serif; font-weight:600; font-size:clamp(1.7rem,3.4vw,2.6rem); line-height:1.14; margin:0 0 10px; color:var(--paper); }
+        #tpi3 h2, #tpi3 .t2{ font-family:'Fredoka',system-ui,sans-serif; font-weight:600; font-size:clamp(1.7rem,3.4vw,2.6rem); line-height:1.14; margin:0 0 10px; color:var(--paper); }
         #tpi3 h2 em{ font-style:normal; color:var(--sun); }
         #tpi3 .tpi3-sub{ font-size:.98rem; line-height:1.5; color:var(--lav); margin:0; }
         #tpi3 .tpi3-nav{ display:flex; gap:10px; flex-shrink:0; }
@@ -1938,7 +1942,7 @@
           font-family:"Poppins",sans-serif; background:#faf7fb; padding:56px 20px 64px;
         }
         #storeFaq .faq-head{ text-align:center; max-width:640px; margin:0 auto 32px; }
-        #storeFaq .faq-head h2{ font-size:clamp(24px,3.2vw,34px); font-weight:800; color:#2e1065; margin:0 0 8px; }
+        #storeFaq .faq-head h2, #storeFaq .faq-head .t2{ font-size:clamp(24px,3.2vw,34px); font-weight:800; color:#2e1065; margin:0 0 8px; }
         #storeFaq .faq-head p{ font-size:14.5px; color:#6b5c7a; margin:0; }
         #storeFaq .faq-list{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:10px; }
         #storeFaq details{
@@ -2038,14 +2042,14 @@
   <!-- Cart Page -->
   <div class="store-container hidden" id="storefrontCartPage">
     <button class="btn secondary" style="margin:20px 0; border-radius:20px; font-weight:700;" onclick="goHomeStorefront()">← Seguir comprando</button>
-    <h2 style="margin-bottom:16px;">🛒 Tu Carrito de Compras</h2>
+    <div role="heading" aria-level="2" class="t2" style="margin-bottom:16px;">🛒 Tu Carrito de Compras</div>
     <div id="storefrontCartBody"></div>
   </div>
 
   <!-- Checkout Page -->
   <div class="store-container hidden" id="storefrontCheckoutPage">
     <button class="btn secondary" style="margin:20px 0; border-radius:20px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openStorefrontCart()">← Volver al carrito</button>
-    <h2 style="margin-bottom:16px; color:#2e1065;">📦 Finalizar Compra</h2>
+    <div role="heading" aria-level="2" class="t2" style="margin-bottom:16px; color:#2e1065;">📦 Finalizar Compra</div>
     <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px; align-items:start;">
       <div style="background:#fff; border:1px solid #f0e6ef; padding:20px; border-radius:12px;">
         <h3 style="margin-top:0; color:#2e1065;">🚚 Método de entrega</h3>
@@ -2134,7 +2138,7 @@
   <div class="store-container hidden" id="storefrontOrderConfirmPage">
     <div style="background:#fff; border:1px solid #f0e6ef; max-width:600px; margin:40px auto; text-align:center; padding:40px 30px; border-radius:16px;">
       <div id="confirmIcon" style="font-size:56px; margin-bottom:10px;">✅</div>
-      <h2 id="confirmTitle" style="margin:0 0 10px; color:#2e1065;">¡Gracias por tu pedido!</h2>
+      <div role="heading" aria-level="2" class="t2" id="confirmTitle" style="margin:0 0 10px; color:#2e1065;">¡Gracias por tu pedido!</div>
       <p id="confirmMsg" style="color:#5b4a68; margin-bottom:20px;">Tu pedido ha sido registrado exitosamente. Te contactaremos pronto para confirmar los detalles de entrega.</p>
       <div style="background:var(--mf-cream); border-radius:10px; padding:16px; margin-bottom:24px;">
         <div style="font-size:12px; color:#8b7d97; font-weight:700;">NÚMERO DE PEDIDO</div>
@@ -2222,7 +2226,7 @@
 
     <!-- Colabora como marca -->
     <div style="background:linear-gradient(135deg, var(--mf-purple-dark), var(--mf-purple)); border-radius:20px; padding:32px 28px; color:#fff; margin-bottom:30px;">
-      <h2 style="margin-top:0;">🤝 Colabora con nosotros como marca</h2>
+      <div role="heading" aria-level="2" class="t2" style="margin-top:0;">🤝 Colabora con nosotros como marca</div>
       <p style="opacity:0.92; max-width:620px; margin-bottom:0;">¿Tienes una marca, eres creador de contenido o buscas hacer equipo con Mi Fiestashop? Cuéntanos tu propuesta y te contactamos.</p>
 
       <form id="brandCollabForm" onsubmit="event.preventDefault(); submitBrandCollab();" style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:22px; max-width:700px;">
@@ -2423,7 +2427,7 @@
 <div id="storefrontProductModal" class="modal-overlay hidden">
   <div class="modal" style="max-width:760px;">
     <div class="modal-header">
-      <h2 style="font-size:16px;">Vista del producto</h2>
+      <div role="heading" aria-level="2" class="t2" style="font-size:16px;">Vista del producto</div>
       <button class="btn small" onclick="closeStorefrontProductDetail()">✕</button>
     </div>
     <div id="storefrontProductModalBody"></div>
@@ -2457,7 +2461,7 @@
   <div id="clientePortalLoggedOut" style="max-width:440px; margin:50px auto; padding:0 20px;">
     <div class="card" style="border-radius:20px; padding:32px;">
       <div style="text-align:center; margin-bottom:20px;">
-        <h2 style="margin:0 0 6px; color:#2e1065;" id="clienteAuthTitle">Iniciar Sesión</h2>
+        <div role="heading" aria-level="2" class="t2" style="margin:0 0 6px; color:#2e1065;" id="clienteAuthTitle">Iniciar Sesión</div>
         <p style="margin:0; color:var(--text-muted); font-size:13px;" id="clienteAuthSubtitle">Accede para ver tus pedidos y tus datos.</p>
       </div>
 
@@ -2517,7 +2521,7 @@
           --
         </div>
         <div>
-          <h2 style="margin:0 0 4px 0; font-size:1.4rem;" id="clienteWelcomeName">Hola 👋</h2>
+          <div role="heading" aria-level="2" class="t2" style="margin:0 0 4px 0; font-size:1.4rem;" id="clienteWelcomeName">Hola 👋</div>
           <div style="font-size:0.88rem; color:#94a3b8;">
             <code id="clienteWelcomeEmail"></code>
           </div>
@@ -5021,6 +5025,7 @@
           <button class="btn small" data-seotab="paginas" onclick="seoTab('paginas')">Páginas</button>
           <button class="btn small" data-seotab="productos" onclick="seoTab('productos')">Productos</button>
           <button class="btn small" data-seotab="categorias" onclick="seoTab('categorias')">Categorías</button>
+          <button class="btn small" data-seotab="masivo" onclick="seoTab('masivo')">✨ Optimización masiva</button>
           <button class="btn small" data-seotab="google" onclick="seoTab('google')">Google: palabras clave</button>
           <button class="btn small" data-seotab="velocidad" onclick="seoTab('velocidad')">Velocidad</button>
           <button class="btn small" data-seotab="config" onclick="seoTab('config')">Configuración</button>
@@ -5349,7 +5354,7 @@
 <div class="modal-overlay hidden" id="resenaModal">
   <div class="modal" style="max-width: 480px;">
     <div class="modal-header">
-      <h2 id="resenaModalTitle">Agregar reseña</h2>
+      <div role="heading" aria-level="2" class="t2" id="resenaModalTitle">Agregar reseña</div>
       <button class="btn small" onclick="closeResenaModal()">✕</button>
     </div>
     <form id="resenaForm" onsubmit="event.preventDefault(); saveResena();">
@@ -5357,7 +5362,7 @@
       <div style="margin-bottom:14px;">
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Foto (opcional, tomada de Google):</label>
         <input type="file" id="resenaFotoInput" accept="image/*" onchange="previewResenaFoto(this)" style="width:100%; font-size:13px;">
-        <img id="resenaFotoPreview" class="hidden" style="margin-top:10px; width:72px; height:72px; border-radius:50%; object-fit:cover;">
+        <img id="resenaFotoPreview" alt="Foto de la reseña" class="hidden" style="margin-top:10px; width:72px; height:72px; border-radius:50%; object-fit:cover;">
         <input type="hidden" id="resenaFotoUrl" value="">
       </div>
       <div style="margin-bottom:14px;">
@@ -6106,6 +6111,8 @@
       <div class="ticket-divider"></div>
       <div class="t-center ticket-thanks" id="tFooterMsg">Gracias por Tu Compra</div>
       <div class="t-center ticket-sub">www.mifiestashop.com</div>
+      <!-- Solo en tickets con IVA (los únicos que el cliente puede facturar en /facturar, ver api/autofactura.js). -->
+      <div class="t-center ticket-sub hidden" id="tFacturaMsg" style="margin-top:6px;">¿Necesitas factura? Entra a<br><b>mifiestashop.com/facturar</b><br>con tu número de ticket y el total.</div>
       <div class="ticket-scissors">- - - - - - - - - - - - - -</div>
     </div>
 
@@ -8670,7 +8677,7 @@ async function confirmPOSSale() {
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = clienteNombre;
   document.getElementById('tSubtotal').textContent = fmtMoney(subtotal);
-  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0); document.getElementById('tFacturaMsg')?.classList.toggle('hidden', iva <= 0);
   document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
@@ -8879,7 +8886,7 @@ function reprintTicket(folio, total) {
   document.getElementById('tFecha').textContent = new Date().toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = 'Cliente POS';
   document.getElementById('tSubtotal').textContent = fmtMoney(total);
-  document.getElementById('tIvaRow').classList.add('hidden');
+  document.getElementById('tIvaRow').classList.add('hidden'); document.getElementById('tFacturaMsg')?.classList.add('hidden');
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(total);
   document.getElementById('tChange').textContent = '$0.00';
@@ -9384,7 +9391,7 @@ function viewPosTicketFromHistorial(id) {
   document.getElementById('tFecha').textContent = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
   document.getElementById('tCliente').textContent = t.cliente || 'Cliente POS';
   document.getElementById('tSubtotal').textContent = fmtMoney(t.subtotal != null ? t.subtotal : t.total);
-  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0);
+  document.getElementById('tIvaRow').classList.toggle('hidden', iva <= 0); document.getElementById('tFacturaMsg')?.classList.toggle('hidden', iva <= 0);
   document.getElementById('tIva').textContent = fmtMoney(iva);
   document.getElementById('tTotal').textContent = fmtMoney(t.total);
   document.getElementById('tPaid').textContent = fmtMoney(t.pago_recibido || t.total);
@@ -14889,7 +14896,7 @@ function seoHtmlSeguro(h) {
     .replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '').replace(/javascript:/gi, '');
 }
 const SEO_NIVEL = { critico: ['Crítico', '#dc2626'], alto: ['Alto', '#ea580c'], medio: ['Medio', '#d97706'], bajo: ['Bajo', '#6b7280'] };
-const SEO_TIPO = { inicio: 'Inicio', producto: 'Producto', cms: 'Página', blog: 'Blog', articulo: 'Artículo', otra: 'Categoría/otra' };
+const SEO_TIPO = { inicio: 'Inicio', producto: 'Producto', categoria: 'Categoría', cms: 'Página', blog: 'Blog', articulo: 'Artículo', otra: 'Otra' };
 
 async function seoApi(accion, datos) {
   const r = await fetch('/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...datos }) });
@@ -14921,6 +14928,7 @@ async function seoTab(t) {
     else if (t === 'paginas') await seoPaginas(c);
     else if (t === 'productos') await seoProductosVista(c);
     else if (t === 'categorias') await seoCategoriasVista(c);
+    else if (t === 'masivo') await seoMasivoVista(c);
     else if (t === 'google') await seoGoogle(c);
     else if (t === 'velocidad') await seoVelocidad(c);
     else seoConfigVista(c);
@@ -15136,6 +15144,109 @@ async function seoGuardar(id) {
     delete seoPropuestas[id];
     const fila = document.getElementById('seoPRow' + id); if (fila) fila.style.opacity = '.45';
   } catch (e) { alert(e.message); b.disabled = false; }
+}
+
+// ---------- Optimización masiva: la IA propone (api/cron-seo-ia.js) y aquí se aprueba por lotes ----------
+let seoMasivoItems = [];
+const SEO_MASIVO_ESTADOS = { propuesto: 'Por revisar', pendiente: 'En espera de la IA', aprobado: 'Aprobados', rechazado: 'Rechazados', error: 'Con error' };
+async function seoMasivoVista(c) {
+  c.innerHTML = `<div id="seoMResumen" style="margin-bottom:10px;">Cargando…</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+      <select id="seoMEstado" onchange="seoMasivoCargar()" style="${SEO_INPUT} width:auto;">${Object.entries(SEO_MASIVO_ESTADOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select>
+      <label style="font-size:12px; display:flex; gap:6px; align-items:center;"><input type="checkbox" id="seoMTodos" onchange="document.querySelectorAll('.seoMSel').forEach(x => x.checked = this.checked)"> Marcar todos</label>
+      <span id="seoMAcciones"></span>
+    </div>
+    <p style="font-size:12px; color:var(--text-muted); margin-top:0;">La IA trabaja sola cada 10 minutos, empezando por los productos más vendidos, y deja aquí sus propuestas. Revisa, corrige si hace falta (puedes editar el título, la meta y la descripción directo en cada tarjeta) y aprueba. Nada cambia en la tienda hasta que apruebas, y cada aprobación se puede deshacer.</p>
+    <div id="seoMLista">Cargando…</div>`;
+  await seoMasivoResumen();
+  await seoMasivoCargar();
+}
+async function seoMasivoResumen() {
+  try {
+    const r = await seoApi('cola_resumen', {});
+    const u = r.ultima;
+    document.getElementById('seoMResumen').innerHTML = `<div style="display:flex; gap:10px; flex-wrap:wrap;">
+      ${[['propuesto', 'Por revisar', '#d3007b'], ['pendiente', 'En espera de la IA', '#7c3aed'], ['aprobado', 'Aprobados', '#15803d'], ['rechazado', 'Rechazados', '#6b7280'], ['error', 'Con error', '#dc2626']].map(([k, t, col]) => `<div class="card" style="margin:0; padding:10px 14px; min-width:110px; cursor:pointer;" onclick="document.getElementById('seoMEstado').value='${k}'; seoMasivoCargar()"><div style="font-size:22px; font-weight:800; color:${col};">${r[k] || 0}</div><div style="font-size:12px;">${t}</div></div>`).join('')}
+    </div><div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${u ? `Última corrida de la IA: ${new Date(u.last_synced_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} · ${escapeHtml(u.ultimo_resultado || '')}` : 'La IA todavía no ha corrido: empieza sola en los próximos 10 minutos.'}</div>`;
+  } catch (e) { document.getElementById('seoMResumen').innerHTML = seoError(e); }
+}
+function seoMasivoTarjeta(it) {
+  const p = it.propuesta || {}, a = it.actual;
+  const editable = it.estado === 'propuesto';
+  const campo = (id, val, filas) => editable
+    ? (filas ? `<textarea id="${id}" rows="${filas}" style="${SEO_INPUT} font-size:12px;">${escapeHtml(val || '')}</textarea>` : `<input id="${id}" value="${escapeHtml(val || '')}" style="${SEO_INPUT} font-size:12px;">`)
+    : `<div style="font-size:12px;">${escapeHtml(val || '—')}</div>`;
+  return `<div class="card" style="padding:12px; margin-bottom:10px;" id="seoMCard${it.id}">
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+      <input type="checkbox" class="seoMSel" value="${it.id}">
+      ${it.imagen ? `<img src="${escapeHtml(it.imagen)}" style="width:44px; height:44px; object-fit:cover; border-radius:6px;">` : ''}
+      <div style="flex:1;"><b>${escapeHtml(it.nombre)}</b><div style="font-size:11px; color:var(--text-muted);">#${it.id} · ${escapeHtml(it.categoria)} · ${it.prioridad ? `${Math.round(it.prioridad)} piezas vendidas` : 'sin ventas registradas'}${p.palabra_clave ? ` · palabra clave: <b>${escapeHtml(p.palabra_clave)}</b>` : ''}</div></div>
+      ${editable ? `<button class="btn small primary" onclick="seoMasivoAprobar([${it.id}])">Aprobar</button><button class="btn small" onclick="seoMasivoRechazar([${it.id}])">Rechazar</button>` : ''}
+      ${it.estado === 'aprobado' ? `<button class="btn small" onclick="seoMasivoDeshacer(${it.id})">Deshacer</button>` : ''}
+      ${['rechazado', 'error'].includes(it.estado) ? `<button class="btn small" onclick="seoMasivoReintentar([${it.id}])">Volver a pedir a la IA</button>` : ''}
+    </div>
+    ${it.error ? `<p style="color:#dc2626; font-size:12px; margin:0 0 6px;">${escapeHtml(it.error)}</p>` : ''}
+    ${it.estado === 'pendiente' ? '<p style="font-size:12px; color:var(--text-muted); margin:0;">La IA todavía no lo procesa.</p>' : `
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+      <div><div style="font-size:11px; font-weight:700; color:var(--text-muted);">AHORA</div>
+        <div style="font-size:12px;"><b>Título:</b> ${escapeHtml(a.meta_title || '(sin título SEO)')}</div>
+        <div style="font-size:12px;"><b>Meta:</b> ${escapeHtml(a.meta_description || '(sin meta descripción)')}</div>
+        <div style="font-size:12px; color:var(--text-muted); max-height:90px; overflow:auto;">${seoHtmlSeguro(a.descripcion_html) || '(sin descripción)'}</div></div>
+      <div><div style="font-size:11px; font-weight:700; color:#d3007b;">${editable ? 'PROPUESTA (puedes editarla)' : 'PROPUESTA'}</div>
+        <div style="font-size:12px;"><b>Título</b> <span style="color:var(--text-muted);">(${(p.meta_title || '').length}/55)</span></div>${campo('seoMT' + it.id, p.meta_title)}
+        <div style="font-size:12px; margin-top:4px;"><b>Meta</b> <span style="color:var(--text-muted);">(${(p.meta_description || '').length}/155)</span></div>${campo('seoMD' + it.id, p.meta_description, 2)}
+        <div style="font-size:12px; margin-top:4px;"><b>Descripción</b></div>
+        <div id="seoMH${it.id}" ${editable ? 'contenteditable="true"' : ''} style="border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:12px; max-height:180px; overflow:auto;">${seoHtmlSeguro(p.descripcion_html || '')}</div></div>
+    </div>`}
+  </div>`;
+}
+async function seoMasivoCargar() {
+  const est = document.getElementById('seoMEstado').value;
+  const l = document.getElementById('seoMLista');
+  l.innerHTML = 'Cargando…';
+  document.getElementById('seoMTodos').checked = false;
+  document.getElementById('seoMAcciones').innerHTML = est === 'propuesto'
+    ? `<button class="btn small primary" onclick="seoMasivoAprobar(seoMasivoMarcados())">✓ Aprobar marcados</button> <button class="btn small" onclick="seoMasivoRechazar(seoMasivoMarcados())">Rechazar marcados</button>`
+    : (['rechazado', 'error'].includes(est) ? `<button class="btn small" onclick="seoMasivoReintentar(seoMasivoMarcados())">Volver a pedir a la IA</button>` : '');
+  try {
+    const d = await seoApi('cola_lista', { estado: est, limite: 30 });
+    seoMasivoItems = d.items;
+    l.innerHTML = d.items.length ? d.items.map(seoMasivoTarjeta).join('') : `<p style="color:var(--text-muted);">${est === 'propuesto' ? 'No hay propuestas por revisar ahora. La IA deja nuevas cada 10 minutos.' : 'Nada en esta lista.'}</p>`;
+  } catch (e) { l.innerHTML = seoError(e); }
+}
+function seoMasivoMarcados() { return [...document.querySelectorAll('.seoMSel:checked')].map(x => Number(x.value)); }
+async function seoMasivoAprobar(ids) {
+  if (!ids.length) { alert('Marca al menos una propuesta.'); return; }
+  if (ids.length > 1 && !confirm(`¿Aprobar ${ids.length} propuestas? Se cambiarán en la tienda (se puede deshacer una por una).`)) return;
+  const ediciones = {};
+  ids.forEach(id => {
+    const t = document.getElementById('seoMT' + id), d = document.getElementById('seoMD' + id), h = document.getElementById('seoMH' + id);
+    if (t) ediciones[id] = { meta_title: t.value, meta_description: d.value, descripcion_html: h.innerHTML };
+  });
+  try {
+    const r = await seoApi('cola_aprobar', { ids, ediciones });
+    ids.forEach(id => { const c = document.getElementById('seoMCard' + id); if (c) c.remove(); });
+    if (r.fallidos.length) alert(`No se pudieron guardar ${r.fallidos.length}: ${r.fallidos.map(f => '#' + f.id + ' ' + f.error).join('; ')}`);
+    seoMasivoResumen();
+    if (!document.querySelector('.seoMSel')) seoMasivoCargar();
+  } catch (e) { alert(e.message); }
+}
+async function seoMasivoRechazar(ids) {
+  if (!ids.length) { alert('Marca al menos una propuesta.'); return; }
+  try {
+    await seoApi('cola_rechazar', { ids });
+    ids.forEach(id => { const c = document.getElementById('seoMCard' + id); if (c) c.remove(); });
+    seoMasivoResumen();
+    if (!document.querySelector('.seoMSel')) seoMasivoCargar();
+  } catch (e) { alert(e.message); }
+}
+async function seoMasivoDeshacer(id) {
+  if (!confirm('¿Regresar el producto a como estaba antes? La propuesta vuelve a "Por revisar".')) return;
+  try { await seoApi('cola_deshacer', { id }); seoMasivoResumen(); seoMasivoCargar(); } catch (e) { alert(e.message); }
+}
+async function seoMasivoReintentar(ids) {
+  if (!ids.length) { alert('Marca al menos un producto.'); return; }
+  try { await seoApi('cola_reintentar', { ids }); seoMasivoResumen(); seoMasivoCargar(); } catch (e) { alert(e.message); }
 }
 
 // ---------- Categorías: título, meta descripción, introducción y preguntas frecuentes ----------
@@ -18520,7 +18631,7 @@ const BODA_BLOCKS_HTML = `<!-- =================================================
   font-family:"Poppins",sans-serif; background:#faf7f8; padding:56px 4vw; box-sizing:border-box;
 }
 #paquetes-boda-mfs .pb-header{text-align:center; max-width:700px; margin:0 auto 36px;}
-#paquetes-boda-mfs .pb-header h2{font-size:clamp(26px,3.5vw,38px); font-weight:800; color:var(--purple-dark); margin:0 0 8px;}
+#paquetes-boda-mfs .pb-header h2, #paquetes-boda-mfs .pb-header .t2{font-size:clamp(26px,3.5vw,38px); font-weight:800; color:var(--purple-dark); margin:0 0 8px;}
 #paquetes-boda-mfs .pb-header h2 span{color:var(--pink);}
 #paquetes-boda-mfs .pb-header p{font-size:15px; color:#6b5c7a; margin:0;}
 #paquetes-boda-mfs .pb-grid{
@@ -18759,7 +18870,7 @@ function bodaProductsHtml(city) {
   font-family:"Poppins",sans-serif; background:#faf7fb; padding:52px 4vw 60px;
 }
 #productos-boda-mfs .pbm-head{ text-align:center; max-width:700px; margin:0 auto 30px; }
-#productos-boda-mfs .pbm-head h2{ font-size:clamp(26px,3.5vw,40px); font-weight:800; color:#2e1065; margin:0 0 6px; letter-spacing:.02em; }
+#productos-boda-mfs .pbm-head h2, #productos-boda-mfs .pbm-head .t2{ font-size:clamp(26px,3.5vw,40px); font-weight:800; color:#2e1065; margin:0 0 6px; letter-spacing:.02em; }
 #productos-boda-mfs .pbm-head p{ font-size:16px; color:#8e3fa8; font-weight:600; margin:0; }
 #productos-boda-mfs .pbm-grid-wrap{ max-width:1280px; margin:0 auto; }
 #productos-boda-mfs .pbm-loading{ text-align:center; color:#8b7d97; padding:40px 0; grid-column:1/-1; }

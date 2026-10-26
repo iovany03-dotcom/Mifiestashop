@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factura tu compra — Mi Fiestashop</title>
+<meta name="description" content="Genera la factura (CFDI 4.0) de tu compra en Mi Fiestashop con el número de ticket y el total.">
+<link rel="canonical" href="https://www.mifiestashop.com/facturar">
+<link rel="icon" type="image/webp" href="/img/cms/logo.webp">
+<style>
+  :root { --mf-pink: #d3007b; --mf-cream: #fff3de; --text: #2e1065; --muted: #8b7d97; --border: #e5dce6; --ok: #15803d; --bad: #b91c1c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, sans-serif; background: var(--mf-cream); color: var(--text); min-height: 100vh; padding: 24px 16px; }
+  .card { background: #fff; border-radius: 16px; max-width: 520px; margin: 0 auto; padding: 28px 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .logo { display: block; margin: 0 auto 14px; width: 64px; height: 64px; }
+  h1 { font-size: 22px; text-align: center; margin: 0 0 6px; color: var(--mf-pink); }
+  h2 { font-size: 16px; margin: 22px 0 10px; }
+  p.sub { text-align: center; font-size: 14px; color: var(--muted); margin: 0 0 22px; line-height: 1.5; }
+  label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .ayuda { font-weight: 400; color: var(--muted); font-size: 12px; }
+  input, select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #faf7fb; color: var(--text); font-size: 15px; margin-bottom: 14px; }
+  input.mayus { text-transform: uppercase; }
+  .fila { display: flex; gap: 10px; } .fila > div { flex: 1; min-width: 0; }
+  button { width: 100%; padding: 14px; border: none; border-radius: 24px; background: var(--mf-pink); color: #fff; font-weight: 700; font-size: 15px; cursor: pointer; }
+  button.sec { background: #fff; color: var(--mf-pink); border: 2px solid var(--mf-pink); margin-top: 8px; }
+  button:disabled { opacity: .55; cursor: wait; }
+  .msg { padding: 12px 14px; border-radius: 10px; font-size: 14px; line-height: 1.45; margin: 12px 0; }
+  .msg.bad { background: #fef2f2; color: var(--bad); border: 1px solid #fecaca; }
+  .msg.ok { background: #f0fdf4; color: var(--ok); border: 1px solid #bbf7d0; }
+  .msg.info { background: #faf5ff; color: var(--text); border: 1px solid #e9d5ff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 6px 0; border-bottom: 1px solid #f1e9f2; vertical-align: top; }
+  td.n { text-align: right; white-space: nowrap; padding-left: 10px; }
+  tr.tot td { font-weight: 700; border-bottom: none; }
+  .hidden { display: none; }
+  .pie { text-align: center; font-size: 12px; color: var(--muted); margin-top: 20px; line-height: 1.6; }
+  .pie a { color: var(--mf-pink); }
+</style>
+</head>
+<body>
+<div class="card">
+  <img class="logo" src="/img/cms/logo.webp" alt="Mi Fiestashop" width="64" height="64">
+  <h1>Factura tu compra</h1>
+  <p class="sub">Escribe el número y el total de tu ticket. Solo se pueden facturar las compras en las que se cobró IVA.</p>
+
+  <form id="fBuscar" autocomplete="off">
+    <div class="fila">
+      <div><label for="folio">Número de ticket <span class="ayuda">(ej. POS-12345)</span></label>
+        <input id="folio" inputmode="numeric" placeholder="POS-12345" required></div>
+      <div><label for="total">Total pagado <span class="ayuda">(con centavos)</span></label>
+        <input id="total" inputmode="decimal" placeholder="$0.00" required></div>
+    </div>
+    <button id="bBuscar" type="submit">Buscar mi ticket</button>
+  </form>
+  <div id="mBuscar"></div>
+
+  <div id="ticket" class="hidden">
+    <h2>Tu compra</h2>
+    <div id="tDetalle"></div>
+  </div>
+
+  <form id="fFactura" class="hidden" autocomplete="on">
+    <h2>Tus datos fiscales <span class="ayuda">(tal cual vienen en tu Constancia de Situación Fiscal)</span></h2>
+    <label for="rfc">RFC</label>
+    <input id="rfc" class="mayus" maxlength="13" required autocomplete="off">
+    <label for="nombre">Nombre o razón social <span class="ayuda">(sin "S.A. de C.V.")</span></label>
+    <input id="nombre" class="mayus" required autocomplete="organization">
+    <div class="fila">
+      <div><label for="cp">Código postal fiscal</label><input id="cp" inputmode="numeric" maxlength="5" required autocomplete="postal-code"></div>
+      <div><label for="regimen">Régimen fiscal</label><select id="regimen" required></select></div>
+    </div>
+    <label for="uso">Uso del CFDI</label>
+    <select id="uso" required></select>
+    <div id="cTarjeta" class="hidden">
+      <label for="formaPago">¿Con qué tarjeta pagaste?</label>
+      <select id="formaPago"><option value="04">Tarjeta de crédito</option><option value="28">Tarjeta de débito</option></select>
+    </div>
+    <label for="email">Correo <span class="ayuda">(ahí te llega la factura en PDF y XML)</span></label>
+    <input id="email" type="email" required autocomplete="email">
+    <button id="bEmitir" type="submit">Generar factura</button>
+  </form>
+  <div id="mFactura"></div>
+
+  <form id="fDescargar" class="hidden" autocomplete="off">
+    <label for="rfcDesc">RFC con el que se facturó</label>
+    <input id="rfcDesc" class="mayus" maxlength="13" required>
+    <button type="submit">Descargar PDF</button>
+    <button type="button" class="sec" id="bXml">Descargar XML</button>
+  </form>
+  <div id="mDescargar"></div>
+
+  <div class="pie">¿Dudas con tu factura? Escríbenos por <a href="https://wa.me/525612622146" target="_blank" rel="noopener">WhatsApp</a>.<br><a href="/">Volver a la tienda</a></div>
+</div>
+
+<script>
+(function () {
+  const REGIMENES = [['601', 'General de Ley Personas Morales'], ['603', 'Personas Morales con Fines no Lucrativos'], ['605', 'Sueldos y Salarios'], ['606', 'Arrendamiento'], ['608', 'Demás ingresos'], ['612', 'Personas Físicas con Actividades Empresariales y Profesionales'], ['616', 'Sin obligaciones fiscales'], ['621', 'Incorporación Fiscal'], ['625', 'Actividades Empresariales con ingresos a través de Plataformas Tecnológicas'], ['626', 'Régimen Simplificado de Confianza']];
+  const USOS = [['G03', 'Gastos en general'], ['G01', 'Adquisición de mercancías'], ['S01', 'Sin efectos fiscales'], ['CP01', 'Pagos']];
+  const $ = id => document.getElementById(id);
+  $('regimen').innerHTML = '<option value="">Elige…</option>' + REGIMENES.map(([c, n]) => `<option value="${c}">${c} — ${n}</option>`).join('');
+  $('uso').innerHTML = USOS.map(([c, n]) => `<option value="${c}">${c} — ${n}</option>`).join('');
+  const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const dinero = n => '$' + Number(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const msg = (id, tipo, texto) => { $(id).innerHTML = texto ? `<div class="msg ${tipo}">${texto}</div>` : ''; };
+  // El link del ticket puede traer el folio: /facturar?ticket=12345
+  const q = new URLSearchParams(location.search);
+  if (q.get('ticket')) $('folio').value = q.get('ticket');
+
+  // Con RFC de persona física (13 caracteres) o moral (12) se sugiere el régimen más común.
+  $('rfc').addEventListener('input', () => {
+    const r = $('rfc').value.trim();
+    if (!$('regimen').value && r.length === 12) $('regimen').value = '601';
+  });
+
+  async function api(datos) {
+    const r = await fetch('/api/autofactura', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'No se pudo completar. Intenta de nuevo.');
+    return d;
+  }
+  const venta = () => ({ folio: $('folio').value, total: $('total').value });
+
+  $('fBuscar').addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = $('bBuscar'); b.disabled = true; b.textContent = 'Buscando…';
+    ['mBuscar', 'mFactura', 'mDescargar'].forEach(id => msg(id));
+    $('ticket').classList.add('hidden'); $('fFactura').classList.add('hidden'); $('fDescargar').classList.add('hidden');
+    try {
+      const { ticket: t } = await api({ accion: 'buscar', ...venta() });
+      $('tDetalle').innerHTML = `<p style="font-size:13px; color:var(--muted); margin:0 0 8px;">Ticket ${esc(t.folio)} · ${new Date(t.fecha).toLocaleDateString('es-MX', { dateStyle: 'long' })}${t.sucursal ? ' · ' + esc(t.sucursal) : ''}</p>
+        <table>${t.conceptos.map(c => `<tr><td>${esc(c.cantidad)} × ${esc(c.nombre)}</td><td class="n">${dinero(c.importe)}</td></tr>`).join('')}
+        <tr><td>Subtotal</td><td class="n">${dinero(t.subtotal)}</td></tr><tr><td>IVA</td><td class="n">${dinero(t.iva)}</td></tr><tr class="tot"><td>Total</td><td class="n">${dinero(t.total)}</td></tr></table>`;
+      $('ticket').classList.remove('hidden');
+      if (t.facturable) {
+        $('fFactura').classList.remove('hidden');
+        $('cTarjeta').classList.toggle('hidden', !t.tarjeta);
+        $('rfc').focus();
+      } else {
+        msg('mBuscar', t.ya_facturado ? 'info' : 'bad', esc(t.motivo));
+        if (t.ya_facturado) $('fDescargar').classList.remove('hidden');
+      }
+    } catch (err) { msg('mBuscar', 'bad', esc(err.message)); }
+    b.disabled = false; b.textContent = 'Buscar mi ticket';
+  });
+
+  $('fFactura').addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = $('bEmitir'); b.disabled = true; b.textContent = 'Generando factura…';
+    msg('mFactura');
+    try {
+      const d = await api({
+        accion: 'emitir', ...venta(), email: $('email').value.trim(), formaPago: $('formaPago').value,
+        receptor: { rfc: $('rfc').value, nombre: $('nombre').value, cp: $('cp').value, regimen: $('regimen').value, usoCfdi: $('uso').value }
+      });
+      $('fFactura').classList.add('hidden');
+      msg('mFactura', 'ok', `<b>¡Listo! Tu factura se generó.</b><br>Folio fiscal: ${esc(d.factura.uuid || '—')}<br>${d.correoEnviado ? `Te la enviamos a <b>${esc($('email').value.trim())}</b>.` : 'No pudimos enviarla por correo, descárgala aquí abajo.'}`);
+      $('rfcDesc').value = d.factura.rfc;
+      $('fDescargar').classList.remove('hidden');
+    } catch (err) { msg('mFactura', 'bad', esc(err.message)); }
+    b.disabled = false; b.textContent = 'Generar factura';
+  });
+
+  async function bajar(formato) {
+    msg('mDescargar');
+    try {
+      const d = await api({ accion: 'descargar', ...venta(), rfc: $('rfcDesc').value, formato });
+      const bytes = Uint8Array.from(atob(d.content), c => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: formato === 'xml' ? 'application/xml' : 'application/pdf' }));
+      const a = document.createElement('a'); a.href = url; a.download = `factura-mifiestashop-${$('folio').value.replace(/\D/g, '')}.${formato}`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) { msg('mDescargar', 'bad', esc(err.message)); }
+  }
+  $('fDescargar').addEventListener('submit', e => { e.preventDefault(); bajar('pdf'); });
+  $('bXml').addEventListener('click', () => bajar('xml'));
+})();
+</script>
+</body>
+</html>
