@@ -15904,6 +15904,7 @@ function recVincular(id, sugeridos) {
       <input type="search" id="recVBuscar" placeholder="Nombre, SKU o código de barras" oninput="recVincBuscar()" style="${REC_INPUT} flex:1; min-width:200px;">
       <label class="btn small" style="cursor:pointer;">📷 Identificar con foto<input type="file" accept="image/*" capture="environment" style="display:none;" onchange="recVincFoto(this)"></label>
       <button class="btn small" onclick="recProductoNuevoForm()">+ Producto nuevo</button>
+      ${(recActual.recepcion.archivos || []).filter(a => a.tipo === 'nota').map(a => `<button class="btn small" onclick="recVerArchivo('${escapeHtml(a.path)}')">📄 Ver nota${a.pagina ? ' p. ' + a.pagina : ''}</button>`).join('')}
     </div>
     <label style="display:flex; gap:6px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px;"><input type="checkbox" id="recVVarios" onchange="recVincModoVarios(this.checked)"> Son varios productos del catálogo (elige cuáles y cuántas piezas de cada uno)</label>
     <div id="recVRes" style="max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px;">${sugeridos ? recVincHtmlResultados(sugeridos, true) : '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'}</div>
