@@ -16204,18 +16204,18 @@ function recConteo(id) {
       <div><b>${escapeHtml(p.name || '')}</b><div style="font-size:12px; color:var(--text-muted);">Código ${escapeHtml(l.codigo || '—')} · renglón ${l.renglon}</div>
       <div style="font-size:13px; margin-top:2px;">${esperado != null ? `La nota dice <b>${recNum(l.cantidad_nota)} ${escapeHtml(l.presentacion || 'pieza')}${l.factor > 1 ? ` × ${l.factor} = ${recNum(esperado)} piezas` : ''}</b>` : 'No viene en la nota'}</div></div></div>
     <p style="font-size:12px; color:#d97706; margin:0 0 10px;">Cuenta físicamente. Escanear o ver una caja no basta: confirma cuántas piezas trae.</p>
-    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
-      <label>Cajas<input id="recCCajas" type="number" min="0" step="1" value="${l.cajas ?? ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
-      <label>Piezas por caja<input id="recCPpc" type="number" min="0" step="1" value="${l.piezas_por_caja ?? (l.factor > 1 ? l.factor : '')}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
-      <label>Piezas sueltas<input id="recCSueltas" type="number" min="0" step="1" value="${l.piezas_sueltas ?? ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
-      <label>Dañadas<input id="recCDan" type="number" min="0" step="1" value="${l.danadas || ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%;"></label>
-      <label style="grid-column:2/-1;">Observaciones<input id="recCObs" value="${escapeHtml(l.observaciones || '')}" style="${REC_INPUT} width:100%;"></label>
+    <input type="hidden" id="recCCajas" value=""><input type="hidden" id="recCPpc" value="">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+      <label>Piezas contadas<input id="recCSueltas" type="number" min="0" step="1" inputmode="numeric" value="${l.cantidad_recibida != null ? l.cantidad_recibida : ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%; font-size:18px;"></label>
+      <label>Dañadas<input id="recCDan" type="number" min="0" step="1" inputmode="numeric" value="${l.danadas || ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%; font-size:18px;"></label>
+      ${esperado != null ? `<button type="button" class="btn small" style="grid-column:1/-1;" onclick="document.getElementById('recCSueltas').value=${Number(esperado)}; document.getElementById('recCCajas').value=''; document.getElementById('recCPpc').value=''; recConteoTotal();">Coincide con la nota (${recNum(esperado)} piezas)</button>` : ''}
+      <label style="grid-column:1/-1;">Observaciones<input id="recCObs" value="${escapeHtml(l.observaciones || '')}" style="${REC_INPUT} width:100%;"></label>
     </div>
     <div id="recCTotal" style="margin-top:12px; font-size:15px;"></div>
     <label style="display:block; margin-top:10px; font-size:13px;">Foto de evidencia (daños, empaque, etiqueta) <input type="file" id="recCFoto" accept="image/*" capture="environment"></label>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;"><button class="btn" onclick="recCerrarModal()">Cancelar</button><button class="btn primary" id="recCBtn" onclick="recConteoGuardar(${id})">Confirmar conteo</button></div>`);
   recConteoTotal();
-  setTimeout(() => document.getElementById(l.factor > 1 ? 'recCCajas' : 'recCSueltas')?.focus(), 50);
+  setTimeout(() => document.getElementById('recCSueltas')?.focus(), 50);
 }
 // Varios renglones del mismo producto (p. ej. gorras en distintos colores): se cuenta una sola vez el
 // total y se reparte entre los renglones en orden, hasta lo que dice la nota; lo que sobre va al último.
