@@ -15543,13 +15543,17 @@ async function recIniciar() {
   try { recProveedores = await recRpc('rpc_recep_proveedores', {}) || []; }
   catch (e) { document.getElementById('recCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; return; }
   if (!adminCatalogProducts.length) loadAdminCatalogProducts();
-  if (recActual && recTabActual === 'recepciones') recAbrir(recActual.recepcion.id); else recTab(recTabActual);
+  let guardada = null;
+  try { guardada = Number(localStorage.getItem('mf_rec_abierta')) || null; } catch (e) { /* ok */ }
+  if (recActual && recTabActual === 'recepciones') recAbrir(recActual.recepcion.id);
+  else if (!recActual && guardada && recTabActual === 'recepciones') recAbrir(guardada);
+  else recTab(recTabActual);
 }
 
 function recTab(t) {
   recTabActual = t;
   document.querySelectorAll('[data-rectab]').forEach(b => { b.className = 'btn small' + (b.dataset.rectab === t ? ' primary' : ''); });
-  if (t === 'recepciones') { recActual = null; recLista(); }
+  if (t === 'recepciones') { recActual = null; try { localStorage.removeItem('mf_rec_abierta'); } catch (e) { /* ok */ } recLista(); }
   else if (t === 'equivalencias') recEquivalencias();
   else if (t === 'proveedores') recProveedoresVista();
   else recReportes();
@@ -15635,7 +15639,7 @@ async function recAbrir(id) {
   try {
     if (!recActual || recActual.recepcion.id !== id) recNotaPaginas = [];
     recMostrar(await recRpc('rpc_recep_detalle', { p_id: id }));
-  } catch (e) { document.getElementById('recCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; }
+  } catch (e) { try { localStorage.removeItem('mf_rec_abierta'); } catch (e2) { /* ok */ } document.getElementById('recCuerpo').innerHTML = `<p style="color:#dc2626;">${escapeHtml(recError(e))}</p>`; }
 }
 
 // Las respuestas de las funciones de escritura no traen los permisos de la sesión; se conservan.
@@ -15646,6 +15650,11 @@ function recMostrar(d) {
     d.soy_supervisor = !currentStaffSession || (currentStaffSession.permisos || []).includes('aprobar-movimientos');
   }
   recActual = d;
+  // Se recuerda la recepción abierta para volver a ella al reabrir el panel (sin perder el avance).
+  try {
+    if (d.recepcion && !['conciliada', 'cancelada'].includes(d.recepcion.estado)) localStorage.setItem('mf_rec_abierta', String(d.recepcion.id));
+    else localStorage.removeItem('mf_rec_abierta');
+  } catch (e) { /* sin almacenamiento: no pasa nada */ }
   recRenderDetalle();
 }
 
