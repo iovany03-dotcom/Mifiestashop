@@ -16203,9 +16203,20 @@ function recEscanear(valor) {
 
 // ---------- Pantalla 5: recepción física ----------
 let recConteoId = null;
+// Borrador del conteo (piezas / dañadas / observaciones) en este navegador: si se cierra el panel sin
+// confirmar, al volver a abrir el conteo del renglón los datos siguen ahí.
+const recBorradorKey = id => `mf_rec_borrador_${recActual.recepcion.id}_${id}`;
+function recBorradorLeer(id) { try { return JSON.parse(localStorage.getItem(recBorradorKey(id)) || 'null'); } catch (e) { return null; } }
+function recBorradorGuardar() {
+  if (!recConteoId) return;
+  const v = k => document.getElementById(k)?.value ?? '';
+  try { localStorage.setItem(recBorradorKey(recConteoId), JSON.stringify({ n: v('recCSueltas'), d: v('recCDan'), o: v('recCObs') })); } catch (e) { /* ok */ }
+}
+function recBorradorBorrar(id) { try { localStorage.removeItem(recBorradorKey(id)); } catch (e) { /* ok */ } }
 function recConteo(id) {
   recConteoId = id;
   const l = recLinea(id);
+  const bor = l.cantidad_recibida == null ? recBorradorLeer(id) : null;
   const p = l.producto || {};
   const esperado = l.esperado_piezas;
   recAbrirModal('Conteo físico', `
@@ -16215,10 +16226,10 @@ function recConteo(id) {
     <p style="font-size:12px; color:#d97706; margin:0 0 10px;">Cuenta físicamente. Escanear o ver una caja no basta: confirma cuántas piezas trae.</p>
     <input type="hidden" id="recCCajas" value=""><input type="hidden" id="recCPpc" value="">
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-      <label>Piezas contadas<input id="recCSueltas" type="number" min="0" step="1" inputmode="numeric" value="${l.cantidad_recibida != null ? l.cantidad_recibida : ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%; font-size:18px;"></label>
-      <label>Dañadas<input id="recCDan" type="number" min="0" step="1" inputmode="numeric" value="${l.danadas || ''}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%; font-size:18px;"></label>
+      <label>Piezas contadas<input id="recCSueltas" type="number" min="0" step="1" inputmode="numeric" value="${l.cantidad_recibida != null ? l.cantidad_recibida : (bor ? escapeHtml(bor.n) : '')}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%; font-size:18px;"></label>
+      <label>Dañadas<input id="recCDan" type="number" min="0" step="1" inputmode="numeric" value="${l.danadas || (bor ? escapeHtml(bor.d) : '')}" oninput="recConteoTotal()" style="${REC_INPUT} width:100%; font-size:18px;"></label>
       ${esperado != null ? `<button type="button" class="btn small" style="grid-column:1/-1;" onclick="document.getElementById('recCSueltas').value=${Number(esperado)}; document.getElementById('recCCajas').value=''; document.getElementById('recCPpc').value=''; recConteoTotal();">Coincide con la nota (${recNum(esperado)} piezas)</button>` : ''}
-      <label style="grid-column:1/-1;">Observaciones<input id="recCObs" value="${escapeHtml(l.observaciones || '')}" style="${REC_INPUT} width:100%;"></label>
+      <label style="grid-column:1/-1;">Observaciones<input id="recCObs" value="${escapeHtml(l.observaciones || (bor ? bor.o : '') || '')}" oninput="recBorradorGuardar()" style="${REC_INPUT} width:100%;"></label>
     </div>
     <div id="recCTotal" style="margin-top:12px; font-size:15px;"></div>
     <label style="display:block; margin-top:10px; font-size:13px;">Foto de evidencia (daños, empaque, etiqueta) <input type="file" id="recCFoto" accept="image/*" capture="environment"></label>
@@ -16293,6 +16304,7 @@ async function recConteoGrupoGuardar() {
   }
 }
 function recConteoTotal() {
+  recBorradorGuardar();
   const n = k => parseInt(document.getElementById(k).value, 10) || 0;
   const total = n('recCCajas') * n('recCPpc') + n('recCSueltas');
   const l = recLinea(recConteoId);
@@ -16314,6 +16326,7 @@ async function recConteoGuardar(id) {
       const foto = await recLeerArchivo(f, 1600, 0.8);
       d = await recApi('evidencia', { recepcion_id: recActual.recepcion.id, linea_id: id, archivo: { media_type: foto.media_type, data: foto.data }, nota: document.getElementById('recCObs').value });
     }
+    recBorradorBorrar(id);
     recCerrarModal(); recMostrar(d);
     document.getElementById('recEscaner')?.focus();
   } catch (e) { alert(recError(e)); btn.disabled = false; }
