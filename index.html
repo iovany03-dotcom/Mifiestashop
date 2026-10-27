@@ -15936,15 +15936,11 @@ function recVincular(id, sugeridos) {
     <div id="recVRes" style="max-height:300px; overflow:auto; border:1px solid var(--border); border-radius:10px;">${sugeridos ? recVincHtmlResultados(sugeridos, true) : '<p style="padding:10px; color:var(--text-muted); margin:0;">Escribe para buscar…</p>'}</div>
     <div id="recVSelTxt" style="margin-top:8px; font-weight:700;"></div>
     <label id="recVGuardarLbl" style="display:flex; gap:6px; align-items:center; font-size:13px; margin-top:6px;"><input type="checkbox" id="recVGuardar" ${l.codigo && !l.reparto ? 'checked' : 'disabled'}> Guardar la equivalencia (${escapeHtml(recActual.recepcion.proveedor)} + ${escapeHtml(l.codigo || 'sin código')}) para que se reconozca sola en próximas compras</label>
-    <details id="recVMas" style="margin-top:10px;" ${(l.reparto || pres !== 'pieza') ? 'open' : ''}>
-      <summary style="cursor:pointer; font-size:13px; font-weight:700;">Más opciones${pres !== 'pieza' && (l.factor || 1) > 1 ? ` <span style="color:#dc2626;">(${pres}: ${l.factor} piezas por unidad)</span>` : ''}</summary>
+    <details id="recVMas" style="margin-top:10px;" ${l.reparto ? 'open' : ''}>
+      <summary style="cursor:pointer; font-size:13px; font-weight:700;">Más opciones</summary>
     <label style="display:flex; gap:6px; align-items:center; font-size:13px; font-weight:700; margin:0 0 8px;"><input type="checkbox" id="recVVarios" onchange="recVincModoVarios(this.checked)"> Son varios productos del catálogo (elige cuáles y cuántas piezas de cada uno)</label>
     <div id="recVVariosPanel" class="hidden" style="margin-top:10px;"></div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
-      <label id="recVPresLbl">Presentación en la nota<select id="recVPres" onchange="recVincPres()" style="${REC_INPUT} width:100%;">${['pieza', 'paquete', 'caja', 'docena', 'bolsa', 'rollo'].map(o => `<option ${o === pres ? 'selected' : ''}>${o}</option>`).join('')}</select></label>
-      <label id="recVFactorLbl" class="${pres === 'pieza' ? 'hidden' : ''}">Piezas por unidad de la nota<input id="recVFactor" type="number" min="1" step="1" value="${pres === 'pieza' ? 1 : (l.reparto ? l.reparto.factor : (l.factor || 1))}" oninput="recVariosPintar()" style="${REC_INPUT} width:100%;"></label>
-    </div>
-    <p id="recVEjemplo" style="font-size:12px; color:var(--text-muted); margin:6px 0;">Si la nota dice "5 cajas" y cada caja trae 20 piezas, elige presentación "caja" y escribe 20. Con "pieza" se cuenta 1 por unidad.</p>
+    <input type="hidden" id="recVPres" value="pieza"><input type="hidden" id="recVFactor" value="${l.reparto ? l.reparto.factor : 1}">
     ${(() => {
       const otros = (recActual.lineas || []).filter(x => x.id !== l.id && !x.id_product && !x.reparto && !x.ingresado_at && x.origen !== 'adicional');
       return otros.length ? `<div id="recVOtrosLbl" style="margin-top:10px; border:1px dashed var(--border); border-radius:10px; padding:8px 10px;">
@@ -15976,12 +15972,6 @@ function recVariosTotal() {
   return cant > 0 && factor >= 1 ? cant * factor : 0;
 }
 function recVariosSuma() { return recVarios.partes.reduce((a, p) => a + (Number(p.piezas) || 0), 0); }
-function recVincPres() {
-  const pieza = document.getElementById('recVPres').value === 'pieza';
-  document.getElementById('recVFactorLbl')?.classList.toggle('hidden', pieza);
-  if (pieza) document.getElementById('recVFactor').value = 1;
-  recVariosPintar();
-}
 function recVincModoVarios(on) {
   recVarios.activo = !!on;
   const l = recLinea(recVincId);
