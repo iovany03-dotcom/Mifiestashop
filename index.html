@@ -15167,7 +15167,10 @@ async function seoMasivoResumen() {
     const u = r.ultima;
     document.getElementById('seoMResumen').innerHTML = `<div style="display:flex; gap:10px; flex-wrap:wrap;">
       ${[['propuesto', 'Por revisar', '#d3007b'], ['pendiente', 'En espera de la IA', '#7c3aed'], ['aprobado', 'Aprobados', '#15803d'], ['rechazado', 'Rechazados', '#6b7280'], ['error', 'Con error', '#dc2626']].map(([k, t, col]) => `<div class="card" style="margin:0; padding:10px 14px; min-width:110px; cursor:pointer;" onclick="document.getElementById('seoMEstado').value='${k}'; seoMasivoCargar()"><div style="font-size:22px; font-weight:800; color:${col};">${r[k] || 0}</div><div style="font-size:12px;">${t}</div></div>`).join('')}
-    </div><div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${u ? `Última corrida de la IA: ${new Date(u.last_synced_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} · ${escapeHtml(u.ultimo_resultado || '')}` : 'La IA todavía no ha corrido: empieza sola en los próximos 10 minutos.'}</div>`;
+    </div>
+    <label style="display:flex; gap:8px; align-items:center; margin-top:10px; font-size:13px;"><input type="checkbox" ${r.auto ? 'checked' : ''} onchange="seoMasivoAuto(this)">
+      <span><b>Aprobación automática</b> — la IA aprueba sola las propuestas que pasan los controles (largo del título y la meta, descripción de 80 a 400 palabras, sin precios, enlaces ni emojis). Las que no, se quedan en "Por revisar" con la razón. Todas se pueden deshacer.</span></label>
+    <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">${u ? `Última corrida de la IA: ${new Date(u.last_synced_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })} · ${escapeHtml(u.ultimo_resultado || '')}` : 'La IA todavía no ha corrido: empieza sola en los próximos 10 minutos.'}</div>`;
   } catch (e) { document.getElementById('seoMResumen').innerHTML = seoError(e); }
 }
 function seoMasivoTarjeta(it) {
@@ -15239,6 +15242,10 @@ async function seoMasivoRechazar(ids) {
     seoMasivoResumen();
     if (!document.querySelector('.seoMSel')) seoMasivoCargar();
   } catch (e) { alert(e.message); }
+}
+async function seoMasivoAuto(el) {
+  if (el.checked && !confirm('¿Activar la aprobación automática? La IA cambiará los títulos, metas y descripciones en la tienda sin que los revises (cada cambio se puede deshacer).')) { el.checked = false; return; }
+  try { await seoApi('cola_auto', { activo: el.checked }); seoMasivoResumen(); } catch (e) { alert(e.message); el.checked = !el.checked; }
 }
 async function seoMasivoDeshacer(id) {
   if (!confirm('¿Regresar el producto a como estaba antes? La propuesta vuelve a "Por revisar".')) return;

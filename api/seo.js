@@ -328,7 +328,7 @@ module.exports = async function handler(req, res) {
       case 'categorias': data = await categorias(b); break;
       case 'cola_resumen': {
         const [r, est] = await Promise.all([cola.resumen(), sb('/rest/v1/ps_sync_estado?dominio=eq.seo_ia&select=last_synced_at,ultimo_resultado')]);
-        data = { ...r, ultima: est[0] || null }; break;
+        data = { ...r, ultima: est[0] || null, auto: await cola.autoActivo() }; break;
       }
       case 'cola_lista': data = await cola.lista(b); break;
       case 'cola_aprobar': data = await cola.aprobar(b, s); break;
@@ -336,6 +336,7 @@ module.exports = async function handler(req, res) {
       case 'cola_deshacer': data = await cola.deshacer(b, s); break;
       case 'cola_reintentar': data = await cola.reintentar(b); break;
       case 'cola_llenar': data = await cola.llenar(); break;
+      case 'cola_auto': data = await cola.ponerAuto(!!b.activo, s); break;
       case 'categoria_ia': data = await categoriaIA(b); break;
       case 'guardar_categoria': data = await guardarCategoria(b, s); break;
       case 'gsc': data = await gsc(b); break;

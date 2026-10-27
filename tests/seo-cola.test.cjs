@@ -43,6 +43,7 @@ function fake(d) {
       if (eqId) filas = filas.filter(c => c.product_id === eqId);
       const est = u.match(/estado=eq\.(\w+)/); if (est) filas = filas.filter(c => c.estado === est[1]);
       const estIn = u.match(/estado=in\.\(([^)]*)\)/); if (estIn) filas = filas.filter(c => estIn[1].split(',').includes(c.estado));
+      if (u.includes('error=is.null')) filas = filas.filter(c => !c.error);
       if (u.includes('or=(estado.eq.pendiente')) filas = filas.filter(c => c.estado === 'pendiente' || (c.estado === 'error' && c.intentos < 3));
       if (m === 'PATCH') { filas.forEach(c => Object.assign(c, body)); return ok(null); }
       filas = [...filas].sort((a, b) => b.prioridad - a.prioridad || a.product_id - b.product_id);
@@ -118,4 +119,23 @@ test('procesar: si la IA falla, se marca con error y se reintenta hasta 3 veces'
     await cola.procesar({ tiempoMaxMs: 65000 });
     assert.ok(d.cola.every(c => c.estado === 'error' && c.intentos >= 1 && c.intentos <= 3));
   } finally { ia.generarJson = prev; }
+});
+
+test('aprobación automática: aprueba lo que pasa los controles y deja el resto por revisar con la razón', async () => {
+  const d = db(); fake(d);
+  const buena = { palabra_clave: 'k', meta_title: 'Globo rojo para fiesta de cumpleaños', meta_description: 'm'.repeat(140), descripcion_html: PALABRAS(130) };
+  d.cola = [
+    { product_id: 1, prioridad: 5, estado: 'propuesto', propuesta: buena, intentos: 0 },
+    { product_id: 2, prioridad: 9, estado: 'propuesto', propuesta: { ...buena, descripcion_html: PALABRAS(130) + '<p>Solo $25 la pieza</p>' }, intentos: 0 },
+    { product_id: 4, prioridad: 1, estado: 'propuesto', propuesta: { ...buena, meta_title: 'X' }, intentos: 0 }
+  ];
+  const cola = require('../lib/seo-cola.js');
+  const r = await cola.aprobarAutomaticas();
+  assert.deepEqual(r, { aprobados: 1, a_revisar: 2 });
+  assert.equal(d.cola[0].estado, 'aprobado');
+  assert.equal(d.cola[0].revisado_por, 'IA (aprobación automática)');
+  assert.equal(d.catalogo.find(p => p.id === 1).meta_title, 'Globo rojo para fiesta de cumpleaños');
+  assert.equal(d.cola[1].estado, 'propuesto'); assert.match(d.cola[1].error, /precios/);
+  assert.match(d.cola[2].error, /título de 1 caracteres/);
+  assert.deepEqual(await cola.aprobarAutomaticas(), { aprobados: 0, a_revisar: 0 }); // no repite las ya marcadas
 });

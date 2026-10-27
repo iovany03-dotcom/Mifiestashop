@@ -4,7 +4,8 @@
 // Usa crédito de OpenAI/Anthropic, así que tiene su propio candado en ps_sync_estado
 // (dominio 'seo_ia'): si la última corrida empezó hace menos de 8 minutos no hace nada, aunque
 // alguien llame la URL muchas veces (CRON_SECRET no está configurado en este proyecto).
-// SEO_IA_PAUSA=1 en Vercel la detiene sin quitar el cron.
+// SEO_IA_PAUSA=1 en Vercel la detiene sin quitar el cron. Con la aprobación automática activada
+// (lib/seo-cola.js autoActivo) aprueba sola las propuestas que pasan los controles de calidad.
 const { sb } = require('../lib/seo-datos.js');
 const cola = require('../lib/seo-cola.js');
 
@@ -17,6 +18,7 @@ module.exports = async function handler(req, res) {
   if (expected && (req.headers.authorization || '').replace(/^Bearer\s+/i, '') !== expected) { res.status(401).json({ error: 'unauthorized' }); return; }
   if (process.env.SEO_IA_PAUSA === '1') { res.status(200).json({ ok: true, pausado: true }); return; }
   if (!(process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY)) { res.status(200).json({ ok: true, sin_ia: true }); return; }
+  const t0 = Date.now();
   try {
     const [estado] = await sb('/rest/v1/ps_sync_estado?dominio=eq.seo_ia&select=last_synced_at,last_synced_id');
     const ultima = estado && estado.last_synced_at ? new Date(estado.last_synced_at).getTime() : 0;
@@ -37,16 +39,26 @@ module.exports = async function handler(req, res) {
       llenado = await cola.llenar();
       dia = hoy;
     }
-    // Si ya hay muchas propuestas sin revisar, no se gasta más crédito hasta que se aprueben.
-    if (r0.propuesto >= MAX_SIN_REVISAR) {
+    // Aprobación automática (SEO → Optimización masiva): aprueba lo que pasa los controles de calidad.
+    const auto = await cola.autoActivo();
+    let aprobadas = null;
+    if (auto) aprobadas = await cola.aprobarAutomaticas();
+    // Sin aprobación automática: si ya hay muchas propuestas sin revisar, no se gasta más crédito
+    // hasta que se aprueben.
+    if (!auto && r0.propuesto >= MAX_SIN_REVISAR) {
       await guardar(`En espera: ${r0.propuesto} propuestas por revisar en SEO → Productos`);
       res.status(200).json({ ok: true, llenado, en_espera: true, cola: r0 });
       return;
     }
-    const hecho = await cola.procesar({ tiempoMaxMs: 240000 });
+    // La función dura máximo 300 s: a la IA le queda lo que no se usó en aprobar.
+    const hecho = await cola.procesar({ tiempoMaxMs: Math.max(0, 250000 - (Date.now() - t0)), paralelo: auto ? 2 : 1 });
+    if (auto) {
+      const a2 = await cola.aprobarAutomaticas();
+      aprobadas = { aprobados: aprobadas.aprobados + a2.aprobados, a_revisar: aprobadas.a_revisar + a2.a_revisar };
+    }
     const r = await cola.resumen();
-    await guardar(`${hecho.propuestos} propuestas, ${hecho.errores} errores · por revisar ${r.propuesto}, pendientes ${r.pendiente}`);
-    res.status(200).json({ ok: true, llenado, ...hecho, cola: r });
+    await guardar(`${hecho.propuestos} propuestas, ${hecho.errores} errores${auto ? `, ${aprobadas.aprobados} aprobadas solas` : ''} · por revisar ${r.propuesto}, pendientes ${r.pendiente}`);
+    res.status(200).json({ ok: true, llenado, auto, aprobadas, ...hecho, cola: r });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
