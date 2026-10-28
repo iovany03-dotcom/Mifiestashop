@@ -1810,6 +1810,66 @@
   ],
   "redirects": [
     {
+      "source": "/content/367-articulos-para-batucada",
+      "destination": "/content/290-articulos-para-batucada",
+      "permanent": true
+    },
+    {
+      "source": "/content/385-accesorios-de-neon-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/409-accesorios-para-batucada-boda-cdmx",
+      "destination": "/content/310-accesorios-para-batucada-boda-cdmx",
+      "permanent": true
+    },
+    {
+      "source": "/content/328-venta-de-articulos-de-fiesta-puebla",
+      "destination": "/content/322-venta-de-articulos-de-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/327-tienda-para-fiestas-puebla",
+      "destination": "/content/323-tienda-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/397-tienda-de-articulos-para-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/395-accesorios-de-fiesta-puebla",
+      "destination": "/content/325-accesorios-de-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/396-tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/content/326-tienda-de-cosas-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/354-todo-para-fiestas-mayoreo",
+      "destination": "/content/329-todo-para-fiestas-mayoreo",
+      "permanent": true
+    },
+    {
+      "source": "/content/369-productos-para-fiestas-y-batucadas",
+      "destination": "/content/349-productos-para-fiestas-y-batucadas",
+      "permanent": true
+    },
+    {
+      "source": "/content/370-productos-para-fiestas-y-batucadas",
+      "destination": "/content/349-productos-para-fiestas-y-batucadas",
+      "permanent": true
+    },
+    {
+      "source": "/content/408-accesorios-para-batucada-boda-puebla",
+      "destination": "/content/359-accesorios-para-batucada-boda-puebla",
+      "permanent": true
+    },
+    {
       "source": "/mayoristas",
       "destination": "/content/417-articulos-para-fiesta-mayoreo-en-mexico",
       "permanent": true

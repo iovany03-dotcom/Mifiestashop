@@ -11,7 +11,11 @@ module.exports = async function handler(req, res) {
 
   const urls = [{ loc: `${siteOrigin}/`, priority: '1.0' }];
   const cmsPages = require('../data/cms-manifest.json');
-  cmsPages.forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
+  // Hay páginas CMS duplicadas (mismo slug con otro id, copiadas de PrestaShop): se redirigen a la de
+  // menor id (vercel.json) y no van al sitemap.
+  const menorId = new Map();
+  cmsPages.forEach(p => { const id = Number(p.id); if (!menorId.has(p.slug) || id < menorId.get(p.slug)) menorId.set(p.slug, id); });
+  cmsPages.filter(p => Number(p.id) === menorId.get(p.slug)).forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
   // Mayoristas y Contacto: mismas ligas que en PrestaShop.
   ['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos']
     .forEach(path => urls.push({ loc: `${siteOrigin}${path}`, priority: '0.7' }));

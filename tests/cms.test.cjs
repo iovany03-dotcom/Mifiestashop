@@ -72,9 +72,9 @@ test('only Facebook and Google pages are migrated; VIP forms keep their original
   for(const id of [9,11,12,412,413,414,415,416,417,418,419,420,421])assert.equal(fs.existsSync(path.join(root,'cms-pages/'+id+'.html')),false);
   for(const id of [294,295,296]){const page=source.find(p=>p.id===id);const form=cheerio.load(fs.readFileSync(path.join(root,'cms-pages/'+id+'.html'),'utf8'));assert.equal(form('#vip-form').attr('data-endpoint'),page.vip.endpoint);assert.equal(form('#vip-form').attr('data-redirect'),page.vip.redirect);assert.equal(form('#vip-form input').length,3);}
 });
-test('sitemap includes all original CMS paths',async()=>{
+test('sitemap includes the original CMS paths, except duplicates that redirect to the lowest id of the same slug',async()=>{
   const previousFetch=global.fetch;global.fetch=async()=>({ok:true,json:async()=>[]});
-  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'www.mifiestashop.com'}},res);assert.equal(res.code,200);for(const page of source)assert.ok(res.data.includes(`https://www.mifiestashop.com${page.sourcePath}`));}
+  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'www.mifiestashop.com'}},res);assert.equal(res.code,200);const menor=new Map();source.forEach(p=>{if(!menor.has(p.slug)||p.id<menor.get(p.slug))menor.set(p.slug,p.id)});for(const page of source)assert.equal(res.data.includes(`https://www.mifiestashop.com${page.sourcePath}`),page.id===menor.get(page.slug),page.sourcePath);}
   finally{global.fetch=previousFetch;}
 });
 test('excluded pages keep their original content (ps_cms_paginas) and coexist with migrated pages',async()=>{
