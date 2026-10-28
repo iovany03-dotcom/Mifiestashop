@@ -33,7 +33,11 @@ async function ticketDelCliente(api, folioTxt, totalTxt) {
   const folio = `#POS-${digitos}`;
   const filas = await api(`pos_tickets?folio=eq.${encodeURIComponent(folio)}&total=gte.${r2(total - 0.5)}&total=lte.${r2(total + 0.5)}&select=folio,iva,total,subtotal,metodo,estado,created_at,almacen&order=created_at.desc&limit=1`);
   const t = filas && filas[0];
-  if (!t) throw new ErrorCliente(404, 'No encontramos un ticket con ese número y ese total. Revisa que sean los de tu ticket (el total con centavos).');
+  if (!t) {
+    // Los folios del POS son de 5 cifras: si escribió menos, lo más probable es que le falte un dígito.
+    if (digitos.length < 5) throw new ErrorCliente(404, `El número de ticket tiene 5 cifras (por ejemplo POS-12345) y escribiste solo ${digitos.length}: revisa que no te falte un dígito. Si ya lo revisaste, confirma también el total con centavos.`);
+    throw new ErrorCliente(404, 'No encontramos un ticket con ese número y ese total. Revisa que sean los de tu ticket (el total con centavos).');
+  }
   return t;
 }
 
