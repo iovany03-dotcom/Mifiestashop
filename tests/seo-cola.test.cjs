@@ -139,3 +139,11 @@ test('aprobación automática: aprueba lo que pasa los controles y deja el resto
   assert.match(d.cola[2].error, /título de 1 caracteres/);
   assert.deepEqual(await cola.aprobarAutomaticas(), { aprobados: 0, a_revisar: 0 }); // no repite las ya marcadas
 });
+
+test('la revisión automática rechaza títulos con palabras repetidas', () => {
+  const { revisarPropuesta } = require('../lib/seo-cola.js');
+  const base = { meta_description: 'x'.repeat(120), descripcion_html: PALABRAS(120) };
+  assert.ok(revisarPropuesta({ ...base, meta_title: 'Globo gato - globo gato mayoreo' }).includes('título con palabras repetidas'));
+  assert.ok(revisarPropuesta({ ...base, meta_title: 'Peluca Afro Payaso: peluca afro payaso multicolor' }).includes('título con palabras repetidas'));
+  assert.ok(!revisarPropuesta({ ...base, meta_title: 'Globo gato metálico para cumpleaños' }).includes('título con palabras repetidas'));
+});
