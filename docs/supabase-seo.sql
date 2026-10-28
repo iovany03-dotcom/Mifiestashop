@@ -56,3 +56,14 @@ begin
 end $$;
 revoke execute on function public.seo_sesion(text,text,text) from public, anon, authenticated;
 grant execute on function public.seo_sesion(text,text,text) to service_role;
+
+-- Indexación en Google (api/cron-seo.js: revisa unas URLs del sitemap cada hora con la API de inspección de Search Console)
+create table if not exists public.seo_indexacion (
+  url text primary key,
+  veredicto text, cobertura text, indexacion text, rastreo text,
+  ultimo_rastreo timestamptz, canonica_google text, canonica_usuario text, robots text,
+  error text, revisado_at timestamptz not null default now()
+);
+create index if not exists seo_indexacion_revisado_idx on public.seo_indexacion (revisado_at);
+alter table public.seo_indexacion enable row level security;
+revoke all on public.seo_indexacion from anon, authenticated;

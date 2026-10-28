@@ -4,6 +4,9 @@
 //   2) Una vez al día (la primera corrida sin registro de hoy): guarda en seo_historial el puntaje
 //      del sitio y, si Search Console está conectado, las consultas del día en seo_gsc_diario.
 //   3) Una vez al día, si hay PAGESPEED_API_KEY: mide la velocidad del inicio en celular.
+//   4) Con Search Console conectado: rellena el historial de los últimos 28 días (hasta 5 días por
+//      corrida) y revisa INSPECCIONES_POR_CORRIDA URLs del sitemap (las nunca revisadas primero, luego
+//      las más viejas) para saber si Google las tiene indexadas (tabla seo_indexacion).
 const { auditarUrl } = require('../lib/seo-auditor.js');
 const google = require('../lib/seo-google.js');
 const { sb, sbTodo, guardarAuditorias, urlsDelSitemap, productosConPuntaje, promedio, ORIGEN } = require('../lib/seo-datos.js');
@@ -11,6 +14,9 @@ const { sb, sbTodo, guardarAuditorias, urlsDelSitemap, productosConPuntaje, prom
 const POR_CORRIDA = 70;
 const PARALELO = 5;
 const TIEMPO_MAX_MS = 200000;
+const INSPECCIONES_POR_CORRIDA = 40;   // la API de inspección permite 2,000 al día por propiedad
+const DIAS_HISTORIAL = 28;
+const DIAS_POR_CORRIDA = 5;
 
 async function cursor() {
   const r = await sb('/rest/v1/ps_sync_estado?dominio=eq.seo_auditoria&select=last_synced_id');
@@ -77,6 +83,52 @@ async function fotoDiaria() {
   return out;
 }
 
+// Historial de Search Console: los días que faltan de los últimos DIAS_HISTORIAL (con ~3 de retraso).
+async function rellenarHistorialGsc() {
+  if (!google.gscConfigurado()) return {};
+  const candidatos = [];
+  for (let k = 3; k < 3 + DIAS_HISTORIAL; k++) candidatos.push(new Date(Date.now() - k * 864e5).toISOString().slice(0, 10));
+  const hay = await Promise.all(candidatos.map(async d => (await sb(`/rest/v1/seo_gsc_diario?fecha=eq.${d}&select=fecha&limit=1`)).length > 0));
+  const faltan = candidatos.filter((d, i) => !hay[i]);
+  let dias = 0;
+  for (const dia of faltan.slice(0, DIAS_POR_CORRIDA)) {
+    const filas = await google.analitica({ startDate: dia, endDate: dia, dimensiones: ['query', 'page'], limite: 5000 });
+    for (let i = 0; i < filas.length; i += 1000) {
+      await sb('/rest/v1/seo_gsc_diario?on_conflict=fecha,consulta,pagina', {
+        method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify(filas.slice(i, i + 1000).map(r => ({ fecha: dia, consulta: r.keys[0].slice(0, 300), pagina: r.keys[1].slice(0, 500), clics: r.clics, impresiones: r.impresiones, ctr: r.ctr, posicion: r.posicion })))
+      });
+    }
+    dias++;
+  }
+  return { gsc_dias_rellenados: dias, gsc_dias_pendientes: Math.max(0, faltan.length - dias) };
+}
+
+// ¿Google tiene indexadas las páginas del sitemap? Se revisan pocas por corrida para no pasar la cuota.
+async function inspeccionarTanda() {
+  if (!google.gscConfigurado()) return {};
+  const urls = await urlsDelSitemap();
+  const hechas = await sbTodo('/rest/v1/seo_indexacion?select=url,revisado_at');
+  const porUrl = new Map(hechas.map(r => [r.url, r.revisado_at]));
+  const orden = urls.filter(u => !porUrl.has(u)).concat(urls.filter(u => porUrl.has(u)).sort((a, b) => String(porUrl.get(a)).localeCompare(String(porUrl.get(b)))));
+  const tanda = orden.slice(0, INSPECCIONES_POR_CORRIDA);
+  const t0 = Date.now();
+  const filas = [];
+  for (let i = 0; i < tanda.length && Date.now() - t0 < TIEMPO_MAX_MS; i += 4) {
+    const lote = await Promise.all(tanda.slice(i, i + 4).map(async u => {
+      try {
+        const r = await google.inspeccionarUrl(u);
+        return { url: u, veredicto: r.veredicto || null, cobertura: r.cobertura || null, indexacion: r.indexacion || null, rastreo: r.rastreo || null, ultimo_rastreo: r.ultimo_rastreo || null, canonica_google: r.canonica_google || null, canonica_usuario: r.canonica_usuario || null, robots: r.robots || null, error: null, revisado_at: new Date().toISOString() };
+      } catch (e) { return { url: u, error: String(e.message).slice(0, 300), revisado_at: new Date().toISOString() }; }
+    }));
+    filas.push(...lote);
+  }
+  if (filas.length) {
+    await sb('/rest/v1/seo_indexacion?on_conflict=url', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(filas.map(f => ({ veredicto: null, cobertura: null, indexacion: null, rastreo: null, ultimo_rastreo: null, canonica_google: null, canonica_usuario: null, robots: null, ...f }))) });
+  }
+  return { inspeccionadas: filas.length, sin_revisar: Math.max(0, urls.length - porUrl.size - filas.filter(f => !porUrl.has(f.url)).length) };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const expected = process.env.CRON_SECRET;
@@ -86,7 +138,11 @@ module.exports = async function handler(req, res) {
   try {
     const tanda = await auditarTanda(await cursor());
     const foto = await fotoDiaria();
-    res.status(200).json({ ok: true, ...tanda, ...foto });
+    // Lo de Search Console no debe tumbar la auditoría: si falla, se informa y se sigue.
+    const extra = {};
+    try { Object.assign(extra, await rellenarHistorialGsc()); } catch (e) { extra.historial_error = String(e.message).slice(0, 200); }
+    try { Object.assign(extra, await inspeccionarTanda()); } catch (e) { extra.inspeccion_error = String(e.message).slice(0, 200); }
+    res.status(200).json({ ok: true, ...tanda, ...foto, ...extra });
   } catch (e) {
     res.status(500).json({ ok: false, error: e.message });
   }
