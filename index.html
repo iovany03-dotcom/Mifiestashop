@@ -21894,14 +21894,30 @@ function hashCode(str) {
   return hash;
 }
 
+// Meses que se muestran en el análisis por producto: desde marzo de 2026 hasta el mes actual
+// (o el último mes con ventas), y recortados al filtro de fecha. Antes la lista terminaba en
+// septiembre y las ventas de octubre en adelante salían en 0.
+function monthsForAnalytics(fromMonth, toMonth) {
+  const hoy = new Date();
+  let fin = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+  Object.values(recordedProductSales).forEach(r => Object.keys(r.byMonth || {}).forEach(m => { if (/^\d{4}-\d{2}$/.test(m) && m > fin) fin = m; }));
+  const out = [];
+  let [y, mo] = [2026, 3];
+  while (`${y}-${String(mo).padStart(2, '0')}` <= fin) {
+    const m = `${y}-${String(mo).padStart(2, '0')}`;
+    if ((!fromMonth || m >= fromMonth) && (!toMonth || m <= toMonth)) out.push(m);
+    if (++mo > 12) { mo = 1; y++; }
+  }
+  return out;
+}
+
 function getProductMonthlySales(p, fromISO, toISO) {
-  const allMonths = ['2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
   // fromISO/toISO (YYYY-MM-DD) recortan el rango a los meses del filtro de
   // fecha del dashboard — comparación lexicográfica sobre 'YYYY-MM' funciona
   // porque el formato ya viene con ceros a la izquierda.
   const fromMonth = fromISO ? fromISO.slice(0, 7) : null;
   const toMonth = toISO ? toISO.slice(0, 7) : null;
-  const months = allMonths.filter(m => (!fromMonth || m >= fromMonth) && (!toMonth || m <= toMonth));
+  const months = monthsForAnalytics(fromMonth, toMonth);
   const pKeySku = String(p.sku || '').trim();
   const pKeyId = String(p.id || '').trim();
   const pName = String(p.name || '').trim().toLowerCase();
