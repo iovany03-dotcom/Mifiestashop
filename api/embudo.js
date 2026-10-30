@@ -7,6 +7,8 @@
 //   -> { filas: [{ origen, dispositivo, max_paso, sesiones }] (el embudo se
 //        arma en el navegador a partir de esto), sesiones: [...],
 //        errores: [...], abandonados: [...] }
+// POST { ...creds, accion: 'velocidad', desde, hasta }
+//   -> velocidad real de las visitas (evento "velocidad"): { mediciones, segmentos, conversion, paginas, redes }
 // POST { ...creds, accion: 'sesion', sessionId }
 //   -> { eventos: [{ evento, path, producto_id, valor, datos, created_at }] }
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -70,6 +72,10 @@ module.exports = async function handler(req, res) {
     if (hasta - desde > MAX_RANGO_MS) { res.status(400).json({ error: 'El rango máximo es de 90 días' }); return; }
     const p = { p_desde: desde.toISOString(), p_hasta: hasta.toISOString() };
 
+    if (body.accion === 'velocidad') {
+      res.status(200).json(await rpc(key, 'embudo_velocidad', p));
+      return;
+    }
     const [filas, sesiones, errores, abandonados] = await Promise.all([
       rpc(key, 'embudo_agregado', p),
       rpc(key, 'embudo_sesiones', { ...p, p_limite: 300 }),

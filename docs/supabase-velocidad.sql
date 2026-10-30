@@ -1,0 +1,15 @@
+-- Velocidad real de las visitas (evento "velocidad" que manda medirVelocidad en index.html,
+-- guardado por api/evento.js en eventos_tienda). Reporte: api/embudo.js accion 'velocidad'.
+-- Aplicado en Supabase el 2026-10-30 (migración embudo_velocidad). embudo_sesiones se cambió para
+-- que la medición, que se manda al salir de la página, no cuente como "último evento".
+--
+-- embudo_velocidad(p_desde, p_hasta) -> jsonb {
+--   mediciones,
+--   segmentos:  percentil 75 de LCP/INP/CLS/TTFB por dispositivo y navegador (app de Facebook,
+--               Instagram, TikTok o navegador normal), y % de cargas de más de 4 s,
+--   conversion: visitas según qué tan rápido se vio su primera página (< 2.5 s, 2.5-4 s, > 4 s)
+--               y qué tan lejos llegaron (producto, carrito, compra, WhatsApp),
+--   paginas:    páginas de entrada en celular con más cargas lentas,
+--   redes:      celulares por tipo de red (4g, 3g...)
+-- }
+-- Solo la ejecuta service_role. Definición completa: ver la migración "embudo_velocidad" en Supabase.

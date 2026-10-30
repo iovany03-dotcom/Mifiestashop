@@ -3688,6 +3688,12 @@
         <div id="embFunnel"></div>
       </div>
 
+      <div class="card" id="embVelocidadCard">
+        <h2 style="margin:0 0 4px; font-size:1.05rem;">Velocidad real de las visitas</h2>
+        <p style="margin:0 0 10px; font-size:12px; color:var(--text-muted);">Medida en el celular o la computadora de cada cliente (lo mismo que mide Google). Se muestra el percentil 75: 3 de cada 4 visitas fueron así de rápidas o más. Verde = bien según Google; rojo = malo.</p>
+        <div id="embVelocidad">Cargando…</div>
+      </div>
+
       <div class="card">
         <h2 style="margin:0 0 10px; font-size:1.05rem;">Por origen de la visita</h2>
         <div class="table-wrap">
@@ -7152,6 +7158,49 @@ function whenPageVisible(fn) {
   };
   document.addEventListener('visibilitychange', onVisible);
 }
+
+// ---------- Velocidad real de cada visita (Core Web Vitals) ----------
+// Mide en el navegador del cliente lo mismo que Google (LCP: cuándo se ve lo principal; INP:
+// qué tan rápido responde a un toque; CLS: si las cosas brincan al cargar), más el tiempo de
+// respuesta del servidor (TTFB) y el primer dibujo (FCP). Se manda una vez, al salir o
+// esconder la página, como evento "velocidad" del embudo, con la página de entrada, si se
+// abrió dentro de la app de Facebook/Instagram/TikTok y el tipo de red. Sin librerías externas.
+(function medirVelocidad() {
+  if (!('PerformanceObserver' in window) || location.pathname.startsWith('/admin')) return;
+  const m = { lcp: null, fcp: null, ttfb: null, cls: 0 };
+  const entrada = location.pathname.slice(0, 200);
+  const observar = (type, cb, extra) => { try { new PerformanceObserver(l => l.getEntries().forEach(cb)).observe({ type, buffered: true, ...(extra || {}) }); } catch (e) {} };
+  observar('largest-contentful-paint', e => { m.lcp = Math.round(e.startTime); });
+  observar('paint', e => { if (e.name === 'first-contentful-paint') m.fcp = Math.round(e.startTime); });
+  // CLS: la peor "ventana" de movimientos (grupos de menos de 5 s con pausas de menos de 1 s).
+  let ventana = 0, primero = 0, ultimo = 0;
+  observar('layout-shift', e => {
+    if (e.hadRecentInput) return;
+    if (ventana && e.startTime - ultimo < 1000 && e.startTime - primero < 5000) ventana += e.value;
+    else { ventana = e.value; primero = e.startTime; }
+    ultimo = e.startTime;
+    m.cls = Math.max(m.cls, ventana);
+  });
+  // INP: la interacción más lenta (con muchas, se descarta 1 de cada 50 como hace Google).
+  const interacciones = new Map();
+  observar('event', e => { if (e.interactionId) interacciones.set(e.interactionId, Math.max(interacciones.get(e.interactionId) || 0, e.duration)); }, { durationThreshold: 40 });
+  try { const nav = performance.getEntriesByType('navigation')[0]; if (nav && nav.responseStart > 0) m.ttfb = Math.round(nav.responseStart); } catch (e) {}
+  let enviado = false;
+  const enviar = () => {
+    if (enviado || (m.lcp == null && m.fcp == null)) return;
+    enviado = true;
+    const ds = [...interacciones.values()].sort((a, b) => b - a);
+    const ua = navigator.userAgent;
+    const app = /FBAN|FBAV|FB_IAB/.test(ua) ? 'facebook' : /Instagram/.test(ua) ? 'instagram' : /musical_ly|TikTok|BytedanceWebview/i.test(ua) ? 'tiktok' : 'navegador';
+    trackFunnel('velocidad', { urgente: true, datos: {
+      lcp: m.lcp, fcp: m.fcp, ttfb: m.ttfb, cls: Math.round(m.cls * 1000) / 1000,
+      inp: ds.length ? Math.round(ds[Math.min(ds.length - 1, Math.floor(ds.length / 50))]) : undefined,
+      entrada, app, red: (navigator.connection && navigator.connection.effectiveType) || undefined
+    } });
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviar(); });
+  addEventListener('pagehide', enviar);
+})();
 
 function trackFunnelPageView() {
   const path = window.location.pathname;
@@ -11056,7 +11105,7 @@ const EMBUDO_EVENTOS = {
   ver_carrito: 'Vio su carrito', iniciar_checkout: 'Inició el pago', cotizar_envio: 'Cotizó envío',
   elegir_envio: 'Eligió paquetería', error_checkout: 'Le salió un error', pedido_creado: 'Creó su pedido',
   ir_a_pago: 'Se fue a Mercado Pago', compra: 'Compró', pago_pendiente: 'Pago pendiente',
-  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel./ubicación)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
+  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel./ubicación)', registro: 'Creó su cuenta', newsletter: 'Se suscribió', velocidad: 'Midió la velocidad de la página'
 };
 let embudoData = null;
 
@@ -11096,6 +11145,48 @@ async function loadEmbudo() {
   sel.innerHTML = '<option value="">Todos</option>' + origenes.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(EMBUDO_ORIGENES[o] || o)}</option>`).join('');
   if (origenes.includes(prev)) sel.value = prev;
   renderEmbudo();
+  loadEmbudoVelocidad(desde, hasta);
+}
+
+// ---------- Velocidad real (evento "velocidad", ver medirVelocidad) ----------
+const EMB_VEL_UMBRAL = { lcp: [2500, 4000], inp: [200, 500], cls: [0.1, 0.25], ttfb: [800, 1800] };
+function embVelColor(k, v) {
+  if (v == null) return 'var(--text-muted)';
+  const [bien, mal] = EMB_VEL_UMBRAL[k];
+  return v <= bien ? '#15803d' : v <= mal ? '#d97706' : '#dc2626';
+}
+function embVelValor(k, v) {
+  if (v == null) return '—';
+  const t = k === 'cls' ? Number(v).toFixed(2) : (v >= 1000 ? (v / 1000).toFixed(1) + ' s' : Math.round(v) + ' ms');
+  return `<b style="color:${embVelColor(k, Number(v))};">${t}</b>`;
+}
+async function loadEmbudoVelocidad(desde, hasta) {
+  const box = document.getElementById('embVelocidad');
+  if (!box) return;
+  box.innerHTML = 'Cargando…';
+  try {
+    const r = await fetch('/api/embudo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...getSessionCredsParams(), accion: 'velocidad', desde: desde.toISOString(), hasta: hasta.toISOString() }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    if (!d.mediciones) { box.innerHTML = '<p style="color:var(--text-muted); margin:0;">Todavía no hay mediciones en este periodo: se juntan solas con cada visita (se empezó a medir el 30 de octubre de 2026).</p>'; return; }
+    const APP = { navegador: 'Navegador', facebook: 'App de Facebook', instagram: 'App de Instagram', tiktok: 'App de TikTok' };
+    const DISP = { movil: 'Celular', escritorio: 'Computadora', tablet: 'Tablet' };
+    const tabla = (cab, filas) => `<div class="table-wrap"><table><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filas || `<tr><td colspan="${cab.length}" style="color:var(--text-muted);">Sin datos suficientes todavía.</td></tr>`}</tbody></table></div>`;
+    const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '—';
+    box.innerHTML = `<p style="font-size:12px; margin:0 0 6px;">${d.mediciones.toLocaleString('es-MX')} páginas medidas.</p>
+      <h3 style="font-size:.95rem; margin:10px 0 6px;">Por dispositivo y navegador</h3>
+      ${tabla(['Dispositivo', 'Abierto en', 'Visitas', 'Se ve lo principal (LCP)', 'Responde al tocar (INP)', 'Brincos (CLS)', 'Servidor (TTFB)', 'Cargas lentas (> 4 s)'],
+        d.segmentos.map(x => `<tr><td>${DISP[x.dispositivo] || escapeHtml(x.dispositivo)}</td><td>${APP[x.app] || escapeHtml(x.app)}</td><td>${Number(x.visitas).toLocaleString('es-MX')}</td><td>${embVelValor('lcp', x.lcp)}</td><td>${embVelValor('inp', x.inp)}</td><td>${embVelValor('cls', x.cls)}</td><td>${embVelValor('ttfb', x.ttfb)}</td><td>${x.pct_lentas == null ? '—' : x.pct_lentas + '%'}</td></tr>`).join(''))}
+      <h3 style="font-size:.95rem; margin:14px 0 6px;">¿Vende más cuando carga rápido?</h3>
+      <p style="font-size:12px; color:var(--text-muted); margin:0 0 6px;">Visitas agrupadas por qué tan rápido se vio su primera página, y qué tan lejos llegaron.</p>
+      ${tabla(['Primera página', 'Dispositivo', 'Visitas', 'Vieron un producto', 'Agregaron al carrito', 'Compraron', 'Escribieron por WhatsApp'],
+        d.conversion.filter(x => x.rango !== 'sin dato').map(x => `<tr><td>${escapeHtml(x.rango.slice(2))}</td><td>${DISP[x.dispositivo] || escapeHtml(x.dispositivo)}</td><td>${Number(x.visitas).toLocaleString('es-MX')}</td><td>${pct(x.ven_producto, x.visitas)}</td><td>${pct(x.carrito, x.visitas)}</td><td>${pct(x.compra, x.visitas)}</td><td>${pct(x.whatsapp, x.visitas)}</td></tr>`).join(''))}
+      <h3 style="font-size:.95rem; margin:14px 0 6px;">Páginas de entrada más lentas en celular</h3>
+      ${tabla(['Página', 'Visitas', 'Cargas lentas', 'LCP', 'INP'],
+        d.paginas.map(x => `<tr><td style="font-size:12px;"><a href="${escapeHtml(x.entrada)}" target="_blank" rel="noopener">${escapeHtml(String(x.entrada).slice(0, 70))}</a></td><td>${x.visitas}</td><td>${x.lentas}</td><td>${embVelValor('lcp', x.lcp)}</td><td>${embVelValor('inp', x.inp)}</td></tr>`).join(''))}
+      <h3 style="font-size:.95rem; margin:14px 0 6px;">Celulares por tipo de red</h3>
+      ${tabla(['Red', 'Visitas', 'LCP'], d.redes.map(x => `<tr><td>${escapeHtml(String(x.red).toUpperCase())}</td><td>${x.visitas}</td><td>${embVelValor('lcp', x.lcp)}</td></tr>`).join(''))}`;
+  } catch (e) { box.innerHTML = `<p style="color:#dc2626;">No se pudo cargar la velocidad: ${escapeHtml(e.message)}</p>`; }
 }
 
 function embudoConteos(filas) {

@@ -84,3 +84,31 @@ test('api/embudo: resumen llama las 4 funciones con el rango pedido y rechaza ra
     assert.equal(res2.code, 400);
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
+
+test('velocidad real: api/evento guarda la medición y api/embudo la reporta con la llave de servicio', async () => {
+  const prev = global.fetch;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  let posted = null;
+  global.fetch = async (url, opts = {}) => { posted = JSON.parse(opts.body); return { ok: true, text: async () => '' }; };
+  try {
+    const res = response();
+    const body = JSON.stringify({ events: [{ v: 'visitante01', s: 'sesion0001', e: 'velocidad', p: '/', dv: 'movil', o: 'facebook', d: { lcp: 3120, fcp: 900, ttfb: 410, cls: 0.04, inp: 180, entrada: '/content/288-articulos-pata-batucada-en-cdmx', app: 'facebook', red: '4g' } }] });
+    await require('../api/evento.js')({ method: 'POST', headers: { 'user-agent': 'Mozilla/5.0 (iPhone) FBAN/FBIOS' }, body }, res);
+    assert.equal(res.code, 204);
+    assert.equal(posted[0].evento, 'velocidad');
+    assert.deepEqual(posted[0].datos, { lcp: 3120, fcp: 900, ttfb: 410, cls: 0.04, inp: 180, entrada: '/content/288-articulos-pata-batucada-en-cdmx', app: 'facebook', red: '4g' });
+
+    const calls = [];
+    global.fetch = async (url, opts = {}) => {
+      const u = String(url);
+      if (u.includes('rpc_check_session')) return { ok: true, json: async () => true };
+      calls.push({ fn: u.split('/rpc/')[1], key: opts.headers.apikey, params: JSON.parse(opts.body) });
+      return { ok: true, json: async () => ({ mediciones: 1, segmentos: [], conversion: [], paginas: [], redes: [] }) };
+    };
+    const r2 = response();
+    await require('../api/embudo.js')({ method: 'POST', body: { p_admin_password: 'x', accion: 'velocidad', desde: '2026-10-01T06:00:00.000Z', hasta: '2026-10-30T06:00:00.000Z' } }, r2);
+    assert.equal(r2.code, 200, JSON.stringify(r2.data));
+    assert.deepEqual(calls.map(c => [c.fn, c.key]), [['embudo_velocidad', 'sr']]);
+    assert.equal(r2.data.mediciones, 1);
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
