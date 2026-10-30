@@ -2060,7 +2060,7 @@
   </div>
 
   <!-- Checkout Page -->
-  <div class="store-container hidden" id="storefrontCheckoutPage">
+  <div class="store-container hidden" id="storefrontCheckoutPage" data-clarity-mask="True">
     <button class="btn secondary" style="margin:20px 0; border-radius:20px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openStorefrontCart()">← Volver al carrito</button>
     <div role="heading" aria-level="2" class="t2" style="margin-bottom:16px; color:#2e1065;">📦 Finalizar Compra</div>
     <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px; align-items:start;">
@@ -2448,7 +2448,7 @@
 </div>
 
 <!-- ==================== PORTAL DE CLIENTES (mifiestashop.com/mi-cuenta) ==================== -->
-<div id="view-cliente-portal" class="hidden" style="min-height:100vh; background:var(--bg-main); color:var(--text-primary); padding-bottom:60px;">
+<div id="view-cliente-portal" class="hidden" style="min-height:100vh; background:var(--bg-main); color:var(--text-primary); padding-bottom:60px;" data-clarity-mask="True">
   
   <!-- Header del Portal -->
   <header class="store-header">
@@ -5304,6 +5304,20 @@
           </div>
 
           <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Microsoft Clarity (mapas de calor y grabaciones)</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>ID del proyecto de Clarity:</b>
+                <input type="text" id="cfgClarityId" placeholder="Ej. abcd1234ef" maxlength="20" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                <span style="font-size:11.5px; color:var(--text-muted);">En clarity.microsoft.com → Configuración → Descripción general. Son unas 10 letras y números (lo que va después de <code>clarity.ms/tag/</code>).</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="cfgClarityActivo"> Activar en la tienda pública</label>
+              <label><b>Estado:</b> <span id="cfgClarityStatus" class="pill">Inactivo</span></label>
+              <button class="btn primary" onclick="saveClarityConfig()">Guardar Clarity</button>
+              <div id="cfgClarityMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
             <h3 style="margin-top:0; color:var(--series-1);">Eventos que se envían automáticamente</h3>
             <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
               <div><code>PageView</code> — cada visita a la tienda o al portal</div>
@@ -6982,7 +6996,7 @@ let metaPixelConfig = { id: null, activo: false, rowId: null, loaded: false };
 
 async function loadMetaPixelConfig() {
   try {
-    const rows = await sbGet('ajustes_marketing?select=id,meta_pixel_id,meta_pixel_activo&order=id.asc&limit=1');
+    const rows = await sbGet('ajustes_marketing?select=id,meta_pixel_id,meta_pixel_activo,clarity_id,clarity_activo&order=id.asc&limit=1');
     if (Array.isArray(rows) && rows[0]) {
       metaPixelConfig = {
         id: rows[0].meta_pixel_id || null,
@@ -6990,12 +7004,38 @@ async function loadMetaPixelConfig() {
         rowId: rows[0].id,
         loaded: true
       };
+      clarityConfig = { id: rows[0].clarity_id || null, activo: !!rows[0].clarity_activo };
     }
   } catch (e) {
     console.log('No se pudo cargar la configuración de Meta Pixel:', e.message);
   }
   initMetaPixel();
+  initClarity();
   renderMetaPixelAdminForm();
+}
+
+// ================= MICROSOFT CLARITY (mapas de calor y grabaciones de sesiones) =================
+// ID en ajustes_marketing (Parámetros avanzados → Meta Pixel → Microsoft Clarity). Solo en la
+// tienda pública: nunca en el panel/POS ni en el navegador del equipo. Lo que escribe el cliente
+// (datos de envío, contacto, cuenta) va marcado con data-clarity-mask y no se ve en las grabaciones.
+let clarityConfig = { id: null, activo: false };
+function initClarity() {
+  if (!clarityConfig.activo || !clarityConfig.id || window.clarity) return;
+  if (window.location.pathname.startsWith('/admin') || navigator.webdriver) return;
+  if (getAdminPassword() || getStaffCreds()) return;
+  (function (c, l, a, r, i, t, y) {
+    c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+    t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+    y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+  })(window, document, 'clarity', 'script', clarityConfig.id);
+  // Para filtrar grabaciones y mapas: de dónde llegó, en qué dispositivo y si fue en la app de Facebook.
+  try {
+    const ses = funnelSession();
+    if (ses) { clarity('set', 'origen', ses.origin || 'directo'); clarity('set', 'visitante', ses.vid); }
+    clarity('set', 'dispositivo', funnelDevice());
+    const ua = navigator.userAgent;
+    clarity('set', 'abierto_en', /FBAN|FBAV|FB_IAB/.test(ua) ? 'facebook' : /Instagram/.test(ua) ? 'instagram' : /musical_ly|TikTok|BytedanceWebview/i.test(ua) ? 'tiktok' : 'navegador');
+  } catch (e) {}
 }
 
 function initMetaPixel() {
@@ -7133,6 +7173,8 @@ function trackFunnel(evento, { productId, valor, datos, urgente } = {}) {
   if (getAdminPassword() || getStaffCreds()) return;
   const ses = funnelSession();
   if (!ses) return;
+  // En Clarity, para filtrar grabaciones ("los que agregaron al carrito y no compraron").
+  if (window.clarity && evento !== 'visita' && evento !== 'velocidad') { try { clarity('event', evento); } catch (e) {} }
   funnelQueue.push({
     v: ses.vid, s: ses.sid, e: evento, p: window.location.pathname, t: Date.now(),
     pid: productId, val: valor, o: ses.origin, dv: funnelDevice(), d: datos
@@ -7610,6 +7652,32 @@ async function deletePersonal(id) {
   }
 }
 
+function renderClarityAdminForm() {
+  const idInput = document.getElementById('cfgClarityId');
+  const act = document.getElementById('cfgClarityActivo');
+  const st = document.getElementById('cfgClarityStatus');
+  if (idInput) idInput.value = clarityConfig.id || '';
+  if (act) act.checked = !!clarityConfig.activo;
+  if (st) { const on = clarityConfig.activo && clarityConfig.id; st.textContent = on ? 'Activo' : 'Inactivo'; st.className = 'pill ' + (on ? 'ok' : 'warn'); }
+}
+async function saveClarityConfig() {
+  const msg = document.getElementById('cfgClarityMsg');
+  const id = document.getElementById('cfgClarityId').value.trim();
+  const activo = document.getElementById('cfgClarityActivo').checked;
+  try {
+    const rows = await sbRpc('rpc_admin_save_clarity', { p_admin_password: getAdminPassword(), p_clarity_id: id, p_clarity_activo: activo });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    clarityConfig = { id: row ? row.clarity_id : id, activo: row ? !!row.clarity_activo : activo };
+    renderClarityAdminForm();
+    msg.textContent = clarityConfig.activo ? 'Clarity guardado y activo: empieza a grabar en las próximas visitas (los datos aparecen en Clarity en unas 2 horas).' : 'Clarity guardado (inactivo).';
+    msg.style.color = '#15803d'; msg.style.background = 'rgba(21,128,61,0.08)';
+  } catch (e) {
+    msg.textContent = 'No se pudo guardar: ' + (/unauthorized/.test(e.message) ? 'solo el administrador puede cambiarlo.' : e.message);
+    msg.style.color = '#dc2626'; msg.style.background = 'rgba(220,38,38,0.08)';
+  }
+  msg.classList.remove('hidden');
+}
+
 function renderMetaPixelAdminForm() {
   const idInput = document.getElementById('cfgMetaPixelId');
   const activeInput = document.getElementById('cfgMetaPixelActivo');
@@ -7621,6 +7689,7 @@ function renderMetaPixelAdminForm() {
     statusEl.textContent = active ? 'Activo' : 'Inactivo';
     statusEl.className = 'pill ' + (active ? 'ok' : 'warn');
   }
+  renderClarityAdminForm();
 }
 
 // GATE & ACCESS CONTROL
