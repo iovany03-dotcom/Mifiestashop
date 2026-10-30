@@ -2875,7 +2875,7 @@
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
         <a class="submenu-link" data-view="api-desarrolladores">API para Desarrolladores</a>
-        <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
+        <a class="submenu-link" data-view="param-avanzados-pixel">Integraciones</a>
       </div>
     </div>
 
@@ -5282,15 +5282,15 @@
     <section id="view-param-avanzados-pixel" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-          <h2>Integración de Meta Pixel</h2>
-          <button class="btn primary" onclick="saveMetaPixelConfig()">Guardar Configuración</button>
+          <h2>Integraciones</h2>
+
         </div>
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
-          Conecta el Píxel de Meta (Facebook/Instagram Ads) para medir el rendimiento de tus campañas: visitas al catálogo, productos agregados al carrito, inicios de compra y pedidos completados. Se activa únicamente en la tienda pública y el portal de clientes — nunca en el Backoffice.
+          Herramientas externas conectadas a la tienda: el Píxel de Meta (Facebook/Instagram Ads) para medir tus campañas, y Microsoft Clarity para ver mapas de calor y grabaciones de cómo navegan los clientes. Cada una se guarda con su propio botón.
         </p>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
           <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Configuración del Píxel</h3>
+            <h3 style="margin-top:0; color:var(--series-1);">Meta Pixel (Facebook e Instagram Ads)</h3>
             <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
               <label><b>ID del Píxel de Meta:</b>
                 <input type="text" id="cfgMetaPixelId" placeholder="Ej. 937979512914198" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
@@ -5299,6 +5299,7 @@
                 <input type="checkbox" id="cfgMetaPixelActivo"> Activar el rastreo en la tienda pública
               </label>
               <label><b>Estado:</b> <span id="cfgMetaPixelStatus" class="pill">Inactivo</span></label>
+              <button class="btn primary" onclick="saveMetaPixelConfig()">Guardar Meta Pixel</button>
               <div id="cfgMetaPixelMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
             </div>
           </div>
@@ -7015,7 +7016,7 @@ async function loadMetaPixelConfig() {
 }
 
 // ================= MICROSOFT CLARITY (mapas de calor y grabaciones de sesiones) =================
-// ID en ajustes_marketing (Parámetros avanzados → Meta Pixel → Microsoft Clarity). Solo en la
+// ID en ajustes_marketing (Parámetros avanzados → Integraciones → Microsoft Clarity). Solo en la
 // tienda pública: nunca en el panel/POS ni en el navegador del equipo. Lo que escribe el cliente
 // (datos de envío, contacto, cuenta) va marcado con data-clarity-mask y no se ve en las grabaciones.
 let clarityConfig = { id: null, activo: false };
@@ -8341,7 +8342,7 @@ function switchView(viewName) {
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'api-desarrolladores': ['API para Desarrolladores', 'Llaves y documentación para integraciones externas'],
-    'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
+    'param-avanzados-pixel': ['Parámetros Avanzados', 'Integraciones']
   };
   if (titles[viewName]) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
