@@ -6,9 +6,9 @@ const path = require('path');
 const MP = path.join(__dirname, '../lib/mp-pago.js');
 const venc = () => { delete require.cache[require.resolve('../lib/pedido-vencimiento.js')]; return require('../lib/pedido-vencimiento.js'); };
 
-test('vigencia por defecto 24 h / 72 h y configurable por env', () => {
+test('vigencia por defecto 72 h y configurable por env', () => {
   delete process.env.PEDIDO_VIGENCIA_HORAS; delete process.env.PEDIDO_VIGENCIA_PENDIENTE_HORAS;
-  assert.equal(venc().vigenciaHoras(), 24);
+  assert.equal(venc().vigenciaHoras(), 72);
   assert.equal(venc().vigenciaPendientePagoHoras(), 72);
   process.env.PEDIDO_VIGENCIA_HORAS = '6';
   assert.equal(venc().vigenciaHoras(), 6);
