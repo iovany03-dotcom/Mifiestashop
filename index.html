@@ -2776,11 +2776,17 @@
   </div>
 
   <div class="sidebar-menu">
-    <div class="menu-item active" data-view="dashboard">
-      <div class="menu-link active-link">
+    <!-- ESTADÍSTICAS -->
+    <div class="menu-item expanded" id="menu-estadisticas">
+      <div class="menu-link" onclick="toggleSubmenu('menu-estadisticas')">
         <div class="menu-left">
           <span>Estadísticas</span>
         </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="submenu">
+        <a class="submenu-link active" data-view="dashboard">Resumen de ventas</a>
+        <a class="submenu-link" data-view="comportamiento">Comportamiento en la tienda</a>
       </div>
     </div>
 
@@ -3077,6 +3083,21 @@
     </section>
 
     <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
+    <section id="view-comportamiento" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h2 style="margin:0;">Comportamiento en la tienda</h2>
+            <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Lo que mide Microsoft Clarity en cada visita (cuánto bajan, dónde se frustran, cuánto tiempo se quedan) junto con tus ventas y la velocidad real por página. Se actualiza solo cada noche; los mapas de calor y las grabaciones se ven en <a href="https://clarity.microsoft.com/" target="_blank" rel="noopener">clarity.microsoft.com</a>.</p>
+          </div>
+          <select id="compDias" onchange="cargarComportamiento()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            <option value="1">Último día</option><option value="7" selected>Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option>
+          </select>
+        </div>
+      </div>
+      <div id="compCuerpo">Cargando…</div>
+    </section>
+
     <section id="view-dashboard" class="view-panel hidden">
       <div class="card" id="storeTogglesCard">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
@@ -6818,7 +6839,7 @@ function haySesionPanel(){ const c = getSessionCredsParams(); return !!(c.p_admi
 // Rutas /api con datos privados (ver lib/sesion-panel.js): el panel les manda su sesión en el
 // header x-mfs-sesion. Sin sesión responden 401, así que la tienda pública no las llama.
 // /api/productos también: con sesión trae el costo de compra (sin ella, la tienda no lo recibe).
-const API_PRIVADAS = /^\/api\/(clientes|ventas|ventas-productos|pedidos|pedidos-online|carritos|inventario|proveedores|busquedas|enviar-correo|productos)(\?|$)/;
+const API_PRIVADAS = /^\/api\/(clientes|ventas|ventas-productos|pedidos|pedidos-online|carritos|inventario|proveedores|busquedas|enviar-correo|productos|comportamiento)(\?|$)/;
 (function () {
   const fetchOriginal = window.fetch.bind(window);
   window.fetch = function (input, init) {
@@ -6891,6 +6912,7 @@ const PERMISSION_GROUPS = [
   ]},
   { group: 'Otros', items: [
     { key: 'dashboard', label: 'Estadísticas' },
+    { key: 'comportamiento', label: 'Comportamiento en la tienda (Clarity)' },
     { key: 'notificaciones', label: 'Notificaciones' },
     { key: 'configuracion', label: 'Configurar ticket del POS' }
   ]}
@@ -6939,6 +6961,8 @@ function hasPermission(viewName) {
   if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
   // La recepción la hacen quienes manejan bodegas; los supervisores la autorizan.
   if (viewName === 'recepcion' && (permisos.includes('bodegas') || permisos.includes('aprobar-movimientos'))) return true;
+  // Quien ve el resumen de ventas o el embudo también ve el comportamiento en la tienda.
+  if (viewName === 'comportamiento' && (permisos.includes('dashboard') || permisos.includes('embudo'))) return true;
   return permisos.includes(viewName);
 }
 
@@ -8312,6 +8336,7 @@ function switchView(viewName) {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
     'informe-ventas': ['Informe de Ventas', 'Tendencia y métodos de pago'],
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
+    comportamiento: ['Comportamiento en la tienda', 'Cómo navegan los clientes (Microsoft Clarity + datos propios)'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
@@ -8353,6 +8378,7 @@ function switchView(viewName) {
   if (viewName === 'productos') switchProductosTab('catalogo');
   if (viewName === 'movimientos') initKardexView();
   if (viewName === 'embudo') loadEmbudo();
+  if (viewName === 'comportamiento') cargarComportamiento();
   if (viewName === 'retransmisiones') loadRetransmisiones();
   if (viewName === 'paginas-cms') switchCmsTab('paginas');
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
@@ -11216,6 +11242,73 @@ async function loadEmbudo() {
   if (origenes.includes(prev)) sel.value = prev;
   renderEmbudo();
   loadEmbudoVelocidad(desde, hasta);
+}
+
+// ---------- Estadísticas → Comportamiento en la tienda (api/comportamiento.js) ----------
+const COMP_KPI = [
+  ['sesiones', 'Sesiones', v => Number(v).toLocaleString('es-MX')],
+  ['usuarios', 'Personas distintas', v => Number(v).toLocaleString('es-MX')],
+  ['paginas_por_sesion', 'Páginas por visita', v => Number(v).toFixed(1)],
+  ['scroll', 'Bajan en promedio', v => Math.round(v) + '% de la página'],
+  ['tiempo_activo', 'Tiempo activo por visita', v => compSeg(v)],
+  ['clics_inactivos', 'Tocan algo que no responde', v => v + '% de visitas', 'Clics inactivos: tocan textos o fotos esperando que hagan algo. Mira en Clarity → Mapas térmicos qué es.'],
+  ['clics_ira', 'Tocan varias veces seguidas', v => v + '% de visitas', 'Clics de ira: algo no respondió o tardó. Ver grabaciones con el filtro "Clics de ira".'],
+  ['regresos_rapidos', 'Entran y se regresan', v => v + '% de visitas', 'Regresos rápidos: abrieron algo que no era lo que esperaban.'],
+  ['errores_js', 'Vieron un error de la página', v => v + '% de visitas']
+];
+function compSeg(s) { s = Math.round(Number(s) || 0); return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`; }
+function compPct(v, malo, regular) {
+  if (v == null) return '—';
+  const c = v >= malo ? '#dc2626' : v >= regular ? '#d97706' : '#15803d';
+  return `<b style="color:${c};">${v}%</b>`;
+}
+function compTabla(cab, filas, vacio) {
+  return `<div class="table-wrap"><table><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filas || `<tr><td colspan="${cab.length}" style="color:var(--text-muted);">${vacio || 'Sin datos todavía.'}</td></tr>`}</tbody></table></div>`;
+}
+async function cargarComportamiento() {
+  const c = document.getElementById('compCuerpo');
+  if (!c) return;
+  c.innerHTML = '<div class="card">Cargando…</div>';
+  try {
+    const r = await fetch('/api/comportamiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dias: Number(document.getElementById('compDias').value) }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || d.error || ('HTTP ' + r.status));
+    if (!d.totales) {
+      c.innerHTML = `<div class="card"><p style="margin:0;">${d.token ? 'Todavía no hay datos de Clarity en este periodo: se guardan cada noche a las 00:35.' : 'Falta conectar la API de Clarity (variable CLARITY_API_TOKEN en Vercel).'}</p></div>`;
+      return;
+    }
+    const t = d.totales;
+    const DISP = { Mobile: 'Celular', PC: 'Computadora', Tablet: 'Tablet', Other: 'Otro' };
+    const CANAL = { PaidSocial: 'Redes sociales (anuncios)', OrganicSocial: 'Redes sociales (sin anuncio)', OrganicSearch: 'Google (orgánico)', PaidSearch: 'Google Ads', Direct: 'Directo', Referral: 'Otros sitios', Email: 'Correo', Other: 'Otro' };
+    const maxSes = Math.max(1, ...d.serie.map(x => x.sesiones || 0));
+    const etiquetaRuta = r => r === '/' ? 'Inicio' : r === '/?buscar=…' ? 'Resultados de búsqueda' : r === '/?vista=carrito' ? 'Carrito' : r;
+    const lista = (titulo, items, fmt) => `<div class="card" style="margin:0;"><h3 style="margin:0 0 8px; font-size:.95rem;">${titulo}</h3>${(items || []).length ? (items || []).slice(0, 8).map(i => { const tot = items.reduce((a, b) => a + b.sesiones, 0) || 1; return `<div style="display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:3px 0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(i.nombre)}">${escapeHtml(fmt ? fmt(i.nombre) : i.nombre)}</span><b>${Math.round(i.sesiones / tot * 100)}%</b></div>`; }).join('') : '<p style="color:var(--text-muted); font-size:12px; margin:0;">Sin datos.</p>'}</div>`;
+    c.innerHTML = `
+      <div class="kpis" style="margin-bottom:16px;">${COMP_KPI.filter(([k]) => t[k] != null).map(([k, nombre, fmt, ayuda]) => `<div class="kpi-card" ${ayuda ? `title="${escapeHtml(ayuda)}"` : ''}><div class="label">${nombre}</div><div class="value" style="font-size:20px;">${fmt(t[k])}</div>${ayuda ? `<div class="sub">${escapeHtml(ayuda.split(':')[0])}</div>` : ''}</div>`).join('')}</div>
+      <div class="card">
+        <h3 style="margin:0 0 10px; font-size:1rem;">Visitas por día</h3>
+        <div style="display:flex; align-items:flex-end; gap:6px; height:120px; overflow-x:auto;">${d.serie.map(x => `<div style="flex:1; min-width:22px; display:flex; flex-direction:column; align-items:center; gap:4px;" title="${escapeHtml(x.fecha)}: ${x.sesiones || 0} sesiones · ${x.clics_ira ?? '—'}% clics de ira"><div style="font-size:10px; color:var(--text-muted);">${x.sesiones || 0}</div><div style="width:100%; height:${Math.max(2, Math.round((x.sesiones || 0) / maxSes * 80))}px; background:var(--series-1, #d3007b); border-radius:4px 4px 0 0;"></div><div style="font-size:10px; color:var(--text-muted);">${x.fecha.slice(5)}</div></div>`).join('')}</div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 4px; font-size:1rem;">Páginas</h3>
+        <p style="margin:0 0 8px; font-size:12px; color:var(--text-muted);">Las más visitadas. "Bajan" = hasta qué parte de la página llegan en promedio (celular). Las columnas de carrito, compra y velocidad son de tu propio embudo, contando las visitas que entraron por esa página.</p>
+        ${compTabla(['Página', 'Sesiones', 'Bajan (celular)', 'Tiempo activo', 'Clics inactivos', 'Clics de ira', 'Regresos rápidos', 'Agregan al carrito', 'Compran', 'Velocidad celular'],
+          d.paginas.map(p => `<tr><td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px;"><a href="${escapeHtml(p.ruta.startsWith('/?') ? '/' : p.ruta)}" target="_blank" rel="noopener" title="${escapeHtml(p.ruta)}">${escapeHtml(etiquetaRuta(p.ruta))}</a></td><td>${p.sesiones}</td><td>${p.scroll_movil ?? p.scroll ?? '—'}${(p.scroll_movil ?? p.scroll) != null ? '%' : ''}</td><td>${p.tiempo_activo != null ? compSeg(p.tiempo_activo) : '—'}</td><td>${compPct(p.clics_inactivos, 15, 8)}</td><td>${compPct(p.clics_ira, 5, 2)}</td><td>${compPct(p.regresos_rapidos, 20, 10)}</td><td>${p.carrito_pct != null ? p.carrito_pct + '%' : '—'}</td><td>${p.compra_pct != null ? p.compra_pct + '%' : '—'}</td><td>${p.lcp_movil != null ? embVelValor('lcp', p.lcp_movil) : '—'}</td></tr>`).join(''))}
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-bottom:16px;">
+        <div class="card" style="margin:0;"><h3 style="margin:0 0 8px; font-size:1rem;">Por dispositivo</h3>
+          ${compTabla(['Dispositivo', 'Sesiones', 'Bajan', 'Tiempo activo', 'Clics de ira', 'Regresos rápidos'], d.dispositivos.map(x => `<tr><td>${DISP[x.Device] || escapeHtml(x.Device)}</td><td>${x.sesiones}</td><td>${x.scroll ?? '—'}%</td><td>${compSeg(x.tiempo_activo)}</td><td>${compPct(x.clics_ira, 5, 2)}</td><td>${compPct(x.regresos_rapidos, 20, 10)}</td></tr>`).join(''))}</div>
+        <div class="card" style="margin:0;"><h3 style="margin:0 0 8px; font-size:1rem;">Por canal</h3>
+          ${compTabla(['Canal', 'Sesiones', 'Páginas/visita', 'Tiempo activo', 'Regresos rápidos'], d.canales.map(x => `<tr><td>${escapeHtml(CANAL[x.Channel] || x.Channel)}</td><td>${x.sesiones}</td><td>${x.paginas_por_sesion ?? '—'}</td><td>${compSeg(x.tiempo_activo)}</td><td>${compPct(x.regresos_rapidos, 20, 10)}</td></tr>`).join(''))}</div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:16px;">
+        ${lista('De dónde llegan', d.listas.ReferrerUrl)}
+        ${lista('Navegador', d.listas.Browser)}
+        ${lista('Sistema', d.listas.OS)}
+        ${lista('País', d.listas.Country)}
+      </div>
+      <p style="font-size:11.5px; color:var(--text-muted);">${d.fechas.length} día(s) con datos de Clarity${d.ultima ? ` · última actualización: ${new Date(d.ultima.last_synced_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}` : ''}. Clarity solo permite consultar los últimos 3 días, así que el historial se va formando día con día desde el 30 de octubre de 2026.</p>`;
+  } catch (e) { c.innerHTML = `<div class="card" style="color:#dc2626;">No se pudo cargar: ${escapeHtml(e.message)}</div>`; }
 }
 
 // ---------- Velocidad real (evento "velocidad", ver medirVelocidad) ----------
