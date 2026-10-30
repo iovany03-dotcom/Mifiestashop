@@ -17268,7 +17268,7 @@ async function sendTestNotification() {
   } catch (e) { /* sin conexión */ }
 }
 
-// ================= AVISO DE PEDIDO NUEVO =================
+// ================= AVISO DE PEDIDO PAGADO =================
 // pedidos_online junta el checkout público (tienda + Mercado Pago) y los
 // pedidos creados a mano desde "+ Crear Pedido" — no los tickets del POS
 // (esos los ve el cajero en el momento, en su propia pantalla). Mientras el
@@ -17290,17 +17290,21 @@ async function pollForNewOrders() {
     return; // sin conexión momentánea: se reintenta en la siguiente corrida
   }
 
+  // Solo se avisa de pedidos PAGADOS: uno recién creado (o que nunca se paga) no avisa.
+  const sinPago = ['Pendiente', 'Pendiente de pago', 'Error en el pago', 'Cancelado', 'Reembolsado', 'Factura anticipada'];
+  const pagados = orders.filter(o => !sinPago.includes(o.status));
+
   if (!seenOrderFolios) {
-    // Primera corrida: solo se registra lo que ya existe, sin avisar de
-    // pedidos viejos cada vez que se abre el panel.
-    seenOrderFolios = new Set(orders.map(o => o.id));
+    // Primera corrida: solo se registra lo que ya estaba pagado, sin avisar
+    // de pedidos viejos cada vez que se abre el panel.
+    seenOrderFolios = new Set(pagados.map(o => o.id));
     return;
   }
 
-  orders.filter(o => !seenOrderFolios.has(o.id)).forEach(o => {
-    notifyEvent('newSale', '🛒 Nuevo pedido', `Pedido ${o.id} de ${o.customer || 'cliente'} por ${fmtMoney(o.total)}.`);
+  pagados.filter(o => !seenOrderFolios.has(o.id)).forEach(o => {
+    notifyEvent('newSale', '💰 Pedido pagado', `Pedido ${o.id} de ${o.customer || 'cliente'} por ${fmtMoney(o.total)}.`);
+    seenOrderFolios.add(o.id);
   });
-  orders.forEach(o => seenOrderFolios.add(o.id));
 }
 
 function startNewOrderPolling() {

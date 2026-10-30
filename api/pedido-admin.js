@@ -30,6 +30,7 @@
 // POST { p_admin_password, p_staff_email, p_staff_pin, accion, origen, folio,
 //        estado?, registradoPor? } -> { ok: true, estado?, piezasRegresadas, historialRegistrado }
 const historial = require('../lib/pedido-historial.js');
+const { rest, regresarStock } = require('../lib/pedido-stock.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
@@ -45,37 +46,6 @@ async function rpc(fn, params) {
   });
   if (!r.ok) return false;
   return !!(await r.json());
-}
-
-function rest(key) {
-  return async (path, opts = {}) => {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-      ...opts,
-      headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', ...(opts.headers || {}) }
-    });
-    const text = await r.text();
-    if (!r.ok) throw new Error(`${path.split('?')[0]} -> HTTP ${r.status}: ${text.slice(0, 200)}`);
-    try { return text ? JSON.parse(text) : null; } catch (e) { return null; }
-  };
-}
-
-// Compensa en el ledger (pos_stock_moves) todo lo que el pedido movió de
-// stock. Devuelve cuántas piezas regresó.
-async function regresarStock(api, folio, registradoPor) {
-  const moves = await api(`pos_stock_moves?select=id_product,almacen,qty&folio=eq.${encodeURIComponent(folio)}`);
-  const net = new Map();
-  (Array.isArray(moves) ? moves : []).forEach(m => {
-    const key = `${m.id_product}|${m.almacen}`;
-    net.set(key, (net.get(key) || 0) + Number(m.qty || 0));
-  });
-  const reversal = [];
-  net.forEach((qty, key) => {
-    if (Math.abs(qty) < 1e-9) return;
-    const [id_product, almacen] = key.split('|');
-    reversal.push({ id_product: Number(id_product), almacen, qty: -qty, motivo: 'cancelacion', folio, registrado_por: registradoPor || 'Admin' });
-  });
-  if (reversal.length) await api('pos_stock_moves', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(reversal) });
-  return reversal.reduce((s, m) => s + Math.max(0, m.qty), 0);
 }
 
 // Valores del pedido ANTES del cambio, para escribir en el historial "de qué a qué". Si no se pueden
