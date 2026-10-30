@@ -19,6 +19,14 @@
     {
       "path": "/api/cron-seo-ia",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron-codigos-postales",
+      "schedule": "17 4 3 * *"
+    },
+    {
+      "path": "/api/cron-clarity",
+      "schedule": "35 6 * * *"
     }
   ],
   "functions": {
@@ -127,6 +135,12 @@
       "includeFiles": "index.html"
     },
     "api/seo.js": {
+      "maxDuration": 300
+    },
+    "api/cron-clarity.js": {
+      "maxDuration": 120
+    },
+    "api/cron-codigos-postales.js": {
       "maxDuration": 300
     },
     "api/cron-seo-ia.js": {

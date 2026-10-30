@@ -489,6 +489,8 @@ export default async function middleware(request) {
       }
       // Los H2 de las secciones del inicio, contacto, etc. (ocultas aquí) no son de esta página.
       if (ssr) html = soloH2Propios(html, ['catalogCatIntro', 'catalogCatFaq']);
+      // El banner del inicio no se ve aquí: no se precarga (en celular gasta datos y retrasa la foto del producto).
+      if (ssr) html = html.replace('<link rel="preload" as="image" href="/img/hero-banner.webp" fetchpriority="high">', '');
     } catch (e) { /* si algo falla se manda el HTML con las etiquetas ya puestas */ }
 
     return finalize(html, origin, origin.status);

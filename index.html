@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#d3007b">
 <link rel="icon" type="image/webp" href="/img/cms/logo.webp">
 <link id="canonicalLink" rel="canonical" href="https://www.mifiestashop.com/">
-<link rel="preload" as="image" href="img/hero-banner.webp" fetchpriority="high">
+<link rel="preload" as="image" href="/img/hero-banner.webp" fetchpriority="high">
 
 <!-- PWA: instalar en pantalla de inicio (Android/Chrome) -->
 <link rel="manifest" href="/manifest.json">
@@ -895,6 +895,16 @@
     font-size: 1.05rem;
     font-weight: 600;
   }
+  .store-topbar .tb-corto { display: none; }
+  /* Celular: una sola franja delgada (envío gratis + mayoreo); la amarilla se oculta para que el
+     producto se vea sin tener que bajar. */
+  @media (max-width: 768px) {
+    .store-topbar { padding: 7px 8px; font-size: 0.78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .store-topbar .tb-largo { display: none; }
+    .store-topbar .tb-corto { display: inline; }
+    .store-topbar-yellow { display: none; }
+    .store-topbar-notice { padding: 7px 10px; font-size: 0.82rem; }
+  }
   .store-topbar-notice { background:#2e1065; color:#fff; text-align:center; padding:11px 18px; font-size:1.05rem; font-weight:700; }
   .store-topbar-notice[hidden] { display:none; }
   .store-topbar-yellow {
@@ -1084,8 +1094,13 @@
     #storefrontOrderConfirmPage [style*="grid-template-columns"],
     #view-cliente-portal [style*="grid-template-columns"],
     #view-cms-page [style*="grid-template-columns"] {
-      grid-template-columns: 1fr !important;
+      /* minmax(0, …): con 1fr la columna crecía al ancho mínimo de su contenido y el pago
+         medía 420 px en un celular de 390 (había que mover la página de lado). */
+      grid-template-columns: minmax(0, 1fr) !important;
     }
+    #storefrontCheckoutPage [style*="grid-template-columns"] > * { min-width: 0; }
+    /* En el pago, el botón flotante de WhatsApp tapaba el botón "Pagar" y el de "Aplicar" cupón. */
+    body:has(#storefrontCheckoutPage:not(.hidden)) .store-whatsapp-float { display: none; }
   }
 
   /* La ficha de producto (imagen + info a los lados) ya se ve apretada
@@ -1445,9 +1460,7 @@
 <div id="view-storefront">
   
   <!-- Announcement Top Bar -->
-  <div class="store-topbar">
-    🎉 Envío GRATIS en compras mayores a $1,500 MXN
-  </div>
+  <div class="store-topbar"><span class="tb-largo">🎉 Envío GRATIS en compras mayores a $1,500 MXN</span><span class="tb-corto">🎉 Envío gratis desde $1,500 · Mayoreo 3+ pzas</span></div>
   <div class="store-topbar-yellow">
     Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊
   </div>
@@ -1459,7 +1472,7 @@
       <a href="#" class="store-brand" onclick="renderStorefrontProducts('all')">
         <span class="store-brand-logo-wrap">
           <img class="store-brand-logo store-brand-logo-face" src="/img/cms/logo.webp" alt="Mi Fiestashop">
-          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
         </span>
       </a>
       <nav class="store-header-nav">
@@ -1505,7 +1518,7 @@
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
     <h1 class="sr-only">Mi Fiestashop: Artículos para Fiesta, Globos, Batucada y Pirotecnia Fría al Mayoreo y Menudeo en México</h1>
     <a href="/266-productos" class="hero-banner-link" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); openStorefrontCatalog('all');">
-      <img src="img/hero-banner.webp" width="1672" height="941" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
+      <img src="/img/hero-banner.webp" width="1672" height="941" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
     </a>
   </div>
 
@@ -1568,7 +1581,7 @@
 
     <!-- Banner: Síguenos y Etiquétanos -->
     <a href="https://instagram.com/articulosparafiestamx/" target="_blank" rel="noopener" class="store-social-banner">
-      <img src="img/social-tag-banner.webp" alt="Si subes tu fiesta, etiquétanos - Mi Fiestashop" loading="lazy">
+      <img src="/img/social-tag-banner.webp" alt="Si subes tu fiesta, etiquétanos - Mi Fiestashop" loading="lazy">
     </a>
 
     <div class="store-container">
@@ -2047,7 +2060,7 @@
   </div>
 
   <!-- Checkout Page -->
-  <div class="store-container hidden" id="storefrontCheckoutPage">
+  <div class="store-container hidden" id="storefrontCheckoutPage" data-clarity-mask="True">
     <button class="btn secondary" style="margin:20px 0; border-radius:20px; font-weight:700; background:#fff; color:#2e1065; border:1px solid #e5dce6;" onclick="openStorefrontCart()">← Volver al carrito</button>
     <div role="heading" aria-level="2" class="t2" style="margin-bottom:16px; color:#2e1065;">📦 Finalizar Compra</div>
     <div style="display:grid; grid-template-columns: 1.3fr 1fr; gap:24px; align-items:start;">
@@ -2087,7 +2100,7 @@
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Colonia *</label>
-            <input type="text" id="checkoutColonia" placeholder="Ej. Portales" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
+            <datalist id="checkoutColoniaLista"></datalist><input type="text" id="checkoutColonia" list="checkoutColoniaLista" autocomplete="off" placeholder="Ej. Portales" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
           </div>
           <div id="checkoutShippingQuoteBox" class="hidden" style="background:var(--mf-cream); border-radius:8px; padding:10px 12px; font-size:13px; color:#2e1065;"></div>
           <div>
@@ -2380,7 +2393,7 @@
 
   <a class="store-whatsapp-float" href="https://wa.me/525612622146" target="_blank" rel="noopener" aria-label="Contáctanos por WhatsApp" title="Contáctanos por WhatsApp">
     <div class="store-whatsapp-bubble">¡Hola! Soy Mikel.<br>Estoy aquí para ayudarte.</div>
-    <img src="img/whatsapp-support.webp" alt="Mikel, soporte por WhatsApp">
+    <img src="/img/whatsapp-support.webp" alt="Mikel, soporte por WhatsApp">
   </a>
   <script>
     (function initWhatsappBubble(){
@@ -2435,7 +2448,7 @@
 </div>
 
 <!-- ==================== PORTAL DE CLIENTES (mifiestashop.com/mi-cuenta) ==================== -->
-<div id="view-cliente-portal" class="hidden" style="min-height:100vh; background:var(--bg-main); color:var(--text-primary); padding-bottom:60px;">
+<div id="view-cliente-portal" class="hidden" style="min-height:100vh; background:var(--bg-main); color:var(--text-primary); padding-bottom:60px;" data-clarity-mask="True">
   
   <!-- Header del Portal -->
   <header class="store-header">
@@ -2698,7 +2711,7 @@
 
 <!-- ==================== PÁGINAS DE BODA (ancho completo) ==================== -->
 <div id="view-boda-page" class="hidden" style="min-height:100vh; background:#fff; color:#2e1065;">
-  <div class="store-topbar">🎉 Envío GRATIS en compras mayores a $1,500 MXN</div>
+  <div class="store-topbar"><span class="tb-largo">🎉 Envío GRATIS en compras mayores a $1,500 MXN</span><span class="tb-corto">🎉 Envío gratis desde $1,500 · Mayoreo 3+ pzas</span></div>
   <div class="store-topbar-yellow">Regístrate y accede a nuestros precios de mayoreo desde 3 piezas 🎊</div>
   <div class="store-topbar-notice" data-desde="2026-10-08" data-hasta="2026-10-14" hidden>📍 La sucursal de Querétaro estará cerrada del 12 al 14 de octubre. ¡Anticipa tu compra!</div>
   <header class="store-header">
@@ -2706,7 +2719,7 @@
       <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
         <span class="store-brand-logo-wrap">
           <img class="store-brand-logo store-brand-logo-face" src="/img/cms/logo.webp" alt="Mi Fiestashop">
-          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
         </span>
       </a>
       <nav class="store-header-nav">
@@ -2755,7 +2768,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <a href="#" class="brand-logo">
-      <img src="img/logo-antifaz.webp" alt="Mi Fiestashop" class="logo-icon-img">
+      <img src="/img/logo-antifaz.webp" alt="Mi Fiestashop" class="logo-icon-img">
     </a>
     <button class="sidebar-toggle" id="toggleSidebar" title="Contraer panel">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
@@ -2763,11 +2776,17 @@
   </div>
 
   <div class="sidebar-menu">
-    <div class="menu-item active" data-view="dashboard">
-      <div class="menu-link active-link">
+    <!-- ESTADÍSTICAS -->
+    <div class="menu-item expanded" id="menu-estadisticas">
+      <div class="menu-link" onclick="toggleSubmenu('menu-estadisticas')">
         <div class="menu-left">
           <span>Estadísticas</span>
         </div>
+        <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="submenu">
+        <a class="submenu-link active" data-view="dashboard">Resumen de ventas</a>
+        <a class="submenu-link" data-view="comportamiento">Comportamiento en la tienda</a>
       </div>
     </div>
 
@@ -2862,7 +2881,7 @@
         <a class="submenu-link" data-view="param-avanzados-correo">Correo</a>
         <a class="submenu-link" data-view="param-avanzados-importar">Importar</a>
         <a class="submenu-link" data-view="api-desarrolladores">API para Desarrolladores</a>
-        <a class="submenu-link" data-view="param-avanzados-pixel">Meta Pixel</a>
+        <a class="submenu-link" data-view="param-avanzados-pixel">Integraciones</a>
       </div>
     </div>
 
@@ -3064,6 +3083,21 @@
     </section>
 
     <!-- ================= VIEW 2: ESTADÍSTICAS & TABLERO ================= -->
+    <section id="view-comportamiento" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <h2 style="margin:0;">Comportamiento en la tienda</h2>
+            <p style="margin:4px 0 0; font-size:12.5px; color:var(--text-muted);">Lo que mide Microsoft Clarity en cada visita (cuánto bajan, dónde se frustran, cuánto tiempo se quedan) junto con tus ventas y la velocidad real por página. Se actualiza solo cada noche; los mapas de calor y las grabaciones se ven en <a href="https://clarity.microsoft.com/" target="_blank" rel="noopener">clarity.microsoft.com</a>.</p>
+          </div>
+          <select id="compDias" onchange="cargarComportamiento()" style="padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+            <option value="1">Último día</option><option value="7" selected>Últimos 7 días</option><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option>
+          </select>
+        </div>
+      </div>
+      <div id="compCuerpo">Cargando…</div>
+    </section>
+
     <section id="view-dashboard" class="view-panel hidden">
       <div class="card" id="storeTogglesCard">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
@@ -3673,6 +3707,12 @@
         <div class="kpis" id="embKpis" style="margin-bottom:16px;"></div>
         <div id="embInsight" style="margin-bottom:14px;"></div>
         <div id="embFunnel"></div>
+      </div>
+
+      <div class="card" id="embVelocidadCard">
+        <h2 style="margin:0 0 4px; font-size:1.05rem;">Velocidad real de las visitas</h2>
+        <p style="margin:0 0 10px; font-size:12px; color:var(--text-muted);">Medida en el celular o la computadora de cada cliente (lo mismo que mide Google). Se muestra el percentil 75: 3 de cada 4 visitas fueron así de rápidas o más. Verde = bien según Google; rojo = malo.</p>
+        <div id="embVelocidad">Cargando…</div>
       </div>
 
       <div class="card">
@@ -5263,15 +5303,15 @@
     <section id="view-param-avanzados-pixel" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
-          <h2>Integración de Meta Pixel</h2>
-          <button class="btn primary" onclick="saveMetaPixelConfig()">Guardar Configuración</button>
+          <h2>Integraciones</h2>
+
         </div>
         <p style="color:var(--text-secondary); font-size:12.5px; margin:0 0 20px;">
-          Conecta el Píxel de Meta (Facebook/Instagram Ads) para medir el rendimiento de tus campañas: visitas al catálogo, productos agregados al carrito, inicios de compra y pedidos completados. Se activa únicamente en la tienda pública y el portal de clientes — nunca en el Backoffice.
+          Herramientas externas conectadas a la tienda: el Píxel de Meta (Facebook/Instagram Ads) para medir tus campañas, y Microsoft Clarity para ver mapas de calor y grabaciones de cómo navegan los clientes. Cada una se guarda con su propio botón.
         </p>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px;">
           <div class="card" style="margin:0; background:var(--plane);">
-            <h3 style="margin-top:0; color:var(--series-1);">Configuración del Píxel</h3>
+            <h3 style="margin-top:0; color:var(--series-1);">Meta Pixel (Facebook e Instagram Ads)</h3>
             <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
               <label><b>ID del Píxel de Meta:</b>
                 <input type="text" id="cfgMetaPixelId" placeholder="Ej. 937979512914198" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
@@ -5280,7 +5320,22 @@
                 <input type="checkbox" id="cfgMetaPixelActivo"> Activar el rastreo en la tienda pública
               </label>
               <label><b>Estado:</b> <span id="cfgMetaPixelStatus" class="pill">Inactivo</span></label>
+              <button class="btn primary" onclick="saveMetaPixelConfig()">Guardar Meta Pixel</button>
               <div id="cfgMetaPixelMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin:0; background:var(--plane);">
+            <h3 style="margin-top:0; color:var(--series-1);">Microsoft Clarity (mapas de calor y grabaciones)</h3>
+            <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+              <label><b>ID del proyecto de Clarity:</b>
+                <input type="text" id="cfgClarityId" placeholder="Ej. abcd1234ef" maxlength="20" style="width:100%; padding:8px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+                <span style="font-size:11.5px; color:var(--text-muted);">En clarity.microsoft.com → Configuración → Descripción general. Son unas 10 letras y números (lo que va después de <code>clarity.ms/tag/</code>).</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="cfgClarityActivo"> Activar en la tienda pública</label>
+              <label><b>Estado:</b> <span id="cfgClarityStatus" class="pill">Inactivo</span></label>
+              <button class="btn primary" onclick="saveClarityConfig()">Guardar Clarity</button>
+              <div id="cfgClarityMsg" class="hidden" style="border-radius:8px; padding:10px 12px; font-size:13px;"></div>
             </div>
           </div>
 
@@ -6056,7 +6111,7 @@
 
     <div class="ticket-paper" id="printableTicket">
       <div class="ticket-brand-bar"></div>
-      <img class="ticket-icon" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+      <img class="ticket-icon" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
       <div class="t-center ticket-store-name" id="tHeaderName">MI FIESTASHOP</div>
       <div class="t-center ticket-sub" id="tHeaderRfc">RFC: MFS260101XXX</div>
       <div class="t-center ticket-sub" id="tHeaderAddress">Sucursal Puebla Principal</div>
@@ -6283,7 +6338,7 @@
           <h3>Vista Previa del Ticket Impreso</h3>
           <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
             <div class="ticket-brand-bar"></div>
-            <img class="ticket-icon" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+            <img class="ticket-icon" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
             <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
             <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
             <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
@@ -6784,7 +6839,7 @@ function haySesionPanel(){ const c = getSessionCredsParams(); return !!(c.p_admi
 // Rutas /api con datos privados (ver lib/sesion-panel.js): el panel les manda su sesión en el
 // header x-mfs-sesion. Sin sesión responden 401, así que la tienda pública no las llama.
 // /api/productos también: con sesión trae el costo de compra (sin ella, la tienda no lo recibe).
-const API_PRIVADAS = /^\/api\/(clientes|ventas|ventas-productos|pedidos|pedidos-online|carritos|inventario|proveedores|busquedas|enviar-correo|productos)(\?|$)/;
+const API_PRIVADAS = /^\/api\/(clientes|ventas|ventas-productos|pedidos|pedidos-online|carritos|inventario|proveedores|busquedas|enviar-correo|productos|comportamiento)(\?|$)/;
 (function () {
   const fetchOriginal = window.fetch.bind(window);
   window.fetch = function (input, init) {
@@ -6857,6 +6912,7 @@ const PERMISSION_GROUPS = [
   ]},
   { group: 'Otros', items: [
     { key: 'dashboard', label: 'Estadísticas' },
+    { key: 'comportamiento', label: 'Comportamiento en la tienda (Clarity)' },
     { key: 'notificaciones', label: 'Notificaciones' },
     { key: 'configuracion', label: 'Configurar ticket del POS' }
   ]}
@@ -6905,6 +6961,8 @@ function hasPermission(viewName) {
   if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
   // La recepción la hacen quienes manejan bodegas; los supervisores la autorizan.
   if (viewName === 'recepcion' && (permisos.includes('bodegas') || permisos.includes('aprobar-movimientos'))) return true;
+  // Quien ve el resumen de ventas o el embudo también ve el comportamiento en la tienda.
+  if (viewName === 'comportamiento' && (permisos.includes('dashboard') || permisos.includes('embudo'))) return true;
   return permisos.includes(viewName);
 }
 
@@ -6963,7 +7021,7 @@ let metaPixelConfig = { id: null, activo: false, rowId: null, loaded: false };
 
 async function loadMetaPixelConfig() {
   try {
-    const rows = await sbGet('ajustes_marketing?select=id,meta_pixel_id,meta_pixel_activo&order=id.asc&limit=1');
+    const rows = await sbGet('ajustes_marketing?select=id,meta_pixel_id,meta_pixel_activo,clarity_id,clarity_activo&order=id.asc&limit=1');
     if (Array.isArray(rows) && rows[0]) {
       metaPixelConfig = {
         id: rows[0].meta_pixel_id || null,
@@ -6971,12 +7029,38 @@ async function loadMetaPixelConfig() {
         rowId: rows[0].id,
         loaded: true
       };
+      clarityConfig = { id: rows[0].clarity_id || null, activo: !!rows[0].clarity_activo };
     }
   } catch (e) {
     console.log('No se pudo cargar la configuración de Meta Pixel:', e.message);
   }
   initMetaPixel();
+  initClarity();
   renderMetaPixelAdminForm();
+}
+
+// ================= MICROSOFT CLARITY (mapas de calor y grabaciones de sesiones) =================
+// ID en ajustes_marketing (Parámetros avanzados → Integraciones → Microsoft Clarity). Solo en la
+// tienda pública: nunca en el panel/POS ni en el navegador del equipo. Lo que escribe el cliente
+// (datos de envío, contacto, cuenta) va marcado con data-clarity-mask y no se ve en las grabaciones.
+let clarityConfig = { id: null, activo: false };
+function initClarity() {
+  if (!clarityConfig.activo || !clarityConfig.id || window.clarity) return;
+  if (window.location.pathname.startsWith('/admin') || navigator.webdriver) return;
+  if (getAdminPassword() || getStaffCreds()) return;
+  (function (c, l, a, r, i, t, y) {
+    c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+    t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+    y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+  })(window, document, 'clarity', 'script', clarityConfig.id);
+  // Para filtrar grabaciones y mapas: de dónde llegó, en qué dispositivo y si fue en la app de Facebook.
+  try {
+    const ses = funnelSession();
+    if (ses) { clarity('set', 'origen', ses.origin || 'directo'); clarity('set', 'visitante', ses.vid); }
+    clarity('set', 'dispositivo', funnelDevice());
+    const ua = navigator.userAgent;
+    clarity('set', 'abierto_en', /FBAN|FBAV|FB_IAB/.test(ua) ? 'facebook' : /Instagram/.test(ua) ? 'instagram' : /musical_ly|TikTok|BytedanceWebview/i.test(ua) ? 'tiktok' : 'navegador');
+  } catch (e) {}
 }
 
 function initMetaPixel() {
@@ -7114,6 +7198,8 @@ function trackFunnel(evento, { productId, valor, datos, urgente } = {}) {
   if (getAdminPassword() || getStaffCreds()) return;
   const ses = funnelSession();
   if (!ses) return;
+  // En Clarity, para filtrar grabaciones ("los que agregaron al carrito y no compraron").
+  if (window.clarity && evento !== 'visita' && evento !== 'velocidad') { try { clarity('event', evento); } catch (e) {} }
   funnelQueue.push({
     v: ses.vid, s: ses.sid, e: evento, p: window.location.pathname, t: Date.now(),
     pid: productId, val: valor, o: ses.origin, dv: funnelDevice(), d: datos
@@ -7139,6 +7225,49 @@ function whenPageVisible(fn) {
   };
   document.addEventListener('visibilitychange', onVisible);
 }
+
+// ---------- Velocidad real de cada visita (Core Web Vitals) ----------
+// Mide en el navegador del cliente lo mismo que Google (LCP: cuándo se ve lo principal; INP:
+// qué tan rápido responde a un toque; CLS: si las cosas brincan al cargar), más el tiempo de
+// respuesta del servidor (TTFB) y el primer dibujo (FCP). Se manda una vez, al salir o
+// esconder la página, como evento "velocidad" del embudo, con la página de entrada, si se
+// abrió dentro de la app de Facebook/Instagram/TikTok y el tipo de red. Sin librerías externas.
+(function medirVelocidad() {
+  if (!('PerformanceObserver' in window) || location.pathname.startsWith('/admin')) return;
+  const m = { lcp: null, fcp: null, ttfb: null, cls: 0 };
+  const entrada = location.pathname.slice(0, 200);
+  const observar = (type, cb, extra) => { try { new PerformanceObserver(l => l.getEntries().forEach(cb)).observe({ type, buffered: true, ...(extra || {}) }); } catch (e) {} };
+  observar('largest-contentful-paint', e => { m.lcp = Math.round(e.startTime); });
+  observar('paint', e => { if (e.name === 'first-contentful-paint') m.fcp = Math.round(e.startTime); });
+  // CLS: la peor "ventana" de movimientos (grupos de menos de 5 s con pausas de menos de 1 s).
+  let ventana = 0, primero = 0, ultimo = 0;
+  observar('layout-shift', e => {
+    if (e.hadRecentInput) return;
+    if (ventana && e.startTime - ultimo < 1000 && e.startTime - primero < 5000) ventana += e.value;
+    else { ventana = e.value; primero = e.startTime; }
+    ultimo = e.startTime;
+    m.cls = Math.max(m.cls, ventana);
+  });
+  // INP: la interacción más lenta (con muchas, se descarta 1 de cada 50 como hace Google).
+  const interacciones = new Map();
+  observar('event', e => { if (e.interactionId) interacciones.set(e.interactionId, Math.max(interacciones.get(e.interactionId) || 0, e.duration)); }, { durationThreshold: 40 });
+  try { const nav = performance.getEntriesByType('navigation')[0]; if (nav && nav.responseStart > 0) m.ttfb = Math.round(nav.responseStart); } catch (e) {}
+  let enviado = false;
+  const enviar = () => {
+    if (enviado || (m.lcp == null && m.fcp == null)) return;
+    enviado = true;
+    const ds = [...interacciones.values()].sort((a, b) => b - a);
+    const ua = navigator.userAgent;
+    const app = /FBAN|FBAV|FB_IAB/.test(ua) ? 'facebook' : /Instagram/.test(ua) ? 'instagram' : /musical_ly|TikTok|BytedanceWebview/i.test(ua) ? 'tiktok' : 'navegador';
+    trackFunnel('velocidad', { urgente: true, datos: {
+      lcp: m.lcp, fcp: m.fcp, ttfb: m.ttfb, cls: Math.round(m.cls * 1000) / 1000,
+      inp: ds.length ? Math.round(ds[Math.min(ds.length - 1, Math.floor(ds.length / 50))]) : undefined,
+      entrada, app, red: (navigator.connection && navigator.connection.effectiveType) || undefined
+    } });
+  };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') enviar(); });
+  addEventListener('pagehide', enviar);
+})();
 
 function trackFunnelPageView() {
   const path = window.location.pathname;
@@ -7548,6 +7677,32 @@ async function deletePersonal(id) {
   }
 }
 
+function renderClarityAdminForm() {
+  const idInput = document.getElementById('cfgClarityId');
+  const act = document.getElementById('cfgClarityActivo');
+  const st = document.getElementById('cfgClarityStatus');
+  if (idInput) idInput.value = clarityConfig.id || '';
+  if (act) act.checked = !!clarityConfig.activo;
+  if (st) { const on = clarityConfig.activo && clarityConfig.id; st.textContent = on ? 'Activo' : 'Inactivo'; st.className = 'pill ' + (on ? 'ok' : 'warn'); }
+}
+async function saveClarityConfig() {
+  const msg = document.getElementById('cfgClarityMsg');
+  const id = document.getElementById('cfgClarityId').value.trim();
+  const activo = document.getElementById('cfgClarityActivo').checked;
+  try {
+    const rows = await sbRpc('rpc_admin_save_clarity', { p_admin_password: getAdminPassword(), p_clarity_id: id, p_clarity_activo: activo });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    clarityConfig = { id: row ? row.clarity_id : id, activo: row ? !!row.clarity_activo : activo };
+    renderClarityAdminForm();
+    msg.textContent = clarityConfig.activo ? 'Clarity guardado y activo: empieza a grabar en las próximas visitas (los datos aparecen en Clarity en unas 2 horas).' : 'Clarity guardado (inactivo).';
+    msg.style.color = '#15803d'; msg.style.background = 'rgba(21,128,61,0.08)';
+  } catch (e) {
+    msg.textContent = 'No se pudo guardar: ' + (/unauthorized/.test(e.message) ? 'solo el administrador puede cambiarlo.' : e.message);
+    msg.style.color = '#dc2626'; msg.style.background = 'rgba(220,38,38,0.08)';
+  }
+  msg.classList.remove('hidden');
+}
+
 function renderMetaPixelAdminForm() {
   const idInput = document.getElementById('cfgMetaPixelId');
   const activeInput = document.getElementById('cfgMetaPixelActivo');
@@ -7559,6 +7714,7 @@ function renderMetaPixelAdminForm() {
     statusEl.textContent = active ? 'Activo' : 'Inactivo';
     statusEl.className = 'pill ' + (active ? 'ok' : 'warn');
   }
+  renderClarityAdminForm();
 }
 
 // GATE & ACCESS CONTROL
@@ -8180,6 +8336,7 @@ function switchView(viewName) {
     pos: ['Sistema POS', 'Punto de Venta en Vivo'],
     'informe-ventas': ['Informe de Ventas', 'Tendencia y métodos de pago'],
     dashboard: ['Estadísticas & Tablero', 'Resumen de Ventas'],
+    comportamiento: ['Comportamiento en la tienda', 'Cómo navegan los clientes (Microsoft Clarity + datos propios)'],
     pedidos: ['Pedidos & Ventas', 'Historial de Transacciones'],
     carritos: ['Carritos de Compra', 'Carritos Abandonados'],
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
@@ -8210,7 +8367,7 @@ function switchView(viewName) {
     'param-avanzados-importar': ['Parámetros Avanzados', 'Herramientas de Importación'],
     'param-avanzados-equipo': ['Parámetros Avanzados', 'Personal & Permisos de Equipo'],
     'api-desarrolladores': ['API para Desarrolladores', 'Llaves y documentación para integraciones externas'],
-    'param-avanzados-pixel': ['Parámetros Avanzados', 'Meta Pixel (Facebook & Instagram Ads)']
+    'param-avanzados-pixel': ['Parámetros Avanzados', 'Integraciones']
   };
   if (titles[viewName]) {
     document.getElementById('currentViewTitle').textContent = titles[viewName][0];
@@ -8221,6 +8378,7 @@ function switchView(viewName) {
   if (viewName === 'productos') switchProductosTab('catalogo');
   if (viewName === 'movimientos') initKardexView();
   if (viewName === 'embudo') loadEmbudo();
+  if (viewName === 'comportamiento') cargarComportamiento();
   if (viewName === 'retransmisiones') loadRetransmisiones();
   if (viewName === 'paginas-cms') switchCmsTab('paginas');
   if (viewName === 'api-desarrolladores') loadApiKeysAdmin();
@@ -11043,7 +11201,7 @@ const EMBUDO_EVENTOS = {
   ver_carrito: 'Vio su carrito', iniciar_checkout: 'Inició el pago', cotizar_envio: 'Cotizó envío',
   elegir_envio: 'Eligió paquetería', error_checkout: 'Le salió un error', pedido_creado: 'Creó su pedido',
   ir_a_pago: 'Se fue a Mercado Pago', compra: 'Compró', pago_pendiente: 'Pago pendiente',
-  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel./ubicación)', registro: 'Creó su cuenta', newsletter: 'Se suscribió'
+  pago_rechazado: 'Pago rechazado', contacto: 'Contactó (WhatsApp/tel./ubicación)', registro: 'Creó su cuenta', newsletter: 'Se suscribió', velocidad: 'Midió la velocidad de la página'
 };
 let embudoData = null;
 
@@ -11083,6 +11241,115 @@ async function loadEmbudo() {
   sel.innerHTML = '<option value="">Todos</option>' + origenes.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(EMBUDO_ORIGENES[o] || o)}</option>`).join('');
   if (origenes.includes(prev)) sel.value = prev;
   renderEmbudo();
+  loadEmbudoVelocidad(desde, hasta);
+}
+
+// ---------- Estadísticas → Comportamiento en la tienda (api/comportamiento.js) ----------
+const COMP_KPI = [
+  ['sesiones', 'Sesiones', v => Number(v).toLocaleString('es-MX')],
+  ['usuarios', 'Personas distintas', v => Number(v).toLocaleString('es-MX')],
+  ['paginas_por_sesion', 'Páginas por visita', v => Number(v).toFixed(1)],
+  ['scroll', 'Bajan en promedio', v => Math.round(v) + '% de la página'],
+  ['tiempo_activo', 'Tiempo activo por visita', v => compSeg(v)],
+  ['clics_inactivos', 'Tocan algo que no responde', v => v + '% de visitas', 'Clics inactivos: tocan textos o fotos esperando que hagan algo. Mira en Clarity → Mapas térmicos qué es.'],
+  ['clics_ira', 'Tocan varias veces seguidas', v => v + '% de visitas', 'Clics de ira: algo no respondió o tardó. Ver grabaciones con el filtro "Clics de ira".'],
+  ['regresos_rapidos', 'Entran y se regresan', v => v + '% de visitas', 'Regresos rápidos: abrieron algo que no era lo que esperaban.'],
+  ['errores_js', 'Vieron un error de la página', v => v + '% de visitas']
+];
+function compSeg(s) { s = Math.round(Number(s) || 0); return s >= 60 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${s} s`; }
+function compPct(v, malo, regular) {
+  if (v == null) return '—';
+  const c = v >= malo ? '#dc2626' : v >= regular ? '#d97706' : '#15803d';
+  return `<b style="color:${c};">${v}%</b>`;
+}
+function compTabla(cab, filas, vacio) {
+  return `<div class="table-wrap"><table><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filas || `<tr><td colspan="${cab.length}" style="color:var(--text-muted);">${vacio || 'Sin datos todavía.'}</td></tr>`}</tbody></table></div>`;
+}
+async function cargarComportamiento() {
+  const c = document.getElementById('compCuerpo');
+  if (!c) return;
+  c.innerHTML = '<div class="card">Cargando…</div>';
+  try {
+    const r = await fetch('/api/comportamiento', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dias: Number(document.getElementById('compDias').value) }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || d.error || ('HTTP ' + r.status));
+    if (!d.totales) {
+      c.innerHTML = `<div class="card"><p style="margin:0;">${d.token ? 'Todavía no hay datos de Clarity en este periodo: se guardan cada noche a las 00:35.' : 'Falta conectar la API de Clarity (variable CLARITY_API_TOKEN en Vercel).'}</p></div>`;
+      return;
+    }
+    const t = d.totales;
+    const DISP = { Mobile: 'Celular', PC: 'Computadora', Tablet: 'Tablet', Other: 'Otro' };
+    const CANAL = { PaidSocial: 'Redes sociales (anuncios)', OrganicSocial: 'Redes sociales (sin anuncio)', OrganicSearch: 'Google (orgánico)', PaidSearch: 'Google Ads', Direct: 'Directo', Referral: 'Otros sitios', Email: 'Correo', Other: 'Otro' };
+    const maxSes = Math.max(1, ...d.serie.map(x => x.sesiones || 0));
+    const etiquetaRuta = r => r === '/' ? 'Inicio' : r === '/?buscar=…' ? 'Resultados de búsqueda' : r === '/?vista=carrito' ? 'Carrito' : r;
+    const lista = (titulo, items, fmt) => `<div class="card" style="margin:0;"><h3 style="margin:0 0 8px; font-size:.95rem;">${titulo}</h3>${(items || []).length ? (items || []).slice(0, 8).map(i => { const tot = items.reduce((a, b) => a + b.sesiones, 0) || 1; return `<div style="display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:3px 0;"><span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(i.nombre)}">${escapeHtml(fmt ? fmt(i.nombre) : i.nombre)}</span><b>${Math.round(i.sesiones / tot * 100)}%</b></div>`; }).join('') : '<p style="color:var(--text-muted); font-size:12px; margin:0;">Sin datos.</p>'}</div>`;
+    c.innerHTML = `
+      <div class="kpis" style="margin-bottom:16px;">${COMP_KPI.filter(([k]) => t[k] != null).map(([k, nombre, fmt, ayuda]) => `<div class="kpi-card" ${ayuda ? `title="${escapeHtml(ayuda)}"` : ''}><div class="label">${nombre}</div><div class="value" style="font-size:20px;">${fmt(t[k])}</div>${ayuda ? `<div class="sub">${escapeHtml(ayuda.split(':')[0])}</div>` : ''}</div>`).join('')}</div>
+      <div class="card">
+        <h3 style="margin:0 0 10px; font-size:1rem;">Visitas por día</h3>
+        <div style="display:flex; align-items:flex-end; gap:6px; height:120px; overflow-x:auto;">${d.serie.map(x => `<div style="flex:1; min-width:22px; display:flex; flex-direction:column; align-items:center; gap:4px;" title="${escapeHtml(x.fecha)}: ${x.sesiones || 0} sesiones · ${x.clics_ira ?? '—'}% clics de ira"><div style="font-size:10px; color:var(--text-muted);">${x.sesiones || 0}</div><div style="width:100%; height:${Math.max(2, Math.round((x.sesiones || 0) / maxSes * 80))}px; background:var(--series-1, #d3007b); border-radius:4px 4px 0 0;"></div><div style="font-size:10px; color:var(--text-muted);">${x.fecha.slice(5)}</div></div>`).join('')}</div>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 4px; font-size:1rem;">Páginas</h3>
+        <p style="margin:0 0 8px; font-size:12px; color:var(--text-muted);">Las más visitadas. "Bajan" = hasta qué parte de la página llegan en promedio (celular). Las columnas de carrito, compra y velocidad son de tu propio embudo, contando las visitas que entraron por esa página.</p>
+        ${compTabla(['Página', 'Sesiones', 'Bajan (celular)', 'Tiempo activo', 'Clics inactivos', 'Clics de ira', 'Regresos rápidos', 'Agregan al carrito', 'Compran', 'Velocidad celular'],
+          d.paginas.map(p => `<tr><td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px;"><a href="${escapeHtml(p.ruta.startsWith('/?') ? '/' : p.ruta)}" target="_blank" rel="noopener" title="${escapeHtml(p.ruta)}">${escapeHtml(etiquetaRuta(p.ruta))}</a></td><td>${p.sesiones}</td><td>${p.scroll_movil ?? p.scroll ?? '—'}${(p.scroll_movil ?? p.scroll) != null ? '%' : ''}</td><td>${p.tiempo_activo != null ? compSeg(p.tiempo_activo) : '—'}</td><td>${compPct(p.clics_inactivos, 15, 8)}</td><td>${compPct(p.clics_ira, 5, 2)}</td><td>${compPct(p.regresos_rapidos, 20, 10)}</td><td>${p.carrito_pct != null ? p.carrito_pct + '%' : '—'}</td><td>${p.compra_pct != null ? p.compra_pct + '%' : '—'}</td><td>${p.lcp_movil != null ? embVelValor('lcp', p.lcp_movil) : '—'}</td></tr>`).join(''))}
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; margin-bottom:16px;">
+        <div class="card" style="margin:0;"><h3 style="margin:0 0 8px; font-size:1rem;">Por dispositivo</h3>
+          ${compTabla(['Dispositivo', 'Sesiones', 'Bajan', 'Tiempo activo', 'Clics de ira', 'Regresos rápidos'], d.dispositivos.map(x => `<tr><td>${DISP[x.Device] || escapeHtml(x.Device)}</td><td>${x.sesiones}</td><td>${x.scroll ?? '—'}%</td><td>${compSeg(x.tiempo_activo)}</td><td>${compPct(x.clics_ira, 5, 2)}</td><td>${compPct(x.regresos_rapidos, 20, 10)}</td></tr>`).join(''))}</div>
+        <div class="card" style="margin:0;"><h3 style="margin:0 0 8px; font-size:1rem;">Por canal</h3>
+          ${compTabla(['Canal', 'Sesiones', 'Páginas/visita', 'Tiempo activo', 'Regresos rápidos'], d.canales.map(x => `<tr><td>${escapeHtml(CANAL[x.Channel] || x.Channel)}</td><td>${x.sesiones}</td><td>${x.paginas_por_sesion ?? '—'}</td><td>${compSeg(x.tiempo_activo)}</td><td>${compPct(x.regresos_rapidos, 20, 10)}</td></tr>`).join(''))}</div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:16px;">
+        ${lista('De dónde llegan', d.listas.ReferrerUrl)}
+        ${lista('Navegador', d.listas.Browser)}
+        ${lista('Sistema', d.listas.OS)}
+        ${lista('País', d.listas.Country)}
+      </div>
+      <p style="font-size:11.5px; color:var(--text-muted);">${d.fechas.length} día(s) con datos de Clarity${d.ultima ? ` · última actualización: ${new Date(d.ultima.last_synced_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' })}` : ''}. Clarity solo permite consultar los últimos 3 días, así que el historial se va formando día con día desde el 30 de octubre de 2026.</p>`;
+  } catch (e) { c.innerHTML = `<div class="card" style="color:#dc2626;">No se pudo cargar: ${escapeHtml(e.message)}</div>`; }
+}
+
+// ---------- Velocidad real (evento "velocidad", ver medirVelocidad) ----------
+const EMB_VEL_UMBRAL = { lcp: [2500, 4000], inp: [200, 500], cls: [0.1, 0.25], ttfb: [800, 1800] };
+function embVelColor(k, v) {
+  if (v == null) return 'var(--text-muted)';
+  const [bien, mal] = EMB_VEL_UMBRAL[k];
+  return v <= bien ? '#15803d' : v <= mal ? '#d97706' : '#dc2626';
+}
+function embVelValor(k, v) {
+  if (v == null) return '—';
+  const t = k === 'cls' ? Number(v).toFixed(2) : (v >= 1000 ? (v / 1000).toFixed(1) + ' s' : Math.round(v) + ' ms');
+  return `<b style="color:${embVelColor(k, Number(v))};">${t}</b>`;
+}
+async function loadEmbudoVelocidad(desde, hasta) {
+  const box = document.getElementById('embVelocidad');
+  if (!box) return;
+  box.innerHTML = 'Cargando…';
+  try {
+    const r = await fetch('/api/embudo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...getSessionCredsParams(), accion: 'velocidad', desde: desde.toISOString(), hasta: hasta.toISOString() }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    if (!d.mediciones) { box.innerHTML = '<p style="color:var(--text-muted); margin:0;">Todavía no hay mediciones en este periodo: se juntan solas con cada visita (se empezó a medir el 30 de octubre de 2026).</p>'; return; }
+    const APP = { navegador: 'Navegador', facebook: 'App de Facebook', instagram: 'App de Instagram', tiktok: 'App de TikTok' };
+    const DISP = { movil: 'Celular', escritorio: 'Computadora', tablet: 'Tablet' };
+    const tabla = (cab, filas) => `<div class="table-wrap"><table><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>${filas || `<tr><td colspan="${cab.length}" style="color:var(--text-muted);">Sin datos suficientes todavía.</td></tr>`}</tbody></table></div>`;
+    const pct = (a, b) => b ? (a / b * 100).toFixed(1) + '%' : '—';
+    box.innerHTML = `<p style="font-size:12px; margin:0 0 6px;">${d.mediciones.toLocaleString('es-MX')} páginas medidas.</p>
+      <h3 style="font-size:.95rem; margin:10px 0 6px;">Por dispositivo y navegador</h3>
+      ${tabla(['Dispositivo', 'Abierto en', 'Visitas', 'Se ve lo principal (LCP)', 'Responde al tocar (INP)', 'Brincos (CLS)', 'Servidor (TTFB)', 'Cargas lentas (> 4 s)'],
+        d.segmentos.map(x => `<tr><td>${DISP[x.dispositivo] || escapeHtml(x.dispositivo)}</td><td>${APP[x.app] || escapeHtml(x.app)}</td><td>${Number(x.visitas).toLocaleString('es-MX')}</td><td>${embVelValor('lcp', x.lcp)}</td><td>${embVelValor('inp', x.inp)}</td><td>${embVelValor('cls', x.cls)}</td><td>${embVelValor('ttfb', x.ttfb)}</td><td>${x.pct_lentas == null ? '—' : x.pct_lentas + '%'}</td></tr>`).join(''))}
+      <h3 style="font-size:.95rem; margin:14px 0 6px;">¿Vende más cuando carga rápido?</h3>
+      <p style="font-size:12px; color:var(--text-muted); margin:0 0 6px;">Visitas agrupadas por qué tan rápido se vio su primera página, y qué tan lejos llegaron.</p>
+      ${tabla(['Primera página', 'Dispositivo', 'Visitas', 'Vieron un producto', 'Agregaron al carrito', 'Compraron', 'Escribieron por WhatsApp'],
+        d.conversion.filter(x => x.rango !== 'sin dato').map(x => `<tr><td>${escapeHtml(x.rango.slice(2))}</td><td>${DISP[x.dispositivo] || escapeHtml(x.dispositivo)}</td><td>${Number(x.visitas).toLocaleString('es-MX')}</td><td>${pct(x.ven_producto, x.visitas)}</td><td>${pct(x.carrito, x.visitas)}</td><td>${pct(x.compra, x.visitas)}</td><td>${pct(x.whatsapp, x.visitas)}</td></tr>`).join(''))}
+      <h3 style="font-size:.95rem; margin:14px 0 6px;">Páginas de entrada más lentas en celular</h3>
+      ${tabla(['Página', 'Visitas', 'Cargas lentas', 'LCP', 'INP'],
+        d.paginas.map(x => `<tr><td style="font-size:12px;"><a href="${escapeHtml(x.entrada)}" target="_blank" rel="noopener">${escapeHtml(String(x.entrada).slice(0, 70))}</a></td><td>${x.visitas}</td><td>${x.lentas}</td><td>${embVelValor('lcp', x.lcp)}</td><td>${embVelValor('inp', x.inp)}</td></tr>`).join(''))}
+      <h3 style="font-size:.95rem; margin:14px 0 6px;">Celulares por tipo de red</h3>
+      ${tabla(['Red', 'Visitas', 'LCP'], d.redes.map(x => `<tr><td>${escapeHtml(String(x.red).toUpperCase())}</td><td>${x.visitas}</td><td>${embVelValor('lcp', x.lcp)}</td></tr>`).join(''))}`;
+  } catch (e) { box.innerHTML = `<p style="color:#dc2626;">No se pudo cargar la velocidad: ${escapeHtml(e.message)}</p>`; }
 }
 
 function embudoConteos(filas) {
@@ -13439,7 +13706,6 @@ function renderClienteCatalog(query = '') {
       <div>
         <img src="${p.img}" alt="${p.name}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; background:var(--plane); margin-bottom:10px;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
         <div style="font-weight:700; font-size:0.88rem; line-height:1.2; margin-bottom:4px; color:var(--text-primary);">${p.name}</div>
-        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">SKU: ${p.sku}</div>
       </div>
       <div>
         <div style="font-size:1.05rem; font-weight:800; color:var(--series-2); margin-bottom:8px;">${fmtMoney(p.price)}</div>
@@ -19921,7 +20187,6 @@ function buildStorefrontProductCardHTML(p, idx){
       <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
-          <div class="store-prod-sku">SKU: ${p.sku}</div>
           <div class="store-prod-title" style="cursor:pointer;" onclick="openStorefrontProductDetail(${idx})">${p.name}</div>
         </div>
         <div>
@@ -20304,11 +20569,10 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
       <div style="min-width:0;">
-        <img id="pdMainImg_${qtyId}" src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        <img id="pdMainImg_${qtyId}" src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; height:auto; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
         ${buildProductThumbsHTML(p, 'pdMainImg_' + qtyId)}
       </div>
       <div>
-        <div style="font-size:12px; color:#8b7d97; font-weight:600;">SKU: ${p.sku}</div>
         <${qtyId === 'storefrontPageQty' ? 'h1' : 'h2'} style="margin:6px 0 10px; font-size:22px; color:#2e1065;">${p.name}</${qtyId === 'storefrontPageQty' ? 'h1' : 'h2'}>
         <div style="font-size:1.6rem; font-weight:800; color:var(--mf-orange);">${fmtMoney(p.price)}</div>
         ${wholesaleNoteHTML(p)}
@@ -20379,7 +20643,6 @@ function buildRelatedProductCardHTML(p){
       <img src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" class="store-prod-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
       <div class="store-prod-body">
         <div>
-          <div class="store-prod-sku">SKU: ${p.sku}</div>
           <div class="store-prod-title">${p.name}</div>
         </div>
         <div>
@@ -20888,15 +21151,57 @@ function selectCheckoutShippingOption(idx) {
   trackFunnel('elegir_envio', { valor: checkoutShippingCost, datos: { paqueteria: checkoutShippingCarrier, gratis: envioGratis } });
 }
 
+// Nombres del catálogo de Correos de México -> los del selector de estados.
+const CP_ESTADO_SEPOMEX = { 'México': 'Estado de México', 'Coahuila de Zaragoza': 'Coahuila', 'Michoacán de Ocampo': 'Michoacán', 'Veracruz de Ignacio de la Llave': 'Veracruz' };
+let checkoutCpInfo = null, checkoutCpBuscado = '';
+async function autollenarPorCP(cp) {
+  if (cp !== checkoutCpBuscado) {
+    checkoutCpBuscado = cp;
+    checkoutCpInfo = null;
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/buscar_cp`, { method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_cp: cp }) });
+      const d = r.ok ? await r.json() : null;
+      if (cp === checkoutCpBuscado) checkoutCpInfo = (Array.isArray(d) && d[0]) || null;
+    } catch (e) { /* sin catálogo: el cliente escribe los datos como antes */ }
+  }
+  {
+    const info = checkoutCpInfo;
+    if (info) {
+      // Solo se reemplaza lo que está vacío o lo que se llenó solo con otro CP.
+      const poner = (el, valor) => { if (el && valor && (!el.value.trim() || el.dataset.auto === '1')) { el.value = valor; el.dataset.auto = '1'; } };
+      const sel = document.getElementById('checkoutEstado');
+      const est = CP_ESTADO_SEPOMEX[info.estado] || info.estado;
+      if (sel && [...sel.options].some(o => o.value === est)) poner(sel, est);
+      poner(document.getElementById('checkoutMunicipio'), info.municipio);
+      const lista = document.getElementById('checkoutColoniaLista');
+      if (lista) lista.innerHTML = info.colonias.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+      const col = document.getElementById('checkoutColonia');
+      if (info.colonias.length === 1) poner(col, info.colonias[0]);
+      else if (col && col.dataset.auto === '1') { col.value = ''; col.dataset.auto = ''; }
+      if (col) col.placeholder = info.colonias.length > 1 ? `Elige tu colonia (${info.colonias.length} en este CP)` : 'Ej. Portales';
+    }
+  }
+  return checkoutCpInfo;
+}
+// Si el cliente escribe a mano estado/municipio/colonia, ya no se cambian solos.
+document.addEventListener('input', e => { if (['checkoutEstado', 'checkoutMunicipio', 'checkoutColonia'].includes(e.target.id) && e.isTrusted) e.target.dataset.auto = ''; }, true);
+
 async function onCheckoutShippingFieldsInput() {
   const cpInput = document.getElementById('checkoutCP');
   const box = document.getElementById('checkoutShippingQuoteBox');
   const cp = (cpInput?.value || '').replace(/\D/g, '').slice(0, 5);
   if (cpInput) cpInput.value = cp;
 
+
+  // Con el código postal se llenan solos estado, municipio y colonia (catálogo de Correos de
+  // México, función buscar_cp) y se cotiza de inmediato: en el celular escribir los 4 datos antes
+  // de ver el envío hacía que muchos abandonaran.
+  let info = null;
+  if (cp.length === 5) info = await autollenarPorCP(cp);
   const estado = document.getElementById('checkoutEstado')?.value.trim() || '';
   const municipio = document.getElementById('checkoutMunicipio')?.value.trim() || '';
-  const colonia = document.getElementById('checkoutColonia')?.value.trim() || '';
+  // Para cotizar basta la primera colonia del CP (el precio no cambia); la del cliente se pide al pagar.
+  const colonia = document.getElementById('checkoutColonia')?.value.trim() || (info && info.colonias[0]) || '';
 
   if (cp.length !== 5 || !estado || !municipio || !colonia) {
     checkoutShippingCost = null;
@@ -20905,7 +21210,7 @@ async function onCheckoutShippingFieldsInput() {
     checkoutSelectedShippingIndex = null;
     if (box) {
       box.classList.remove('hidden');
-      box.innerHTML = `Completa código postal, estado, municipio y colonia para ver tus opciones de envío.`;
+      box.innerHTML = cp.length !== 5 ? `Escribe tu código postal para ver tus opciones de envío.` : `Completa estado, municipio y colonia para ver tus opciones de envío.`;
     }
     renderCheckoutSummary();
     return;
@@ -21652,33 +21957,84 @@ async function submitNewsletterSignup(){
 // real del producto — sin priorizar, un producto que de verdad se llama
 // "Bombin neón" podía quedar detrás de otros que solo lo mencionan como
 // etiqueta y aparecen antes en el catálogo.
-function searchScore(p, query) {
-  query = String(query || '').trim();
-  const words = query.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return null;
-  const name = normalizeEs(p.name);
-  const sku = normalizeEs(p.sku);
-  const has = (text, w) => text.includes(w) ||
-    (w.length > 3 && w.endsWith('es') && text.includes(w.slice(0, -2))) ||
-    (w.length > 3 && w.endsWith('s') && text.includes(w.slice(0, -1)));
-  if (!words.every(w => has(name, w) || has(sku, w))) return null;
-  const phraseIdx = name.indexOf(query);
-  if (phraseIdx !== -1) return phraseIdx;          // la frase tal cual en el nombre
-  if (words.every(w => has(name, w))) return 500;  // todas las palabras en el nombre
-  return 1000;                                     // alguna solo en las palabras clave
+// Palabras que no ayudan a encontrar ("accesorios para bailar" -> "bailar").
+const BUSQUEDA_VACIAS = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'para', 'al', 'a', 'y', 'e', 'o', 'en', 'con', 'por', 'un', 'una', 'unos', 'unas', 'tu', 'tus', 'mi', 'mis', 'su', 'sus', 'que', 'se']);
+// Palabras genéricas: se ignoran si hay otras más concretas; solas, muestran todo el catálogo.
+const BUSQUEDA_GENERICAS = new Set(['articulo', 'articulos', 'accesorio', 'accesorios', 'producto', 'productos', 'cosas', 'mayoreo', 'menudeo', 'negocio', 'negocios', 'organizador', 'organizadores', 'evento', 'eventos', 'venta', 'tienda', 'celebrar', 'celebracion']);
+// Sinónimos: lo que la gente busca -> cómo se llaman los productos o sus categorías.
+const BUSQUEDA_SINONIMOS = {
+  bailar: ['batucada'], baile: ['batucada'], bailes: ['batucada'], batucadas: ['batucada'],
+  novio: ['boda'], novios: ['boda'], novia: ['boda'], bodas: ['boda'], casamiento: ['boda'],
+  fluorescente: ['neon', 'fluor'], fluorescentes: ['neon', 'fluor'], neon: ['neon', 'fluor'], brillan: ['neon', 'luminoso', 'led'],
+  luminoso: ['luminos', 'led'], luminosos: ['luminos', 'led'], luz: ['luminos', 'led'], led: ['led', 'luminos'],
+  cumple: ['cumpleanos'], cumpleano: ['cumpleanos'], xv: ['xv', 'quince'], quinceanera: ['xv', 'quince'],
+  gorro: ['gorro', 'sombrero'], gorros: ['gorro', 'sombrero'], sombrero: ['sombrero', 'gorro'], sombreros: ['sombrero', 'gorro'],
+  hule: ['hule', 'espuma'], pantunflas: ['pantufla'], pantuflas: ['pantufla'], recuerdo: ['recuerdo'], recuerdos: ['recuerdo'],
+  decoracion: ['decoracion', 'decora'], adorno: ['decoracion', 'adorno'], adornos: ['decoracion', 'adorno']
+};
+
+function palabrasBusqueda(query) {
+  const todas = normalizeEs(query).split(/[\s,.;:/+-]+/).filter(w => w && !BUSQUEDA_VACIAS.has(w));
+  const concretas = todas.filter(w => !BUSQUEDA_GENERICAS.has(w));
+  return { todas, concretas, soloGenericas: todas.length > 0 && concretas.length === 0 };
 }
 
-// Todos los productos que coinciden con la búsqueda, del más al menos
-// relevante (a igual puntaje, en el orden del catálogo).
+// Coincidencia de una palabra con un texto: tal cual, sin plural ("globos" -> "globo") o con sus sinónimos.
+function palabraEn(text, w) {
+  const has = (t, x) => t.includes(x) ||
+    (x.length > 3 && x.endsWith('es') && t.includes(x.slice(0, -2))) ||
+    (x.length > 3 && x.endsWith('s') && t.includes(x.slice(0, -1)));
+  // Femenino/masculino: "vaquera" también encuentra "vaquero".
+  const raiz = w.length > 4 && /[aeo]s?$/.test(w) ? w.replace(/s$/, '').slice(0, -1) : null;
+  return has(text, w) || (raiz && text.includes(raiz)) || (BUSQUEDA_SINONIMOS[w] || []).some(x => has(text, x));
+}
+
+// Coincidencia de una búsqueda con un producto. Cada palabra (sin las de relleno) tiene que
+// aparecer en el nombre, el SKU (que en este catálogo es una lista de palabras clave) o la
+// categoría, en cualquier orden. Regresa null si no coincide; si coincide, un puntaje donde
+// menor = más relevante (la frase tal cual en el nombre primero).
+function searchScore(p, query, palabras) {
+  query = String(query || '').trim();
+  const pal = palabras || palabrasBusqueda(query);
+  const words = pal.concretas.length ? pal.concretas : pal.todas;
+  if (words.length === 0) return null;
+  const name = normalizeEs(p.name);
+  const otros = normalizeEs(`${p.sku || ''} ${p.catLabel || ''} ${p.cat || ''}`);
+  if (!words.every(w => palabraEn(name, w) || palabraEn(otros, w))) return null;
+  const phraseIdx = name.indexOf(query);
+  if (phraseIdx !== -1) return phraseIdx;                 // la frase tal cual en el nombre
+  if (words.every(w => palabraEn(name, w))) return 500;  // todas las palabras en el nombre
+  return 1000;                                            // alguna solo en palabras clave o categoría
+}
+
+// Todos los productos que coinciden con la búsqueda, del más al menos relevante (a igual
+// puntaje, en el orden del catálogo). Si ninguno tiene todas las palabras, se muestran los que
+// tienen alguna (más coincidencias primero) en vez de "sin resultados"; si la búsqueda es solo
+// de palabras genéricas ("artículos al mayoreo"), todo el catálogo.
 function searchProducts(q) {
   const query = normalizeEs(q).trim();
   if (!query) return [];
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  return dataset
-    .map(p => ({ p, score: searchScore(p, query) }))
+  const pal = palabrasBusqueda(query);
+  const exactos = dataset
+    .map(p => ({ p, score: searchScore(p, query, pal) }))
     .filter(x => x.score !== null)
     .sort((a, b) => a.score - b.score)
     .map(x => x.p);
+  if (!exactos.length && pal.soloGenericas) return dataset.slice();
+  const words = pal.concretas.length ? pal.concretas : pal.todas;
+  // Pocos con todas las palabras ("batucada de boda"): después, los que tienen alguna.
+  if (exactos.length >= 8 || words.length < 2) return exactos;
+  // La palabra menos común pesa más ("fiesta vaquera": primero lo vaquero, luego lo de fiesta).
+  const ya = new Set(exactos);
+  const textos = dataset.map(p => normalizeEs(`${p.name} ${p.sku || ''} ${p.catLabel || ''} ${p.cat || ''}`));
+  const peso = Object.fromEntries(words.map(w => [w, 1 / Math.max(1, textos.filter(t => palabraEn(t, w)).length)]));
+  const parciales = dataset
+    .map((p, i) => ({ p, n: words.reduce((s, w) => s + (palabraEn(textos[i], w) ? peso[w] : 0), 0) }))
+    .filter(x => x.n > 0 && !ya.has(x.p))
+    .sort((a, b) => b.n - a.n)
+    .map(x => x.p);
+  return exactos.concat(parciales);
 }
 
 function isStorefrontSearchPageOpen() {
@@ -21790,6 +22146,9 @@ function scheduleSearchLog(q) {
   clearTimeout(searchLogTimer);
   if (query.length < 3) return; // mismo mínimo que "Parámetros de Búsqueda" en el admin
   searchLogTimer = setTimeout(() => {
+    // Sin el catálogo cargado todavía el conteo saldría en 0 (y la búsqueda se vería "sin resultados"
+    // en el panel): se espera a que cargue.
+    if (!(productsFirstLoadDone && liveProducts.length > 0)) { scheduleSearchLog(query); return; }
     const key = query.toLowerCase();
     if (key === lastLoggedSearchQuery) return;
     lastLoggedSearchQuery = key;

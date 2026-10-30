@@ -20,7 +20,7 @@ const EVENTOS = new Set([
   'visita', 'ver_producto', 'buscar', 'agregar_carrito', 'ver_carrito',
   'iniciar_checkout', 'cotizar_envio', 'elegir_envio', 'error_checkout',
   'pedido_creado', 'ir_a_pago', 'compra', 'pago_pendiente', 'pago_rechazado',
-  'contacto', 'registro', 'newsletter'
+  'contacto', 'registro', 'newsletter', 'velocidad'
 ]);
 const ORIGENES = new Set(['facebook', 'instagram', 'google', 'tiktok', 'whatsapp', 'email', 'otro', 'directo']);
 const DISPOSITIVOS = new Set(['movil', 'tablet', 'escritorio']);
