@@ -12,6 +12,9 @@
 const { exigirSesion } = require('../lib/sesion-panel.js');
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 
+// Sin pago: Pendiente / Error en el pago. "Pendiente de pago" (OXXO, SPEI...) sí es pedido: el cliente ya generó su pago.
+const esCarritoSinPago = (o) => o.source === 'checkout' && o.payment_method === 'Mercado Pago' && ['Pendiente', 'Error en el pago'].includes(o.status);
+
 module.exports = async function handler(req, res) {
   // Datos privados del panel: solo con sesión (lib/sesion-panel.js) y nunca en la caché del CDN.
   res.setHeader('Cache-Control', 'private, no-store');
@@ -32,7 +35,9 @@ module.exports = async function handler(req, res) {
     if (!r.ok) throw new Error(`Supabase error ${r.status}`);
     const rows = await r.json();
 
-    const orders = rows.map(o => ({
+    // Un pedido de la tienda con Mercado Pago que aún no se paga todavía no es un pedido: es un carrito
+    // (se ve en Carritos, api/carritos.js). Pasa a Pedidos cuando el pago se acredita.
+    const orders = rows.filter(o => !esCarritoSinPago(o)).map(o => ({
       id: o.folio,
       reference: o.folio,
       date: o.created_at ? new Date(o.created_at).toLocaleString('es-MX', { timeZone: 'America/Mexico_City' }) : '—',

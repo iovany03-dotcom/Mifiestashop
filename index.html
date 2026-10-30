@@ -5947,7 +5947,7 @@
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
       <div>
         <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Transportadora:</label>
-        <select id="cpTransportadora" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <select id="cpTransportadora" onchange="cpToggleComprobante()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
           <option value="Recolección en tienda">Recolección en tienda</option>
           <option value="Estafeta">Estafeta</option>
           <option value="FedEx">FedEx</option>
@@ -5967,7 +5967,7 @@
     </div>
 
     <div id="cpComprobanteWrap" class="hidden" style="margin-bottom:14px; padding:12px; border:1px dashed var(--border); border-radius:8px;">
-      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Foto del baucher o comprobante de pago <span style="color:#dc2626;">(obligatoria)</span>:</label>
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Foto del baucher o comprobante de pago <span style="color:#dc2626;">(obligatoria; siempre en pedidos para envío)</span>:</label>
       <input type="file" id="cpComprobante" accept="image/*" onchange="cpVistaComprobante(this)" style="font-size:13px; max-width:100%;">
       <img id="cpComprobanteVista" alt="Vista previa del baucher" class="hidden" style="display:block; margin-top:8px; max-width:100%; max-height:200px; border-radius:6px; border:1px solid var(--border);">
     </div>
@@ -14778,8 +14778,10 @@ function cpRenderSummary(){
 }
 
 // Pedido manual ya pagado (efectivo, transferencia o tarjeta): la foto del baucher es obligatoria.
-// "Pendiente de pago" no tiene baucher todavía.
-function cpRequiereComprobante() { return document.getElementById('cpMetodoPago').value !== 'Pendiente de pago'; }
+// "Pendiente de pago" no tiene baucher todavía, salvo en pedidos para envío: esos siempre se
+// registran ya pagados y con su baucher (todo lo que no sea "Recolección en tienda" es envío).
+function cpEsEnvio() { return document.getElementById('cpTransportadora').value !== 'Recolección en tienda'; }
+function cpRequiereComprobante() { return cpEsEnvio() || document.getElementById('cpMetodoPago').value !== 'Pendiente de pago'; }
 function cpToggleComprobante() {
   document.getElementById('cpComprobanteWrap').classList.toggle('hidden', !cpRequiereComprobante());
 }
@@ -14807,8 +14809,9 @@ async function confirmCrearPedido(){
   if (!nombre) return alert('Escribe el nombre del cliente.');
   if (cpItems.length === 0) return alert('Agrega al menos un producto.');
   const fotoBaucher = document.getElementById('cpComprobante').files[0];
+  if (cpEsEnvio() && document.getElementById('cpMetodoPago').value === 'Pendiente de pago') return alert('Los pedidos para envío se registran ya pagados: elige Efectivo, Transferencia o Tarjeta y adjunta la foto del baucher.');
   if (cpRequiereComprobante()) {
-    if (!fotoBaucher) return alert('Adjunta la foto del baucher o comprobante de pago: es obligatoria en pedidos manuales ya pagados.');
+    if (!fotoBaucher) return alert(cpEsEnvio() ? 'Adjunta la foto del baucher o comprobante de pago: es obligatoria en los pedidos para envío.' : 'Adjunta la foto del baucher o comprobante de pago: es obligatoria en pedidos manuales ya pagados.');
     if (!/^image\//.test(fotoBaucher.type)) return alert('El baucher debe ser una foto (imagen).');
     if (fotoBaucher.size > 10 * 1024 * 1024) return alert('La foto del baucher pesa más de 10 MB. Toma una más ligera.');
   }
@@ -17270,7 +17273,7 @@ async function sendTestNotification() {
   } catch (e) { /* sin conexión */ }
 }
 
-// ================= AVISO DE PEDIDO NUEVO =================
+// ================= AVISO DE PEDIDO PAGADO =================
 // pedidos_online junta el checkout público (tienda + Mercado Pago) y los
 // pedidos creados a mano desde "+ Crear Pedido" — no los tickets del POS
 // (esos los ve el cajero en el momento, en su propia pantalla). Mientras el
@@ -17292,17 +17295,21 @@ async function pollForNewOrders() {
     return; // sin conexión momentánea: se reintenta en la siguiente corrida
   }
 
+  // Solo se avisa de pedidos PAGADOS: uno recién creado (o que nunca se paga) no avisa.
+  const sinPago = ['Pendiente', 'Pendiente de pago', 'Error en el pago', 'Cancelado', 'Reembolsado', 'Factura anticipada'];
+  const pagados = orders.filter(o => !sinPago.includes(o.status));
+
   if (!seenOrderFolios) {
-    // Primera corrida: solo se registra lo que ya existe, sin avisar de
-    // pedidos viejos cada vez que se abre el panel.
-    seenOrderFolios = new Set(orders.map(o => o.id));
+    // Primera corrida: solo se registra lo que ya estaba pagado, sin avisar
+    // de pedidos viejos cada vez que se abre el panel.
+    seenOrderFolios = new Set(pagados.map(o => o.id));
     return;
   }
 
-  orders.filter(o => !seenOrderFolios.has(o.id)).forEach(o => {
-    notifyEvent('newSale', '🛒 Nuevo pedido', `Pedido ${o.id} de ${o.customer || 'cliente'} por ${fmtMoney(o.total)}.`);
+  pagados.filter(o => !seenOrderFolios.has(o.id)).forEach(o => {
+    notifyEvent('newSale', '💰 Pedido pagado', `Pedido ${o.id} de ${o.customer || 'cliente'} por ${fmtMoney(o.total)}.`);
+    seenOrderFolios.add(o.id);
   });
-  orders.forEach(o => seenOrderFolios.add(o.id));
 }
 
 function startNewOrderPolling() {

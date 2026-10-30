@@ -45,14 +45,15 @@ function escapeAttr(str) {
 // <title id="pageTitleTag">...</title> -> nuevo texto entre las etiquetas.
 function replaceTagText(html, id, tagName, newText) {
   const re = new RegExp(`(<${tagName}[^>]*id="${id}"[^>]*>)[^<]*(</${tagName}>)`);
-  return html.replace(re, `$1${escapeAttr(newText)}$2`);
+  // Función (no cadena): un "$1", "$2" o "$&" dentro del texto (p. ej. un precio "$18") no debe tratarse como patrón.
+  return html.replace(re, (m, abre, cierra) => `${abre}${escapeAttr(newText)}${cierra}`);
 }
 
 // Reemplaza el valor de un atributo (content/href) dentro de una etiqueta
 // identificada por un selector simple (id="..." o property="..."/name="...").
 function replaceAttr(html, selector, attr, newValue) {
   const re = new RegExp(`(<[a-z]+[^>]*${selector}[^>]*${attr}=")[^"]*(")`);
-  return html.replace(re, `$1${escapeAttr(newValue)}$2`);
+  return html.replace(re, (m, abre, cierra) => `${abre}${escapeAttr(newValue)}${cierra}`);
 }
 
 // Arma el JSON-LD Product (Schema.org) como texto seguro para incrustar en
@@ -476,15 +477,15 @@ export default async function middleware(request) {
           .replace('<div class="store-hero" id="storefrontHero"', '<div class="store-hero hidden" id="storefrontHero"')
           .replace('<div id="storefrontStoreContainer">', '<div id="storefrontStoreContainer" class="hidden">')
           .replace('class="store-container hidden" id="storefrontProductPage"', 'class="store-container" id="storefrontProductPage"')
-          .replace('<div id="storefrontProductPageBody"></div>', `<div id="storefrontProductPageBody">${fichaProducto(ssr)}</div>`);
+          .replace('<div id="storefrontProductPageBody"></div>', () => `<div id="storefrontProductPageBody">${fichaProducto(ssr)}</div>`);
       } else if (ssr && ssr.tipo === 'categoria') {
         html = html
           .replace('<div class="store-hero" id="storefrontHero"', '<div class="store-hero hidden" id="storefrontHero"')
           .replace('<div id="storefrontStoreContainer">', '<div id="storefrontStoreContainer" class="hidden">')
           .replace('class="store-container hidden" id="storefrontCatalogPage"', 'class="store-container" id="storefrontCatalogPage"')
-          .replace('<h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>', `<h1 id="catalogSearchTitle" class="catalog-search-title">${escapeAttr(ssr.name)}</h1><div id="catalogCatIntro" class="catalog-cat-intro">${htmlSeguro(ssr.descripcion)}</div>`)
-          .replace('<div class="store-prods-grid" id="catalogGrid"></div>', `<div class="store-prods-grid" id="catalogGrid">${introCategoria(ssr)}</div>`)
-          .replace('<section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>', `<section id="catalogCatFaq" class="catalog-cat-faq${ssr.faq.length ? '' : ' hidden'}">${faqCategoria(ssr)}</section>`);
+          .replace('<h1 id="catalogSearchTitle" class="catalog-search-title hidden"></h1>', () => `<h1 id="catalogSearchTitle" class="catalog-search-title">${escapeAttr(ssr.name)}</h1><div id="catalogCatIntro" class="catalog-cat-intro">${htmlSeguro(ssr.descripcion)}</div>`)
+          .replace('<div class="store-prods-grid" id="catalogGrid"></div>', () => `<div class="store-prods-grid" id="catalogGrid">${introCategoria(ssr)}</div>`)
+          .replace('<section id="catalogCatFaq" class="catalog-cat-faq hidden"></section>', () => `<section id="catalogCatFaq" class="catalog-cat-faq${ssr.faq.length ? '' : ' hidden'}">${faqCategoria(ssr)}</section>`);
       }
       // Los H2 de las secciones del inicio, contacto, etc. (ocultas aquí) no son de esta página.
       if (ssr) html = soloH2Propios(html, ['catalogCatIntro', 'catalogCatFaq']);

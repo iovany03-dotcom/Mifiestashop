@@ -29,6 +29,8 @@ function montar(){
 // Botón verde "Escríbenos por WhatsApp" flotando a la derecha (encima de la mascota), siempre
 // visible al bajar por la página: el flotante con la mascota no siempre se reconoce como WhatsApp.
 function botonesEnLinea(){
+  // En el blog no va el botón verde (tapaba el texto en celular); queda la mascota con su enlace a WhatsApp.
+  if(document.body&&document.body.dataset.theme==='blog')return;
   if(document.querySelector('.cms-wa-inline'))return;
   const titulo=(document.querySelector('h1')||{}).textContent||document.title||'';
   const href='https://wa.me/'+NUMERO+'?text='+encodeURIComponent('Hola, vi la página "'+titulo.replace(/\s+/g,' ').trim().slice(0,90)+'" de Mi Fiestashop y quiero más información.');
