@@ -50,8 +50,19 @@ async function fetchPsCarritos() {
   });
 }
 
-async function fetchCarritosWeb(serviceRoleKey) {
+// Pedidos de la tienda con Mercado Pago que nadie ha pagado (Pendiente / Error en el pago): se muestran
+// aquí como carritos en vez de como pedidos; al pagarse pasan a Pedidos (api/pedidos-online.js).
+async function fetchSinPago(serviceRoleKey) {
   if (!serviceRoleKey) return [];
+  const url = `${SUPABASE_URL}/rest/v1/pedidos_online?select=folio,created_at,customer_name,customer_email,items,status&source=eq.checkout&payment_method=eq.Mercado%20Pago&status=in.(Pendiente,%22Error%20en%20el%20pago%22)&order=created_at.desc&limit=500`;
+  const r = await fetch(url, { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } });
+  if (!r.ok) throw new Error(`Supabase error ${r.status}`);
+  return r.json();
+}
+
+async function fetchCarritosWeb(serviceRoleKey, sinPago = []) {
+  if (!serviceRoleKey) return [];
+  const foliosSinPago = new Set(sinPago.map(p => p.folio));
   const select = 'id,customer_name,customer_email,items,order_reference,date_add,date_upd';
   const url = `${SUPABASE_URL}/rest/v1/carritos_web?select=${select}&order=id.desc&limit=500`;
   const r = await fetch(url, { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } });
@@ -66,13 +77,17 @@ async function fetchCarritosWeb(serviceRoleKey) {
       price: it.price || 0,
       img: it.img || ''
     }));
-    const { status, statusText } = computeStatus(c.date_upd, c.order_reference);
+    // Si el carrito llegó a crear un pedido que nunca se pagó, sigue siendo un carrito.
+    const sinPagar = c.order_reference && foliosSinPago.has(c.order_reference);
+    const calc = computeStatus(c.date_upd, sinPagar ? null : c.order_reference);
+    const status = calc.status;
+    const statusText = sinPagar ? `${calc.statusText} · pago pendiente (${c.order_reference})` : calc.statusText;
     return {
       id: `CRW-${c.id}`,
       date: c.date_add,
       customer: c.customer_name || `Invitado web #${c.id}`,
       email: c.customer_email || 'invitado.web@mifiestashop.com',
-      status, statusText, items
+      status, statusText, items, ...(sinPagar ? { folioSinPago: c.order_reference } : {})
     };
   });
 }
@@ -84,11 +99,23 @@ module.exports = async function handler(req, res) {
   if (!(await exigirSesion(req, res))) return;
 
   try {
+    const sinPago = await fetchSinPago(process.env.SUPABASE_SERVICE_ROLE_KEY);
     const [psCarts, webCarts] = await Promise.all([
       fetchPsCarritos(),
-      fetchCarritosWeb(process.env.SUPABASE_SERVICE_ROLE_KEY)
+      fetchCarritosWeb(process.env.SUPABASE_SERVICE_ROLE_KEY, sinPago)
     ]);
-    const carts = webCarts.concat(psCarts).sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Pedidos sin pagar cuyo carrito no se guardó aparte (si se guardó, ya salió arriba con su folio).
+    const yaListados = new Set(webCarts.map(w => w.folioSinPago).filter(Boolean));
+    const deSinPago = sinPago.filter(p => !yaListados.has(p.folio)).map(p => {
+      const calc = computeStatus(p.created_at, null);
+      return {
+        id: `PED-${p.folio}`, date: p.created_at,
+        customer: p.customer_name || 'Invitado web', email: p.customer_email || 'invitado.web@mifiestashop.com',
+        status: calc.status, statusText: `${calc.statusText} · pago pendiente (${p.folio})`,
+        items: (Array.isArray(p.items) ? p.items : []).map(it => ({ name: it.name || `Producto #${it.id}`, sku: it.sku || '', qty: it.qty || 1, price: it.price || 0, img: it.img || '' }))
+      };
+    });
+    const carts = webCarts.map(({ folioSinPago, ...w }) => w).concat(deSinPago, psCarts).sort((a, b) => new Date(b.date) - new Date(a.date));
     res.status(200).json({ carts, source: 'supabase' });
   } catch (err) {
     res.status(200).json({ fallback: true, error: err.message, carts: [] });

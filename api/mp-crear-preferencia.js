@@ -14,8 +14,6 @@
 // POST /api/mp-crear-preferencia { folio, items, payerEmail, payerName, siteUrl }
 //   -> { id, init_point } o { error }
 
-const { vigenciaHoras } = require('../lib/pedido-vencimiento.js');
-
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
@@ -65,10 +63,6 @@ module.exports = async function handler(req, res) {
     auto_return: 'approved',
     notification_url: `${origin}/api/mp-webhook`,
     statement_descriptor: 'MI FIESTASHOP',
-    // El enlace de pago vence junto con el pedido (lib/pedido-vencimiento.js cancela los no pagados).
-    expires: true,
-    expiration_date_from: new Date().toISOString(),
-    expiration_date_to: new Date(Date.now() + vigenciaHoras() * 3600e3).toISOString(),
   };
 
   try {

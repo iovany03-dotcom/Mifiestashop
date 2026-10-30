@@ -5,11 +5,8 @@
 // pagado nunca se queda como pendiente porque el aviso (webhook) de
 // Mercado Pago no llegó, y los rechazos quedan con su motivo.
 //
-// Después también cancela los pedidos que no se pagaron a tiempo (lib/pedido-vencimiento.js).
-//
-// GET -> { vencimiento, revisados, conIntentos, sinIntentos, resultados: [...] }
+// GET -> { revisados, conIntentos, sinIntentos, resultados: [...] }
 const { conciliarPedido } = require('../lib/mp-pago.js');
-const { vencerPedidosSinPago } = require('../lib/pedido-vencimiento.js');
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
 const MAX_PEDIDOS = 40;
@@ -49,12 +46,7 @@ module.exports = async function handler(req, res) {
         resultados.push({ folio, error: e.message });
       }
     }
-    // Pedidos que no se pagaron a tiempo: se cancelan y se regresa su stock (lib/pedido-vencimiento.js).
-    let vencimiento = null;
-    try { vencimiento = await vencerPedidosSinPago({ accessToken, serviceRoleKey }); }
-    catch (e) { console.error('vencimiento de pedidos:', e.message); vencimiento = { error: e.message }; }
     res.status(200).json({
-      vencimiento,
       revisados: resultados.length,
       conIntentos: resultados.filter(x => x.intentos > 0).length,
       sinIntentos: resultados.filter(x => x.intentos === 0).length,
