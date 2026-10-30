@@ -2787,6 +2787,8 @@
       <div class="submenu">
         <a class="submenu-link active" data-view="dashboard">Resumen de ventas</a>
         <a class="submenu-link" data-view="comportamiento">Comportamiento en la tienda</a>
+        <a class="submenu-link" data-view="informe-ventas">Informe de Ventas</a>
+        <a class="submenu-link" data-view="embudo">Embudo de compra</a>
       </div>
     </div>
 
@@ -2802,13 +2804,12 @@
       </div>
       <div class="submenu">
         <a class="submenu-link active" data-view="pos">Sistema POS</a>
-        <a class="submenu-link" data-view="informe-ventas">Informe de Ventas</a>
         <a class="submenu-link" data-view="pedidos">Pedidos</a>
+        <a class="submenu-link" data-view="clientes">Clientes</a>
         <a class="submenu-link" data-view="envios">Envíos & Skydropx</a>
         <a class="submenu-link" data-view="facturacion">Facturación</a>
         <a class="submenu-link" data-view="costos">Costos y Gastos</a>
         <a class="submenu-link" data-view="carritos">Carritos de Compra</a>
-        <a class="submenu-link" data-view="embudo">Embudo de compra</a>
         <a class="submenu-link" data-view="retransmisiones">Retransmisiones</a>
       </div>
     </div>
@@ -2828,7 +2829,6 @@
         <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
         <a class="submenu-link" data-view="etiquetas">Etiquetas de precio</a>
         <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
-        <a class="submenu-link" data-view="blog">Blog (SEO)</a>
       </div>
     </div>
 
@@ -2842,9 +2842,6 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
-        <a class="submenu-link" data-view="clientes">Clientes</a>
-        <a class="submenu-link" data-view="direcciones">Direcciones</a>
-        <a class="submenu-link" data-view="proveedores">Proveedores</a>
       </div>
     </div>
 
@@ -2864,6 +2861,7 @@
         <a class="submenu-link" data-view="param-tienda-productos">Configuración de Productos</a>
         <a class="submenu-link" data-view="param-tienda-seo">SEO: análisis y ranking</a>
         <a class="submenu-link" data-view="param-tienda-buscar">Buscar</a>
+        <a class="submenu-link" data-view="blog">Blog (SEO)</a>
       </div>
     </div>
 
@@ -4520,6 +4518,7 @@
         <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
           <button class="btn primary" id="clientesTabBtn-directorio" onclick="switchClientesAdminTab('directorio')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Directorio</button>
           <button class="btn" id="clientesTabBtn-ajustes" onclick="switchClientesAdminTab('ajustes')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Ajustes</button>
+          <button class="btn" onclick="switchView('direcciones')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Direcciones</button>
         </div>
 
         <div id="clientesTab-directorio">
@@ -4796,6 +4795,11 @@
 
     <section id="view-direcciones" class="view-panel hidden">
       <div class="card">
+        <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid var(--border);">
+          <button class="btn" onclick="switchView('clientes')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Directorio</button>
+          <button class="btn" onclick="switchView('clientes'); switchClientesAdminTab('ajustes')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Ajustes</button>
+          <button class="btn primary" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">Direcciones</button>
+        </div>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;">
           <h2 style="margin:0;">Direcciones de clientes</h2>
           <button class="btn primary" onclick="loadDirecciones(0)">Recargar</button>
@@ -6961,6 +6965,8 @@ function hasPermission(viewName) {
   if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
   // La recepción la hacen quienes manejan bodegas; los supervisores la autorizan.
   if (viewName === 'recepcion' && (permisos.includes('bodegas') || permisos.includes('aprobar-movimientos'))) return true;
+  // Las direcciones ahora son una pestaña dentro de Clientes.
+  if (viewName === 'direcciones' && permisos.includes('clientes')) return true;
   // Quien ve el resumen de ventas o el embudo también ve el comportamiento en la tienda.
   if (viewName === 'comportamiento' && (permisos.includes('dashboard') || permisos.includes('embudo'))) return true;
   return permisos.includes(viewName);
