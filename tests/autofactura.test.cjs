@@ -102,3 +102,13 @@ test('descargar: solo con el RFC con el que se facturó', async () => {
   assert.equal(bien.code, 200);
   assert.equal(bien.data.content, 'JVBER');
 });
+
+test('buscar: si el folio trae menos de 5 cifras, avisa que puede faltar un dígito (sin revelar si existe)', async () => {
+  fake();
+  const corto = await call({ accion: 'buscar', folio: 'POS-1227', total: '116' });
+  assert.equal(corto.code, 404);
+  assert.match(corto.data.error, /5 cifras/);
+  const completo = await call({ accion: 'buscar', folio: 'POS-99999', total: '116' });
+  assert.equal(completo.code, 404);
+  assert.doesNotMatch(completo.data.error, /5 cifras/);
+});
