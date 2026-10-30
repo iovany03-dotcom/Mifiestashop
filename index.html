@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#d3007b">
 <link rel="icon" type="image/webp" href="/img/cms/logo.webp">
 <link id="canonicalLink" rel="canonical" href="https://www.mifiestashop.com/">
-<link rel="preload" as="image" href="img/hero-banner.webp" fetchpriority="high">
+<link rel="preload" as="image" href="/img/hero-banner.webp" fetchpriority="high">
 
 <!-- PWA: instalar en pantalla de inicio (Android/Chrome) -->
 <link rel="manifest" href="/manifest.json">
@@ -1084,8 +1084,13 @@
     #storefrontOrderConfirmPage [style*="grid-template-columns"],
     #view-cliente-portal [style*="grid-template-columns"],
     #view-cms-page [style*="grid-template-columns"] {
-      grid-template-columns: 1fr !important;
+      /* minmax(0, …): con 1fr la columna crecía al ancho mínimo de su contenido y el pago
+         medía 420 px en un celular de 390 (había que mover la página de lado). */
+      grid-template-columns: minmax(0, 1fr) !important;
     }
+    #storefrontCheckoutPage [style*="grid-template-columns"] > * { min-width: 0; }
+    /* En el pago, el botón flotante de WhatsApp tapaba el botón "Pagar" y el de "Aplicar" cupón. */
+    body:has(#storefrontCheckoutPage:not(.hidden)) .store-whatsapp-float { display: none; }
   }
 
   /* La ficha de producto (imagen + info a los lados) ya se ve apretada
@@ -1459,7 +1464,7 @@
       <a href="#" class="store-brand" onclick="renderStorefrontProducts('all')">
         <span class="store-brand-logo-wrap">
           <img class="store-brand-logo store-brand-logo-face" src="/img/cms/logo.webp" alt="Mi Fiestashop">
-          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
         </span>
       </a>
       <nav class="store-header-nav">
@@ -1505,7 +1510,7 @@
   <div class="store-hero" id="storefrontHero" style="padding:0; background:none; overflow:visible;">
     <h1 class="sr-only">Mi Fiestashop: Artículos para Fiesta, Globos, Batucada y Pirotecnia Fría al Mayoreo y Menudeo en México</h1>
     <a href="/266-productos" class="hero-banner-link" onclick="event.preventDefault(); history.pushState(null,'','/266-productos'); openStorefrontCatalog('all');">
-      <img src="img/hero-banner.webp" width="1672" height="941" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
+      <img src="/img/hero-banner.webp" width="1672" height="941" alt="Todo empezó con un 'vamos a hacer algo tranqui'. Todo para tu fiesta, menos lo tranqui." class="hero-banner-img">
     </a>
   </div>
 
@@ -1568,7 +1573,7 @@
 
     <!-- Banner: Síguenos y Etiquétanos -->
     <a href="https://instagram.com/articulosparafiestamx/" target="_blank" rel="noopener" class="store-social-banner">
-      <img src="img/social-tag-banner.webp" alt="Si subes tu fiesta, etiquétanos - Mi Fiestashop" loading="lazy">
+      <img src="/img/social-tag-banner.webp" alt="Si subes tu fiesta, etiquétanos - Mi Fiestashop" loading="lazy">
     </a>
 
     <div class="store-container">
@@ -2087,7 +2092,7 @@
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px; color:#2e1065;">Colonia *</label>
-            <input type="text" id="checkoutColonia" placeholder="Ej. Portales" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
+            <datalist id="checkoutColoniaLista"></datalist><input type="text" id="checkoutColonia" list="checkoutColoniaLista" autocomplete="off" placeholder="Ej. Portales" style="width:100%; padding:10px; border-radius:8px; border:1px solid #e5dce6; background:#faf7fb; color:#2e1065;" oninput="onCheckoutShippingFieldsInput()">
           </div>
           <div id="checkoutShippingQuoteBox" class="hidden" style="background:var(--mf-cream); border-radius:8px; padding:10px 12px; font-size:13px; color:#2e1065;"></div>
           <div>
@@ -2380,7 +2385,7 @@
 
   <a class="store-whatsapp-float" href="https://wa.me/525612622146" target="_blank" rel="noopener" aria-label="Contáctanos por WhatsApp" title="Contáctanos por WhatsApp">
     <div class="store-whatsapp-bubble">¡Hola! Soy Mikel.<br>Estoy aquí para ayudarte.</div>
-    <img src="img/whatsapp-support.webp" alt="Mikel, soporte por WhatsApp">
+    <img src="/img/whatsapp-support.webp" alt="Mikel, soporte por WhatsApp">
   </a>
   <script>
     (function initWhatsappBubble(){
@@ -2706,7 +2711,7 @@
       <a href="#" class="store-brand" onclick="closeBodaPage(); return false;">
         <span class="store-brand-logo-wrap">
           <img class="store-brand-logo store-brand-logo-face" src="/img/cms/logo.webp" alt="Mi Fiestashop">
-          <img class="store-brand-logo store-brand-logo-mask" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+          <img class="store-brand-logo store-brand-logo-mask" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
         </span>
       </a>
       <nav class="store-header-nav">
@@ -2755,7 +2760,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <a href="#" class="brand-logo">
-      <img src="img/logo-antifaz.webp" alt="Mi Fiestashop" class="logo-icon-img">
+      <img src="/img/logo-antifaz.webp" alt="Mi Fiestashop" class="logo-icon-img">
     </a>
     <button class="sidebar-toggle" id="toggleSidebar" title="Contraer panel">
       <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
@@ -6056,7 +6061,7 @@
 
     <div class="ticket-paper" id="printableTicket">
       <div class="ticket-brand-bar"></div>
-      <img class="ticket-icon" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+      <img class="ticket-icon" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
       <div class="t-center ticket-store-name" id="tHeaderName">MI FIESTASHOP</div>
       <div class="t-center ticket-sub" id="tHeaderRfc">RFC: MFS260101XXX</div>
       <div class="t-center ticket-sub" id="tHeaderAddress">Sucursal Puebla Principal</div>
@@ -6283,7 +6288,7 @@
           <h3>Vista Previa del Ticket Impreso</h3>
           <div class="ticket-paper" id="cfgTicketPreviewBox" style="margin-top:14px;">
             <div class="ticket-brand-bar"></div>
-            <img class="ticket-icon" src="img/logo-antifaz.webp" alt="Mi Fiestashop">
+            <img class="ticket-icon" src="/img/logo-antifaz.webp" alt="Mi Fiestashop">
             <div class="t-center ticket-store-name" id="prevTName">MI FIESTASHOP</div>
             <div class="t-center ticket-sub" id="prevTRfc">RFC: MFS260101XXX</div>
             <div class="t-center ticket-sub" id="prevTAddr">Sucursal Puebla Principal</div>
@@ -20297,7 +20302,7 @@ function buildProductDetailHTML(p, qtyId, onAddToCart){
   return `
     <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:24px;">
       <div style="min-width:0;">
-        <img id="pdMainImg_${qtyId}" src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
+        <img id="pdMainImg_${qtyId}" src="${p.img}" alt="${escapeHtml(p.name)}${p.catLabel ? ' - ' + escapeHtml(p.catLabel) : ''} | Mi Fiestashop" width="800" height="800" style="width:100%; height:auto; border-radius:14px; object-fit:contain; aspect-ratio:1/1; background:#fff; padding:16px; box-sizing:border-box;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300'">
         ${buildProductThumbsHTML(p, 'pdMainImg_' + qtyId)}
       </div>
       <div>
@@ -20881,15 +20886,57 @@ function selectCheckoutShippingOption(idx) {
   trackFunnel('elegir_envio', { valor: checkoutShippingCost, datos: { paqueteria: checkoutShippingCarrier, gratis: envioGratis } });
 }
 
+// Nombres del catálogo de Correos de México -> los del selector de estados.
+const CP_ESTADO_SEPOMEX = { 'México': 'Estado de México', 'Coahuila de Zaragoza': 'Coahuila', 'Michoacán de Ocampo': 'Michoacán', 'Veracruz de Ignacio de la Llave': 'Veracruz' };
+let checkoutCpInfo = null, checkoutCpBuscado = '';
+async function autollenarPorCP(cp) {
+  if (cp !== checkoutCpBuscado) {
+    checkoutCpBuscado = cp;
+    checkoutCpInfo = null;
+    try {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/buscar_cp`, { method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_cp: cp }) });
+      const d = r.ok ? await r.json() : null;
+      if (cp === checkoutCpBuscado) checkoutCpInfo = (Array.isArray(d) && d[0]) || null;
+    } catch (e) { /* sin catálogo: el cliente escribe los datos como antes */ }
+  }
+  {
+    const info = checkoutCpInfo;
+    if (info) {
+      // Solo se reemplaza lo que está vacío o lo que se llenó solo con otro CP.
+      const poner = (el, valor) => { if (el && valor && (!el.value.trim() || el.dataset.auto === '1')) { el.value = valor; el.dataset.auto = '1'; } };
+      const sel = document.getElementById('checkoutEstado');
+      const est = CP_ESTADO_SEPOMEX[info.estado] || info.estado;
+      if (sel && [...sel.options].some(o => o.value === est)) poner(sel, est);
+      poner(document.getElementById('checkoutMunicipio'), info.municipio);
+      const lista = document.getElementById('checkoutColoniaLista');
+      if (lista) lista.innerHTML = info.colonias.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+      const col = document.getElementById('checkoutColonia');
+      if (info.colonias.length === 1) poner(col, info.colonias[0]);
+      else if (col && col.dataset.auto === '1') { col.value = ''; col.dataset.auto = ''; }
+      if (col) col.placeholder = info.colonias.length > 1 ? `Elige tu colonia (${info.colonias.length} en este CP)` : 'Ej. Portales';
+    }
+  }
+  return checkoutCpInfo;
+}
+// Si el cliente escribe a mano estado/municipio/colonia, ya no se cambian solos.
+document.addEventListener('input', e => { if (['checkoutEstado', 'checkoutMunicipio', 'checkoutColonia'].includes(e.target.id) && e.isTrusted) e.target.dataset.auto = ''; }, true);
+
 async function onCheckoutShippingFieldsInput() {
   const cpInput = document.getElementById('checkoutCP');
   const box = document.getElementById('checkoutShippingQuoteBox');
   const cp = (cpInput?.value || '').replace(/\D/g, '').slice(0, 5);
   if (cpInput) cpInput.value = cp;
 
+
+  // Con el código postal se llenan solos estado, municipio y colonia (catálogo de Correos de
+  // México, función buscar_cp) y se cotiza de inmediato: en el celular escribir los 4 datos antes
+  // de ver el envío hacía que muchos abandonaran.
+  let info = null;
+  if (cp.length === 5) info = await autollenarPorCP(cp);
   const estado = document.getElementById('checkoutEstado')?.value.trim() || '';
   const municipio = document.getElementById('checkoutMunicipio')?.value.trim() || '';
-  const colonia = document.getElementById('checkoutColonia')?.value.trim() || '';
+  // Para cotizar basta la primera colonia del CP (el precio no cambia); la del cliente se pide al pagar.
+  const colonia = document.getElementById('checkoutColonia')?.value.trim() || (info && info.colonias[0]) || '';
 
   if (cp.length !== 5 || !estado || !municipio || !colonia) {
     checkoutShippingCost = null;
@@ -20898,7 +20945,7 @@ async function onCheckoutShippingFieldsInput() {
     checkoutSelectedShippingIndex = null;
     if (box) {
       box.classList.remove('hidden');
-      box.innerHTML = `Completa código postal, estado, municipio y colonia para ver tus opciones de envío.`;
+      box.innerHTML = cp.length !== 5 ? `Escribe tu código postal para ver tus opciones de envío.` : `Completa estado, municipio y colonia para ver tus opciones de envío.`;
     }
     renderCheckoutSummary();
     return;
@@ -21645,33 +21692,84 @@ async function submitNewsletterSignup(){
 // real del producto — sin priorizar, un producto que de verdad se llama
 // "Bombin neón" podía quedar detrás de otros que solo lo mencionan como
 // etiqueta y aparecen antes en el catálogo.
-function searchScore(p, query) {
-  query = String(query || '').trim();
-  const words = query.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return null;
-  const name = normalizeEs(p.name);
-  const sku = normalizeEs(p.sku);
-  const has = (text, w) => text.includes(w) ||
-    (w.length > 3 && w.endsWith('es') && text.includes(w.slice(0, -2))) ||
-    (w.length > 3 && w.endsWith('s') && text.includes(w.slice(0, -1)));
-  if (!words.every(w => has(name, w) || has(sku, w))) return null;
-  const phraseIdx = name.indexOf(query);
-  if (phraseIdx !== -1) return phraseIdx;          // la frase tal cual en el nombre
-  if (words.every(w => has(name, w))) return 500;  // todas las palabras en el nombre
-  return 1000;                                     // alguna solo en las palabras clave
+// Palabras que no ayudan a encontrar ("accesorios para bailar" -> "bailar").
+const BUSQUEDA_VACIAS = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'para', 'al', 'a', 'y', 'e', 'o', 'en', 'con', 'por', 'un', 'una', 'unos', 'unas', 'tu', 'tus', 'mi', 'mis', 'su', 'sus', 'que', 'se']);
+// Palabras genéricas: se ignoran si hay otras más concretas; solas, muestran todo el catálogo.
+const BUSQUEDA_GENERICAS = new Set(['articulo', 'articulos', 'accesorio', 'accesorios', 'producto', 'productos', 'cosas', 'mayoreo', 'menudeo', 'negocio', 'negocios', 'organizador', 'organizadores', 'evento', 'eventos', 'venta', 'tienda', 'celebrar', 'celebracion']);
+// Sinónimos: lo que la gente busca -> cómo se llaman los productos o sus categorías.
+const BUSQUEDA_SINONIMOS = {
+  bailar: ['batucada'], baile: ['batucada'], bailes: ['batucada'], batucadas: ['batucada'],
+  novio: ['boda'], novios: ['boda'], novia: ['boda'], bodas: ['boda'], casamiento: ['boda'],
+  fluorescente: ['neon', 'fluor'], fluorescentes: ['neon', 'fluor'], neon: ['neon', 'fluor'], brillan: ['neon', 'luminoso', 'led'],
+  luminoso: ['luminos', 'led'], luminosos: ['luminos', 'led'], luz: ['luminos', 'led'], led: ['led', 'luminos'],
+  cumple: ['cumpleanos'], cumpleano: ['cumpleanos'], xv: ['xv', 'quince'], quinceanera: ['xv', 'quince'],
+  gorro: ['gorro', 'sombrero'], gorros: ['gorro', 'sombrero'], sombrero: ['sombrero', 'gorro'], sombreros: ['sombrero', 'gorro'],
+  hule: ['hule', 'espuma'], pantunflas: ['pantufla'], pantuflas: ['pantufla'], recuerdo: ['recuerdo'], recuerdos: ['recuerdo'],
+  decoracion: ['decoracion', 'decora'], adorno: ['decoracion', 'adorno'], adornos: ['decoracion', 'adorno']
+};
+
+function palabrasBusqueda(query) {
+  const todas = normalizeEs(query).split(/[\s,.;:/+-]+/).filter(w => w && !BUSQUEDA_VACIAS.has(w));
+  const concretas = todas.filter(w => !BUSQUEDA_GENERICAS.has(w));
+  return { todas, concretas, soloGenericas: todas.length > 0 && concretas.length === 0 };
 }
 
-// Todos los productos que coinciden con la búsqueda, del más al menos
-// relevante (a igual puntaje, en el orden del catálogo).
+// Coincidencia de una palabra con un texto: tal cual, sin plural ("globos" -> "globo") o con sus sinónimos.
+function palabraEn(text, w) {
+  const has = (t, x) => t.includes(x) ||
+    (x.length > 3 && x.endsWith('es') && t.includes(x.slice(0, -2))) ||
+    (x.length > 3 && x.endsWith('s') && t.includes(x.slice(0, -1)));
+  // Femenino/masculino: "vaquera" también encuentra "vaquero".
+  const raiz = w.length > 4 && /[aeo]s?$/.test(w) ? w.replace(/s$/, '').slice(0, -1) : null;
+  return has(text, w) || (raiz && text.includes(raiz)) || (BUSQUEDA_SINONIMOS[w] || []).some(x => has(text, x));
+}
+
+// Coincidencia de una búsqueda con un producto. Cada palabra (sin las de relleno) tiene que
+// aparecer en el nombre, el SKU (que en este catálogo es una lista de palabras clave) o la
+// categoría, en cualquier orden. Regresa null si no coincide; si coincide, un puntaje donde
+// menor = más relevante (la frase tal cual en el nombre primero).
+function searchScore(p, query, palabras) {
+  query = String(query || '').trim();
+  const pal = palabras || palabrasBusqueda(query);
+  const words = pal.concretas.length ? pal.concretas : pal.todas;
+  if (words.length === 0) return null;
+  const name = normalizeEs(p.name);
+  const otros = normalizeEs(`${p.sku || ''} ${p.catLabel || ''} ${p.cat || ''}`);
+  if (!words.every(w => palabraEn(name, w) || palabraEn(otros, w))) return null;
+  const phraseIdx = name.indexOf(query);
+  if (phraseIdx !== -1) return phraseIdx;                 // la frase tal cual en el nombre
+  if (words.every(w => palabraEn(name, w))) return 500;  // todas las palabras en el nombre
+  return 1000;                                            // alguna solo en palabras clave o categoría
+}
+
+// Todos los productos que coinciden con la búsqueda, del más al menos relevante (a igual
+// puntaje, en el orden del catálogo). Si ninguno tiene todas las palabras, se muestran los que
+// tienen alguna (más coincidencias primero) en vez de "sin resultados"; si la búsqueda es solo
+// de palabras genéricas ("artículos al mayoreo"), todo el catálogo.
 function searchProducts(q) {
   const query = normalizeEs(q).trim();
   if (!query) return [];
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  return dataset
-    .map(p => ({ p, score: searchScore(p, query) }))
+  const pal = palabrasBusqueda(query);
+  const exactos = dataset
+    .map(p => ({ p, score: searchScore(p, query, pal) }))
     .filter(x => x.score !== null)
     .sort((a, b) => a.score - b.score)
     .map(x => x.p);
+  if (!exactos.length && pal.soloGenericas) return dataset.slice();
+  const words = pal.concretas.length ? pal.concretas : pal.todas;
+  // Pocos con todas las palabras ("batucada de boda"): después, los que tienen alguna.
+  if (exactos.length >= 8 || words.length < 2) return exactos;
+  // La palabra menos común pesa más ("fiesta vaquera": primero lo vaquero, luego lo de fiesta).
+  const ya = new Set(exactos);
+  const textos = dataset.map(p => normalizeEs(`${p.name} ${p.sku || ''} ${p.catLabel || ''} ${p.cat || ''}`));
+  const peso = Object.fromEntries(words.map(w => [w, 1 / Math.max(1, textos.filter(t => palabraEn(t, w)).length)]));
+  const parciales = dataset
+    .map((p, i) => ({ p, n: words.reduce((s, w) => s + (palabraEn(textos[i], w) ? peso[w] : 0), 0) }))
+    .filter(x => x.n > 0 && !ya.has(x.p))
+    .sort((a, b) => b.n - a.n)
+    .map(x => x.p);
+  return exactos.concat(parciales);
 }
 
 function isStorefrontSearchPageOpen() {
@@ -21783,6 +21881,9 @@ function scheduleSearchLog(q) {
   clearTimeout(searchLogTimer);
   if (query.length < 3) return; // mismo mínimo que "Parámetros de Búsqueda" en el admin
   searchLogTimer = setTimeout(() => {
+    // Sin el catálogo cargado todavía el conteo saldría en 0 (y la búsqueda se vería "sin resultados"
+    // en el panel): se espera a que cargue.
+    if (!(productsFirstLoadDone && liveProducts.length > 0)) { scheduleSearchLog(query); return; }
     const key = query.toLowerCase();
     if (key === lastLoggedSearchQuery) return;
     lastLoggedSearchQuery = key;
