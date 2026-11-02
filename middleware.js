@@ -62,8 +62,30 @@ function replaceAttr(html, selector, attr, newValue) {
 // El precio sale de catalogo_productos (la fuente desde que se desconectó PrestaShop), en la
 // misma consulta: no agrega llamadas. Con "offers" Google puede mostrar el precio en los
 // resultados; BreadcrumbList muestra Inicio › Categoría en vez de la URL.
+// Políticas publicadas en la tienda (páginas /pagina/politica-de-envio-gratis-mi-fiesta-shop y
+// /pagina/politica-de-devolucion-mi-fiesta-shop). Google pide que coincidan con lo que dice el sitio.
+const ENVIO_GRATIS_DESDE = 1500;
+const POLITICA_DEVOLUCION = {
+  '@type': 'MerchantReturnPolicy', applicableCountry: 'MX',
+  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow', merchantReturnDays: 3,
+  returnMethod: ['https://schema.org/ReturnByMail', 'https://schema.org/ReturnInStore'],
+  returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
+  itemCondition: 'https://schema.org/NewCondition'
+};
+// Envío gratis (desde $1,500): 1 día de preparación y de 1 a 6 días hábiles de paquetería
+// (1-3 en CDMX, Puebla y Querétaro; 2-6 en el resto del país). Abajo de $1,500 el costo depende
+// del destino, así que no se declara.
+const ENVIO_GRATIS = {
+  '@type': 'OfferShippingDetails',
+  shippingRate: { '@type': 'MonetaryAmount', value: 0, currency: 'MXN' },
+  shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'MX' },
+  deliveryTime: { '@type': 'ShippingDeliveryTime',
+    handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
+    transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 6, unitCode: 'DAY' } }
+};
+
 function buildProductJsonLd(name, sku, desc, images, extra = {}) {
-  const { price, pageUrl, barcode, categoria } = extra;
+  const { price, pageUrl, barcode, categoria, existencias } = extra;
   const producto = {
     '@type': 'Product',
     name,
@@ -76,8 +98,12 @@ function buildProductJsonLd(name, sku, desc, images, extra = {}) {
   if (Number(price) > 0) {
     producto.offers = {
       '@type': 'Offer', price: Number(price).toFixed(2), priceCurrency: 'MXN',
-      availability: 'https://schema.org/InStock', itemCondition: 'https://schema.org/NewCondition',
-      url: pageUrl || undefined, seller: { '@type': 'Organization', name: 'Mi Fiestashop' }
+      // Sin registro de existencias (paquetes armados al momento) = disponible, igual que en la tienda.
+      availability: existencias === null || existencias === undefined || existencias > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      url: pageUrl || undefined, seller: { '@type': 'Organization', name: 'Mi Fiestashop' },
+      hasMerchantReturnPolicy: POLITICA_DEVOLUCION,
+      shippingDetails: Number(price) >= ENVIO_GRATIS_DESDE ? ENVIO_GRATIS : undefined
     };
   }
   const migas = [{ '@type': 'ListItem', position: 1, name: 'Inicio', item: `${ORIGEN_SEO}/` }];
@@ -94,7 +120,7 @@ const ORIGEN_SEO = 'https://www.mifiestashop.com';
 // catálogo son internos y un GTIN inválido es un error en Google Merchant / resultados.
 function gtin13Valido(c) {
   const s = String(c || '');
-  if (!/^\d{13}$/.test(s)) return false;
+  if (!/^\d{13}$/.test(s) || s[0] === '2') return false; // prefijo 2 = código interno de la tienda
   const suma = s.slice(0, 12).split('').reduce((t, d, i) => t + Number(d) * (i % 2 ? 3 : 1), 0);
   return (10 - (suma % 10)) % 10 === Number(s[12]);
 }
@@ -135,7 +161,11 @@ async function resolveProduct(id) {
     return { redirect: cat && cat.active && cat.link_rewrite ? `/${cat.id}-${cat.link_rewrite}` : CATALOGO_RAIZ };
   }
   const canonicalPath = productoPath(p.id, p.link_rewrite, p.barcode, cat && cat.link_rewrite);
-  const migr = await sb(`productos_migrados?id=eq.${id}&select=name,sku,description,images`);
+  const [migr, stockFilas] = await Promise.all([
+    sb(`productos_migrados?id=eq.${id}&select=name,sku,description,images`),
+    sb(`ps_stock?id_product=eq.${id}&select=quantity`)
+  ]);
+  const existencias = Array.isArray(stockFilas) && stockFilas.length ? stockFilas.reduce((t, f) => t + (Number(f.quantity) || 0), 0) : null;
   const m = migr && migr[0];
   const name = (m && m.name) || p.name;
   if (!name) return { exists: true, canonicalPath, seo: null };
@@ -159,7 +189,7 @@ async function resolveProduct(id) {
         categoria: cat && cat.active && cat.link_rewrite ? { name: cat.name, path: `/${cat.id}-${cat.link_rewrite}` } : null
       },
       jsonLd: buildProductJsonLd(name, (m && m.sku) || p.sku, desc, images, {
-        price: p.price, barcode: p.barcode, pageUrl: `${ORIGEN_SEO}${canonicalPath}`,
+        price: p.price, barcode: p.barcode, pageUrl: `${ORIGEN_SEO}${canonicalPath}`, existencias,
         categoria: cat && cat.active && cat.link_rewrite ? { name: cat.name, path: `/${cat.id}-${cat.link_rewrite}` } : null
       })
     }
