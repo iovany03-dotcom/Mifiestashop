@@ -14774,7 +14774,8 @@ function renderOdDetails(order, extra) {
           <b>Número de guía:</b>
           <input id="odTrackingInput" value="${escapeHtml(guia)}" placeholder="Captura la guía cuando se envíe" style="flex:1; min-width:180px; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12px;">
           <button class="btn small primary" onclick="saveOrderDetailExtras(true)">Guardar guía</button>
-        </div>` : ''}`;
+        </div>
+        ${odEvidenciaHtml(order)}` : ''}`;
     }
   }
 
@@ -14861,6 +14862,74 @@ function navigateOrderDetail(step) {
   if (next) openOrderDetailModal(next.id);
 }
 
+// Evidencia de envío: para pasar el pedido a Enviado o Entregado hace falta la guía, o el baucher de Uber / Lala,
+// o el ticket firmado por quien recibió con la foto de su identificación (api/pedido-admin.js lo exige).
+function odEvidenciaHtml(order) {
+  const liga = (u, t) => u && /^https:\/\//.test(u) ? `<a href="${escapeHtml(u)}" target="_blank" rel="noopener" style="color:var(--series-2);">${t}</a>` : '';
+  const tiene = order.evidenciaTipo === 'uber_lala' ? !!order.evidenciaUrl : order.evidenciaTipo === 'ticket_firmado' ? !!(order.evidenciaUrl && order.evidenciaIdUrl) : false;
+  const estado = String(order.trackingNumber || '').trim() ? '✅ Tiene guía de rastreo.'
+    : tiene ? '✅ Evidencia adjunta: ' + (order.evidenciaTipo === 'uber_lala' ? liga(order.evidenciaUrl, 'baucher de Uber / Lala') : liga(order.evidenciaUrl, 'ticket firmado') + ' · ' + liga(order.evidenciaIdUrl, 'identificación')) + ` <button class="btn small" onclick="odQuitarEvidencia()">Quitar</button>`
+    : '⚠️ Sin guía ni evidencia: no se podrá marcar como Enviado o Entregado.';
+  const inp = 'font-size:12px;';
+  return `
+    <div style="padding:10px 0; border-top:1px solid var(--border);">
+      <div style="font-weight:700; margin-bottom:6px;">Evidencia de envío o entrega</div>
+      <div id="odEvidenciaEstado" style="font-size:12.5px; margin-bottom:8px;">${estado}</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <select id="odEvidenciaTipo" onchange="odToggleEvidenciaId()" style="padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); ${inp}">
+          <option value="uber_lala">Baucher de Uber / Lala</option>
+          <option value="ticket_firmado">Ticket firmado por el cliente + identificación</option>
+        </select>
+      </div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px; align-items:flex-end;">
+        <label style="${inp} display:block;"><span id="odEvidenciaFotoLabel">Foto del baucher</span><br><input type="file" id="odEvidenciaFoto" accept="image/*"></label>
+        <label id="odEvidenciaIdWrap" class="hidden" style="${inp} display:block;">Foto de la identificación<br><input type="file" id="odEvidenciaIdFoto" accept="image/*"></label>
+        <button class="btn small primary" onclick="odGuardarEvidencia()">Guardar evidencia</button>
+      </div>
+    </div>`;
+}
+function odToggleEvidenciaId() {
+  const t = document.getElementById('odEvidenciaTipo').value;
+  document.getElementById('odEvidenciaIdWrap').classList.toggle('hidden', t !== 'ticket_firmado');
+  document.getElementById('odEvidenciaFotoLabel').textContent = t === 'ticket_firmado' ? 'Foto del ticket firmado de recibido' : 'Foto del baucher';
+}
+async function odSubirFotoEntrega(folio, file) {
+  if (!file || !/^image\//.test(file.type)) throw new Error('Elige una foto (imagen).');
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+  const azar = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => b.toString(16).padStart(2, '0')).join('');
+  const path = `entregas/${String(folio).replace(/[^A-Za-z0-9-]/g, '')}-${azar}.${ext}`;
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${path}`, {
+    method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type || 'image/jpeg' }, body: file
+  });
+  if (!r.ok) throw new Error('no se pudo subir la foto (' + r.status + ')');
+  return `${SUPABASE_URL}/storage/v1/object/public/assets/${path}`;
+}
+async function odGuardarEvidencia() {
+  const order = currentOrderObj;
+  if (!order || orderOrigen(order) !== 'online') return;
+  const tipo = document.getElementById('odEvidenciaTipo').value;
+  const foto = document.getElementById('odEvidenciaFoto').files[0];
+  const idFoto = document.getElementById('odEvidenciaIdFoto').files[0];
+  if (!foto) return alert(tipo === 'ticket_firmado' ? 'Adjunta la foto del ticket firmado de recibido.' : 'Adjunta la foto del baucher de Uber / Lala.');
+  if (tipo === 'ticket_firmado' && !idFoto) return alert('El ticket firmado necesita también la foto de la identificación de quien recibió.');
+  try {
+    const url = await odSubirFotoEntrega(order.id, foto);
+    const idUrl = tipo === 'ticket_firmado' ? await odSubirFotoEntrega(order.id, idFoto) : null;
+    await pedidoAdminRequest({ accion: 'evidencia', origen: 'online', folio: order.id, tipo, url, idUrl });
+    Object.assign(order, { evidenciaTipo: tipo, evidenciaUrl: url, evidenciaIdUrl: idUrl });
+    openOrderDetailModal(order.id);
+  } catch (e) { alert('No se pudo guardar la evidencia: ' + e.message); }
+}
+async function odQuitarEvidencia() {
+  const order = currentOrderObj;
+  if (!order || !confirm('¿Quitar la evidencia adjunta de este pedido?')) return;
+  try {
+    await pedidoAdminRequest({ accion: 'evidencia', origen: 'online', folio: order.id, quitar: true });
+    Object.assign(order, { evidenciaTipo: null, evidenciaUrl: null, evidenciaIdUrl: null });
+    openOrderDetailModal(order.id);
+  } catch (e) { alert(e.message); }
+}
+
 async function saveOrderDetailExtras(soloGuia) {
   const order = currentOrderObj;
   if (!order || orderOrigen(order) !== 'online') return;
@@ -14877,6 +14946,7 @@ async function saveOrderDetailExtras(soloGuia) {
     if (soloGuia) order.trackingNumber = body.trackingNumber;
     else { order.nota = body.nota; order.deliveryDate = body.deliveryDate; odText('odOrderNote', body.nota || '—'); renderOrdersTableRows(); }
     odText(soloGuia ? 'odContactNote' : 'odExtrasNote', soloGuia ? 'Guía guardada.' : 'Guardado.');
+    if (soloGuia) openOrderDetailModal(order.id);
     cargarHistorialPedido(order);
   } catch (e) {
     alert(e.message);
@@ -23461,6 +23531,12 @@ async function crearGuiaSkydropxReal() {
     SK_RATE_SEL = null; skMostrarTarifa();
     await cargarEnviosSkydropx();
     cargarSaldoSkydropx();
+    // La guía queda ligada al pedido: cuenta como evidencia de envío (api/pedido-admin.js).
+    if (!sh.error && (sh.trackingNumber || sh.id) && orderId !== '#General') {
+      const guiaPedido = sh.trackingNumber || `Skydropx ${sh.id}`;
+      try { await pedidoAdminRequest({ accion: 'datos', origen: 'online', folio: orderId, trackingNumber: guiaPedido }); const ped = loadedOrdersList.find(o => String(o.id) === orderId); if (ped) ped.trackingNumber = guiaPedido; }
+      catch (e) { console.warn('No se pudo guardar la guía en el pedido:', e.message); }
+    }
     if (sh.error) alert('Skydropx reportó un problema con la guía: ' + sh.error);
     else if (sh.labelUrl || sh.id) {
       alert(`Guía creada (${sh.carrier || r.carrier}) para ${orderId}. Rastreo: ${sh.trackingNumber || 'pendiente'}. Se descargará el PDF; si no, usa "Descargar PDF" en la tabla de envíos.`);

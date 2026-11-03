@@ -53,7 +53,7 @@ async function rpc(fn, params) {
 async function leerPedido(api, origen, folio) {
   try {
     const table = origen === 'online' ? 'pedidos_online' : 'pos_tickets';
-    const cols = origen === 'online' ? 'status,nota,delivery_date,tracking_number' : 'estado';
+    const cols = origen === 'online' ? 'status,nota,delivery_date,tracking_number,evidencia_tipo,evidencia_url,evidencia_id_url' : 'estado';
     const rows = await api(`${table}?folio=eq.${encodeURIComponent(folio)}&select=${cols}&limit=1`);
     return Array.isArray(rows) && rows[0] ? rows[0] : null;
   } catch (e) {
@@ -62,6 +62,19 @@ async function leerPedido(api, origen, folio) {
 }
 const estadoActual = (origen, row) => row ? (origen === 'online' ? (row.status || 'Pendiente') : (row.estado || 'Pago aceptado')) : null;
 const fmtFecha = v => (v ? String(v).slice(0, 10) : '—');
+
+// Para marcar un pedido como Enviado o Entregado hace falta una prueba: la guía de la paquetería, el baucher
+// del viaje de Uber / Lala Move, o el ticket firmado por quien recibió con la foto de su identificación.
+const ESTADOS_CON_EVIDENCIA = ['Enviado', 'Entregado'];
+const https = v => /^https:\/\/[^\s"'<>]+$/i.test(String(v || ''));
+function tieneEvidencia(p) {
+  if (!p) return false;
+  if (String(p.tracking_number || '').trim()) return true;
+  if (p.evidencia_tipo === 'uber_lala') return https(p.evidencia_url);
+  if (p.evidencia_tipo === 'ticket_firmado') return https(p.evidencia_url) && https(p.evidencia_id_url);
+  return false;
+}
+const MSG_EVIDENCIA = 'Para marcar el pedido como Enviado o Entregado primero genera la guía, o adjunta el baucher de Uber / Lala, o el ticket firmado por el cliente con su identificación (en el detalle del pedido, sección Envío).';
 
 async function setEstado(api, origen, folio, estado) {
   const f = encodeURIComponent(folio);
@@ -114,7 +127,14 @@ module.exports = async function handler(req, res) {
     if (accion === 'estado' || accion === 'cancelar') {
       const estado = accion === 'cancelar' ? 'Cancelado' : String(body.estado || '');
       if (!ESTADOS.includes(estado)) { res.status(400).json({ error: 'Estado no válido.' }); return; }
-      const de = estadoActual(origen, await leerPedido(api, origen, folio));
+      const previo = await leerPedido(api, origen, folio);
+      if (origen === 'online' && ESTADOS_CON_EVIDENCIA.includes(estado)) {
+        // Se lee aparte (sin tragarse el error): si no se puede verificar, no se deja pasar.
+        const filas = await api(`pedidos_online?folio=eq.${encodeURIComponent(folio)}&select=tracking_number,evidencia_tipo,evidencia_url,evidencia_id_url&limit=1`);
+        if (!Array.isArray(filas) || !filas[0]) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+        if (!tieneEvidencia(filas[0])) { res.status(409).json({ error: MSG_EVIDENCIA }); return; }
+      }
+      const de = estadoActual(origen, previo);
       if (!await setEstado(api, origen, folio, estado)) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
       const piezasRegresadas = estado === 'Cancelado' ? await regresarStock(api, folio, registradoPor || usuario) : 0;
       let historialRegistrado = true;
@@ -150,6 +170,30 @@ module.exports = async function handler(req, res) {
       if (patch.delivery_date !== undefined && fmtFecha(antes.delivery_date) !== fmtFecha(patch.delivery_date)) cambios.push(`Fecha de entrega: ${fmtFecha(antes.delivery_date)} → ${fmtFecha(patch.delivery_date)}`);
       if (patch.tracking_number !== undefined && (antes.tracking_number || null) !== patch.tracking_number) cambios.push(`Guía de rastreo: ${antes.tracking_number || '—'} → ${patch.tracking_number || '—'}`);
       const historialRegistrado = await historial.registrar(serviceRoleKey, cambios.map(detalle => ({ folio, origen, accion: 'datos', detalle, usuario })));
+      res.status(200).json({ ok: true, historialRegistrado });
+      return;
+    }
+
+    // Evidencia de envío/entrega: baucher de Uber / Lala, o ticket firmado + identificación (fotos ya subidas
+    // a assets/entregas/). La guía no se sube aquí: es el número de rastreo (acción "datos").
+    //   { tipo: 'uber_lala'|'ticket_firmado', url, idUrl? } | { quitar: true }
+    if (accion === 'evidencia') {
+      if (origen !== 'online') { res.status(400).json({ error: 'Solo los pedidos de la tienda en línea o manuales llevan evidencia de envío.' }); return; }
+      const prefijo = `${SUPABASE_URL}/storage/v1/object/public/assets/entregas/`;
+      let patch;
+      if (body.quitar === true) patch = { evidencia_tipo: null, evidencia_url: null, evidencia_id_url: null, evidencia_por: null, evidencia_at: null };
+      else {
+        const tipo = String(body.tipo || '');
+        const url = String(body.url || ''), idUrl = String(body.idUrl || '');
+        if (!['uber_lala', 'ticket_firmado'].includes(tipo)) { res.status(400).json({ error: 'Tipo de evidencia no válido.' }); return; }
+        if (!url.startsWith(prefijo) || !https(url)) { res.status(400).json({ error: 'Falta la foto del baucher o del ticket firmado.' }); return; }
+        if (tipo === 'ticket_firmado' && (!idUrl.startsWith(prefijo) || !https(idUrl))) { res.status(400).json({ error: 'El ticket firmado necesita también la foto de la identificación de quien recibió.' }); return; }
+        patch = { evidencia_tipo: tipo, evidencia_url: url, evidencia_id_url: tipo === 'ticket_firmado' ? idUrl : null, evidencia_por: usuario, evidencia_at: new Date().toISOString() };
+      }
+      const rows = await api(`pedidos_online?folio=eq.${encodeURIComponent(folio)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(patch) });
+      if (!Array.isArray(rows) || rows.length === 0) { res.status(404).json({ error: 'Pedido no encontrado.' }); return; }
+      const historialRegistrado = await historial.registrar(serviceRoleKey, { folio, origen, accion: 'evidencia', usuario,
+        detalle: body.quitar === true ? 'Se quitó la evidencia de envío' : `Evidencia de envío adjunta: ${patch.evidencia_tipo === 'uber_lala' ? 'baucher de Uber / Lala' : 'ticket firmado con identificación'}` });
       res.status(200).json({ ok: true, historialRegistrado });
       return;
     }
