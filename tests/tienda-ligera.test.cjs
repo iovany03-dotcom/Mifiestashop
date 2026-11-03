@@ -62,6 +62,12 @@ test('inicio, producto y categoría salen ligeros, con un solo H1 y el código a
         assert.match(html, /Mayoreo: \$7\.00 c\/u desde 12 piezas/);
         assert.ok(!html.includes('alert(1)'), 'la descripción va sin scripts');
         assert.match(html, /class="store-container" id="storefrontProductPage"/);
+        // Datos para Google: política de devoluciones publicada, existencias y sin envío gratis abajo de $1,500.
+        const ld = JSON.parse(html.match(/<script id="ldJsonProduct"[^>]*>([^<]*)<\/script>/)[1]);
+        const prod = ld['@graph'].find(x => x['@type'] === 'Product');
+        assert.equal(prod.offers.hasMerchantReturnPolicy.merchantReturnDays, 3);
+        assert.equal(prod.offers.availability, 'https://schema.org/InStock');
+        assert.equal(prod.offers.shippingDetails, undefined);
       }
       if (tipo === 'categoria') {
         assert.match(html, /<h1 id="catalogSearchTitle" class="catalog-search-title">Fiesta Mexicana<\/h1>/);
