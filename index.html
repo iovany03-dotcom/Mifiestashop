@@ -6302,6 +6302,12 @@
       <div style="display:flex; justify-content:space-between;"><span>+ Ventas en efectivo:</span><b id="cerrarCajaVentas" style="color:var(--text-primary);">$0.00</b></div>
       <div style="display:flex; justify-content:space-between;"><span>− Salidas de caja:</span><b id="cerrarCajaSalidas" style="color:var(--text-primary);">$0.00</b></div>
       <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:6px; font-size:14px;"><span><b>= Esperado en caja:</b></span><b id="cerrarCajaEsperado" style="color:var(--text-primary);">$0.00</b></div>
+      <div style="border-top:1px solid var(--border); margin-top:4px; padding-top:8px; font-size:12px;">
+        <div style="font-weight:700; margin-bottom:4px;">Otros cobros desde la apertura (no son efectivo: no entran al esperado)</div>
+        <div style="display:flex; justify-content:space-between;"><span>Ventas con tarjeta <span id="cerrarCajaTarjetaN"></span>:</span><b id="cerrarCajaTarjeta" style="color:var(--text-primary);">$0.00</b></div>
+        <div style="display:flex; justify-content:space-between;"><span>Ventas por transferencia <span id="cerrarCajaTransferN"></span>:</span><b id="cerrarCajaTransfer" style="color:var(--text-primary);">$0.00</b></div>
+        <div id="cerrarCajaSalidasN" style="color:var(--text-muted); margin-top:4px;"></div>
+      </div>
     </div>
     <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:4px;">Monto contado en caja ($):</label>
     <input type="number" id="cerrarCajaContado" placeholder="0.00" min="0" step="0.01" oninput="updateCerrarCajaDiferencia()" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px; margin-bottom:10px;">
@@ -9306,25 +9312,39 @@ async function confirmAbrirCaja() {
 async function openCerrarCajaModal() {
   if (!cajaActual) { alert('No hay una caja abierta en esta sucursal.'); return; }
 
-  const [ticketRows, salidaRows] = await Promise.all([
-    sbRpc('rpc_pos_ticket_list', getSessionCredsParams()).catch(() => []),
-    sbRpc('rpc_salida_list', getSessionCredsParams()).catch(() => [])
-  ]);
   const almacen = cajaActual.almacen;
   const desde = cajaActual.fecha_apertura;
-
-  const ventasEfectivo = (Array.isArray(ticketRows) ? ticketRows : [])
-    .filter(t => t.almacen === almacen && t.metodo === 'cash' && t.created_at >= desde)
-    .reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
-  const salidas = (Array.isArray(salidaRows) ? salidaRows : [])
-    .filter(s => s.almacen === almacen && s.created_at >= desde)
-    .reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
+  // El resumen se calcula en la base de datos: la lista de tickets solo trae los últimos 200 de todas las sucursales,
+  // y una caja abierta varios días perdía ventas (efectivo, tarjeta y transferencia) y salidas.
+  let resumen = null;
+  try { resumen = await sbRpc('rpc_caja_resumen', { ...getSessionCredsParams(), p_almacen: almacen, p_desde: desde }); } catch (e) { resumen = null; }
+  let ventasEfectivo, salidas, tarjeta = null, transfer = null, nTar = null, nTra = null, nSal = null;
+  if (resumen && typeof resumen === 'object') {
+    ventasEfectivo = Number(resumen.efectivo) || 0; salidas = Number(resumen.salidas) || 0;
+    tarjeta = Number(resumen.tarjeta) || 0; transfer = Number(resumen.transferencia) || 0;
+    nTar = resumen.tickets_tarjeta; nTra = resumen.tickets_transferencia; nSal = resumen.num_salidas;
+  } else {
+    // Respaldo (sin la función nueva): solo con los tickets recientes, puede quedarse corto.
+    const [ticketRows, salidaRows] = await Promise.all([
+      sbRpc('rpc_pos_ticket_list', getSessionCredsParams()).catch(() => []),
+      sbRpc('rpc_salida_list', getSessionCredsParams()).catch(() => [])
+    ]);
+    const tk = (Array.isArray(ticketRows) ? ticketRows : []).filter(t => t.almacen === almacen && t.created_at >= desde && t.estado !== 'Cancelado');
+    const suma = m => tk.filter(t => t.metodo === m).reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+    ventasEfectivo = suma('cash'); tarjeta = suma('card'); transfer = suma('transfer');
+    salidas = (Array.isArray(salidaRows) ? salidaRows : []).filter(s => s.almacen === almacen && s.created_at >= desde).reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
+  }
   const esperado = (parseFloat(cajaActual.monto_apertura) || 0) + ventasEfectivo - salidas;
 
   document.getElementById('cerrarCajaApertura').textContent = fmtMoney(cajaActual.monto_apertura);
   document.getElementById('cerrarCajaVentas').textContent = fmtMoney(ventasEfectivo);
   document.getElementById('cerrarCajaSalidas').textContent = fmtMoney(salidas);
   document.getElementById('cerrarCajaEsperado').textContent = fmtMoney(esperado);
+  document.getElementById('cerrarCajaTarjeta').textContent = fmtMoney(tarjeta || 0);
+  document.getElementById('cerrarCajaTransfer').textContent = fmtMoney(transfer || 0);
+  document.getElementById('cerrarCajaTarjetaN').textContent = nTar != null ? `(${nTar} tickets)` : '';
+  document.getElementById('cerrarCajaTransferN').textContent = nTra != null ? `(${nTra} tickets)` : '';
+  document.getElementById('cerrarCajaSalidasN').textContent = nSal != null ? (nSal > 0 ? `Salidas registradas desde la apertura: ${nSal}.` : 'No hay salidas de caja registradas en esta sucursal desde la apertura.') : '';
   document.getElementById('cerrarCajaContado').value = '';
   document.getElementById('cerrarCajaNotas').value = '';
   document.getElementById('cerrarCajaDiferenciaBox').classList.add('hidden');
