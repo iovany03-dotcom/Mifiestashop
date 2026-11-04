@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const select = 'folio,created_at,customer_name,customer_email,customer_phone,shipping_address,billing_address,bodega,nota,delivery_date,payment_method,shipping_carrier,shipping_cost,items,subtotal,discount_amount,discount_label,total,status,created_by,source,tracking_number,comprobante_url,mp_payment_id,mp_status,mp_status_detail,paid_at';
+    const select = 'folio,created_at,customer_name,customer_email,customer_phone,shipping_address,billing_address,bodega,nota,delivery_date,payment_method,shipping_carrier,shipping_cost,items,subtotal,discount_amount,discount_label,total,status,created_by,source,tracking_number,evidencia_tipo,evidencia_url,evidencia_id_url,comprobante_url,mp_payment_id,mp_status,mp_status_detail,paid_at';
     const url = `${SUPABASE_URL}/rest/v1/pedidos_online?select=${select}&order=created_at.desc&limit=1000`;
     const r = await fetch(url, {
       headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
@@ -58,6 +58,9 @@ module.exports = async function handler(req, res) {
       shippingCarrier: o.shipping_carrier || null,
       shippingCost: o.shipping_cost != null ? parseFloat(o.shipping_cost) : 0,
       trackingNumber: o.tracking_number || null,
+      evidenciaTipo: o.evidencia_tipo || null,
+      evidenciaUrl: o.evidencia_url || null,
+      evidenciaIdUrl: o.evidencia_id_url || null,
       comprobanteUrl: o.comprobante_url || null,
       mpPaymentId: o.mp_payment_id || null,
       mpStatus: o.mp_status || null,
