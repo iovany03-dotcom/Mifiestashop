@@ -5,12 +5,16 @@ const {designNeonPage}=require('./neon-page.cjs');
 const { modelFor, esc } = require('./cms-content.cjs');
 const { xvGalleryHtml } = require('./xv-gallery.cjs');
 const { usesBatucadaPackages, batucadaPricingHtml, HEADING } = require('./batucada-packages.cjs');
+const { HUB_ID, CONSOLIDAR, designPueblaHub } = require('./puebla-hub.cjs');
 const REVIEWS_MORE_URL={cdmx:'https://maps.app.goo.gl/t9gun227wXwa26Ff6',queretaro:'https://maps.app.goo.gl/ZKjUHHA1SSNaemxv8',puebla:'https://maps.app.goo.gl/Bs3YzM5CA2e39Guw9'};
 const root = path.resolve(__dirname, '..');
 const pages = require('../data/cms-pages.json');
 const origin = 'https://www.mifiestashop.com';
 const models = pages.map(page => modelFor(page, pages));
 const output = path.join(root, 'cms-pages');
+// Páginas repetidas que se mandan (301) a otra (ver scripts/puebla-hub.cjs).
+const pathDe = id => { const m = models.find(q => q.id === Number(id)); if (!m) throw new Error(`No existe la página CMS ${id}`); return m.sourcePath; };
+const consolidada = id => Object.prototype.hasOwnProperty.call(CONSOLIDAR, id);
 fs.mkdirSync(output, { recursive: true });
 const logo = '/img/cms/logo.webp';
 const header = fs.readFileSync(path.join(__dirname,'cms-header.html'),'utf8');
@@ -42,7 +46,7 @@ function render(page) {
   const organizer = usesBatucadaPackages(p);
   const shopLink = '/?buscar=' + encodeURIComponent(t.query);
   const informational = p.theme === 'informacion';
-  const related = [...new Map(models.filter(q => q.theme === p.theme && q.id !== p.id && q.slug !== p.slug && !q.sourceWasEmpty).map(q=>[q.slug,q])).values()].slice(0,4);
+  const related = [...new Map(models.filter(q => q.theme === p.theme && q.id !== p.id && q.slug !== p.slug && !q.sourceWasEmpty && !consolidada(q.id)).map(q=>[q.slug,q])).values()].slice(0,4);
   const schema = {'@context':'https://schema.org','@type':'WebPage', name:p.title, description:p.description, url:origin + p.sourcePath};
   // No organization-wide list of addresses is injected into CMS pages.
   if (p.location?.address) schema.contentLocation = {'@type':'Place', name:`Mi Fiesta Shop ${p.location.name}`, address:p.location.address};
@@ -69,7 +73,7 @@ ${!informational && t.tags.length ? `<section class="cms-categories wrap" aria-l
 ${!informational ? `<section class="catalog-section" id="productos"><div class="wrap"><div class="section-heading store-section-title"><div><h2>${esc(t.label)} para tu celebración</h2><p>Encuentra las opciones que van con tu estilo.</p></div><a class="text-link" href="${shopLink}">Ver catálogo</a></div><div class="store-prods-grid" id="cms-products" aria-live="polite" data-terms="${esc(JSON.stringify(t.terms))}"><p class="catalog-status">Cargando productos…</p></div><noscript><p><a href="${shopLink}">Consulta los productos en nuestra tienda.</a></p></noscript></div></section>` : ''}
 ${p.vip ? vipHtml(p) : (informational && p.content.trim()) ? `<article class="source-content wrap information-content" aria-label="Información de ${esc(p.title)}">${p.content}</article>` : ''}
 ${p.reviews.length ? `<section class="reviews wrap"><div class="section-heading"><div><h2>Así celebran nuestros clientes</h2><p>Experiencias compartidas con Mi Fiesta Shop.</p></div>${p.location?.url ? `<a class="text-link" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Ver más reseñas en Google →</a>` : ''}</div>${['boda','batucada'].includes(p.theme) ? galleryHtml() : ''}<div class="review-grid" id="cms-reviews-grid">${p.reviews.map(r=>`<figure class="review-card"><figcaption class="review-author"><span class="review-avatar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8.5" r="3.5" fill="currentColor"/><path d="M4.5 20c0-4.2 3.4-7 7.5-7s7.5 2.8 7.5 7" fill="currentColor"/></svg></span><span><strong>${esc(r.name)}</strong><span class="review-source">Opinión compartida con Mi Fiesta Shop</span></span></figcaption><blockquote>${esc(r.quote)}</blockquote></figure>`).join('')}</div><div class="reviews-more" style="display:flex;justify-content:center;margin-top:28px"><a class="button primary" href="${REVIEWS_MORE_URL[p.location?.city] || REVIEWS_MORE_URL.cdmx}" target="_blank" rel="noopener noreferrer">Ver más opiniones</a></div></section>` : ''}
-${p.location && !p.location.multiple ? `<section class="location-section wrap" id="ubicacion"><div><p class="section-kicker">Te esperamos</p><h2>${p.location.name ? `Visítanos en ${esc(p.location.name)}` : 'Visita nuestra tienda'}</h2>${p.location.address ? `<address>${esc(p.location.address)}</address>` : ''}${p.location.phone ? `<a class="phone" href="tel:${esc(p.location.phone)}">${esc(p.location.phone)}</a>` : ''}</div><a class="button primary" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></section>` : ''}
+${p.location && !p.location.multiple ? `<section class="location-section wrap" id="ubicacion"><div><p class="section-kicker">Te esperamos</p><h2>${p.location.name ? `Visítanos en ${esc(p.location.name)}` : 'Visita nuestra tienda'}</h2>${p.location.address ? `<address>${esc(p.location.address)}</address>` : ''}${p.location.phone ? `<a class="phone" href="tel:${esc(p.location.phone)}">${esc(p.location.phone)}</a>` : ''}${p.location.city === 'puebla' && p.id !== HUB_ID ? `<p><a class="text-link" href="${esc(pathDe(HUB_ID))}">Conoce nuestra tienda de artículos para fiesta en Puebla →</a></p>` : ''}</div><a class="button primary" href="${esc(p.location.url)}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></section>` : ''}
 <section class="cms-promotions wrap" id="promociones" aria-labelledby="promotions-title"><div class="store-section-title"><h2 id="promotions-title">${organizer ? HEADING : 'Promociones'+(!informational ? ' de '+esc(t.label.toLocaleLowerCase('es')) : '')}</h2><a href="/?vista=promos">Ver promociones y cupones →</a></div>${organizer ? batucadaPricingHtml() : t.promoPackages ? `<div id="cms-promo-pricing" class="promo-pricing-grid" data-packages="${esc(JSON.stringify(t.promoPackages))}" aria-live="polite"></div>` : `<div id="cms-promo-products" class="store-prods-grid" data-terms="${esc(JSON.stringify(t.terms))}"></div>`}</section>
 ${faqHtml(p)}
 ${p.theme === 'xv' ? xvGalleryHtml() : ''}
@@ -80,6 +84,7 @@ const runtime = [];
 for (const model of models) {
   let html = render(model);
   if(model.id===410)html=designNeonPage(html,model);
+  if(model.id===HUB_ID)html=designPueblaHub(html,model,pathDe);
   // Revision URLs prevent cached pre-migration JS/CSS from keeping old cards alive.
   html=html.replace(/(src|href)="(\/assets\/[^"?]+\.(?:js|css))"/g,(_,attr,url)=>{
     const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,url))).digest('hex').slice(0,12);
@@ -96,7 +101,7 @@ fs.writeFileSync(path.join(root,'data','cms-runtime.json'), JSON.stringify(runti
 // Root and /pagina aliases keep existing Vercel links working and select the first source ID,
 // matching the previous API's deterministic behavior. Never normalize the source slug.
 const manifest = models.map(p => ({id:p.id,title:p.title,slug:p.slug,path:p.sourcePath,theme:p.theme,inFooter:p.inFooter,categoryId:p.categoryId,categoryName:p.categoryName,
-  sourceStatus:p.sourceStatus,sourceWasEmpty:p.sourceWasEmpty,location:p.location}));
+  sourceStatus:p.sourceStatus,sourceWasEmpty:p.sourceWasEmpty,location:p.location,...(consolidada(p.id) ? {redirectTo:pathDe(CONSOLIDAR[p.id])} : {})}));
 fs.writeFileSync(path.join(root,'data','cms-manifest.json'), JSON.stringify(manifest,null,2)+'\n');
 const config = JSON.parse(fs.readFileSync(path.join(root,'vercel.json')));
 const generated = [];
@@ -110,8 +115,28 @@ for (const p of models) {
   }
 }
 const generatedPaths = new Set(generated.map(r=>r.source));
-const kept = config.rewrites.filter(r=>!generatedPaths.has(r.source) && !r.destination.startsWith('/cms-pages/'));
-config.rewrites = [...generated, ...kept];
+// Las demás reglas se quedan donde estaban (antes o después del bloque de páginas CMS).
+const esCms = r => generatedPaths.has(r.source) || r.destination.startsWith('/cms-pages/');
+const primera = config.rewrites.findIndex(esCms);
+const antes = primera < 0 ? [] : config.rewrites.slice(0, primera).filter(r => !esCms(r));
+const despues = config.rewrites.slice(Math.max(primera, 0)).filter(r => !esCms(r));
+config.rewrites = [...antes, ...generated, ...despues];
+// 301 de las páginas consolidadas (y de sus ligas cortas /slug y /pagina/slug cuando la primera
+// página con ese slug es la consolidada). Los redirects de vercel.json van antes que los rewrites.
+const consolidadas = [];
+const primeraDelSlug = new Map();
+for (const p of models) if (!primeraDelSlug.has(p.slug)) primeraDelSlug.set(p.slug, p.id);
+for (const p of models) {
+  if (!consolidada(p.id)) continue;
+  const destination = pathDe(CONSOLIDAR[p.id]);
+  if (consolidada(CONSOLIDAR[p.id])) throw new Error(`La página ${p.id} manda a otra que también se consolida`);
+  consolidadas.push({source:p.sourcePath,destination,permanent:true});
+  if (primeraDelSlug.get(p.slug) === p.id) consolidadas.push({source:`/${p.slug}`,destination,permanent:true},{source:`/pagina/${p.slug}`,destination,permanent:true});
+}
+const fuentes = new Set(consolidadas.map(r=>r.source));
+const iRed = config.redirects.findIndex(r=>fuentes.has(r.source));
+const otros = config.redirects.filter(r=>!fuentes.has(r.source));
+config.redirects = iRed < 0 ? [...otros, ...consolidadas] : [...otros.slice(0, iRed), ...consolidadas, ...otros.slice(iRed)];
 fs.writeFileSync(path.join(root,'vercel.json'), JSON.stringify(config,null,2)+'\n');
 console.log(`Built ${models.length} CMS pages; ${seen.size} exact slugs; ${generated.length} routes.`);
 console.log(`Locations: ${models.filter(p=>p.location).length}; corrected city mismatches: ${models.filter(p=>p.location?.corrected).length}.`);

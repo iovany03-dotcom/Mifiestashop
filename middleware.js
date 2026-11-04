@@ -453,7 +453,7 @@ export default async function middleware(request) {
         const exactos = new Set(cmsManifest.map(p => p.path).concat(['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos']));
         if (!exactos.has(path)) {
           const cms = cmsManifest.filter(p => p.slug === slug).sort((a, b) => a.id - b.id)[0];
-          if (cms) return redirectTo(url, cms.path);
+          if (cms) return redirectTo(url, cms.redirectTo || cms.path); // consolidada: directo a la que se quedó
         }
       } catch (e) { /* si algo falla, sigue el flujo normal */ }
     }

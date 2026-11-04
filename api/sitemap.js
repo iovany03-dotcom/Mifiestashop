@@ -15,7 +15,8 @@ module.exports = async function handler(req, res) {
   // menor id (vercel.json) y no van al sitemap.
   const menorId = new Map();
   cmsPages.forEach(p => { const id = Number(p.id); if (!menorId.has(p.slug) || id < menorId.get(p.slug)) menorId.set(p.slug, id); });
-  cmsPages.filter(p => Number(p.id) === menorId.get(p.slug)).forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
+  // Las consolidadas (redirectTo, ver scripts/puebla-hub.cjs) tampoco: ya mandan (301) a otra.
+  cmsPages.filter(p => Number(p.id) === menorId.get(p.slug) && !p.redirectTo).forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
   // Mayoristas y Contacto: mismas ligas que en PrestaShop.
   ['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos']
     .forEach(path => urls.push({ loc: `${siteOrigin}${path}`, priority: '0.7' }));

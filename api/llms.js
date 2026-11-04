@@ -38,7 +38,7 @@ async function generar() {
 ## Sucursales
 
 - CDMX: Rumania 613, Col. Portales, Benito Juárez, Ciudad de México
-- Puebla: C. 35 Sur 2901, Sta. Cruz Los Ángeles, Puebla
+- Puebla: C. 35 Sur 2901, col. Santa Cruz Los Ángeles, C.P. 72400, Puebla, Pue. Tel. 222 983 6256. Página de la tienda: ${ORIGEN}/content/324-tienda-de-articulos-para-fiesta-puebla (batucada, mayoreo, boda, XV años y neón en Puebla)
 - Querétaro: C. Gral. Lázaro Cárdenas 67, Casa Blanca, Querétaro
 - También se puede recoger el pedido en sucursal sin costo de envío.
 

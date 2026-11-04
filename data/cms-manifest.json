@@ -375,7 +375,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 287,
@@ -482,21 +483,7 @@
     "categoryName": "PUBLICIDAD FACEBOOK",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
-    "location": {
-      "city": "cdmx",
-      "name": "CDMX",
-      "address": "Rumania 613, Col. Portales, Benito Juárez",
-      "url": "https://goo.gl/maps/oQPABhGofckY9knv6",
-      "phone": "5559250750",
-      "corrected": false,
-      "evidence": {
-        "sourceHadLocation": true,
-        "originalMaps": [
-          "https://goo.gl/maps/oQPABhGofckY9knv6"
-        ],
-        "verifiedStorePage": 279
-      }
-    }
+    "location": null
   },
   {
     "id": 292,
@@ -764,7 +751,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 305,
@@ -791,7 +779,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 306,
@@ -1007,7 +996,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/289-articulos-para-batucada-en-puebla"
   },
   {
     "id": 314,
@@ -1250,7 +1240,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 323,
@@ -1278,7 +1269,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 324,
@@ -1332,7 +1324,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 326,
@@ -1359,7 +1352,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 327,
@@ -1386,7 +1380,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 328,
@@ -1413,7 +1408,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 329,
@@ -1987,7 +1983,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla"
   },
   {
     "id": 357,
@@ -2014,7 +2011,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 358,
@@ -2068,7 +2066,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/282-articulos-para-boda-en-puebla"
   },
   {
     "id": 360,
@@ -2095,7 +2094,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/289-articulos-para-batucada-en-puebla"
   },
   {
     "id": 361,
@@ -2122,7 +2122,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 362,
@@ -2149,7 +2150,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 363,
@@ -2494,7 +2496,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 382,
@@ -2548,7 +2551,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla"
   },
   {
     "id": 384,
@@ -2575,7 +2579,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 385,
@@ -2588,7 +2593,8 @@
     "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": false,
-    "location": null
+    "location": null,
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 386,
@@ -2615,7 +2621,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 387,
@@ -2669,7 +2676,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 389,
@@ -2696,7 +2704,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/300-accesorios-de-neon-para-fiestas-puebla"
   },
   {
     "id": 390,
@@ -2858,7 +2867,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 396,
@@ -2885,7 +2895,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 397,
@@ -2912,7 +2923,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 398,
@@ -2939,7 +2951,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/405-articulos-para-fiesta-por-mayoreo-puebla"
   },
   {
     "id": 399,
@@ -2966,7 +2979,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 400,
@@ -3020,7 +3034,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/405-articulos-para-fiesta-por-mayoreo-puebla"
   },
   {
     "id": 402,
@@ -3047,7 +3062,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/324-tienda-de-articulos-para-fiesta-puebla"
   },
   {
     "id": 403,
@@ -3060,7 +3076,8 @@
     "categoryName": "PUBLICIDAD GOOGLE ADS",
     "sourceStatus": 200,
     "sourceWasEmpty": true,
-    "location": null
+    "location": null,
+    "redirectTo": "/content/405-articulos-para-fiesta-por-mayoreo-puebla"
   },
   {
     "id": 404,
@@ -3087,7 +3104,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/405-articulos-para-fiesta-por-mayoreo-puebla"
   },
   {
     "id": 405,
@@ -3141,7 +3159,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/289-articulos-para-batucada-en-puebla"
   },
   {
     "id": 407,
@@ -3168,7 +3187,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/289-articulos-para-batucada-en-puebla"
   },
   {
     "id": 408,
@@ -3195,7 +3215,8 @@
         ],
         "verifiedStorePage": 282
       }
-    }
+    },
+    "redirectTo": "/content/282-articulos-para-boda-en-puebla"
   },
   {
     "id": 409,
