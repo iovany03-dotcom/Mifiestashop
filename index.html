@@ -2951,6 +2951,7 @@
             <button class="btn small primary" id="btnToggleCaja" data-view="caja-cerrar" onclick="openAbrirCajaModal()">Abrir Caja</button>
             <button class="btn small danger" id="btnCerrarCaja" data-view="caja-cerrar" onclick="openCerrarCajaModal()" style="display:none;">Cerrar Caja</button>
             <button class="btn small" data-view="caja-salidas" onclick="openSalidasCajaModal()">Salidas de Caja</button>
+            <button class="btn small" id="btnResumenDia" data-view="caja-historial-cierres" onclick="descargarResumenDia()">Descargar resumen del día</button>
             <button class="btn small" data-view="caja-historial-tickets" onclick="openTicketHistorialModal()">Historial de Tickets</button>
             <button class="btn small" data-view="caja-historial-cierres" onclick="openCajaHistorialModal()">Historial de Cierres de Caja</button>
             <button class="btn small" data-view="configuracion" onclick="openTicketConfigModal()">Configurar Ticket</button>
@@ -8703,6 +8704,80 @@ function loadJsPdf() {
     });
   }
   return jsPdfLoading;
+}
+
+// ================= RESUMEN DEL DÍA (PDF): ventas, salidas y caja chica =================
+async function descargarResumenDia() {
+  const btn = document.getElementById('btnResumenDia');
+  const etiqueta = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Generando…'; }
+  try {
+    const almacen = currentCajaAlmacen();
+    const dia = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Mexico_City' });
+    const [JsPDF, r] = await Promise.all([
+      loadJsPdf(),
+      sbRpc('rpc_resumen_dia', { ...getSessionCredsParams(), p_almacen: almacen, p_dia: dia })
+    ]);
+    if (!r || typeof r !== 'object') throw new Error('No se pudo leer el resumen.');
+    const tickets = Array.isArray(r.tickets) ? r.tickets : [], salidas = Array.isArray(r.salidas) ? r.salidas : [];
+    const m = v => '$' + (Number(v) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const porMetodo = k => tickets.filter(t => t.metodo === k);
+    const suma = arr => arr.reduce((s, t) => s + (Number(t.total) || 0), 0);
+    const efectivo = porMetodo('cash'), tarjeta = porMetodo('card'), transf = porMetodo('transfer');
+    const totalSalidas = salidas.reduce((s, x) => s + (Number(x.monto) || 0), 0);
+
+    const doc = new JsPDF({ unit: 'mm', format: 'letter' });
+    const L = 15, W = 186;
+    let y = 18;
+    const salto = (alto = 6) => { if (y + alto > 270) { doc.addPage(); y = 18; } };
+    const linea = (txt, der, { bold = false, size = 10 } = {}) => { salto(); doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.text(String(txt), L, y); if (der !== undefined) doc.text(String(der), L + W, y, { align: 'right' }); y += size > 11 ? 7 : 5.5; };
+    const titulo = txt => { salto(12); y += 3; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(txt, L, y); y += 2; doc.setDrawColor(200); doc.line(L, y, L + W, y); y += 5.5; };
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Mi Fiestashop — Resumen del día', L, y); y += 7;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+    doc.text(`Sucursal: ${almacen}`, L, y); y += 5;
+    doc.text(`Fecha: ${dia}   ·   Generado: ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}   ·   Por: ${nombreSesionActual()}`, L, y); y += 3;
+
+    titulo('Ventas del día');
+    linea(`Efectivo (${efectivo.length} tickets)`, m(suma(efectivo)));
+    linea(`Tarjeta (${tarjeta.length} tickets)`, m(suma(tarjeta)));
+    linea(`Transferencia (${transf.length} tickets)`, m(suma(transf)));
+    linea(`Total vendido (${tickets.length} tickets)`, m(suma(tickets)), { bold: true });
+    if (tickets.length) {
+      y += 2; salto(); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+      doc.text('Folio', L, y); doc.text('Hora', L + 62, y); doc.text('Pago', L + 82, y); doc.text('Cajero', L + 108, y); doc.text('Total', L + W, y, { align: 'right' }); y += 5;
+      const nombreMetodo = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia' };
+      tickets.forEach(t => {
+        salto(); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        doc.text(String(t.folio || ''), L, y); doc.text(String(t.hora || ''), L + 62, y); doc.text(nombreMetodo[t.metodo] || String(t.metodo || ''), L + 82, y);
+        doc.text(String(t.por || '').slice(0, 28), L + 108, y); doc.text(m(t.total), L + W, y, { align: 'right' }); y += 4.6;
+      });
+      y += 1;
+    }
+
+    titulo('Salidas de caja del día');
+    if (!salidas.length) linea('Sin salidas de caja registradas hoy.');
+    salidas.forEach(s => linea(`${s.hora || ''}  ${String(s.concepto || '').slice(0, 70)}${s.por ? '  (' + String(s.por).slice(0, 24) + ')' : ''}`, m(s.monto)));
+    if (salidas.length) linea('Total de salidas', m(totalSalidas), { bold: true });
+
+    titulo('Caja chica y efectivo en caja');
+    if (r.caja) {
+      const c = r.caja;
+      const queda = (Number(c.apertura) || 0) + (Number(c.efectivo_desde_apertura) || 0) - (Number(c.salidas_desde_apertura) || 0);
+      linea(`Caja chica con la que abrió la caja (${c.fecha_apertura}${c.abierto_por ? ', ' + c.abierto_por : ''})`, m(c.apertura));
+      linea('+ Ventas en efectivo desde la apertura', m(c.efectivo_desde_apertura));
+      linea('− Salidas de caja desde la apertura', m(c.salidas_desde_apertura));
+      linea('= Efectivo que debe quedar en caja ahora', m(queda), { bold: true });
+    } else {
+      linea('No hay una caja abierta en esta sucursal.');
+    }
+    linea(`Efectivo neto del día (ventas en efectivo − salidas)`, m(suma(efectivo) - totalSalidas));
+    doc.save(`resumen-del-dia-${dia}-${almacen.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '')}.pdf`);
+  } catch (e) {
+    alert('No se pudo generar el resumen del día: ' + (e && e.message ? e.message : e));
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = etiqueta; }
+  }
 }
 
 async function generateQuotePdf() {
