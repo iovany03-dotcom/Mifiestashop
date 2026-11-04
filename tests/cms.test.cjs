@@ -5,6 +5,7 @@ const source=require('../data/cms-pages.json'),manifest=require('../data/cms-man
 const config=require('../vercel.json');
 const {modelFor,sanitize,locationLinks,cityOf}=require('../scripts/cms-content.cjs');
 const handler=require('../api/paginas.js');
+const hub=require('../scripts/puebla-hub.cjs');
 function response(){return {code:0,data:null,headers:{},setHeader(k,v){this.headers[k]=v},status(code){this.code=code;return this},json(data){this.data=data;return this},send(data){this.data=data;return this}};}
 test('every source page has its exact title, slug, original path and static metadata',()=>{
   assert.equal(source.length,139);assert.equal(manifest.length,source.length);
@@ -13,7 +14,8 @@ test('every source page has its exact title, slug, original path and static meta
     assert.equal(m.path,`/content/${page.id}-${page.slug}`);
     const route=config.rewrites.find(r=>r.source===m.path);assert.ok(route,m.path);
     const $=cheerio.load(fs.readFileSync(path.join(root,route.destination),'utf8'));
-    assert.equal($('h1').length,1,m.path);assert.equal($('h1').text(),page.id===410?page.title.replace(/_+$/,''):page.title);
+    assert.equal($('h1').length,1,m.path);if(page.id===hub.HUB_ID){assert.equal($('h1').text(),'Tienda de artículos para fiesta en Puebla');assert.equal($('title').text(),hub.TITLE);continue;}
+    assert.equal($('h1').text(),page.id===410?page.title.replace(/_+$/,''):page.title);
     assert.equal($('link[rel=canonical]').attr('href'),'https://www.mifiestashop.com'+m.path);
     assert.equal($('title').text(),page.title+' | Mi Fiestashop');
     assert.equal($('meta[name=description]').length,1);
@@ -74,7 +76,7 @@ test('only Facebook and Google pages are migrated; VIP forms keep their original
 });
 test('sitemap includes the original CMS paths, except duplicates that redirect to the lowest id of the same slug',async()=>{
   const previousFetch=global.fetch;global.fetch=async()=>({ok:true,json:async()=>[]});
-  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'www.mifiestashop.com'}},res);assert.equal(res.code,200);const menor=new Map();source.forEach(p=>{if(!menor.has(p.slug)||p.id<menor.get(p.slug))menor.set(p.slug,p.id)});for(const page of source)assert.equal(res.data.includes(`https://www.mifiestashop.com${page.sourcePath}`),page.id===menor.get(page.slug),page.sourcePath);}
+  try{const res=response();await require('../api/sitemap.js')({query:{},headers:{host:'www.mifiestashop.com'}},res);assert.equal(res.code,200);const menor=new Map();source.forEach(p=>{if(!menor.has(p.slug)||p.id<menor.get(p.slug))menor.set(p.slug,p.id)});for(const page of source)assert.equal(res.data.includes(`https://www.mifiestashop.com${page.sourcePath}`),page.id===menor.get(page.slug)&&!(page.id in hub.CONSOLIDAR),page.sourcePath);}
   finally{global.fetch=previousFetch;}
 });
 test('excluded pages keep their original content (ps_cms_paginas) and coexist with migrated pages',async()=>{
@@ -175,4 +177,33 @@ test('la regla de redireccion va al final y no pisa ninguna ruta exacta de las p
 test('el titulo de la pagina 288 dice "para" y ya no "pata", sin cambiar su direccion',()=>{
   const m=manifest.find(p=>p.id===288);assert.equal(m.title,'Articulos para batucada en CDMX');assert.equal(m.slug,'articulos-pata-batucada-en-cdmx');
   const html=fs.readFileSync(path.join(root,'cms-pages/288.html'),'utf8');assert.ok(html.includes('<h1>Articulos para batucada en CDMX</h1>'));assert.ok(!/Articulos pata/.test(html));
+});
+
+// SEO local de Puebla (scripts/puebla-hub.cjs): una página por intención y la principal de la tienda.
+test('Puebla: las páginas repetidas mandan (301) a una que se queda, sin cadenas',()=>{
+  const ids=new Set(source.map(p=>p.id));
+  for(const [de,a] of Object.entries(hub.CONSOLIDAR)){
+    assert.ok(ids.has(Number(de))&&ids.has(a),de);assert.ok(!(a in hub.CONSOLIDAR),`${de} -> ${a} es cadena`);
+    const m=manifest.find(p=>p.id===Number(de)),dest=manifest.find(p=>p.id===a).path;
+    assert.equal(m.redirectTo,dest);
+    const r=config.redirects.find(x=>x.source===m.path);assert.ok(r,m.path);assert.equal(r.destination,dest);assert.equal(r.permanent,true);
+  }
+  // Ninguna página que se queda manda a otra ni aparece como destino de una liga corta equivocada.
+  for(const p of manifest.filter(p=>p.location?.city==="puebla"&&!(p.id in hub.CONSOLIDAR)))assert.ok(!config.redirects.some(r=>r.source===p.path),p.path);
+});
+test('Puebla: la página de la tienda trae ficha completa, mapa, ligas a cada intención y datos para Google',()=>{
+  const m=manifest.find(p=>p.id===hub.HUB_ID);
+  const $=cheerio.load(fs.readFileSync(path.join(root,'cms-pages',`${hub.HUB_ID}.html`),'utf8'));
+  assert.equal($('meta[name=description]').attr('content'),hub.DESC);
+  assert.ok(hub.DESC.length<=160&&hub.TITLE.length<=60);
+  const ld=JSON.parse($('script[type="application/ld+json"]').text());
+  const store=ld['@graph'].find(x=>x['@type']==='Store');
+  assert.equal(store.address.postalCode,'72400');assert.equal(store.telephone,'+522229836256');assert.ok(store.geo.latitude);
+  assert.equal(ld['@graph'].find(x=>x['@type']==='FAQPage').mainEntity.length,$('.cms-faq details').length);
+  assert.ok($('iframe.puebla-mapa').attr('src').startsWith('https://www.google.com/maps?q='));
+  for(const [id] of hub.PAGINAS){const dest=manifest.find(p=>p.id===id);assert.ok(dest&&!dest.redirectTo,String(id));assert.equal($(`a[href="${dest.path}"]`).length>0,true,dest.path);}
+  // Las páginas de Puebla que se quedan ligan de regreso a la tienda.
+  const b=cheerio.load(fs.readFileSync(path.join(root,'cms-pages','289.html'),'utf8'));
+  assert.equal(b(`a[href="${m.path}"]`).length>0,true);
+  assert.equal($('h1').length,1);
 });

@@ -1847,23 +1847,328 @@
       "permanent": true
     },
     {
+      "source": "/content/286-articulos-para-fiesta-organizadores-eventos-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/articulos-para-fiesta-organizadores-eventos-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-organizadores-eventos-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/304-fiesta-tematica-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/fiesta-tematica-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/fiesta-tematica-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/305-fiesta-color-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/fiesta-color-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/fiesta-color-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/313-cosas-para-batucada-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/cosas-para-batucada-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/cosas-para-batucada-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/322-venta-de-articulos-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/venta-de-articulos-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/venta-de-articulos-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/323-tienda-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/tienda-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/tienda-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/325-accesorios-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/326-tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/327-tienda-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/328-venta-de-articulos-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/356-tienda-de-fiesta-de-cumpleanos-puebla",
+      "destination": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/tienda-de-fiesta-de-cumpleanos-puebla",
+      "destination": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/tienda-de-fiesta-de-cumpleanos-puebla",
+      "destination": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/357-accesorios-de-fiesta-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-de-fiesta-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-de-fiesta-neon-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/359-accesorios-para-batucada-boda-puebla",
+      "destination": "/content/282-articulos-para-boda-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-para-batucada-boda-puebla",
+      "destination": "/content/282-articulos-para-boda-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-boda-puebla",
+      "destination": "/content/282-articulos-para-boda-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/360-accesorios-para-batucadas-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-para-batucadas-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-para-batucadas-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/361-articulos-para-fiesta-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/articulos-para-fiesta-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/articulos-para-fiesta-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/362-articulos-eventos-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/articulos-eventos-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/articulos-eventos-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/381-cosas-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/cosas-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/cosas-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/383-cosas-para-un-cumpleanos-puebla",
+      "destination": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/cosas-para-un-cumpleanos-puebla",
+      "destination": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/cosas-para-un-cumpleanos-puebla",
+      "destination": "/content/400-tienda-de-fiesta-de-cumpleanos-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/384-accesorios-fluorescentes-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-fluorescentes-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-fluorescentes-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
       "source": "/content/385-accesorios-de-neon-para-fiestas-puebla",
       "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
       "permanent": true
     },
     {
-      "source": "/content/409-accesorios-para-batucada-boda-cdmx",
-      "destination": "/content/310-accesorios-para-batucada-boda-cdmx",
+      "source": "/content/386-accesorios-fluor-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
       "permanent": true
     },
     {
-      "source": "/content/328-venta-de-articulos-de-fiesta-puebla",
-      "destination": "/content/322-venta-de-articulos-de-fiesta-puebla",
+      "source": "/accesorios-fluor-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
       "permanent": true
     },
     {
-      "source": "/content/327-tienda-para-fiestas-puebla",
-      "destination": "/content/323-tienda-para-fiestas-puebla",
+      "source": "/pagina/accesorios-fluor-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/388-accesorios-fiesta-fluor-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-fiesta-fluor-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-fiesta-fluor-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/389-accesorios-color-neon-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-color-neon-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-color-neon-para-fiestas-puebla",
+      "destination": "/content/300-accesorios-de-neon-para-fiestas-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/395-accesorios-de-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/396-tienda-de-cosas-para-fiesta-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
       "permanent": true
     },
     {
@@ -1872,13 +2177,133 @@
       "permanent": true
     },
     {
-      "source": "/content/395-accesorios-de-fiesta-puebla",
-      "destination": "/content/325-accesorios-de-fiesta-puebla",
+      "source": "/content/398-venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
       "permanent": true
     },
     {
-      "source": "/content/396-tienda-de-cosas-para-fiesta-puebla",
-      "destination": "/content/326-tienda-de-cosas-para-fiesta-puebla",
+      "source": "/venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/venta-de-articulos-para-fiesta-por-mayoreo-en-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/399-tienda-para-fiestas-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/tienda-para-fiestas-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/tienda-para-fiestas-en-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/401-articulos-de-fiesta-mayoreo-en-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/articulos-de-fiesta-mayoreo-en-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/articulos-de-fiesta-mayoreo-en-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/402-productos-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/productos-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/productos-para-fiestas-puebla",
+      "destination": "/content/324-tienda-de-articulos-para-fiesta-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/403-mayoreo-articulos-para-fiestas-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/mayoreo-articulos-para-fiestas-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/mayoreo-articulos-para-fiestas-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/404-productos-para-fiestas-al-por-mayor-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/productos-para-fiestas-al-por-mayor-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/productos-para-fiestas-al-por-mayor-puebla",
+      "destination": "/content/405-articulos-para-fiesta-por-mayoreo-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/406-accesorios-para-batucada-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/accesorios-para-batucada-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/accesorios-para-batucada-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/407-cosas-para-batucada-fiesta-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/cosas-para-batucada-fiesta-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/pagina/cosas-para-batucada-fiesta-puebla",
+      "destination": "/content/289-articulos-para-batucada-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/408-accesorios-para-batucada-boda-puebla",
+      "destination": "/content/282-articulos-para-boda-en-puebla",
+      "permanent": true
+    },
+    {
+      "source": "/content/409-accesorios-para-batucada-boda-cdmx",
+      "destination": "/content/310-accesorios-para-batucada-boda-cdmx",
       "permanent": true
     },
     {
@@ -1894,11 +2319,6 @@
     {
       "source": "/content/370-productos-para-fiestas-y-batucadas",
       "destination": "/content/349-productos-para-fiestas-y-batucadas",
-      "permanent": true
-    },
-    {
-      "source": "/content/408-accesorios-para-batucada-boda-puebla",
-      "destination": "/content/359-accesorios-para-batucada-boda-puebla",
       "permanent": true
     },
     {
