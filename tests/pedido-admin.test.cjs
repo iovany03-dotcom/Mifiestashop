@@ -24,6 +24,7 @@ function fakeSupabase({ ledger = [], pedido = { folio: 'MAN-1', status: 'Pendien
     if (u.includes('pedidos_online') || u.includes('pos_tickets')) {
       if (state.deleted || !u.includes(`folio=eq.${state.pedido.folio}`)) return ok([]);
       if (opts.method === 'PATCH') { Object.assign(state.pedido, body); return ok([state.pedido]); }
+      if (!opts.method || opts.method === 'GET') return ok([state.pedido]);
       if (opts.method === 'DELETE') { state.deleted = true; return ok([state.pedido]); }
     }
     return { ok: false, json: async () => ({}), text: async () => '' };
@@ -48,8 +49,8 @@ test('pedido-admin: cambiar estado se guarda y valida el estado', async () => {
   const st = fakeSupabase();
   let r = await call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'MAN-1', estado: 'Inventado' });
   assert.equal(r.code, 400);
-  r = await call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'MAN-1', estado: 'Enviado' });
-  assert.equal(r.code, 200); assert.equal(st.pedido.status, 'Enviado'); assert.equal(r.data.piezasRegresadas, 0);
+  r = await call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'MAN-1', estado: 'En preparación' });
+  assert.equal(r.code, 200); assert.equal(st.pedido.status, 'En preparación'); assert.equal(r.data.piezasRegresadas, 0);
   r = await call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'NO-EXISTE', estado: 'Enviado' });
   assert.equal(r.code, 404);
 });
@@ -89,4 +90,32 @@ test('pedido-admin: guarda nota, fecha de entrega y guía de pedidos en línea',
   assert.equal(r.code, 400);
   r = await call({ p_admin_password: 'buena', accion: 'datos', origen: 'pos', folio: 'MAN-1', nota: 'x' });
   assert.equal(r.code, 400);
+});
+
+const FOTO = 'https://iuoirslxjcyarvmrqyjd.supabase.co/storage/v1/object/public/assets/entregas/MAN-1-abc.jpg';
+
+test('pedido-admin: Enviado/Entregado exige guía, baucher de Uber/Lala o ticket firmado con identificación', async () => {
+  const st = fakeSupabase();
+  const pedir = estado => call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'MAN-1', estado });
+  let r = await pedir('Enviado');
+  assert.equal(r.code, 409); assert.equal(st.pedido.status, 'Pendiente');
+  r = await pedir('Entregado'); assert.equal(r.code, 409);
+  // ticket firmado sin identificación no basta
+  r = await call({ p_admin_password: 'buena', accion: 'evidencia', origen: 'online', folio: 'MAN-1', tipo: 'ticket_firmado', url: FOTO });
+  assert.equal(r.code, 400);
+  // una liga que no es de nuestro almacenamiento tampoco
+  r = await call({ p_admin_password: 'buena', accion: 'evidencia', origen: 'online', folio: 'MAN-1', tipo: 'uber_lala', url: 'https://x.com/a.jpg' });
+  assert.equal(r.code, 400);
+  r = await call({ p_admin_password: 'buena', accion: 'evidencia', origen: 'online', folio: 'MAN-1', tipo: 'ticket_firmado', url: FOTO, idUrl: FOTO.replace('abc', 'id') });
+  assert.equal(r.code, 200);
+  r = await pedir('Enviado'); assert.equal(r.code, 200); assert.equal(st.pedido.status, 'Enviado');
+});
+
+test('pedido-admin: la guía de rastreo o el baucher de Uber/Lala también bastan', async () => {
+  let st = fakeSupabase({ pedido: { folio: 'MAN-1', status: 'Pago aceptado', tracking_number: 'ABC123' } });
+  let r = await call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'MAN-1', estado: 'Enviado' });
+  assert.equal(r.code, 200);
+  st = fakeSupabase({ pedido: { folio: 'MAN-1', status: 'Pago aceptado', evidencia_tipo: 'uber_lala', evidencia_url: FOTO } });
+  r = await call({ p_admin_password: 'buena', accion: 'estado', origen: 'online', folio: 'MAN-1', estado: 'Entregado' });
+  assert.equal(r.code, 200);
 });
