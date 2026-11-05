@@ -6046,6 +6046,9 @@
       <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Foto del baucher o comprobante de pago <span style="color:#dc2626;">(obligatoria; siempre en pedidos para envío)</span>:</label>
       <input type="file" id="cpComprobante" accept="image/*" onchange="cpVistaComprobante(this)" style="font-size:13px; max-width:100%;">
       <img id="cpComprobanteVista" alt="Vista previa del baucher" class="hidden" style="display:block; margin-top:8px; max-width:100%; max-height:200px; border-radius:6px; border:1px solid var(--border);">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin:10px 0 6px;">Monto que aparece en el baucher ($) <span style="color:#dc2626;">(se compara con el total del pedido)</span>:</label>
+      <input type="number" id="cpComprobanteMonto" min="0" step="0.01" placeholder="Se lee de la foto; corrígelo si no es correcto" oninput="cpCompararMonto()" style="width:100%; max-width:260px; padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+      <div id="cpComprobanteLectura" style="font-size:12px; margin-top:6px; color:var(--text-muted);"></div>
     </div>
 
     <div style="margin-bottom:14px;">
@@ -14892,7 +14895,7 @@ function renderOdDetails(order, extra) {
       const motivo = mpStatusDetailText(order.mpStatusDetail);
       if (motivo && order.mpStatus !== 'approved') estadoPago += ` — ${motivo}`;
       if (order.paidAt) fecha = new Date(order.paidAt).toLocaleString('es-MX');
-      if (order.comprobanteUrl && /^https:\/\//.test(order.comprobanteUrl)) extraInfo = `<div style="font-size:11px;"><a href="${escapeHtml(order.comprobanteUrl)}" target="_blank" rel="noopener" style="color:var(--series-2);">Ver foto del baucher</a></div>`;
+      if (order.comprobanteUrl && /^https:\/\//.test(order.comprobanteUrl)) extraInfo = `<div style="font-size:11px;"><a href="${escapeHtml(order.comprobanteUrl)}" target="_blank" rel="noopener" style="color:var(--series-2);">Ver foto del baucher</a>${order.comprobanteMonto != null ? ` · Monto en el baucher: ${odMoney(order.comprobanteMonto)}${Math.abs(order.comprobanteMonto - (Number(order.total) || 0)) >= 0.5 ? ' <b style="color:#dc2626;">(no coincide con el total)</b>' : ''}` : ''}</div>`;
     } else if (origen === 'pos') {
       ref = order.id;
       estadoPago = 'Cobrado';
@@ -15084,6 +15087,8 @@ async function openCrearPedidoModal(){
   document.getElementById('cpTransportadora').value = 'Recolección en tienda';
   document.getElementById('cpMetodoPago').value = 'Pendiente de pago';
   document.getElementById('cpComprobante').value = '';
+  document.getElementById('cpComprobanteMonto').value = '';
+  document.getElementById('cpComprobanteLectura').textContent = '';
   cpToggleComprobante();
   document.getElementById('cpDireccionEnvio').value = '';
   document.getElementById('cpDireccionFacturacion').value = '';
@@ -15228,6 +15233,7 @@ function cpRenderSummary(){
   document.getElementById('cpSumEnvio').textContent = fmtMoney(envio);
   document.getElementById('cpSumIva').textContent = fmtMoney(iva);
   document.getElementById('cpSumTotal').textContent = fmtMoney(total);
+  if (typeof cpCompararMonto === 'function') cpCompararMonto(); // si ya hay monto de baucher, se vuelve a comparar con el nuevo total
 }
 
 // Pedido manual ya pagado (efectivo, transferencia o tarjeta): la foto del baucher es obligatoria.
@@ -15241,9 +15247,55 @@ function cpToggleComprobante() {
 function cpVistaComprobante(input) {
   const img = document.getElementById('cpComprobanteVista');
   const file = input.files && input.files[0];
+  document.getElementById('cpComprobanteMonto').value = '';
+  document.getElementById('cpComprobanteLectura').textContent = '';
   if (!file || !/^image\//.test(file.type)) { img.classList.add('hidden'); img.removeAttribute('src'); return; }
   img.src = URL.createObjectURL(file);
   img.classList.remove('hidden');
+  cpLeerMontoBaucher(file);
+}
+
+// Foto reducida (máx. 1600 px, JPEG) para mandarla a leer sin pasar el límite de tamaño del servidor.
+async function cpFotoReducida(file) {
+  const bmp = await createImageBitmap(file);
+  const esc = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width * esc); c.height = Math.round(bmp.height * esc);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.85));
+  const b64 = await new Promise((ok, no) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = no; fr.readAsDataURL(blob); });
+  return b64;
+}
+let cpLecturaSeq = 0;
+async function cpLeerMontoBaucher(file) {
+  const seq = ++cpLecturaSeq;
+  const msg = document.getElementById('cpComprobanteLectura');
+  msg.style.color = 'var(--text-muted)'; msg.textContent = 'Leyendo el monto del baucher…';
+  try {
+    const data = await cpFotoReducida(file);
+    const r = await fetch('/api/leer-baucher', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ creds: getSessionCredsParams(), image: { media_type: 'image/jpeg', data } })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (seq !== cpLecturaSeq) return; // se eligió otra foto mientras tanto
+    if (!r.ok) throw new Error(d.error || 'sin respuesta');
+    if (d.monto) { document.getElementById('cpComprobanteMonto').value = d.monto; msg.textContent = ''; cpCompararMonto(); }
+    else msg.textContent = 'No se pudo leer el monto de la foto: escríbelo a mano (es obligatorio).';
+  } catch (e) {
+    if (seq !== cpLecturaSeq) return;
+    msg.textContent = 'No se pudo leer el monto automáticamente (' + e.message + '): escríbelo a mano (es obligatorio).';
+  }
+}
+// Aviso en pantalla mientras se captura; la confirmación final se hace al guardar el pedido.
+function cpCompararMonto() {
+  const msg = document.getElementById('cpComprobanteLectura');
+  const monto = parseFloat(document.getElementById('cpComprobanteMonto').value);
+  if (!Number.isFinite(monto)) return;
+  const { total } = cpGetSummary();
+  const dif = Math.round((monto - total) * 100) / 100;
+  if (Math.abs(dif) < 0.5) { msg.style.color = '#15803d'; msg.textContent = '✅ El monto del baucher coincide con el total del pedido (' + fmtMoney(total) + ').'; }
+  else { msg.style.color = '#dc2626'; msg.textContent = `⚠️ El baucher dice ${fmtMoney(monto)} y el total del pedido es ${fmtMoney(total)} (${dif > 0 ? 'sobra' : 'faltan'} ${fmtMoney(Math.abs(dif))}).`; }
 }
 async function cpSubirComprobante(folio) {
   const file = document.getElementById('cpComprobante').files[0];
@@ -15270,6 +15322,14 @@ async function confirmCrearPedido(){
   }
 
   const { subtotal, descuento, envio, total } = cpGetSummary();
+  // El monto del baucher se compara con el total del pedido: si no coincide se avisa y hay que confirmarlo.
+  let montoBaucher = null;
+  if (cpRequiereComprobante()) {
+    montoBaucher = parseFloat(document.getElementById('cpComprobanteMonto').value);
+    if (!Number.isFinite(montoBaucher) || montoBaucher <= 0) return alert('Escribe el monto que aparece en el baucher (se compara con el total del pedido).');
+    const dif = Math.round((montoBaucher - total) * 100) / 100;
+    if (Math.abs(dif) >= 0.5 && !confirm(`⚠️ El monto del baucher (${fmtMoney(montoBaucher)}) NO coincide con el total del pedido (${fmtMoney(total)}).\n\n${dif > 0 ? 'Sobran' : 'Faltan'} ${fmtMoney(Math.abs(dif))}.\n\nRevisa el baucher o el pedido. ¿Subir el pedido de todos modos?`)) return;
+  }
   const mismaDireccion = document.getElementById('cpMismaDireccionFacturacion').checked;
   const direccionEnvio = document.getElementById('cpDireccionEnvio').value.trim();
 
@@ -15291,6 +15351,7 @@ async function confirmCrearPedido(){
     subtotal,
     discount_amount: descuento || null,
     total,
+    comprobante_monto: montoBaucher,
     status: 'Pendiente',
     created_by: (currentStaffSession && currentStaffSession.nombre) || 'Admin',
     source: 'manual'
