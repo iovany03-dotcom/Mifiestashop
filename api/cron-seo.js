@@ -129,6 +129,22 @@ async function inspeccionarTanda() {
   return { inspeccionadas: filas.length, sin_revisar: Math.max(0, urls.length - porUrl.size - filas.filter(f => !porUrl.has(f.url)).length) };
 }
 
+// Una vez al día se vuelve a enviar el sitemap a Search Console (dominio 'gsc_sitemap' en
+// ps_sync_estado): así Google lo vuelve a leer pronto y encuentra las páginas nuevas o cambiadas.
+// (La API de Google no permite "Solicitar indexación" de páginas normales; esto es lo más cercano.)
+async function reenviarSitemap() {
+  if (!google.gscConfigurado()) return {};
+  const r = await sb('/rest/v1/ps_sync_estado?dominio=eq.gsc_sitemap&select=last_synced_at');
+  const ultimo = Date.parse((r[0] || {}).last_synced_at || 0) || 0;
+  if (Date.now() - ultimo < 20 * 3600 * 1000) return {};
+  await google.enviarSitemap(`${ORIGEN}/sitemap.xml`);
+  await sb('/rest/v1/ps_sync_estado?on_conflict=dominio', {
+    method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify([{ dominio: 'gsc_sitemap', last_synced_id: 0, last_synced_at: new Date().toISOString(), ultimo_resultado: 'sitemap enviado' }])
+  });
+  return { sitemap_enviado: true };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const expected = process.env.CRON_SECRET;
@@ -141,6 +157,7 @@ module.exports = async function handler(req, res) {
     // Lo de Search Console no debe tumbar la auditoría: si falla, se informa y se sigue.
     const extra = {};
     try { Object.assign(extra, await rellenarHistorialGsc()); } catch (e) { extra.historial_error = String(e.message).slice(0, 200); }
+    try { Object.assign(extra, await reenviarSitemap()); } catch (e) { extra.sitemap_error = String(e.message).slice(0, 200); }
     try { Object.assign(extra, await inspeccionarTanda()); } catch (e) { extra.inspeccion_error = String(e.message).slice(0, 200); }
     res.status(200).json({ ok: true, ...tanda, ...foto, ...extra });
   } catch (e) {
