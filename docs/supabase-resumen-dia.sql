@@ -1,0 +1,3 @@
+-- Resumen del día de una sucursal (hora de México) para el botón "Descargar resumen del día" del POS:
+-- tickets sin cancelados, salidas de caja y la caja abierta (caja chica de apertura + efectivo acumulado).
+-- Ya aplicada en Supabase (migración rpc_resumen_dia); ver la función en la base.
