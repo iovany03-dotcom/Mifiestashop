@@ -163,9 +163,9 @@ async function resolveProduct(id) {
   const canonicalPath = productoPath(p.id, p.link_rewrite, p.barcode, cat && cat.link_rewrite);
   const [migr, stockFilas] = await Promise.all([
     sb(`productos_migrados?id=eq.${id}&select=name,sku,description,images`),
-    sb(`ps_stock?id_product=eq.${id}&select=quantity`)
+    sb(`rpc/stock_publico?p_ids=%7B${id}%7D`) // base + movimientos del kardex
   ]);
-  const existencias = Array.isArray(stockFilas) && stockFilas.length ? stockFilas.reduce((t, f) => t + (Number(f.quantity) || 0), 0) : null;
+  const existencias = Array.isArray(stockFilas) && stockFilas.length ? stockFilas.reduce((t, f) => t + (Number(f.cantidad) || 0), 0) : null;
   const m = migr && migr[0];
   const name = (m && m.name) || p.name;
   if (!name) return { exists: true, canonicalPath, seo: null };

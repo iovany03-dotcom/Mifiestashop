@@ -30,12 +30,13 @@ module.exports = async function handler(req, res) {
     return;
   }
   try {
-    const rows = (await sbGetAll(`ps_stock?select=id_warehouse,quantity&id_product=eq.${id}&order=id_warehouse.asc`))
+    // stock_publico = ps_stock (base) + pos_stock_moves (entradas, ventas, traspasos y ajustes del panel).
+    const rows = (await sbGetAll(`rpc/stock_publico?p_ids=%7B${id}%7D`))
       .filter(s => !HIDDEN_WAREHOUSES.includes(String(s.id_warehouse)));
     const branches = rows.map(s => ({
       warehouseId: String(s.id_warehouse),
       name: WAREHOUSES[String(s.id_warehouse)] || `Almacén ${s.id_warehouse}`,
-      qty: Math.round(Number(s.quantity) || 0)
+      qty: Math.max(0, Math.round(Number(s.cantidad) || 0))
     }));
     res.status(200).json({ branches, total: branches.reduce((sum, b) => sum + b.qty, 0) });
   } catch (err) {

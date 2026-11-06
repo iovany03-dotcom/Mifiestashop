@@ -6831,6 +6831,31 @@ async function sbRpc(fnName, params){
   return text ? JSON.parse(text) : null;
 }
 
+// Supabase entrega como máximo 1,000 renglones por respuesta: una función que regresa más (como
+// los totales del kardex, que ya pasan de 1,000 producto/sucursal) se pide por páginas. La función
+// debe regresar en orden fijo (ORDER BY) para que las páginas no se encimen.
+async function sbRpcTodo(fnName, params, pagina = 1000) {
+  const todos = [];
+  for (let offset = 0; offset < 200000; offset += pagina) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}?limit=${pagina}&offset=${offset}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(params || {})
+    });
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      const err = new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
+      err.detail = text;
+      throw err;
+    }
+    const filas = await r.json();
+    if (!Array.isArray(filas)) return filas;
+    todos.push(...filas);
+    if (filas.length < pagina) break;
+  }
+  return todos;
+}
+
 // Contraseña de administrador / de edición de la sesión actual, guardadas
 // en este navegador (nunca en el HTML ni en un repositorio) para poder
 // acompañar cada llamada RPC sin pedirlas de nuevo en cada acción.
@@ -11178,7 +11203,7 @@ async function loadRealStockData() {
   try {
     const [stockRes, ledgerRows] = await Promise.all([
       fetch('/api/stock-all').then(r => { if (!r.ok) throw new Error('stock'); return r.json(); }).catch(() => { stockOk = false; return null; }),
-      sbRpc('rpc_stock_move_totals', getSessionCredsParams()).catch(() => { ledgerOk = false; return null; })
+      sbRpcTodo('rpc_stock_move_totals', getSessionCredsParams()).catch(() => { ledgerOk = false; return null; })
     ]);
     if (stockOk && stockRes && stockRes.stock && !stockRes.fallback) realStockData = stockRes.stock;
     else stockOk = false;

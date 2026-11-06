@@ -3,7 +3,7 @@
 // /feed/google.xml (vercel.json); Merchant Center la descarga sola cada día.
 //
 // RSS 2.0 con el espacio de nombres g: (https://support.google.com/merchants/answer/7052112).
-// Solo productos activos con precio y foto. Existencias: suma de ps_stock en todas las sucursales;
+// Solo productos activos con precio y foto. Existencias: ps_stock + movimientos (stock_publico) en todas las sucursales;
 // los productos sin registro de existencias (paquetes/promociones armados al momento) van como
 // disponibles, igual que en la tienda. Envío: gratis desde $1,500 (Política de envíos); para montos
 // menores la tarifa se configura en Merchant Center.
@@ -29,8 +29,9 @@ function gtinReal(c) {
 async function existencias(ids) {
   const total = new Map();
   for (let i = 0; i < ids.length; i += 200) {
-    const filas = await sbTodo(`/rest/v1/ps_stock?select=id_product,quantity&id_product=in.(${ids.slice(i, i + 200).join(',')})`);
-    for (const f of filas) total.set(Number(f.id_product), (total.get(Number(f.id_product)) || 0) + (Number(f.quantity) || 0));
+    // stock_publico = ps_stock (base) + movimientos del kardex; una sucursal en negativo no resta a las demás.
+    const filas = await sbTodo(`/rest/v1/rpc/stock_publico?p_ids=%7B${ids.slice(i, i + 200).join(',')}%7D`);
+    for (const f of filas) total.set(Number(f.id_product), (total.get(Number(f.id_product)) || 0) + Math.max(0, Number(f.cantidad) || 0));
   }
   return total;
 }
