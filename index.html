@@ -6651,12 +6651,13 @@
       con la nota del proveedor escaneada. El ajuste de entrada es solo para devoluciones, correcciones o diferencias de conteo, con justificación y aprobación de un supervisor.
       <div id="movAjusteCatWrap" style="margin-top:8px;">
         <label style="font-weight:600;">Tipo de ajuste:
-          <select id="movAjusteCat" onchange="saveMovDraft()" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+          <select id="movAjusteCat" onchange="saveMovDraft(); renderMovLote();" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
             <option value="devolucion">Devolución de cliente</option>
             <option value="correccion">Corrección de un error de captura</option>
             <option value="conteo">Diferencia en conteo físico</option>
           </select>
         </label>
+        <div id="movConteoAyuda" style="display:none; margin-top:6px; font-size:12px;">En conteo físico escribe <b>cuántas piezas contaste</b>. El sistema suma solo la diferencia contra lo que tiene registrado al momento de aprobar.</div>
       </div>
     </div>
 
@@ -12484,6 +12485,16 @@ const MOV_TIPO_LABEL = { entrada: 'Ajuste de entrada', salida: 'Salida', traspas
 // (docs/supabase-recepcion.sql); las compras solo entran por Recepción de mercancía.
 const MOV_AJUSTE_RE = /^(devolucion|correccion|conteo):\s*/i;
 
+// Ajuste por conteo físico: en la lista se captura lo CONTADO (no lo que hay que sumar). Lo que entra es
+// la diferencia contra el sistema; al aprobar, el servidor la vuelve a calcular con la existencia de ese
+// momento, así que un conteo aprobado dos veces (o capturado sobre una entrada que ya se hizo) no duplica.
+function movEsConteo() {
+  return currentMovType === 'entrada' && document.getElementById('movAjusteCat')?.value === 'conteo';
+}
+function movConteoDiff(it) {
+  return (it.qty || 0) - movStockInfo(it.id).stock;
+}
+
 function movDataset() {
   return adminCatalogDataset();
 }
@@ -12717,6 +12728,8 @@ function setMovQty(id, value) {
   updateMovLoteSummary();
   const row = document.querySelector(`#movLoteList .mov-lote-row[data-id="${CSS.escape(String(id))}"]`);
   if (row) row.classList.toggle('error', movRowError(it) !== '');
+  const diff = row && row.querySelector('.mov-conteo-diff');
+  if (diff) { const e = movRowError(it); diff.textContent = e || `Entran +${movConteoDiff(it)}`; }
 }
 
 function removeMovProduct(id) {
@@ -12736,6 +12749,10 @@ function clearMovLote() {
 function movRowError(it) {
   if (!(it.qty > 0)) return 'Cantidad inválida';
   const info = movStockInfo(it.id);
+  if (movEsConteo()) {
+    if (it.qty <= info.stock) return `Contaste ${it.qty} y el sistema tiene ${info.stock}: no falta nada${it.qty < info.stock ? ' (si sobran en sistema, usa Salida)' : ''}`;
+    return '';
+  }
   if (it.qty > info.limit) return `Solo hay ${info.stock} u. en ${movBodegaLabel(info.bodega)}`;
   return '';
 }
@@ -12743,9 +12760,12 @@ function movRowError(it) {
 function renderMovLote() {
   const list = document.getElementById('movLoteList');
   if (!list) return;
+  const ayuda = document.getElementById('movConteoAyuda');
+  if (ayuda) ayuda.style.display = movEsConteo() ? 'block' : 'none';
   if (movLote.length === 0) {
     list.innerHTML = '<div style="padding:18px; text-align:center; font-size:13px; color:var(--text-muted);">Busca un producto arriba y dale clic (o Enter) para agregarlo. Puedes agregar todos los que necesites.</div>';
   } else {
+    const conteo = movEsConteo();
     list.innerHTML = movLote.map(it => {
       const p = movFindProduct(it.id);
       const info = movStockInfo(it.id);
@@ -12756,8 +12776,8 @@ function renderMovLote() {
             <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(p ? p.name : 'Producto #' + it.id)}</div>
             <div style="font-size:11px; color:var(--text-muted);">ID ${escapeHtml(it.id)}</div>
           </div>
-          <div class="mov-lote-stock" title="${escapeHtml(err)}">${escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.</div>
-          <input type="number" min="1" inputmode="numeric" value="${it.qty || ''}" data-id="${escapeHtml(it.id)}" aria-label="Cantidad de ${escapeHtml(p ? p.name : it.id)}"
+          <div class="mov-lote-stock" title="${escapeHtml(err)}">${conteo ? 'Sistema' : escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.${conteo ? `<br><span class="mov-conteo-diff" style="font-weight:700;">${err ? escapeHtml(err) : `Entran +${movConteoDiff(it)}`}</span>` : ''}</div>
+          <input type="number" min="1" inputmode="numeric" value="${it.qty || ''}" data-id="${escapeHtml(it.id)}" placeholder="${conteo ? 'Contado' : ''}" aria-label="${conteo ? 'Piezas contadas' : 'Cantidad'} de ${escapeHtml(p ? p.name : it.id)}"
             oninput="setMovQty('${escapeHtml(it.id)}', this.value)"
             onkeydown="if (event.key === 'Enter') { event.preventDefault(); document.getElementById('movSearch').focus(); }">
           <button type="button" class="btn small" title="Quitar" aria-label="Quitar" onclick="removeMovProduct('${escapeHtml(it.id)}')">✕</button>
@@ -12787,7 +12807,7 @@ function movValidate(soloBasico) {
   const destino = document.getElementById('traspasoDestino').value;
   if (movLote.length === 0) return 'Agrega al menos un producto con el buscador.';
   if (currentMovType === 'traspaso' && origen === destino) return 'En un traspaso, la bodega de origen y destino deben ser diferentes.';
-  if (soloBasico) {
+  if (soloBasico && !movEsConteo()) {
     return movLote.some(it => !(it.qty > 0)) ? 'Hay productos con cantidad inválida.' : '';
   }
   const bad = movLote.filter(it => movRowError(it));
@@ -12806,7 +12826,7 @@ function reviewStockMovement() {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   const motivo = document.getElementById('traspasoMotivo').value.trim();
-  const units = movLote.reduce((s, it) => s + it.qty, 0);
+  const units = movLote.reduce((s, it) => s + (movEsConteo() ? movConteoDiff(it) : it.qty), 0);
   const ruta = currentMovType === 'entrada' ? `a ${movBodegaLabel(destino)}`
     : currentMovType === 'salida' ? `de ${movBodegaLabel(origen)}`
     : `de ${movBodegaLabel(origen)} a ${movBodegaLabel(destino)}`;
@@ -12814,7 +12834,10 @@ function reviewStockMovement() {
   const rows = movLote.map(it => {
     const p = movFindProduct(it.id);
     let cols;
-    if (currentMovType === 'entrada') {
+    if (movEsConteo()) {
+      const a = getStockFor(parseInt(it.id, 10), destino);
+      return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right;">${it.qty}</td><td style="text-align:right;">${a}</td><td style="text-align:right; font-weight:700;">+${it.qty - a}</td></tr>`;
+    } else if (currentMovType === 'entrada') {
       const a = getStockFor(parseInt(it.id, 10), destino);
       cols = `<td style="text-align:right;">${a} → <b>${a + it.qty}</b></td>`;
     } else if (currentMovType === 'salida') {
@@ -12826,7 +12849,7 @@ function reviewStockMovement() {
     }
     return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right; font-weight:700;">${it.qty}</td>${cols}</tr>`;
   }).join('');
-  const heads = currentMovType === 'entrada' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`
+  const heads = movEsConteo() ? '' : currentMovType === 'entrada' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`
     : currentMovType === 'salida' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(origen))}</th>`
     : `<th style="text-align:right;">${escapeHtml(movBodegaLabel(origen))}</th><th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`;
 
@@ -12838,7 +12861,7 @@ function reviewStockMovement() {
     </div>
     <div style="max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
       <table style="width:100%; font-size:13px; border-collapse:collapse;">
-        <thead><tr><th style="text-align:left;">Producto</th><th style="text-align:right;">Cant.</th>${heads}</tr></thead>
+        <thead><tr><th style="text-align:left;">Producto</th>${movEsConteo() ? '<th style="text-align:right;">Contado</th><th style="text-align:right;">Sistema</th><th style="text-align:right;">Entran</th>' : `<th style="text-align:right;">Cant.</th>${heads}`}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
@@ -12868,6 +12891,7 @@ function movErrorMessage(e, fallback) {
   if (/partida_invalida/.test(m)) return 'Hay productos con cantidad inválida (deben ser números enteros mayores a 0).';
   if (/bodega_invalida/.test(m)) return 'Revisa la bodega de origen y destino.';
   if (/INGRESO NO PERMITIDO/.test(m)) return 'INGRESO NO PERMITIDO. Para registrar mercancía es obligatorio escanear primero la nota de compra del proveedor y completar el proceso de recepción inteligente.';
+  if (/conteo_sin_diferencia/.test(m)) return 'No se aprobó: en estos productos el sistema ya tiene lo que se contó (o más), así que no hay nada que sumar. Puede que el ajuste ya se haya aplicado o que entró la mercancía por otro lado:\n\n' + m.replace(/^[\s\S]*conteo_sin_diferencia:\s*/, '').replace(/"[\s\S]*$/, '').split('; ').map(x => '• ' + x).join('\n') + '\n\nEdita el borrador (quita esos productos) o descártalo.';
   if (/ajuste_sin_justificacion/.test(m)) return 'El ajuste de entrada necesita tipo (devolución, corrección o conteo) y una justificación de al menos 5 letras.';
   return fallback;
 }
@@ -13097,9 +13121,17 @@ async function saveMovAsDraft() {
     if (motivo.length < 5) { alert('Escribe la justificación del ajuste de entrada (qué pasó y el documento que lo respalda: ticket de devolución, conteo, etc.).'); return; }
     motivo = `${document.getElementById('movAjusteCat').value}: ${motivo}`;
   }
+  const conteo = movEsConteo();
+  if (conteo) {
+    const err2 = movValidate(false);
+    if (err2) { alert(err2); renderMovLote(); return; }
+  }
   const items = movLote.map(it => {
     const p = movFindProduct(it.id);
-    return { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
+    const base = { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
+    // Conteo: qty = diferencia (lo que se espera sumar); el servidor la recalcula al aprobar.
+    if (conteo) { const sistema = movStockInfo(it.id).stock; return { ...base, qty: it.qty - sistema, contado: it.qty, sistema }; }
+    return base;
   });
   const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm'].map(id => document.getElementById(id)).filter(Boolean);
   btns.forEach(b => { b.disabled = true; });
@@ -13113,7 +13145,7 @@ async function saveMovAsDraft() {
     });
     const editado = !!movEditingDocId;
     const n = movLote.length;
-    const units = movLote.reduce((s, it) => s + it.qty, 0);
+    const units = items.reduce((s, it) => s + it.qty, 0);
     movLote = [];
     movEditingDocId = null;
     document.getElementById('traspasoMotivo').value = '';
@@ -13136,7 +13168,7 @@ function editMovDoc(doc) {
   if (movLote.length > 0 && movEditingDocId !== doc.id && !confirm('Tienes productos en la lista del movimiento actual. Se reemplazarán por los de este borrador. ¿Continuar?')) return;
   applyMovState({
     docId: doc.id, tipo: doc.tipo, origen: doc.origen || undefined, destino: doc.destino || undefined, motivo: doc.motivo || '',
-    items: (Array.isArray(doc.items) ? doc.items : []).map(it => ({ id: String(it.id_product), qty: it.qty }))
+    items: (Array.isArray(doc.items) ? doc.items : []).map(it => ({ id: String(it.id_product), qty: it.contado != null ? it.contado : it.qty }))
   });
   saveMovDraft();
   const notice = document.getElementById('movLoteNotice');
