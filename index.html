@@ -2845,10 +2845,7 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="productos">Productos</a>
-        <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
-        <a class="submenu-link" data-view="recepcion">Recepción de mercancía</a>
-        <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
-        <a class="submenu-link" data-view="etiquetas">Etiquetas de precio</a>
+        <a class="submenu-link" data-view="bodegas" id="navInventario">Inventario</a>
         <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
       </div>
     </div>
@@ -4096,25 +4093,24 @@
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">Bodega Principal (Rumania)</div>
-          <div class="value">720,999 u.</div>
-          <div class="sub">2,050 SKUs activos</div>
+          <div class="value" id="invWhUnits-rumania">—</div>
+          <div class="sub" id="invWhSkus-rumania"></div>
         </div>
         <div class="kpi-card">
           <div class="label">Puebla</div>
-          <div class="value">546,866 u.</div>
-          <div class="sub">1,262 SKUs activos (193 agotados)</div>
+          <div class="value" id="invWhUnits-puebla">—</div>
+          <div class="sub" id="invWhSkus-puebla"></div>
         </div>
         <div class="kpi-card">
           <div class="label">Querétaro</div>
-          <div class="value">548,907 u.</div>
-          <div class="sub">1,373 SKUs activos</div>
+          <div class="value" id="invWhUnits-queretaro">—</div>
+          <div class="sub" id="invWhSkus-queretaro"></div>
         </div>
       </div>
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h2>Inventario por Almacén / Bodega</h2>
-          <button class="btn primary" onclick="openTraspasoModal()">Traspaso entre Bodegas</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -4122,9 +4118,9 @@
               <tr><th>Bodega</th><th>Ubicación</th><th>Unidades Stock</th><th>SKUs Registrados</th><th>Estado</th></tr>
             </thead>
             <tbody>
-              <tr><td><b>CDMX Rumania</b></td><td>CDMX centro</td><td>720,999</td><td>2,050</td><td><span class="pill ok">Operativo</span></td></tr>
-              <tr><td><b>Querétaro</b></td><td>Qro. El Marqués</td><td>548,907</td><td>1,373</td><td><span class="pill ok">Operativo</span></td></tr>
-              <tr><td><b>Puebla</b></td><td>Puebla Capital</td><td>546,866</td><td>1,262</td><td><span class="pill ok">Operativo</span></td></tr>
+              <tr><td><b>CDMX Rumania</b></td><td>CDMX centro</td><td id="invWhRowUnits-rumania">—</td><td id="invWhRowSkus-rumania">—</td><td><span class="pill ok">Operativo</span></td></tr>
+              <tr><td><b>Querétaro</b></td><td>Qro. El Marqués</td><td id="invWhRowUnits-queretaro">—</td><td id="invWhRowSkus-queretaro">—</td><td><span class="pill ok">Operativo</span></td></tr>
+              <tr><td><b>Puebla</b></td><td>Puebla Capital</td><td id="invWhRowUnits-puebla">—</td><td id="invWhRowSkus-puebla">—</td><td><span class="pill ok">Operativo</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -4133,13 +4129,13 @@
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">Total Unidades en Stock</div>
-          <div class="value" id="invKpiTotalUnits">1,816,772 u.</div>
+          <div class="value" id="invKpiTotalUnits">—</div>
           <div class="sub">Distribuido en 3 almacenes activos</div>
         </div>
         <div class="kpi-card">
           <div class="label">Bodega Mayor Existencia</div>
-          <div class="value" id="invKpiTopWarehouse">CDMX Rumania</div>
-          <div class="sub">720,999 unidades en almacén</div>
+          <div class="value" id="invKpiTopWarehouse">—</div>
+          <div class="sub" id="invKpiTopWarehouseSub"></div>
         </div>
         <div class="kpi-card">
           <div class="label"> Alertas de Stock Bajo</div>
@@ -4148,7 +4144,7 @@
         </div>
         <div class="kpi-card">
           <div class="label">Valor Estimado Inventario</div>
-          <div class="value" id="invKpiTotalValue">$88.2M MXN</div>
+          <div class="value" id="invKpiTotalValue">—</div>
           <div class="sub">Precio costo promedio</div>
         </div>
       </div>
@@ -4160,8 +4156,7 @@
             <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.9rem;">Existencias en tiempo real de cada producto desglosadas por cada una de nuestras 3 sucursales.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn primary" onclick="syncInventoryData()">Actualizar Stock</button>
-            <button class="btn secondary" onclick="openTraspasoModal()">Movimientos & Traspasos</button>
+            <button class="btn primary" onclick="openTraspasoModal()">Movimientos & Traspasos</button>
           </div>
         </div>
 
@@ -4211,7 +4206,7 @@
           <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
           <button class="btn secondary small" onclick="downloadLowStockCSV()">Descargar (CSV)</button>
-          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          <select id="lowStockStoreFilter" onchange="lowStockShown = LOW_STOCK_PAGE; renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
             <option value="all">Todas las sucursales</option>
             <option value="puebla">Puebla</option>
             <option value="rumania">CDMX Rumania</option>
@@ -4228,6 +4223,9 @@
               <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
+        </div>
+        <div id="lowStockMoreWrap" style="display:none; text-align:center; margin-top:12px;">
+          <button class="btn secondary" id="lowStockMoreBtn" onclick="lowStockShown += LOW_STOCK_PAGE; renderLowStockByStoreCard()">Cargar más</button>
         </div>
       </div>
     </section>
@@ -7068,6 +7066,14 @@ function applyStaffPermissionsUI() {
     el.classList.toggle('perm-hidden', !allowed);
   });
 
+  // "Inventario" abre la primera de sus pestañas que esta persona puede ver.
+  const navInv = document.getElementById('navInventario');
+  if (navInv) {
+    const first = inventarioTabs().find(t => !restricted || hasPermission(t.view));
+    navInv.dataset.view = first ? first.view : 'bodegas';
+    navInv.classList.toggle('perm-hidden', !first);
+  }
+
   // Which cash registers (bodegas) this person can operate in the POS. Only
   // restrict once at least one caja-* permission is explicitly set for them —
   // staff configured before this existed have none of these keys, and should
@@ -8411,6 +8417,37 @@ if (document.getElementById('sidebarBackdrop')) {
 }
 
 // NAVIGATION
+// ---- Inventario: Existencias, Recepción, Movimientos y Etiquetas en una sola entrada del menú ----
+// Cada parte sigue siendo su propia vista (con su carga y sus permisos); arriba de las cuatro va la
+// misma tira de pestañas para moverse entre ellas.
+// (Función y no constante: applyStaffPermissionsUI la usa y puede correr antes que esta parte del script.)
+function inventarioTabs() {
+  return [
+    { view: 'bodegas', label: 'Existencias por bodega' },
+    { view: 'recepcion', label: 'Recepción de mercancía' },
+    { view: 'movimientos', label: 'Movimientos (Kardex)' },
+    { view: 'etiquetas', label: 'Etiquetas de precio' }
+  ];
+}
+
+function renderInventarioTabs(active) {
+  const tabs = inventarioTabs();
+  tabs.forEach(t => {
+    const section = document.getElementById('view-' + t.view);
+    if (!section) return;
+    let bar = section.querySelector(':scope > .inv-tabs');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'inv-tabs';
+      bar.style.cssText = 'display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; border-bottom:1px solid var(--border);';
+      section.insertBefore(bar, section.firstChild);
+    }
+    bar.innerHTML = tabs.filter(x => hasPermission(x.view)).map(x =>
+      `<button type="button" class="btn${x.view === active ? ' primary' : ''}" onclick="switchView('${x.view}')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">${x.label}</button>`
+    ).join('');
+  });
+}
+
 function switchView(viewName) {
   if (currentStaffSession && !hasPermission(viewName)) {
     alert('No tienes permiso para acceder a esta sección. Contacta al administrador si crees que es un error.');
@@ -8435,10 +8472,10 @@ function switchView(viewName) {
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
     retransmisiones: ['Retransmisiones', 'Mensajes y cupones para recuperar ventas'],
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
-    bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
-    movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
-    etiquetas: ['Etiquetas de precio', 'Imprimir etiquetas con precio y mayoreo'],
-    recepcion: ['Recepción de mercancía', 'Nota escaneada con IA, vinculación de códigos, conteo y autorización'],
+    bodegas: ['Inventario', 'Existencias por bodega'],
+    movimientos: ['Inventario', 'Movimientos (Kardex) por producto y bodega'],
+    etiquetas: ['Inventario', 'Etiquetas de precio con mayoreo'],
+    recepcion: ['Inventario', 'Recepción de mercancía: nota escaneada, vinculación de códigos, conteo y autorización'],
     competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
     blog: ['Blog', 'Artículos para atraer visitas desde Google'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
@@ -8486,6 +8523,10 @@ function switchView(viewName) {
   if (viewName === 'recepcion') recIniciar();
   if (viewName === 'param-tienda-seo') seoIniciar();
   if (viewName === 'blog') blogMostrarLista();
+  if (inventarioTabs().some(t => t.view === viewName)) {
+    renderInventarioTabs(viewName);
+    document.querySelectorAll('.submenu-link').forEach(l => l.classList.toggle('active', l.id === 'navInventario'));
+  }
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
@@ -11320,6 +11361,24 @@ function renderInventarioTable() {
     return matchQ && matchWh && matchSt;
   });
 
+  // Totales reales por bodega (antes eran números fijos escritos en la página).
+  const WH = [['rumania', 'CDMX Rumania', '_stRumania'], ['puebla', 'Puebla', '_stPuebla'], ['queretaro', 'Querétaro', '_stQueretaro']];
+  const porBodega = WH.map(([key, label, campo]) => {
+    let units = 0, skus = 0, agotados = 0;
+    dataset.forEach(p => { const q = p[campo] || 0; units += q; if (q > 0) skus++; else agotados++; });
+    return { key, label, units, skus, agotados };
+  });
+  const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  porBodega.forEach(b => {
+    setTxt('invWhUnits-' + b.key, b.units.toLocaleString('es-MX') + ' u.');
+    setTxt('invWhSkus-' + b.key, `${b.skus.toLocaleString('es-MX')} productos con existencia (${b.agotados.toLocaleString('es-MX')} agotados)`);
+    setTxt('invWhRowUnits-' + b.key, b.units.toLocaleString('es-MX'));
+    setTxt('invWhRowSkus-' + b.key, b.skus.toLocaleString('es-MX'));
+  });
+  const mayor = porBodega.reduce((a, b) => (b.units > a.units ? b : a), porBodega[0]);
+  setTxt('invKpiTopWarehouse', mayor.label);
+  setTxt('invKpiTopWarehouseSub', mayor.units.toLocaleString('es-MX') + ' unidades en almacén');
+
   // Update KPIs
   if (document.getElementById('invKpiTotalUnits')) document.getElementById('invKpiTotalUnits').textContent = totalUnitsCount.toLocaleString() + ' u.';
   if (document.getElementById('invKpiLowStockCount')) document.getElementById('invKpiLowStockCount').textContent = lowStockCount + ' SKUs';
@@ -11353,11 +11412,6 @@ function renderInventarioTable() {
       </tr>
     `;
   }).join('');
-}
-
-function syncInventoryData() {
-  renderInventarioTable();
-  alert('Inventario por almacén sincronizado correctamente.');
 }
 
 // ================= EMBUDO DE COMPRA (panel del admin) =================
@@ -17968,6 +18022,11 @@ function lowStockEntries(filterWh) {
   return entries;
 }
 
+// Se muestran de LOW_STOCK_PAGE en LOW_STOCK_PAGE con el botón "Cargar más"; cambiar de sucursal
+// regresa a la primera tanda (la actualización automática de cada minuto conserva lo ya cargado).
+const LOW_STOCK_PAGE = 10;
+let lowStockShown = LOW_STOCK_PAGE;
+
 function renderLowStockByStoreCard() {
   const tbody = document.getElementById('lowStockByStoreTableBody');
   const countEl = document.getElementById('lowStockByStoreCount');
@@ -17978,11 +18037,19 @@ function renderLowStockByStoreCard() {
 
   if (countEl) countEl.textContent = entries.length;
 
+  const moreWrap = document.getElementById('lowStockMoreWrap');
   if (entries.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
+    if (moreWrap) moreWrap.style.display = 'none';
     return;
   }
-  tbody.innerHTML = entries.slice(0, 150).map(e => `
+  const restantes = entries.length - lowStockShown;
+  if (moreWrap) {
+    moreWrap.style.display = restantes > 0 ? 'block' : 'none';
+    const btn = document.getElementById('lowStockMoreBtn');
+    if (btn) btn.textContent = `Cargar más (${restantes.toLocaleString('es-MX')} restantes)`;
+  }
+  tbody.innerHTML = entries.slice(0, lowStockShown).map(e => `
     <tr>
       <td>${escapeHtml(e.name)}</td>
       <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(e.sku || '—')}</td>
@@ -17990,10 +18057,10 @@ function renderLowStockByStoreCard() {
       <td style="text-align:center; font-weight:700; color:${e.qty < 0 ? '#dc2626' : 'var(--series-2)'};">${e.qty}</td>
       <td style="text-align:center; color:var(--text-muted);">${e.threshold}</td>
     </tr>
-  `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más… (la descarga trae todos)</td></tr>` : '');
+  `).join('');
 }
 
-// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla muestra solo los primeros 150).
+// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla va por tandas).
 function downloadLowStockCSV() {
   const sel = document.getElementById('lowStockStoreFilter');
   const filterWh = sel?.value || 'all';
