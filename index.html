@@ -6665,7 +6665,7 @@
     </div>
 
     <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
-      Elige el tipo de movimiento y la bodega, agrega los productos con el buscador y guárdalo como borrador. El inventario no cambia hasta que un responsable lo apruebe en el Historial.
+      Elige el tipo de movimiento y la bodega y agrega los productos. Con <b>Guardar borrador</b> queda pendiente hasta que un responsable lo apruebe en el Historial; quien puede aprobar también tiene <b>Guardar y aplicar</b>, que lo aplica al momento.
     </p>
 
     <!-- Movement Type Toggle Buttons -->
@@ -6733,9 +6733,10 @@
         <input type="text" id="traspasoMotivo" oninput="saveMovDraft()" placeholder="Ej. merma por daño, traspaso para surtir sucursal, devolución ticket #1234" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
-      <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
         <button type="button" class="btn" onclick="closeTraspasoModal()">Cancelar</button>
         <button type="button" class="btn" id="btnGuardarBorradorForm" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700;">Guardar borrador</button>
+        <button type="button" class="btn mov-aplicar-btn hidden" id="btnAplicarForm" onclick="saveMovAsDraft(true)" title="Se guarda y se aplica al inventario de una vez (solo quien puede aprobar)" style="padding:10px 20px; font-weight:700; background:#16a34a; color:#fff; border-color:#16a34a;">Guardar y aplicar</button>
         <button type="submit" class="btn primary" id="btnConfirmMovimiento" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">
            Revisar entrada
         </button>
@@ -6748,6 +6749,7 @@
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap;">
         <button type="button" class="btn" onclick="backToMovEditor()">← Regresar a editar</button>
         <button type="button" class="btn primary" id="btnSaveMovBorrador" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">Guardar borrador</button>
+        <button type="button" class="btn mov-aplicar-btn hidden" id="btnAplicarReview" onclick="saveMovAsDraft(true)" title="Se guarda y se aplica al inventario de una vez (solo quien puede aprobar)" style="padding:10px 20px; font-weight:700; background:#16a34a; color:#fff; border-color:#16a34a;">Guardar y aplicar</button>
       </div>
     </div>
   </div>
@@ -13012,6 +13014,8 @@ async function refreshMovHistoryData() {
 }
 
 function updateMovHistorialButton() {
+  // "Guardar y aplicar" solo para quien puede aprobar (el servidor lo vuelve a revisar al aprobar).
+  document.querySelectorAll('.mov-aplicar-btn').forEach(b => b.classList.toggle('hidden', !movCanApprove));
   const btn = document.getElementById('btnMovHistorial');
   if (!btn) return;
   const pending = movDocs.filter(d => d.estado === 'borrador').length;
@@ -13230,8 +13234,11 @@ function movHistAction(action, idx) {
 }
 
 // ---- Guardar borrador ----
-async function saveMovAsDraft() {
-  const err = movValidate(true);
+// Con aplicar=true ("Guardar y aplicar", solo quien puede aprobar) se guarda y se aprueba de una vez:
+// queda en el Historial como aprobado por esta persona, igual que si lo aprobara ahí.
+async function saveMovAsDraft(aplicar = false) {
+  if (aplicar && !movCanApprove) { alert(movErrorMessage({ message: 'sin_permiso_aprobar' })); return; }
+  const err = movValidate(!aplicar);
   if (err) { alert(err); renderMovLote(); return; }
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
@@ -13257,7 +13264,12 @@ async function saveMovAsDraft() {
     if (conteo || currentMovType === 'ajuste') { const sistema = movStockInfo(it.id).stock; return { ...base, qty: it.qty - sistema, contado: it.qty, sistema }; }
     return base;
   });
-  const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm'].map(id => document.getElementById(id)).filter(Boolean);
+  if (aplicar) {
+    const ruta = currentMovType === 'traspaso' ? `de ${movBodegaLabel(origen)} a ${movBodegaLabel(destino)}`
+      : currentMovType === 'salida' ? `de ${movBodegaLabel(origen)}` : `en ${movBodegaLabel(destino)}`;
+    if (!confirm(`${MOV_TIPO_LABEL[currentMovType]} ${ruta}: ${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'}.\n\nSe aplica al inventario AHORA y queda en el Historial como aprobado por ${nombreSesionActual()}.\n\n¿Guardar y aplicar?`)) return;
+  }
+  const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm', 'btnAplicarForm', 'btnAplicarReview'].map(id => document.getElementById(id)).filter(Boolean);
   btns.forEach(b => { b.disabled = true; });
   try {
     const doc = await sbRpc('rpc_mov_doc_save', {
@@ -13277,6 +13289,23 @@ async function saveMovAsDraft() {
     saveMovDraft();
     backToMovEditor();
     renderMovLote();
+    if (aplicar) {
+      try {
+        const aprobado = await sbRpc('rpc_mov_doc_approve', { ...getSessionCredsParams(), p_id: doc.id });
+        movDocLedgerMoves(aprobado).forEach(m => {
+          const key = `${m.id_product}|${m.almacen}`;
+          stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
+        });
+        renderInventarioTable();
+        renderLowStockByStoreCard();
+        alert(`Listo: #${aprobado.folio} se aplicó al inventario.\n\n${MOV_TIPO_LABEL[aprobado.tipo]}: ${n} ${n === 1 ? 'producto' : 'productos'}. Queda en el Historial como aprobado por ${aprobado.aprobado_por}.`);
+        await openMovHistory('todos');
+      } catch (e) {
+        alert(movErrorMessage(e, 'No se pudo aplicar.') + `\n\nEl movimiento #${doc.folio} quedó guardado como pendiente en el Historial.`);
+        await openMovHistory('borrador');
+      }
+      return;
+    }
     alert(`Borrador #${doc.folio} ${editado ? 'actualizado' : 'guardado'}.\n\n${MOV_TIPO_LABEL[doc.tipo]}: ${n} ${n === 1 ? 'producto' : 'productos'}, ${units.toLocaleString('es-MX')} unidades.\n\nTodavía NO cambia el inventario: debe aprobarse en el Historial.`);
     await openMovHistory('borrador');
   } catch (e) {
