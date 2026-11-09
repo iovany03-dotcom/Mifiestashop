@@ -6746,6 +6746,39 @@
   </div>
 </div>
 
+<!-- Ajuste rápido de existencia de un producto en una bodega (desde Almacenes & Bodegas) -->
+<div class="modal-overlay hidden" id="stockAjusteModal">
+  <div class="modal" style="max-width: 440px;">
+    <div class="modal-header">
+      <h2>Ajuste de existencia</h2>
+      <button class="btn small" onclick="closeStockAjuste()">✕</button>
+    </div>
+    <div id="stockAjusteProducto" style="font-size:13px; margin-bottom:10px;"></div>
+    <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:10px;">
+      <div style="flex:1; min-width:120px;">
+        <div style="font-size:12px; color:var(--text-muted);">En sistema</div>
+        <div id="stockAjusteActual" style="font-size:22px; font-weight:700;"></div>
+      </div>
+      <label style="flex:1; min-width:140px; font-size:12px; font-weight:600;">Nueva cantidad
+        <input type="number" id="stockAjusteNueva" min="0" step="1" inputmode="numeric" oninput="renderStockAjusteDiff()"
+          onkeydown="if (event.key === 'Enter') { event.preventDefault(); document.getElementById('stockAjusteMotivo').focus(); }"
+          style="display:block; width:100%; margin-top:4px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px;">
+      </label>
+    </div>
+    <div id="stockAjusteDiff" style="font-size:13px; font-weight:600; min-height:18px; margin-bottom:10px;"></div>
+    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:12px;">Motivo del ajuste
+      <input type="text" id="stockAjusteMotivo" maxlength="200" placeholder="Ej. conteo físico del 9 de noviembre"
+        onkeydown="if (event.key === 'Enter') { event.preventDefault(); saveStockAjuste(); }"
+        style="display:block; width:100%; margin-top:4px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
+    </label>
+    <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px;">Se manda al Historial como borrador: el inventario cambia cuando se aprueba.</p>
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <button class="btn" onclick="closeStockAjuste()">Cancelar</button>
+      <button class="btn primary" id="stockAjusteGuardar" onclick="saveStockAjuste()">Mandar al Historial</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // SUPABASE CREDENTIALS & SETUP
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
@@ -11309,13 +11342,12 @@ function renderInventarioTable() {
         </td>
         <td><b>${p.sku}</b></td>
         <td>${p.name}</td>
-        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stPuebla.toLocaleString()}</span> u.</td>
-        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stRumania.toLocaleString()}</span> u.</td>
-        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stQueretaro.toLocaleString()}</span> u.</td>
+        <td style="text-align:center; white-space:nowrap;"><span style="font-weight:600; color:var(--text-primary);">${p._stPuebla.toLocaleString()}</span> u. ${stockAjusteBtn(p.id, 'puebla')}</td>
+        <td style="text-align:center; white-space:nowrap;"><span style="font-weight:600; color:var(--text-primary);">${p._stRumania.toLocaleString()}</span> u. ${stockAjusteBtn(p.id, 'rumania')}</td>
+        <td style="text-align:center; white-space:nowrap;"><span style="font-weight:600; color:var(--text-primary);">${p._stQueretaro.toLocaleString()}</span> u. ${stockAjusteBtn(p.id, 'queretaro')}</td>
         <td style="text-align:center; font-weight:700; color:var(--series-2);">${p._stTotal.toLocaleString()} u.</td>
         <td style="text-align:center;">${statusPill}</td>
         <td style="text-align:center;">
-          <button class="btn small" style="padding:4px 8px; font-size:0.75rem;" onclick="openStockAdjustModal(${p.id})"> Ajustar</button>
           <button class="btn small secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openKardexForProduct(${p.id})">Movimientos</button>
         </td>
       </tr>
@@ -14024,36 +14056,83 @@ function repeatCustomerOrder(folio) {
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
 }
 
-async function openStockAdjustModal(pId) {
+// ---- Ajuste de existencia por bodega (botón "Ajuste" junto a cada cantidad de la matriz) ----
+// Se escribe la cantidad nueva y se manda al Historial de movimientos como borrador, con el mismo
+// flujo y las mismas reglas que "Movimientos & Traspasos": si sube, es un ajuste de entrada por
+// conteo físico (al aprobar, el servidor vuelve a calcular contado - existencia de ese momento, así
+// no se duplica); si baja, es una salida por la diferencia. Nada cambia hasta que se aprueba.
+let stockAjuste = null;
+
+function stockAjusteBtn(pId, bodega) {
+  return `<button type="button" class="btn small" style="padding:2px 7px; font-size:0.7rem; margin-left:4px;" title="Ajustar ${escapeHtml(movBodegaLabel(bodega))}" onclick="openStockAjuste('${escapeHtml(String(pId))}', '${bodega}')">Ajuste</button>`;
+}
+
+function openStockAjuste(pId, bodega) {
+  if (!getAdminPassword() && !getStaffCreds()) { alert('Inicia sesión para ajustar existencias.'); return; }
   const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
   const product = dataset.find(p => String(p.id) === String(pId));
-  if(!product) return;
+  if (!product) return;
+  const actual = getStockFor(product.id, bodega);
+  stockAjuste = { id: product.id, name: product.name, sku: product.sku || '', bodega, actual };
+  document.getElementById('stockAjusteProducto').innerHTML =
+    `<b>${escapeHtml(product.name)}</b><br><span style="color:var(--text-muted);">${escapeHtml(product.sku || '')} · Bodega <b>${escapeHtml(movBodegaLabel(bodega))}</b></span>`;
+  document.getElementById('stockAjusteActual').textContent = `${actual.toLocaleString('es-MX')} u.`;
+  const nueva = document.getElementById('stockAjusteNueva');
+  nueva.value = '';
+  document.getElementById('stockAjusteMotivo').value = '';
+  renderStockAjusteDiff();
+  document.getElementById('stockAjusteModal').classList.remove('hidden');
+  setTimeout(() => nueva.focus(), 50);
+}
 
-  const current = getStockFor(pId, 'rumania');
-  const newStockStr = prompt(`Ajuste de inventario para:\n${product.sku} - ${product.name}\n\nIngrese la nueva existencia para la bodega CDMX Rumania:`, current);
-  if (newStockStr === null) return;
+function closeStockAjuste() {
+  document.getElementById('stockAjusteModal')?.classList.add('hidden');
+  stockAjuste = null;
+}
 
-  const parsed = parseInt(newStockStr);
-  if (isNaN(parsed) || parsed < 0) return;
+function stockAjusteNueva() {
+  const raw = document.getElementById('stockAjusteNueva').value.trim();
+  return /^\d{1,6}$/.test(raw) ? parseInt(raw, 10) : null;
+}
 
-  const delta = parsed - current;
-  if (delta === 0) return;
-  if (delta > 0) {
-    alert('INGRESO NO PERMITIDO desde aquí.\n\nSi es mercancía comprada, regístrala en Catálogo & Stock → Recepción de mercancía con la nota del proveedor.\nSi es una devolución o una corrección, usa Movimientos & Traspasos → Ajuste de entrada (requiere justificación y aprobación).');
-    return;
-  }
+function renderStockAjusteDiff() {
+  const el = document.getElementById('stockAjusteDiff');
+  if (!el || !stockAjuste) return;
+  const n = stockAjusteNueva();
+  if (n === null) { el.textContent = ''; return; }
+  const d = n - stockAjuste.actual;
+  el.style.color = d > 0 ? 'var(--success, #16a34a)' : d < 0 ? 'var(--danger, #dc2626)' : 'var(--text-muted)';
+  el.textContent = d === 0 ? 'Es la misma cantidad: no hay nada que ajustar.'
+    : d > 0 ? `Entran +${d.toLocaleString('es-MX')} u. (ajuste de entrada por conteo físico)`
+    : `Salen ${Math.abs(d).toLocaleString('es-MX')} u. (salida por ajuste)`;
+}
 
+async function saveStockAjuste() {
+  if (!stockAjuste) return;
+  const n = stockAjusteNueva();
+  if (n === null) { alert('Escribe la nueva cantidad (un número entero, 0 o mayor).'); return; }
+  const { id, name, sku, bodega, actual } = stockAjuste;
+  const d = n - actual;
+  if (d === 0) { alert('Es la misma cantidad que tiene el sistema: no hay nada que ajustar.'); return; }
+  const motivoTxt = document.getElementById('stockAjusteMotivo').value.trim().replace(MOV_AJUSTE_RE, '');
+  if (motivoTxt.replace(/\s/g, '').length < 5) { alert('Escribe el motivo del ajuste (por ejemplo: conteo físico, merma, producto dañado).'); document.getElementById('stockAjusteMotivo').focus(); return; }
+  const detalle = `${motivoTxt} (${movBodegaLabel(bodega)}: sistema ${actual} → ${n})`;
+  const params = d > 0
+    ? { p_tipo: 'entrada', p_origen: null, p_destino: bodega, p_motivo: `conteo: ${detalle}`,
+        p_items: [{ id_product: parseInt(id, 10), qty: d, name, sku, contado: n, sistema: actual }] }
+    : { p_tipo: 'salida', p_origen: bodega, p_destino: null, p_motivo: `Ajuste: ${detalle}`,
+        p_items: [{ id_product: parseInt(id, 10), qty: -d, name, sku }] };
+  const btn = document.getElementById('stockAjusteGuardar');
+  btn.disabled = true;
   try {
-    await sbRpc('rpc_stock_move_insert_bulk', {
-      ...getSessionCredsParams(),
-      p_moves: [{ id_product: pId, almacen: 'rumania', qty: delta, motivo: 'ajuste', folio: 'AJU-' + Math.floor(1000 + Math.random() * 9000), registrado_por: nombreSesionActual() }]
-    });
-    const key = `${pId}|rumania`;
-    stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + delta;
-    renderInventarioTable();
-    alert(` Existencia actualizada a ${parsed} u. para CDMX Rumania.`);
+    const doc = await sbRpc('rpc_mov_doc_save', { ...getSessionCredsParams(), p_id: null, ...params });
+    closeStockAjuste();
+    alert(`Ajuste #${doc.folio} mandado al Historial.\n\n${name}\n${movBodegaLabel(bodega)}: ${actual} → ${n} u. (${d > 0 ? '+' : ''}${d})\n\nTodavía NO cambia el inventario: se aplica cuando se aprueba en el Historial.`);
+    await openMovHistory('borrador');
   } catch (e) {
-    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo actualizar la existencia.');
+    alert(movErrorMessage(e, 'No se pudo mandar el ajuste al Historial (no se guardó nada). Intenta de nuevo.'));
+  } finally {
+    btn.disabled = false;
   }
 }
 
