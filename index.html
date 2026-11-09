@@ -3686,6 +3686,38 @@
       </div>
     </section>
 
+    <!-- ================= HISTORIAL DE MOVIMIENTOS (pestaña de Inventario) ================= -->
+    <section id="view-mov-historial" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+          <div>
+            <h2 style="margin:0 0 4px;">Historial de movimientos</h2>
+            <div style="font-size:13px; color:var(--text-muted);">Todo lo que mueve el inventario: entradas de mercancía, ajustes, salidas, traspasos y cancelaciones. Los ajustes, salidas y traspasos se guardan como borrador y cambian el inventario hasta que se aprueban. Las ventas están en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Movimientos (Kardex)</a>.</div>
+          </div>
+          <button class="btn primary" onclick="openTraspasoModal()">+ Nuevo movimiento</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <div id="movHistFilters" style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn small primary" data-f="todos" onclick="setMovHistFilter('todos')">Todos</button>
+            <button type="button" class="btn small" data-f="borrador" onclick="setMovHistFilter('borrador')">Pendientes de aprobar</button>
+            <button type="button" class="btn small" data-f="aprobado" onclick="setMovHistFilter('aprobado')">Aplicados</button>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="movHistTipo" onchange="renderMovHistory()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              <option value="">Todos los tipos</option>
+              <option value="compra">Entradas de mercancía</option>
+              <option value="entrada">Ajustes de entrada</option>
+              <option value="salida">Salidas</option>
+              <option value="traspaso">Traspasos</option>
+              <option value="otros">Otros (ajustes antiguos, cancelaciones, reversas)</option>
+            </select>
+            <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
+          </div>
+        </div>
+        <div id="traspasoHistoryList" style="font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;"></div>
+      </div>
+    </section>
+
     <!-- ================= EMBUDO DE COMPRA ================= -->
     <section id="view-embudo" class="view-panel hidden">
       <div class="card">
@@ -6637,26 +6669,22 @@
     </p>
 
     <!-- Movement Type Toggle Buttons -->
-    <div style="display:flex; gap:8px; margin-bottom:16px;">
-      <button type="button" class="btn primary" id="btnTipoEntrada" onclick="setMovimientoType('entrada')" style="flex:1; justify-content:center; font-weight:700;">Ajuste de entrada</button>
-      <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
-      <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; justify-content:center; font-weight:700;">Traspaso</button>
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <button type="button" class="btn" id="btnTipoCompra" onclick="closeTraspasoModal(); switchView('recepcion');" title="Mercancía comprada a un proveedor, con su nota" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Entrada de mercancía</button>
+      <button type="button" class="btn primary" id="btnTipoEntrada" onclick="setMovimientoType('entrada')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Ajuste de entrada</button>
+      <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
+      <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Traspaso</button>
     </div>
 
-    <div id="movAvisoCompras" style="background:rgba(211,0,123,0.08); border:1px solid rgba(211,0,123,0.35); border-radius:10px; padding:10px 12px; margin-bottom:14px; font-size:13px; color:var(--text-primary);">
-      <b>Las compras a proveedores ya no se registran aquí.</b> Toda mercancía comprada entra por
-      <a href="#" onclick="event.preventDefault(); closeTraspasoModal(); switchView('recepcion');" style="color:#d3007b; font-weight:700;">Recepción de mercancía</a>
-      con la nota del proveedor escaneada. El ajuste de entrada es solo para devoluciones, correcciones o diferencias de conteo, con justificación y aprobación de un supervisor.
-      <div id="movAjusteCatWrap" style="margin-top:8px;">
-        <label style="font-weight:600;">Tipo de ajuste:
-          <select id="movAjusteCat" onchange="saveMovDraft(); renderMovLote();" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-            <option value="devolucion">Devolución de cliente</option>
-            <option value="correccion">Corrección de un error de captura</option>
-            <option value="conteo">Diferencia en conteo físico</option>
-          </select>
-        </label>
-        <div id="movConteoAyuda" style="display:none; margin-top:6px; font-size:12px;">En conteo físico escribe <b>cuántas piezas contaste</b>. El sistema suma solo la diferencia contra lo que tiene registrado al momento de aprobar.</div>
-      </div>
+    <div id="movAjusteCatWrap" style="margin-bottom:14px;">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">¿Por qué entran estas piezas?</label>
+      <select id="movAjusteCat" onchange="saveMovDraft(); renderMovLote();" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <option value="devolucion">Devolución de un cliente</option>
+        <option value="correccion">Corrección de un error de captura</option>
+        <option value="conteo">Conteo físico (hay más piezas de las que dice el sistema)</option>
+      </select>
+      <div style="margin-top:6px; font-size:12px; color:var(--text-muted);">Suma piezas a la bodega. Escribe abajo qué pasó; se aplica cuando un responsable lo aprueba.</div>
+      <div id="movConteoAyuda" style="display:none; margin-top:6px; font-size:12px;">En conteo físico escribe <b>cuántas piezas contaste</b>. El sistema suma solo la diferencia contra lo que tiene registrado al momento de aprobar.</div>
     </div>
 
     <form id="traspasoForm" onsubmit="event.preventDefault(); reviewStockMovement();">
@@ -6698,7 +6726,7 @@
       </div>
 
       <div style="margin-bottom:18px;">
-        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Motivo / Observaciones (Opcional):</label>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;" id="lblMovMotivo">Motivo / Observaciones (Opcional):</label>
         <input type="text" id="traspasoMotivo" oninput="saveMovDraft()" placeholder="Ej. merma por daño, traspaso para surtir sucursal, devolución ticket #1234" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
@@ -6718,61 +6746,6 @@
         <button type="button" class="btn" onclick="backToMovEditor()">← Regresar a editar</button>
         <button type="button" class="btn primary" id="btnSaveMovBorrador" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">Guardar borrador</button>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- ================= HISTORIAL DE MOVIMIENTOS (entradas, salidas y traspasos; con borradores y aprobación) ================= -->
-<div class="modal-overlay hidden" id="movHistoryModal">
-  <div class="modal" style="max-width: 820px;">
-    <div class="modal-header">
-      <h2>Historial de movimientos</h2>
-      <button class="btn small" onclick="closeMovHistory()">✕</button>
-    </div>
-    <p style="font-size:12.5px; color:var(--text-secondary); margin-top:0; margin-bottom:12px;">
-      Entradas, salidas y traspasos. Cada uno se guarda como borrador y no afecta el inventario hasta que se aprueba; ahí queda registrado quién lo aprobó. Las ventas y los movimientos de las cajas se ven en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Movimientos de inventario</a>.
-    </p>
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <div id="movHistFilters" style="display:flex; gap:6px; flex-wrap:wrap;">
-        <button type="button" class="btn small primary" data-f="todos" onclick="setMovHistFilter('todos')">Todos</button>
-        <button type="button" class="btn small" data-f="borrador" onclick="setMovHistFilter('borrador')">Pendientes de aprobar</button>
-        <button type="button" class="btn small" data-f="aprobado" onclick="setMovHistFilter('aprobado')">Aprobados</button>
-      </div>
-      <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
-    </div>
-    <div id="traspasoHistoryList" style="max-height:60vh; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;"></div>
-  </div>
-</div>
-
-<!-- Ajuste rápido de existencia de un producto en una bodega (desde Almacenes & Bodegas) -->
-<div class="modal-overlay hidden" id="stockAjusteModal">
-  <div class="modal" style="max-width: 440px;">
-    <div class="modal-header">
-      <h2>Ajuste de existencia</h2>
-      <button class="btn small" onclick="closeStockAjuste()">✕</button>
-    </div>
-    <div id="stockAjusteProducto" style="font-size:13px; margin-bottom:10px;"></div>
-    <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:10px;">
-      <div style="flex:1; min-width:120px;">
-        <div style="font-size:12px; color:var(--text-muted);">En sistema</div>
-        <div id="stockAjusteActual" style="font-size:22px; font-weight:700;"></div>
-      </div>
-      <label style="flex:1; min-width:140px; font-size:12px; font-weight:600;">Nueva cantidad
-        <input type="number" id="stockAjusteNueva" min="0" step="1" inputmode="numeric" oninput="renderStockAjusteDiff()"
-          onkeydown="if (event.key === 'Enter') { event.preventDefault(); document.getElementById('stockAjusteMotivo').focus(); }"
-          style="display:block; width:100%; margin-top:4px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:16px;">
-      </label>
-    </div>
-    <div id="stockAjusteDiff" style="font-size:13px; font-weight:600; min-height:18px; margin-bottom:10px;"></div>
-    <label style="display:block; font-size:12px; font-weight:600; margin-bottom:12px;">Motivo del ajuste
-      <input type="text" id="stockAjusteMotivo" maxlength="200" placeholder="Ej. conteo físico del 9 de noviembre"
-        onkeydown="if (event.key === 'Enter') { event.preventDefault(); saveStockAjuste(); }"
-        style="display:block; width:100%; margin-top:4px; padding:9px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-    </label>
-    <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px;">Se manda al Historial como borrador: el inventario cambia cuando se aprueba.</p>
-    <div style="display:flex; gap:8px; justify-content:flex-end;">
-      <button class="btn" onclick="closeStockAjuste()">Cancelar</button>
-      <button class="btn primary" id="stockAjusteGuardar" onclick="saveStockAjuste()">Mandar al Historial</button>
     </div>
   </div>
 </div>
@@ -7048,6 +7021,8 @@ function hasPermission(viewName) {
   const permisos = currentStaffSession.permisos || [];
   // Quien ya veía Almacenes / Bodegas también ve sus movimientos.
   if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
+  // El historial de movimientos (pestaña de Inventario) lo ve quien maneja inventario.
+  if (viewName === 'mov-historial') return ['bodegas', 'movimientos', 'recepcion', 'aprobar-movimientos'].some(k => permisos.includes(k));
   // La recepción la hacen quienes manejan bodegas; los supervisores la autorizan.
   if (viewName === 'recepcion' && (permisos.includes('bodegas') || permisos.includes('aprobar-movimientos'))) return true;
   // Las direcciones ahora son una pestaña dentro de Clientes.
@@ -8424,6 +8399,7 @@ if (document.getElementById('sidebarBackdrop')) {
 function inventarioTabs() {
   return [
     { view: 'bodegas', label: 'Existencias por bodega' },
+    { view: 'mov-historial', label: 'Historial de movimientos' },
     { view: 'recepcion', label: 'Recepción de mercancía' },
     { view: 'movimientos', label: 'Movimientos (Kardex)' },
     { view: 'etiquetas', label: 'Etiquetas de precio' }
@@ -8474,6 +8450,7 @@ function switchView(viewName) {
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Inventario', 'Existencias por bodega'],
     movimientos: ['Inventario', 'Movimientos (Kardex) por producto y bodega'],
+    'mov-historial': ['Inventario', 'Historial de movimientos'],
     etiquetas: ['Inventario', 'Etiquetas de precio con mayoreo'],
     recepcion: ['Inventario', 'Recepción de mercancía: nota escaneada, vinculación de códigos, conteo y autorización'],
     competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
@@ -8521,6 +8498,7 @@ function switchView(viewName) {
   if (viewName === 'competencia') loadCompetenciaView();
   if (viewName === 'etiquetas') etqIniciar();
   if (viewName === 'recepcion') recIniciar();
+  if (viewName === 'mov-historial') cargarMovHistorial();
   if (viewName === 'param-tienda-seo') seoIniciar();
   if (viewName === 'blog') blogMostrarLista();
   if (inventarioTabs().some(t => t.view === viewName)) {
@@ -12646,6 +12624,8 @@ function setMovimientoType(tipo) {
 
   const catWrap = document.getElementById('movAjusteCatWrap');
   if (catWrap) catWrap.style.display = tipo === 'entrada' ? 'block' : 'none';
+  const lblMotivo = document.getElementById('lblMovMotivo');
+  if (lblMotivo) lblMotivo.textContent = tipo === 'entrada' ? 'Motivo (obligatorio): qué pasó' : 'Motivo / Observaciones (Opcional):';
   if (tipo === 'entrada') {
     if(wrapOrigen) wrapOrigen.style.display = 'none';
     if(wrapDestino) wrapDestino.style.display = 'block';
@@ -13007,7 +12987,8 @@ const MOV_MANUAL_TAGS = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entra
 
 function movRowTag(row) {
   const tagRaw = String(row.motivo || '').split(':')[0].trim();
-  return [...MOV_MANUAL_TAGS, 'venta_pos'].includes(tagRaw) ? tagRaw : 'ajuste';
+  if (tagRaw === 'ajuste_entrada') return 'entrada';
+  return [...MOV_MANUAL_TAGS, 'venta_pos', 'compra', 'cancelacion'].includes(tagRaw) ? tagRaw : 'ajuste';
 }
 
 function movItemName(it) {
@@ -13059,14 +13040,15 @@ function movHistoryEntries() {
     if (!isReversal && !MOV_HIST_TIPOS.includes(tipo)) return;
     const reverted = !!g.folio && revertedFolios.has(g.folio);
     const pos = g.rows.filter(r => parseFloat(r.qty) > 0), neg = g.rows.filter(r => parseFloat(r.qty) < 0);
-    const itemRows = tipo === 'traspaso' ? pos : (isReversal ? g.rows : g.rows);
+    const itemRows = tipo === 'traspaso' ? pos : g.rows;
+    const conSigno = isReversal || tipo === 'ajuste';
     entries.push({
       key: g.key, source: 'legacy', rows: g.rows, folio: g.folio || '', tipo, estado: 'aprobado', reverted, isReversal,
       revertible: !!g.folio && /^(ENT|SAL|TR)-/.test(g.folio) && !isReversal && !reverted && g.rows.every(r => MOV_MANUAL_TAGS.includes(movRowTag(r))),
       origen: neg[0] ? neg[0].almacen : '', destino: pos[0] ? pos[0].almacen : '',
       nota: String(g.rows[0].motivo || '').split(':').slice(1).join(':').trim(),
       por: g.rows[0].registrado_por || '', date: g.rows[0].created_at, aprobadoPor: '', aprobadoAt: '',
-      items: itemRows.map(r => ({ id_product: r.id_product, name: '', qty: isReversal ? parseFloat(r.qty) || 0 : Math.abs(parseFloat(r.qty) || 0), almacen: r.almacen }))
+      items: itemRows.map(r => ({ id_product: r.id_product, name: '', qty: conSigno ? parseFloat(r.qty) || 0 : Math.abs(parseFloat(r.qty) || 0), almacen: r.almacen }))
     });
   });
 
@@ -13074,7 +13056,7 @@ function movHistoryEntries() {
   return entries;
 }
 
-const MOV_HIST_TIPOS = ['entrada', 'salida', 'traspaso'];
+const MOV_HIST_TIPOS = ['entrada', 'salida', 'traspaso', 'compra', 'ajuste', 'cancelacion'];
 let movHistShown = [];
 
 function setMovHistFilter(f) {
@@ -13082,22 +13064,28 @@ function setMovHistFilter(f) {
   renderMovHistory();
 }
 
+// El historial es una pestaña de Inventario (ya no una ventana flotante).
 async function openMovHistory(filter) {
   if (filter) movHistFilter = filter;
-  document.getElementById('movHistoryModal')?.classList.remove('hidden');
+  closeTraspasoModal();
+  switchView('mov-historial');
+}
+
+async function cargarMovHistorial() {
   const list = document.getElementById('traspasoHistoryList');
   if (list) list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:14px;">Cargando…</div>';
   await refreshMovHistoryData();
   renderMovHistory();
 }
 
-function closeMovHistory() {
-  document.getElementById('movHistoryModal')?.classList.add('hidden');
+// Vuelve a mostrar la ventana de movimientos tal como está (para editar un borrador o corregir).
+function showTraspasoModal() {
+  document.getElementById('traspasoModal')?.classList.remove('hidden');
+  if (adminCatalogProducts.length === 0) loadAdminCatalogProducts().then(() => renderMovLote()).catch(() => {});
 }
 
 function openKardexFromMovHistory() {
   if (!hasPermission('movimientos')) { alert('Tu usuario no tiene acceso a "Movimientos de inventario".'); return; }
-  closeMovHistory();
   closeTraspasoModal();
   switchView('movimientos');
 }
@@ -13108,8 +13096,11 @@ function renderMovHistory() {
   document.querySelectorAll('#movHistFilters button').forEach(b => b.classList.toggle('primary', b.dataset.f === movHistFilter));
 
   const all = movHistoryEntries();
-  const shown = all.filter(e => movHistFilter === 'borrador' ? e.estado === 'borrador'
-    : movHistFilter === 'aprobado' ? (e.estado === 'aprobado' && !e.isReversal) : true);
+  const tipoSel = document.getElementById('movHistTipo')?.value || '';
+  const tipoDe = e => e.isReversal ? 'otros' : (['ajuste', 'cancelacion'].includes(e.tipo) ? 'otros' : e.tipo);
+  const shown = all.filter(e => (movHistFilter === 'borrador' ? e.estado === 'borrador'
+    : movHistFilter === 'aprobado' ? (e.estado === 'aprobado' && !e.isReversal) : true)
+    && (!tipoSel || tipoDe(e) === tipoSel));
   movHistShown = shown;
   const badge = document.getElementById('movCountBadge');
   if (badge) badge.textContent = `${shown.length} movimiento${shown.length === 1 ? '' : 's'}`;
@@ -13121,7 +13112,10 @@ function renderMovHistory() {
   }
 
   const TIPO_PILL = {
-    entrada: ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada'],
+    compra: ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada de mercancía'],
+    entrada: ['rgba(34,197,94,0.15)', '#16a34a', 'Ajuste de entrada'],
+    ajuste: ['rgba(139,92,246,0.15)', '#7c3aed', 'Ajuste'],
+    cancelacion: ['rgba(245,158,11,0.18)', '#b45309', 'Cancelación de venta'],
     salida: ['rgba(239,68,68,0.15)', '#dc2626', 'Salida'],
     traspaso: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso'],
     reversa: ['rgba(148,163,184,0.15)', '#64748b', 'Reversa']
@@ -13130,22 +13124,25 @@ function renderMovHistory() {
 
   container.innerHTML = warn + shown.map((g, i) => {
     const units = g.isReversal ? 0 : g.items.reduce((s, it) => s + (it.qty || 0), 0);
+    const unitsTxt = g.tipo === 'ajuste' && units > 0 ? '+' + units.toLocaleString('es-MX') : units.toLocaleString('es-MX');
     const nProductos = new Set(g.items.map(it => String(it.id_product))).size;
     const first = g.items[0];
     const resumen = nProductos === 1 ? escapeHtml(first ? movItemName(first) : '—') : `${nProductos} productos`;
     const bodegaText = g.tipo === 'traspaso' ? `${movBodegaLabel(g.origen)} → ${movBodegaLabel(g.destino)}`
-      : g.tipo === 'entrada' ? movBodegaLabel(g.destino)
+      : (g.tipo === 'entrada' || g.tipo === 'compra' || g.tipo === 'cancelacion') ? movBodegaLabel(g.destino)
       : g.tipo === 'salida' ? movBodegaLabel(g.origen)
       : [...new Set(g.items.map(it => movBodegaLabel(it.almacen)))].join(', ');
     const folioLabel = g.folio ? (g.folio.startsWith('#') ? g.folio : '#' + g.folio) : '—';
-    const estadoPill = g.isReversal ? '' : g.estado === 'borrador' ? pill(['rgba(245,158,11,0.18)', '#b45309', 'Borrador · pendiente de aprobar'])
-      : g.reverted ? pill(['rgba(148,163,184,0.2)', '#64748b', 'Revertido']) : pill(['rgba(34,197,94,0.15)', '#16a34a', 'Aprobado']);
+    const estadoPill = g.isReversal ? '' : g.estado === 'borrador' ? pill(['rgba(245,158,11,0.18)', '#b45309', 'Pendiente de aprobar'])
+      : g.reverted ? pill(['rgba(148,163,184,0.2)', '#64748b', 'Revertido']) : pill(['rgba(34,197,94,0.15)', '#16a34a', 'Aplicado']);
     const aprobacion = g.isReversal ? ''
       : g.estado === 'borrador' ? '<span style="color:#b45309; font-weight:600;">Pendiente de aprobación</span>'
       : g.source === 'doc' ? `Aprobado por <b style="color:var(--text-primary);">${escapeHtml(g.aprobadoPor)}</b> · ${escapeHtml(movFmtDate(g.aprobadoAt))}`
-      : '<i>Registrado antes de que existieran las aprobaciones</i>';
+      : g.tipo === 'compra' ? 'Autorizado en Recepción de mercancía'
+      : g.tipo === 'cancelacion' ? 'Regresó al inventario al cancelar la venta'
+      : '<i>Aplicado directo, sin pasar por aprobación</i>';
     const detail = g.items.map(it => `<div style="display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border);">
-        <span>${escapeHtml(movItemName(it))}${g.isReversal ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(it.almacen))})</span>` : ''}</span><b>${g.isReversal ? (it.qty > 0 ? '+' : '') + it.qty : it.qty} u.</b></div>`).join('');
+        <span>${escapeHtml(movItemName(it))}${g.isReversal || g.tipo === 'ajuste' ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(it.almacen))})</span>` : ''}</span><b>${g.isReversal || g.tipo === 'ajuste' ? (it.qty > 0 ? '+' : '') + it.qty : it.qty} u.</b></div>`).join('');
 
     const btns = [];
     if (g.items.length > 1) btns.push(`<button type="button" class="btn small" onclick="document.getElementById('movHistDet${i}').classList.toggle('hidden')">Ver productos</button>`);
@@ -13167,10 +13164,10 @@ function renderMovHistory() {
           <div style="min-width:0;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
               <b style="color:var(--text-primary);">${escapeHtml(folioLabel)}</b>
-              ${pill(TIPO_PILL[g.tipo] || TIPO_PILL.reversa)}
+              ${pill(g.tipo === 'entrada' && g.source !== 'doc' ? ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada'] : (TIPO_PILL[g.tipo] || TIPO_PILL.reversa))}
               ${estadoPill}
               <span style="font-weight:600; color:var(--text-primary);">${resumen}</span>
-              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${units.toLocaleString('es-MX')} u.)</b>`}
+              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${unitsTxt} u.)</b>`}
             </div>
             <div style="font-size:11px; color:var(--text-muted);">
               <b>Bodega:</b> ${escapeHtml(bodegaText)} ${g.nota ? '• <i>' + escapeHtml(g.nota) + '</i>' : ''} ${g.por ? '• Capturó: ' + escapeHtml(g.por) : ''}
@@ -13259,7 +13256,7 @@ function editMovDoc(doc) {
   saveMovDraft();
   const notice = document.getElementById('movLoteNotice');
   if (notice) { notice.textContent = `Editando el borrador #${doc.folio}. Al guardar se actualiza ese borrador.`; notice.classList.remove('hidden'); }
-  closeMovHistory();
+  showTraspasoModal();
   document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -13470,7 +13467,7 @@ async function revertStockMovement(folio, corregir) {
     saveMovDraft();
     const notice = document.getElementById('movLoteNotice');
     if (notice) { notice.textContent = `Se revirtió #${folio}. Corrige los productos y cantidades y guárdalo como borrador; tendrá que aprobarse.`; notice.classList.remove('hidden'); }
-    closeMovHistory();
+    showTraspasoModal();
     document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
   await refreshMovHistoryData();
