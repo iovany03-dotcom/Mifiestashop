@@ -3632,7 +3632,7 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
           <div>
-            <h2 style="margin:0 0 4px;">Movimientos de inventario</h2>
+            <h2 style="margin:0 0 4px;">Kardex por producto</h2>
             <div style="font-size:13px; color:var(--text-muted);">Entradas, salidas, ventas, traspasos y ajustes por bodega: los de las cajas de PrestaShop y los de este sistema (POS, pedidos manuales, cancelaciones).</div>
           </div>
           <button class="btn secondary" onclick="exportKardexCsv()">Exportar CSV</button>
@@ -3692,7 +3692,7 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
           <div>
             <h2 style="margin:0 0 4px;">Historial de movimientos</h2>
-            <div style="font-size:13px; color:var(--text-muted);">Todo lo que mueve el inventario: entradas de mercancía, ajustes, salidas, traspasos y cancelaciones. Los ajustes, salidas y traspasos se guardan como borrador y cambian el inventario hasta que se aprueban. Las ventas están en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Movimientos (Kardex)</a>.</div>
+            <div style="font-size:13px; color:var(--text-muted);">Todo lo que mueve el inventario: entradas de mercancía, ajustes, salidas, traspasos y cancelaciones. Los ajustes, salidas y traspasos se guardan como borrador y cambian el inventario hasta que se aprueban. Las ventas de cada producto están en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Kardex por producto</a>.</div>
           </div>
           <button class="btn primary" onclick="openTraspasoModal()">+ Nuevo movimiento</button>
         </div>
@@ -4188,7 +4188,7 @@
             <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.9rem;">Existencias en tiempo real de cada producto desglosadas por cada una de nuestras 3 sucursales.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn primary" onclick="openTraspasoModal()">Movimientos & Traspasos</button>
+            <button class="btn primary" onclick="openTraspasoModal()">+ Nuevo movimiento</button>
           </div>
         </div>
 
@@ -6657,7 +6657,7 @@
 <div class="modal-overlay hidden" id="traspasoModal">
   <div class="modal" style="max-width: 760px;">
     <div class="modal-header">
-      <h2>Movimientos de Inventario & Traspasos</h2>
+      <h2>Nuevo movimiento</h2>
       <div style="display:flex; gap:8px; align-items:center;">
         <button class="btn small" id="btnMovHistorial" onclick="openMovHistory()">Historial</button>
         <button class="btn small" onclick="closeTraspasoModal()">✕</button>
@@ -6671,11 +6671,14 @@
     <!-- Movement Type Toggle Buttons -->
     <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
       <button type="button" class="btn" id="btnTipoCompra" onclick="closeTraspasoModal(); switchView('recepcion');" title="Mercancía comprada a un proveedor, con su nota" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Entrada de mercancía</button>
-      <button type="button" class="btn primary" id="btnTipoEntrada" onclick="setMovimientoType('entrada')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Ajuste de entrada</button>
+      <button type="button" class="btn primary" id="btnTipoAjuste" onclick="setMovimientoType('ajuste')" title="Deja la cantidad que escribas en la bodega: sube o baja según lo que haya" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Ajuste</button>
       <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
       <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Traspaso</button>
     </div>
 
+    <div id="movAjusteGeneralAyuda" style="display:none; margin-bottom:14px; font-size:12.5px; color:var(--text-secondary);">
+      Escribe la <b>cantidad que debe quedar</b> de cada producto en la bodega. El sistema sube o baja la diferencia al aprobarse.
+    </div>
     <div id="movAjusteCatWrap" style="margin-bottom:14px;">
       <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">¿Por qué entran estas piezas?</label>
       <select id="movAjusteCat" onchange="saveMovDraft(); renderMovLote();" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
@@ -6944,7 +6947,7 @@ const PERMISSION_GROUPS = [
   { group: 'Catálogo & Stock', items: [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
-    { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
+    { key: 'movimientos', label: 'Kardex por producto (ventas y movimientos de cada producto)' },
     { key: 'recepcion', label: 'Recepción de mercancía (escanear notas, vincular códigos, contar)' },
     { key: 'etiquetas', label: 'Etiquetas de precio (imprimir con mayoreo y código de barras)' },
     { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
@@ -8401,7 +8404,7 @@ function inventarioTabs() {
     { view: 'bodegas', label: 'Existencias por bodega' },
     { view: 'mov-historial', label: 'Historial de movimientos' },
     { view: 'recepcion', label: 'Recepción de mercancía' },
-    { view: 'movimientos', label: 'Movimientos (Kardex)' },
+    { view: 'movimientos', label: 'Kardex por producto' },
     { view: 'etiquetas', label: 'Etiquetas de precio' }
   ];
 }
@@ -8449,7 +8452,7 @@ function switchView(viewName) {
     retransmisiones: ['Retransmisiones', 'Mensajes y cupones para recuperar ventas'],
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
     bodegas: ['Inventario', 'Existencias por bodega'],
-    movimientos: ['Inventario', 'Movimientos (Kardex) por producto y bodega'],
+    movimientos: ['Inventario', 'Kardex por producto: ventas y movimientos de cada producto por bodega'],
     'mov-historial': ['Inventario', 'Historial de movimientos'],
     etiquetas: ['Inventario', 'Etiquetas de precio con mayoreo'],
     recepcion: ['Inventario', 'Recepción de mercancía: nota escaneada, vinculación de códigos, conteo y autorización'],
@@ -11379,13 +11382,13 @@ function renderInventarioTable() {
         </td>
         <td><b>${p.sku}</b></td>
         <td>${p.name}</td>
-        <td style="text-align:center; white-space:nowrap;"><span style="font-weight:600; color:var(--text-primary);">${p._stPuebla.toLocaleString()}</span> u. ${stockAjusteBtn(p.id, 'puebla')}</td>
-        <td style="text-align:center; white-space:nowrap;"><span style="font-weight:600; color:var(--text-primary);">${p._stRumania.toLocaleString()}</span> u. ${stockAjusteBtn(p.id, 'rumania')}</td>
-        <td style="text-align:center; white-space:nowrap;"><span style="font-weight:600; color:var(--text-primary);">${p._stQueretaro.toLocaleString()}</span> u. ${stockAjusteBtn(p.id, 'queretaro')}</td>
+        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stPuebla.toLocaleString()}</span> u.</td>
+        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stRumania.toLocaleString()}</span> u.</td>
+        <td style="text-align:center;"><span style="font-weight:600; color:var(--text-primary);">${p._stQueretaro.toLocaleString()}</span> u.</td>
         <td style="text-align:center; font-weight:700; color:var(--series-2);">${p._stTotal.toLocaleString()} u.</td>
         <td style="text-align:center;">${statusPill}</td>
         <td style="text-align:center;">
-          <button class="btn small secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openKardexForProduct(${p.id})">Movimientos</button>
+          <button class="btn small secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openKardexForProduct(${p.id})">Kardex</button>
         </td>
       </tr>
     `;
@@ -12525,7 +12528,7 @@ async function loadRtHistorial() {
 }
 
 // ================= MODULO DE MOVIMIENTOS E HISTORIAL DE INVENTARIO =================
-let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
+let currentMovType = 'ajuste'; // 'ajuste', 'salida', 'traspaso' ('entrada' = ajuste de entrada, solo borradores viejos)
 
 // Historial de movimientos: documentos (borradores y aprobados, mov_documentos)
 // y renglones manuales de pos_stock_moves, cargados por refreshMovHistoryData().
@@ -12544,7 +12547,7 @@ const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro:
 let movLote = [];              // [{ id, qty }]
 let movSearchActive = 0;       // resultado resaltado con las flechas
 const MOV_DRAFT_KEY = 'mf_mov_lote_borrador';
-const MOV_TIPO_LABEL = { entrada: 'Ajuste de entrada', salida: 'Salida', traspaso: 'Traspaso' };
+const MOV_TIPO_LABEL = { ajuste: 'Ajuste', entrada: 'Ajuste de entrada', salida: 'Salida', traspaso: 'Traspaso' };
 // Los ajustes de entrada se guardan como tipo 'ajuste_entrada' con el motivo "categoría: justificación"
 // (docs/supabase-recepcion.sql); las compras solo entran por Recepción de mercancía.
 const MOV_AJUSTE_RE = /^(devolucion|correccion|conteo):\s*/i;
@@ -12557,6 +12560,17 @@ function movEsConteo() {
 }
 function movConteoDiff(it) {
   return (it.qty || 0) - movStockInfo(it.id).stock;
+}
+
+// Ajuste general: en la lista se captura la CANTIDAD NUEVA de cada producto en la bodega (puede ser 0);
+// al aprobar, el servidor aplica la diferencia contra la existencia de ese momento (sube o baja).
+function movEsAjuste() {
+  return currentMovType === 'ajuste';
+}
+function movAjusteTexto(it) {
+  if (it.qty === null || it.qty === undefined) return '';
+  const d = it.qty - movStockInfo(it.id).stock;
+  return d > 0 ? `Sube +${d}` : d < 0 ? `Baja ${d}` : 'Sin cambio';
 }
 
 function movDataset() {
@@ -12604,18 +12618,21 @@ function applyMovState(d) {
   if (mCat && document.getElementById('movAjusteCat')) document.getElementById('movAjusteCat').value = mCat[1].toLowerCase();
   document.getElementById('traspasoMotivo').value = String(d.motivo || '').replace(MOV_AJUSTE_RE, '');
   movLote = d.items
-    .map(it => ({ id: String(it.id), qty: Math.max(1, parseInt(it.qty, 10) || 1) }))
+    .map(it => {
+      if (d.tipo === 'ajuste') { const n = parseInt(it.qty, 10); return { id: String(it.id), qty: Number.isFinite(n) && n >= 0 ? n : null }; }
+      return { id: String(it.id), qty: Math.max(1, parseInt(it.qty, 10) || 1) };
+    })
     .filter(it => it.id);
-  setMovimientoType(MOV_TIPO_LABEL[d.tipo] ? d.tipo : 'entrada');
+  setMovimientoType(MOV_TIPO_LABEL[d.tipo] ? d.tipo : 'ajuste');
 }
 
 function setMovimientoType(tipo) {
   currentMovType = tipo;
-  const btnEntrada = document.getElementById('btnTipoEntrada');
+  const btnAjuste = document.getElementById('btnTipoAjuste');
   const btnSalida = document.getElementById('btnTipoSalida');
   const btnTraspaso = document.getElementById('btnTipoTraspaso');
 
-  if(btnEntrada) btnEntrada.className = tipo === 'entrada' ? 'btn primary' : 'btn';
+  if(btnAjuste) btnAjuste.className = (tipo === 'ajuste' || tipo === 'entrada') ? 'btn primary' : 'btn';
   if(btnSalida) btnSalida.className = tipo === 'salida' ? 'btn primary' : 'btn';
   if(btnTraspaso) btnTraspaso.className = tipo === 'traspaso' ? 'btn primary' : 'btn';
 
@@ -12624,9 +12641,13 @@ function setMovimientoType(tipo) {
 
   const catWrap = document.getElementById('movAjusteCatWrap');
   if (catWrap) catWrap.style.display = tipo === 'entrada' ? 'block' : 'none';
+  const ajusteAyuda = document.getElementById('movAjusteGeneralAyuda');
+  if (ajusteAyuda) ajusteAyuda.style.display = tipo === 'ajuste' ? 'block' : 'none';
   const lblMotivo = document.getElementById('lblMovMotivo');
-  if (lblMotivo) lblMotivo.textContent = tipo === 'entrada' ? 'Motivo (obligatorio): qué pasó' : 'Motivo / Observaciones (Opcional):';
-  if (tipo === 'entrada') {
+  if (lblMotivo) lblMotivo.textContent = (tipo === 'entrada' || tipo === 'ajuste') ? 'Motivo (obligatorio): qué pasó' : 'Motivo / Observaciones (Opcional):';
+  const lblDestino = document.getElementById('lblBodegaDestino');
+  if (lblDestino) lblDestino.textContent = tipo === 'ajuste' ? 'Bodega:' : 'Bodega Entrada / Destino:';
+  if (tipo === 'entrada' || tipo === 'ajuste') {
     if(wrapOrigen) wrapOrigen.style.display = 'none';
     if(wrapDestino) wrapDestino.style.display = 'block';
   } else if (tipo === 'salida') {
@@ -12674,7 +12695,7 @@ function closeTraspasoModal() {
 function movStockInfo(pId) {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
-  if (currentMovType === 'entrada') {
+  if (currentMovType === 'entrada' || currentMovType === 'ajuste') {
     return { bodega: destino, stock: getStockFor(pId, destino), limit: Infinity };
   }
   const stock = getStockFor(pId, origen);
@@ -12773,8 +12794,8 @@ function onMovSearchKey(e) {
 function addMovProduct(id) {
   id = String(id);
   const existing = movLote.find(it => it.id === id);
-  if (existing) existing.qty += 1;
-  else movLote.push({ id, qty: 1 });
+  if (existing) { if (!movEsAjuste()) existing.qty += 1; }
+  else movLote.push({ id, qty: movEsAjuste() ? null : 1 });
   const search = document.getElementById('movSearch');
   if (search) search.value = '';
   hideMovSearchResults();
@@ -12789,13 +12810,14 @@ function setMovQty(id, value) {
   const it = movLote.find(x => x.id === String(id));
   if (!it) return;
   const qty = parseInt(value, 10);
-  it.qty = Number.isFinite(qty) && qty > 0 ? Math.min(qty, 99999) : 0;
+  if (movEsAjuste()) it.qty = String(value).trim() === '' || !Number.isFinite(qty) || qty < 0 ? null : Math.min(qty, 999999);
+  else it.qty = Number.isFinite(qty) && qty > 0 ? Math.min(qty, 99999) : 0;
   saveMovDraft();
   updateMovLoteSummary();
   const row = document.querySelector(`#movLoteList .mov-lote-row[data-id="${CSS.escape(String(id))}"]`);
   if (row) row.classList.toggle('error', movRowError(it) !== '');
   const diff = row && row.querySelector('.mov-conteo-diff');
-  if (diff) { const e = movRowError(it); diff.textContent = e || `Entran +${movConteoDiff(it)}`; }
+  if (diff) { const e = movRowError(it); diff.textContent = e || (movEsAjuste() ? movAjusteTexto(it) : `Entran +${movConteoDiff(it)}`); }
 }
 
 function removeMovProduct(id) {
@@ -12813,6 +12835,11 @@ function clearMovLote() {
 }
 
 function movRowError(it) {
+  if (movEsAjuste()) {
+    if (it.qty === null || it.qty === undefined) return 'Escribe la cantidad nueva';
+    if (it.qty === movStockInfo(it.id).stock) return 'Es la misma cantidad que tiene el sistema';
+    return '';
+  }
   if (!(it.qty > 0)) return 'Cantidad inválida';
   const info = movStockInfo(it.id);
   if (movEsConteo()) {
@@ -12832,6 +12859,7 @@ function renderMovLote() {
     list.innerHTML = '<div style="padding:18px; text-align:center; font-size:13px; color:var(--text-muted);">Busca un producto arriba y dale clic (o Enter) para agregarlo. Puedes agregar todos los que necesites.</div>';
   } else {
     const conteo = movEsConteo();
+    const ajuste = movEsAjuste();
     list.innerHTML = movLote.map(it => {
       const p = movFindProduct(it.id);
       const info = movStockInfo(it.id);
@@ -12842,8 +12870,8 @@ function renderMovLote() {
             <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(p ? p.name : 'Producto #' + it.id)}</div>
             <div style="font-size:11px; color:var(--text-muted);">ID ${escapeHtml(it.id)}</div>
           </div>
-          <div class="mov-lote-stock" title="${escapeHtml(err)}">${conteo ? 'Sistema' : escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.${conteo ? `<br><span class="mov-conteo-diff" style="font-weight:700;">${err ? escapeHtml(err) : `Entran +${movConteoDiff(it)}`}</span>` : ''}</div>
-          <input type="number" min="1" inputmode="numeric" value="${it.qty || ''}" data-id="${escapeHtml(it.id)}" placeholder="${conteo ? 'Contado' : ''}" aria-label="${conteo ? 'Piezas contadas' : 'Cantidad'} de ${escapeHtml(p ? p.name : it.id)}"
+          <div class="mov-lote-stock" title="${escapeHtml(err)}">${conteo || ajuste ? 'Sistema' : escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.${conteo || ajuste ? `<br><span class="mov-conteo-diff" style="font-weight:700;">${err ? escapeHtml(err) : (ajuste ? movAjusteTexto(it) : `Entran +${movConteoDiff(it)}`)}</span>` : ''}</div>
+          <input type="number" min="${ajuste ? 0 : 1}" inputmode="numeric" value="${ajuste ? (it.qty ?? '') : (it.qty || '')}" data-id="${escapeHtml(it.id)}" placeholder="${ajuste ? 'Nueva cant.' : conteo ? 'Contado' : ''}" aria-label="${ajuste ? 'Cantidad nueva' : conteo ? 'Piezas contadas' : 'Cantidad'} de ${escapeHtml(p ? p.name : it.id)}"
             oninput="setMovQty('${escapeHtml(it.id)}', this.value)"
             onkeydown="if (event.key === 'Enter') { event.preventDefault(); document.getElementById('movSearch').focus(); }">
           <button type="button" class="btn small" title="Quitar" aria-label="Quitar" onclick="removeMovProduct('${escapeHtml(it.id)}')">✕</button>
@@ -12856,7 +12884,7 @@ function renderMovLote() {
 function updateMovLoteSummary() {
   const units = movLote.reduce((s, it) => s + (it.qty || 0), 0);
   const title = document.getElementById('movLoteTitle');
-  if (title) title.textContent = `Productos en este movimiento (${movLote.length})${movLote.length ? ` · ${units.toLocaleString('es-MX')} u.` : ''}`;
+  if (title) title.textContent = `Productos en este movimiento (${movLote.length})${movLote.length && !movEsAjuste() ? ` · ${units.toLocaleString('es-MX')} u.` : ''}`;
   const clearBtn = document.getElementById('movLoteClear');
   if (clearBtn) clearBtn.style.display = movLote.length ? '' : 'none';
   const btn = document.getElementById('btnConfirmMovimiento');
@@ -12873,7 +12901,7 @@ function movValidate(soloBasico) {
   const destino = document.getElementById('traspasoDestino').value;
   if (movLote.length === 0) return 'Agrega al menos un producto con el buscador.';
   if (currentMovType === 'traspaso' && origen === destino) return 'En un traspaso, la bodega de origen y destino deben ser diferentes.';
-  if (soloBasico && !movEsConteo()) {
+  if (soloBasico && !movEsConteo() && !movEsAjuste()) {
     return movLote.some(it => !(it.qty > 0)) ? 'Hay productos con cantidad inválida.' : '';
   }
   const bad = movLote.filter(it => movRowError(it));
@@ -12892,15 +12920,20 @@ function reviewStockMovement() {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   const motivo = document.getElementById('traspasoMotivo').value.trim();
-  const units = movLote.reduce((s, it) => s + (movEsConteo() ? movConteoDiff(it) : it.qty), 0);
-  const ruta = currentMovType === 'entrada' ? `a ${movBodegaLabel(destino)}`
+  const ajuste = movEsAjuste();
+  const units = movLote.reduce((s, it) => s + (ajuste ? Math.abs((it.qty || 0) - getStockFor(parseInt(it.id, 10), destino)) : movEsConteo() ? movConteoDiff(it) : it.qty), 0);
+  const ruta = ajuste ? `en ${movBodegaLabel(destino)}`
+    : currentMovType === 'entrada' ? `a ${movBodegaLabel(destino)}`
     : currentMovType === 'salida' ? `de ${movBodegaLabel(origen)}`
     : `de ${movBodegaLabel(origen)} a ${movBodegaLabel(destino)}`;
 
   const rows = movLote.map(it => {
     const p = movFindProduct(it.id);
     let cols;
-    if (movEsConteo()) {
+    if (ajuste) {
+      const a = getStockFor(parseInt(it.id, 10), destino), dd = it.qty - a;
+      return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right;">${a}</td><td style="text-align:right; font-weight:700;">${it.qty}</td><td style="text-align:right; font-weight:700; color:${dd > 0 ? '#16a34a' : '#dc2626'};">${dd > 0 ? '+' : ''}${dd}</td></tr>`;
+    } else if (movEsConteo()) {
       const a = getStockFor(parseInt(it.id, 10), destino);
       return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right;">${it.qty}</td><td style="text-align:right;">${a}</td><td style="text-align:right; font-weight:700;">+${it.qty - a}</td></tr>`;
     } else if (currentMovType === 'entrada') {
@@ -12922,12 +12955,12 @@ function reviewStockMovement() {
   document.getElementById('movReviewBody').innerHTML = `
     <div style="padding:12px 14px; border-radius:10px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.35); margin-bottom:12px;">
       <div style="font-size:15px; font-weight:800; color:var(--text-primary);">${MOV_TIPO_LABEL[currentMovType]} ${escapeHtml(ruta)}</div>
-      <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades${motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades${ajuste ? ' de diferencia' : ''}${motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
       <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Todavía no se ha guardado nada. Al guardar queda como <b>borrador</b>: el inventario no cambia hasta que un responsable lo apruebe en el Historial. Revisa las cantidades y la existencia que quedaría; si algo está mal, regresa a editar.</div>
     </div>
     <div style="max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
       <table style="width:100%; font-size:13px; border-collapse:collapse;">
-        <thead><tr><th style="text-align:left;">Producto</th>${movEsConteo() ? '<th style="text-align:right;">Contado</th><th style="text-align:right;">Sistema</th><th style="text-align:right;">Entran</th>' : `<th style="text-align:right;">Cant.</th>${heads}`}</tr></thead>
+        <thead><tr><th style="text-align:left;">Producto</th>${ajuste ? '<th style="text-align:right;">Sistema</th><th style="text-align:right;">Queda en</th><th style="text-align:right;">Cambio</th>' : movEsConteo() ? '<th style="text-align:right;">Contado</th><th style="text-align:right;">Sistema</th><th style="text-align:right;">Entran</th>' : `<th style="text-align:right;">Cant.</th>${heads}`}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
@@ -12958,6 +12991,8 @@ function movErrorMessage(e, fallback) {
   if (/bodega_invalida/.test(m)) return 'Revisa la bodega de origen y destino.';
   if (/INGRESO NO PERMITIDO/.test(m)) return 'INGRESO NO PERMITIDO. Para registrar mercancía es obligatorio escanear primero la nota de compra del proveedor y completar el proceso de recepción inteligente.';
   if (/conteo_sin_diferencia/.test(m)) return 'No se aprobó: en estos productos el sistema ya tiene lo que se contó (o más), así que no hay nada que sumar. Puede que el ajuste ya se haya aplicado o que entró la mercancía por otro lado:\n\n' + m.replace(/^[\s\S]*conteo_sin_diferencia:\s*/, '').replace(/"[\s\S]*$/, '').split('; ').map(x => '• ' + x).join('\n') + '\n\nEdita el borrador (quita esos productos) o descártalo.';
+  if (/ajuste_sin_diferencia/.test(m)) return 'No se aprobó: todos los productos ya tienen en el sistema la cantidad que se capturó, no hay nada que ajustar. Edita el borrador o descártalo.';
+  if (/ajuste_sin_motivo/.test(m)) return 'Escribe el motivo del ajuste (al menos 5 letras).';
   if (/ajuste_sin_justificacion/.test(m)) return 'El ajuste de entrada necesita tipo (devolución, corrección o conteo) y una justificación de al menos 5 letras.';
   return fallback;
 }
@@ -12988,6 +13023,7 @@ const MOV_MANUAL_TAGS = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entra
 function movRowTag(row) {
   const tagRaw = String(row.motivo || '').split(':')[0].trim();
   if (tagRaw === 'ajuste_entrada') return 'entrada';
+  if (tagRaw === 'ajuste_salida') return 'ajuste';
   return [...MOV_MANUAL_TAGS, 'venta_pos', 'compra', 'cancelacion'].includes(tagRaw) ? tagRaw : 'ajuste';
 }
 
@@ -13014,7 +13050,7 @@ function movHistoryEntries() {
   const entries = movDocs.map(d => ({
     key: 'd:' + d.id, source: 'doc', doc: d, folio: d.folio, tipo: d.tipo, estado: d.estado,
     reverted: d.estado === 'aprobado' && revertedFolios.has(d.folio),
-    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR|AJE)-/.test(d.folio),
+    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR|AJE|AJU)-/.test(d.folio),
     isReversal: false, origen: d.origen || '', destino: d.destino || '', nota: d.motivo || '',
     por: d.creado_por || '', date: d.creado_at, aprobadoPor: d.aprobado_por || '', aprobadoAt: d.aprobado_at || '',
     items: (Array.isArray(d.items) ? d.items : []).map(it => ({ id_product: it.id_product, name: it.name || '', qty: Number(it.qty) || 0 }))
@@ -13085,7 +13121,7 @@ function showTraspasoModal() {
 }
 
 function openKardexFromMovHistory() {
-  if (!hasPermission('movimientos')) { alert('Tu usuario no tiene acceso a "Movimientos de inventario".'); return; }
+  if (!hasPermission('movimientos')) { alert('Tu usuario no tiene acceso a "Kardex por producto".'); return; }
   closeTraspasoModal();
   switchView('movimientos');
 }
@@ -13129,7 +13165,7 @@ function renderMovHistory() {
     const first = g.items[0];
     const resumen = nProductos === 1 ? escapeHtml(first ? movItemName(first) : '—') : `${nProductos} productos`;
     const bodegaText = g.tipo === 'traspaso' ? `${movBodegaLabel(g.origen)} → ${movBodegaLabel(g.destino)}`
-      : (g.tipo === 'entrada' || g.tipo === 'compra' || g.tipo === 'cancelacion') ? movBodegaLabel(g.destino)
+      : (g.tipo === 'entrada' || g.tipo === 'compra' || g.tipo === 'cancelacion' || (g.tipo === 'ajuste' && g.source === 'doc')) ? movBodegaLabel(g.destino)
       : g.tipo === 'salida' ? movBodegaLabel(g.origen)
       : [...new Set(g.items.map(it => movBodegaLabel(it.almacen)))].join(', ');
     const folioLabel = g.folio ? (g.folio.startsWith('#') ? g.folio : '#' + g.folio) : '—';
@@ -13200,6 +13236,11 @@ async function saveMovAsDraft() {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   let motivo = document.getElementById('traspasoMotivo').value.trim().replace(MOV_AJUSTE_RE, '');
+  if (currentMovType === 'ajuste') {
+    if (motivo.replace(/\s/g, '').length < 5) { alert('Escribe el motivo del ajuste (por ejemplo: conteo físico, merma, producto dañado, error de captura).'); return; }
+    const errA = movValidate(false);
+    if (errA) { alert(errA); renderMovLote(); return; }
+  }
   if (currentMovType === 'entrada') {
     if (motivo.length < 5) { alert('Escribe la justificación del ajuste de entrada (qué pasó y el documento que lo respalda: ticket de devolución, conteo, etc.).'); return; }
     motivo = `${document.getElementById('movAjusteCat').value}: ${motivo}`;
@@ -13213,7 +13254,7 @@ async function saveMovAsDraft() {
     const p = movFindProduct(it.id);
     const base = { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
     // Conteo: qty = diferencia (lo que se espera sumar); el servidor la recalcula al aprobar.
-    if (conteo) { const sistema = movStockInfo(it.id).stock; return { ...base, qty: it.qty - sistema, contado: it.qty, sistema }; }
+    if (conteo || currentMovType === 'ajuste') { const sistema = movStockInfo(it.id).stock; return { ...base, qty: it.qty - sistema, contado: it.qty, sistema }; }
     return base;
   });
   const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm'].map(id => document.getElementById(id)).filter(Boolean);
@@ -13222,13 +13263,13 @@ async function saveMovAsDraft() {
     const doc = await sbRpc('rpc_mov_doc_save', {
       ...getSessionCredsParams(),
       p_id: movEditingDocId, p_tipo: currentMovType,
-      p_origen: currentMovType === 'entrada' ? null : origen,
+      p_origen: (currentMovType === 'entrada' || currentMovType === 'ajuste') ? null : origen,
       p_destino: currentMovType === 'salida' ? null : destino,
       p_motivo: motivo, p_items: items
     });
     const editado = !!movEditingDocId;
     const n = movLote.length;
-    const units = items.reduce((s, it) => s + it.qty, 0);
+    const units = items.reduce((s, it) => s + Math.abs(it.qty), 0);
     movLote = [];
     movEditingDocId = null;
     document.getElementById('traspasoMotivo').value = '';
@@ -13280,7 +13321,7 @@ function movDocLedgerMoves(doc) {
   const moves = [];
   (doc.items || []).forEach(it => {
     const qty = Number(it.qty) || 0;
-    if (doc.tipo === 'entrada') moves.push({ id_product: it.id_product, almacen: doc.destino, qty });
+    if (doc.tipo === 'entrada' || doc.tipo === 'ajuste') moves.push({ id_product: it.id_product, almacen: doc.destino, qty });
     else if (doc.tipo === 'salida') moves.push({ id_product: it.id_product, almacen: doc.origen, qty: -qty });
     else { moves.push({ id_product: it.id_product, almacen: doc.origen, qty: -qty }); moves.push({ id_product: it.id_product, almacen: doc.destino, qty }); }
   });
@@ -13293,7 +13334,7 @@ async function approveMovDoc(id) {
   if (!movCanApprove) { alert(movErrorMessage({ message: 'sin_permiso_aprobar' })); return; }
 
   if (!realStockLoaded) { try { await loadRealStockData(); } catch (e) { /* se revisa abajo */ } }
-  if (doc.tipo !== 'entrada') {
+  if (doc.tipo === 'salida' || doc.tipo === 'traspaso') {
     if (!realStockLoaded) { alert('No se pudo leer la existencia actual para comprobar el movimiento. Intenta de nuevo en unos segundos.'); return; }
     const faltan = (doc.items || []).filter(it => (Number(it.qty) || 0) > getStockFor(it.id_product, doc.origen));
     if (faltan.length) {
@@ -13303,8 +13344,9 @@ async function approveMovDoc(id) {
       return;
     }
   }
-  const units = (doc.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
-  const ruta = doc.tipo === 'entrada' ? `a ${movBodegaLabel(doc.destino)}` : doc.tipo === 'salida' ? `de ${movBodegaLabel(doc.origen)}` : `de ${movBodegaLabel(doc.origen)} a ${movBodegaLabel(doc.destino)}`;
+  const units = (doc.items || []).reduce((s, it) => s + Math.abs(Number(it.qty) || 0), 0);
+  const ruta = doc.tipo === 'ajuste' ? `en ${movBodegaLabel(doc.destino)} (deja la cantidad capturada; se aplica la diferencia contra la existencia de este momento)`
+    : doc.tipo === 'entrada' ? `a ${movBodegaLabel(doc.destino)}` : doc.tipo === 'salida' ? `de ${movBodegaLabel(doc.origen)}` : `de ${movBodegaLabel(doc.origen)} a ${movBodegaLabel(doc.destino)}`;
   if (!confirm(`Aprobar ${MOV_TIPO_LABEL[doc.tipo].toLowerCase()} #${doc.folio}\n${ruta}\n${doc.items.length} ${doc.items.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades\n\nAl aprobar se aplica al inventario y queda registrado que lo aprobó ${nombreSesionActual()}.\n\n¿Aprobar?`)) return;
 
   try {
@@ -13331,7 +13373,7 @@ async function downloadMovPdf(g) {
   const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   const L = 15, R = 195, BOTTOM = 270;
   const purple = [46, 16, 101], pink = [211, 0, 123], grey = [110, 100, 120], ink = [30, 20, 45];
-  const TITULO = { entrada: 'ENTRADA DE INVENTARIO', salida: 'SALIDA DE INVENTARIO', traspaso: 'TRASPASO ENTRE BODEGAS' };
+  const TITULO = { ajuste: 'AJUSTE DE INVENTARIO', entrada: 'ENTRADA DE INVENTARIO', salida: 'SALIDA DE INVENTARIO', traspaso: 'TRASPASO ENTRE BODEGAS' };
   const estadoTxt = g.estado === 'borrador' ? 'BORRADOR' : (g.reverted ? 'REVERTIDO' : 'APROBADO');
   const estadoColor = g.estado === 'borrador' ? [217, 119, 6] : (g.reverted ? [100, 116, 139] : [22, 163, 74]);
 
@@ -13358,7 +13400,7 @@ async function downloadMovPdf(g) {
     y += Math.max(1, lines.length) * 5 + 1;
   };
   if (g.tipo === 'traspaso') { info('Bodega origen:', movBodegaLabel(g.origen)); info('Bodega destino:', movBodegaLabel(g.destino)); }
-  else if (g.tipo === 'entrada') info('Bodega:', movBodegaLabel(g.destino));
+  else if (g.tipo === 'entrada' || (g.tipo === 'ajuste' && g.source === 'doc')) info('Bodega:', movBodegaLabel(g.destino));
   else info('Bodega:', movBodegaLabel(g.origen));
   info('Motivo:', g.nota);
   info('Capturó:', g.por);
@@ -14105,86 +14147,6 @@ function repeatCustomerOrder(folio) {
   });
   switchClienteTab('nuevo');
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
-}
-
-// ---- Ajuste de existencia por bodega (botón "Ajuste" junto a cada cantidad de la matriz) ----
-// Se escribe la cantidad nueva y se manda al Historial de movimientos como borrador, con el mismo
-// flujo y las mismas reglas que "Movimientos & Traspasos": si sube, es un ajuste de entrada por
-// conteo físico (al aprobar, el servidor vuelve a calcular contado - existencia de ese momento, así
-// no se duplica); si baja, es una salida por la diferencia. Nada cambia hasta que se aprueba.
-let stockAjuste = null;
-
-function stockAjusteBtn(pId, bodega) {
-  return `<button type="button" class="btn small" style="padding:2px 7px; font-size:0.7rem; margin-left:4px;" title="Ajustar ${escapeHtml(movBodegaLabel(bodega))}" onclick="openStockAjuste('${escapeHtml(String(pId))}', '${bodega}')">Ajuste</button>`;
-}
-
-function openStockAjuste(pId, bodega) {
-  if (!getAdminPassword() && !getStaffCreds()) { alert('Inicia sesión para ajustar existencias.'); return; }
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => String(p.id) === String(pId));
-  if (!product) return;
-  const actual = getStockFor(product.id, bodega);
-  stockAjuste = { id: product.id, name: product.name, sku: product.sku || '', bodega, actual };
-  document.getElementById('stockAjusteProducto').innerHTML =
-    `<b>${escapeHtml(product.name)}</b><br><span style="color:var(--text-muted);">${escapeHtml(product.sku || '')} · Bodega <b>${escapeHtml(movBodegaLabel(bodega))}</b></span>`;
-  document.getElementById('stockAjusteActual').textContent = `${actual.toLocaleString('es-MX')} u.`;
-  const nueva = document.getElementById('stockAjusteNueva');
-  nueva.value = '';
-  document.getElementById('stockAjusteMotivo').value = '';
-  renderStockAjusteDiff();
-  document.getElementById('stockAjusteModal').classList.remove('hidden');
-  setTimeout(() => nueva.focus(), 50);
-}
-
-function closeStockAjuste() {
-  document.getElementById('stockAjusteModal')?.classList.add('hidden');
-  stockAjuste = null;
-}
-
-function stockAjusteNueva() {
-  const raw = document.getElementById('stockAjusteNueva').value.trim();
-  return /^\d{1,6}$/.test(raw) ? parseInt(raw, 10) : null;
-}
-
-function renderStockAjusteDiff() {
-  const el = document.getElementById('stockAjusteDiff');
-  if (!el || !stockAjuste) return;
-  const n = stockAjusteNueva();
-  if (n === null) { el.textContent = ''; return; }
-  const d = n - stockAjuste.actual;
-  el.style.color = d > 0 ? 'var(--success, #16a34a)' : d < 0 ? 'var(--danger, #dc2626)' : 'var(--text-muted)';
-  el.textContent = d === 0 ? 'Es la misma cantidad: no hay nada que ajustar.'
-    : d > 0 ? `Entran +${d.toLocaleString('es-MX')} u. (ajuste de entrada por conteo físico)`
-    : `Salen ${Math.abs(d).toLocaleString('es-MX')} u. (salida por ajuste)`;
-}
-
-async function saveStockAjuste() {
-  if (!stockAjuste) return;
-  const n = stockAjusteNueva();
-  if (n === null) { alert('Escribe la nueva cantidad (un número entero, 0 o mayor).'); return; }
-  const { id, name, sku, bodega, actual } = stockAjuste;
-  const d = n - actual;
-  if (d === 0) { alert('Es la misma cantidad que tiene el sistema: no hay nada que ajustar.'); return; }
-  const motivoTxt = document.getElementById('stockAjusteMotivo').value.trim().replace(MOV_AJUSTE_RE, '');
-  if (motivoTxt.replace(/\s/g, '').length < 5) { alert('Escribe el motivo del ajuste (por ejemplo: conteo físico, merma, producto dañado).'); document.getElementById('stockAjusteMotivo').focus(); return; }
-  const detalle = `${motivoTxt} (${movBodegaLabel(bodega)}: sistema ${actual} → ${n})`;
-  const params = d > 0
-    ? { p_tipo: 'entrada', p_origen: null, p_destino: bodega, p_motivo: `conteo: ${detalle}`,
-        p_items: [{ id_product: parseInt(id, 10), qty: d, name, sku, contado: n, sistema: actual }] }
-    : { p_tipo: 'salida', p_origen: bodega, p_destino: null, p_motivo: `Ajuste: ${detalle}`,
-        p_items: [{ id_product: parseInt(id, 10), qty: -d, name, sku }] };
-  const btn = document.getElementById('stockAjusteGuardar');
-  btn.disabled = true;
-  try {
-    const doc = await sbRpc('rpc_mov_doc_save', { ...getSessionCredsParams(), p_id: null, ...params });
-    closeStockAjuste();
-    alert(`Ajuste #${doc.folio} mandado al Historial.\n\n${name}\n${movBodegaLabel(bodega)}: ${actual} → ${n} u. (${d > 0 ? '+' : ''}${d})\n\nTodavía NO cambia el inventario: se aplica cuando se aprueba en el Historial.`);
-    await openMovHistory('borrador');
-  } catch (e) {
-    alert(movErrorMessage(e, 'No se pudo mandar el ajuste al Historial (no se guardó nada). Intenta de nuevo.'));
-  } finally {
-    btn.disabled = false;
-  }
 }
 
 if(document.getElementById('invSearchInput')) document.getElementById('invSearchInput').addEventListener('input', renderInventarioTable);
