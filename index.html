@@ -4737,27 +4737,6 @@
     </section>
 
       <!-- RECEPCIÓN INTELIGENTE DE MERCANCÍA (docs/supabase-recepcion.sql, api/recepcion.js) -->
-      <section id="view-recepcion" class="view-panel hidden">
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
-            <div>
-              <h2 style="margin:0;">Recepción de mercancía</h2>
-              <p style="margin:6px 0 0; font-size:13px; color:var(--text-secondary); max-width:780px;">
-                Toda compra entra al inventario por aquí: primero se escanea la nota del proveedor, la IA lee códigos, cantidades y precios,
-                se vinculan los códigos nuevos, se cuenta la mercancía y un supervisor autoriza el ingreso.
-              </p>
-            </div>
-            <button class="btn primary" onclick="recNueva()">+ Nueva recepción</button>
-          </div>
-          <div class="rec-tabs" style="display:flex; gap:6px; margin:16px 0 12px; flex-wrap:wrap;">
-            <button class="btn small primary" data-rectab="recepciones" onclick="recTab('recepciones')">Recepciones</button>
-            <button class="btn small" data-rectab="equivalencias" onclick="recTab('equivalencias')">Equivalencias de códigos</button>
-            <button class="btn small" data-rectab="proveedores" onclick="recTab('proveedores')">Proveedores</button>
-            <button class="btn small" data-rectab="reportes" onclick="recTab('reportes')">Reportes</button>
-          </div>
-          <div id="recCuerpo"><p style="color:var(--text-muted);">Cargando…</p></div>
-        </div>
-      </section>
 
     <section id="view-etiquetas" class="view-panel hidden">
       <div class="card">
@@ -6644,7 +6623,7 @@
 
 <!-- ================= MOVIMIENTOS E HISTORIAL DE INVENTARIO MODAL ================= -->
 <!-- Diálogo genérico de Recepción de mercancía (vincular, contar, editar renglón, nueva recepción…) -->
-<div class="modal-overlay hidden" id="recModal">
+<div class="modal-overlay hidden" id="recModal" style="z-index:120;">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
       <h2 id="recModalTitulo">Recepción</h2>
@@ -6655,7 +6634,7 @@
 </div>
 
 <div class="modal-overlay hidden" id="traspasoModal">
-  <div class="modal" style="max-width: 760px;">
+  <div class="modal" id="traspasoModalBox" style="max-width: 760px;">
     <div class="modal-header">
       <h2>Nuevo movimiento</h2>
       <div style="display:flex; gap:8px; align-items:center;">
@@ -6664,16 +6643,33 @@
       </div>
     </div>
 
-    <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
+    <p id="movIntro" style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
       Elige el tipo de movimiento y la bodega y agrega los productos. Con <b>Guardar borrador</b> queda pendiente hasta que un responsable lo apruebe en el Historial; quien puede aprobar también tiene <b>Guardar y aplicar</b>, que lo aplica al momento.
     </p>
 
     <!-- Movement Type Toggle Buttons -->
     <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
-      <button type="button" class="btn" id="btnTipoCompra" onclick="closeTraspasoModal(); switchView('recepcion');" title="Mercancía comprada a un proveedor, con su nota" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Entrada de mercancía</button>
+      <button type="button" class="btn" id="btnTipoCompra" onclick="setMovimientoType('compra')" title="Mercancía comprada a un proveedor, con su nota" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Entrada de mercancía</button>
       <button type="button" class="btn primary" id="btnTipoAjuste" onclick="setMovimientoType('ajuste')" title="Deja la cantidad que escribas en la bodega: sube o baja según lo que haya" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Ajuste</button>
       <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
       <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Traspaso</button>
+    </div>
+
+    <!-- Entrada de mercancía (Recepción): nota del proveedor escaneada, vinculación de códigos, conteo y autorización -->
+    <div id="movRecepcionPanel" class="hidden">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <p style="margin:0; font-size:13px; color:var(--text-secondary); max-width:640px;">
+          Mercancía comprada a un proveedor: escanea la nota, la IA lee códigos, cantidades y precios; vinculas los códigos nuevos, cuentas la mercancía y un supervisor autoriza el ingreso.
+        </p>
+        <button class="btn primary" onclick="recNueva()">+ Nueva entrada</button>
+      </div>
+      <div class="rec-tabs" style="display:flex; gap:6px; margin:14px 0 12px; flex-wrap:wrap;">
+        <button class="btn small primary" data-rectab="recepciones" onclick="recTab('recepciones')">Entradas</button>
+        <button class="btn small" data-rectab="equivalencias" onclick="recTab('equivalencias')">Equivalencias de códigos</button>
+        <button class="btn small" data-rectab="proveedores" onclick="recTab('proveedores')">Proveedores</button>
+        <button class="btn small" data-rectab="reportes" onclick="recTab('reportes')">Reportes</button>
+      </div>
+      <div id="recCuerpo"><p style="color:var(--text-muted);">Cargando…</p></div>
     </div>
 
     <div id="movAjusteGeneralAyuda" style="display:none; margin-bottom:14px; font-size:12.5px; color:var(--text-secondary);">
@@ -6950,7 +6946,7 @@ const PERMISSION_GROUPS = [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
     { key: 'movimientos', label: 'Kardex por producto (ventas y movimientos de cada producto)' },
-    { key: 'recepcion', label: 'Recepción de mercancía (escanear notas, vincular códigos, contar)' },
+    { key: 'recepcion', label: 'Entrada de mercancía (escanear notas, vincular códigos, contar)' },
     { key: 'etiquetas', label: 'Etiquetas de precio (imprimir con mayoreo y código de barras)' },
     { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
     { key: 'blog', label: 'Blog: escribir y administrar artículos (SEO)' },
@@ -8405,7 +8401,6 @@ function inventarioTabs() {
   return [
     { view: 'bodegas', label: 'Existencias por bodega' },
     { view: 'mov-historial', label: 'Historial de movimientos' },
-    { view: 'recepcion', label: 'Recepción de mercancía' },
     { view: 'movimientos', label: 'Kardex por producto' },
     { view: 'etiquetas', label: 'Etiquetas de precio' }
   ];
@@ -8434,6 +8429,7 @@ function switchView(viewName) {
     alert('No tienes permiso para acceder a esta sección. Contacta al administrador si crees que es un error.');
     return;
   }
+  if (viewName === 'recepcion') { openEntradaMercancia(); return; }
 
   document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
   const target = document.getElementById('view-' + viewName);
@@ -8502,7 +8498,6 @@ function switchView(viewName) {
   if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'competencia') loadCompetenciaView();
   if (viewName === 'etiquetas') etqIniciar();
-  if (viewName === 'recepcion') recIniciar();
   if (viewName === 'mov-historial') cargarMovHistorial();
   if (viewName === 'param-tienda-seo') seoIniciar();
   if (viewName === 'blog') blogMostrarLista();
@@ -12628,15 +12623,40 @@ function applyMovState(d) {
   setMovimientoType(MOV_TIPO_LABEL[d.tipo] ? d.tipo : 'ajuste');
 }
 
+// "Entrada de mercancía" no es un tipo de movimiento: muestra, dentro de la misma ventana, la
+// recepción de mercancía (nota escaneada, vinculación, conteo y autorización; funciones rec*).
+let movModoRecepcion = false;
+function setMovModoRecepcion(on) {
+  movModoRecepcion = on;
+  document.getElementById('movRecepcionPanel')?.classList.toggle('hidden', !on);
+  // Al salir, setMovimientoType vuelve a decidir qué ayudas del tipo se ven.
+  ['traspasoForm', 'movIntro'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = on ? 'none' : ''; });
+  if (on) ['movAjusteGeneralAyuda', 'movAjusteCatWrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  document.getElementById('movReviewPanel')?.classList.add('hidden');
+  const box = document.getElementById('traspasoModalBox');
+  if (box) box.style.maxWidth = on ? '1100px' : '760px';
+  const btnCompra = document.getElementById('btnTipoCompra');
+  if (btnCompra) btnCompra.classList.toggle('primary', on);
+}
+
 function setMovimientoType(tipo) {
+  if (tipo === 'compra') {
+    if (!hasPermission('recepcion')) { alert('Tu usuario no tiene permiso de "Entrada de mercancía".'); return; }
+    ['btnTipoAjuste', 'btnTipoSalida', 'btnTipoTraspaso'].forEach(id => document.getElementById(id)?.classList.remove('primary'));
+    setMovModoRecepcion(true);
+    hideMovSearchResults();
+    recIniciar();
+    return;
+  }
+  if (movModoRecepcion) setMovModoRecepcion(false);
   currentMovType = tipo;
   const btnAjuste = document.getElementById('btnTipoAjuste');
   const btnSalida = document.getElementById('btnTipoSalida');
   const btnTraspaso = document.getElementById('btnTipoTraspaso');
 
-  if(btnAjuste) btnAjuste.className = (tipo === 'ajuste' || tipo === 'entrada') ? 'btn primary' : 'btn';
-  if(btnSalida) btnSalida.className = tipo === 'salida' ? 'btn primary' : 'btn';
-  if(btnTraspaso) btnTraspaso.className = tipo === 'traspaso' ? 'btn primary' : 'btn';
+  if(btnAjuste) btnAjuste.classList.toggle('primary', tipo === 'ajuste' || tipo === 'entrada');
+  if(btnSalida) btnSalida.classList.toggle('primary', tipo === 'salida');
+  if(btnTraspaso) btnTraspaso.classList.toggle('primary', tipo === 'traspaso');
 
   const wrapOrigen = document.getElementById('wrapperBodegaOrigen');
   const wrapDestino = document.getElementById('wrapperBodegaDestino');
@@ -12665,9 +12685,18 @@ function setMovimientoType(tipo) {
   saveMovDraft();
 }
 
-function openTraspasoModal() {
+function openTraspasoModal(modo) {
   const modal = document.getElementById('traspasoModal');
   if(!modal) return;
+  // Quien solo tiene permiso de entrada de mercancía ve solo esa opción.
+  const puedeMov = hasPermission('bodegas'), puedeRec = hasPermission('recepcion');
+  ['btnTipoAjuste', 'btnTipoSalida', 'btnTipoTraspaso'].forEach(id => document.getElementById(id)?.classList.toggle('perm-hidden', !puedeMov));
+  document.getElementById('btnTipoCompra')?.classList.toggle('perm-hidden', !puedeRec);
+  if (modo === 'compra' || !puedeMov) {
+    modal.classList.remove('hidden');
+    setMovimientoType('compra');
+    return;
+  }
 
   // Si quedó un movimiento a medias (se cerró el modal o se recargó la
   // página), se recupera tal cual.
@@ -13104,6 +13133,13 @@ function setMovHistFilter(f) {
   renderMovHistory();
 }
 
+// La entrada de mercancía (antes la pestaña "Recepción de mercancía") vive en Nuevo movimiento.
+function openEntradaMercancia() {
+  const enInventario = inventarioTabs().some(t => !document.getElementById('view-' + t.view)?.classList.contains('hidden'));
+  if (!enInventario) switchView(hasPermission('bodegas') ? 'bodegas' : 'mov-historial');
+  openTraspasoModal('compra');
+}
+
 // El historial es una pestaña de Inventario (ya no una ventana flotante).
 async function openMovHistory(filter) {
   if (filter) movHistFilter = filter;
@@ -13178,7 +13214,7 @@ function renderMovHistory() {
     const aprobacion = g.isReversal ? ''
       : g.estado === 'borrador' ? '<span style="color:#b45309; font-weight:600;">Pendiente de aprobación</span>'
       : g.source === 'doc' ? `Aprobado por <b style="color:var(--text-primary);">${escapeHtml(g.aprobadoPor)}</b> · ${escapeHtml(movFmtDate(g.aprobadoAt))}`
-      : g.tipo === 'compra' ? 'Autorizado en Recepción de mercancía'
+      : g.tipo === 'compra' ? 'Autorizado al recibir la mercancía'
       : g.tipo === 'cancelacion' ? 'Regresó al inventario al cancelar la venta'
       : '<i>Aplicado directo, sin pasar por aprobación</i>';
     const detail = g.items.map(it => `<div style="display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border);">
@@ -16124,7 +16160,7 @@ function recError(e) {
   try { const j = JSON.parse(m); if (j && j.message) m = j.message; } catch (x) {}
   const T = {
     unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión.',
-    sin_permiso_recepcion: 'Tu usuario no tiene permiso de recepción de mercancía (pídelo al administrador: permiso "Recepción de mercancía").',
+    sin_permiso_recepcion: 'Tu usuario no tiene permiso de recepción de mercancía (pídelo al administrador: permiso "Entrada de mercancía").',
     solo_supervisor: 'Solo un supervisor (permiso "Aprobar movimientos de inventario") o el administrador puede hacerlo.',
     solo_admin: 'Solo el administrador puede corregir equivalencias confirmadas.',
     equivalencia_existente: 'Ese código ya está vinculado a otro producto para este proveedor. Solo un supervisor puede cambiarlo (queda en el historial).',
