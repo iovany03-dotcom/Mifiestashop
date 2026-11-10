@@ -4235,10 +4235,10 @@
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
+          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos<span id="lowStockSelectedCount"></span>)</span></h2>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button class="btn secondary small" onclick="downloadLowStockCSV()">Descargar (CSV)</button>
-          <select id="lowStockStoreFilter" onchange="lowStockShown = LOW_STOCK_PAGE; renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          <button class="btn secondary small" id="lowStockDownloadBtn" onclick="downloadLowStockCSV()">Descargar (CSV)</button>
+          <select id="lowStockStoreFilter" onchange="lowStockShown = LOW_STOCK_PAGE; lowStockSelected.clear(); renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
             <option value="all">Todas las sucursales</option>
             <option value="puebla">Puebla</option>
             <option value="rumania">CDMX Rumania</option>
@@ -4249,10 +4249,10 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
+              <tr><th style="width:30px;"><input type="checkbox" id="lowStockSelectAllCheck" onchange="toggleLowStockSelectAll(this.checked)"></th><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
             </thead>
             <tbody id="lowStockByStoreTableBody">
-              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
+              <tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
         </div>
@@ -18070,32 +18070,43 @@ function lowStockEntries(filterWh) {
     branches.forEach(wh => {
       if (filterWh !== 'all' && wh !== filterWh) return;
       const qty = getStockFor(pId, wh);
-      if (qty <= threshold) entries.push({ name: p.name, sku: p.sku, branch: WAREHOUSE_LABELS[wh] || wh, qty, threshold });
+      if (qty <= threshold) entries.push({ id: pId, whKey: wh, name: p.name, sku: p.sku, branch: WAREHOUSE_LABELS[wh] || wh, qty, threshold });
     });
   });
   entries.sort((a, b) => a.qty - b.qty);
   return entries;
 }
 
+function lowStockKey(e) { return `${e.id}_${e.whKey}`; }
+
 // Se muestran de LOW_STOCK_PAGE en LOW_STOCK_PAGE con el botón "Cargar más"; cambiar de sucursal
 // regresa a la primera tanda (la actualización automática de cada minuto conserva lo ya cargado).
 const LOW_STOCK_PAGE = 10;
 let lowStockShown = LOW_STOCK_PAGE;
+// Selección para descargar solo algunos productos (en vez de todos) — persiste entre
+// "Cargar más" y la actualización automática, se limpia al cambiar de sucursal.
+let lowStockSelected = new Set();
 
 function renderLowStockByStoreCard() {
   const tbody = document.getElementById('lowStockByStoreTableBody');
   const countEl = document.getElementById('lowStockByStoreCount');
+  const selCountEl = document.getElementById('lowStockSelectedCount');
+  const downloadBtn = document.getElementById('lowStockDownloadBtn');
+  const selectAllCheck = document.getElementById('lowStockSelectAllCheck');
   if (!tbody) return;
 
   const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
   const entries = lowStockEntries(filterWh);
 
   if (countEl) countEl.textContent = entries.length;
+  if (selCountEl) selCountEl.textContent = lowStockSelected.size > 0 ? `, ${lowStockSelected.size} seleccionado(s)` : '';
+  if (downloadBtn) downloadBtn.textContent = lowStockSelected.size > 0 ? `Descargar seleccionados (${lowStockSelected.size})` : 'Descargar (CSV)';
 
   const moreWrap = document.getElementById('lowStockMoreWrap');
   if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
     if (moreWrap) moreWrap.style.display = 'none';
+    if (selectAllCheck) { selectAllCheck.checked = false; selectAllCheck.indeterminate = false; }
     return;
   }
   const restantes = entries.length - lowStockShown;
@@ -18104,23 +18115,55 @@ function renderLowStockByStoreCard() {
     const btn = document.getElementById('lowStockMoreBtn');
     if (btn) btn.textContent = `Cargar más (${restantes.toLocaleString('es-MX')} restantes)`;
   }
-  tbody.innerHTML = entries.slice(0, lowStockShown).map(e => `
+  tbody.innerHTML = entries.slice(0, lowStockShown).map(e => {
+    const key = lowStockKey(e);
+    return `
     <tr>
+      <td><input type="checkbox" ${lowStockSelected.has(key) ? 'checked' : ''} onchange="toggleLowStockSelect('${key}', this.checked)"></td>
       <td>${escapeHtml(e.name)}</td>
       <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(e.sku || '—')}</td>
       <td>${escapeHtml(e.branch)}</td>
       <td style="text-align:center; font-weight:700; color:${e.qty < 0 ? '#dc2626' : 'var(--series-2)'};">${e.qty}</td>
       <td style="text-align:center; color:var(--text-muted);">${e.threshold}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+
+  if (selectAllCheck) {
+    const allSelected = entries.every(e => lowStockSelected.has(lowStockKey(e)));
+    selectAllCheck.checked = allSelected;
+    selectAllCheck.indeterminate = !allSelected && lowStockSelected.size > 0;
+  }
 }
 
-// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla va por tandas).
+function toggleLowStockSelect(key, checked) {
+  if (checked) lowStockSelected.add(key); else lowStockSelected.delete(key);
+  renderLowStockByStoreCard();
+}
+
+// Selecciona/deselecciona TODOS los productos del filtro actual, no solo los ya cargados en pantalla.
+function toggleLowStockSelectAll(checked) {
+  const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
+  const entries = lowStockEntries(filterWh);
+  entries.forEach(e => {
+    const key = lowStockKey(e);
+    if (checked) lowStockSelected.add(key); else lowStockSelected.delete(key);
+  });
+  renderLowStockByStoreCard();
+}
+
+// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla va por
+// tandas, pero la descarga no depende de cuántas se hayan cargado). Si hay productos marcados
+// con su casilla, descarga solo esos en vez de todos.
 function downloadLowStockCSV() {
   const sel = document.getElementById('lowStockStoreFilter');
   const filterWh = sel?.value || 'all';
-  const entries = lowStockEntries(filterWh);
+  let entries = lowStockEntries(filterWh);
   if (entries.length === 0) { alert('No hay productos en stock bajo para descargar.'); return; }
+  if (lowStockSelected.size > 0) {
+    entries = entries.filter(e => lowStockSelected.has(lowStockKey(e)));
+    if (entries.length === 0) { alert('Los productos seleccionados no están en este filtro de sucursal.'); return; }
+  }
   const headers = ['Producto', 'SKU', 'Sucursal', 'Stock', 'Umbral', 'Faltan para el umbral'];
   const rows = entries.map(e => [e.name, e.sku || '', e.branch, e.qty, e.threshold, Math.max(0, e.threshold - e.qty)]);
   const csv = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
@@ -18130,8 +18173,9 @@ function downloadLowStockCSV() {
   const link = document.createElement('a');
   const stamp = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Mexico_City' });
   const sucursal = filterWh === 'all' ? 'todas' : filterWh;
+  const sufijo = lowStockSelected.size > 0 ? '-seleccion' : '';
   link.href = url;
-  link.download = `stock-bajo-${sucursal}-${stamp}.csv`;
+  link.download = `stock-bajo-${sucursal}${sufijo}-${stamp}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
