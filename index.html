@@ -11291,6 +11291,32 @@ async function refreshStockAuto() {
   } finally { stockAutoRefreshBusy = false; }
 }
 setInterval(refreshStockAuto, 60000);
+
+// ---- Aviso de versión nueva del panel ----
+// El panel se queda abierto días sin recargarse; cuando se publica una versión nueva (api/version.js)
+// aparece un aviso con "Actualizar". No recarga solo para no perder lo que se esté capturando (de todos
+// modos la lista de un movimiento se guarda en este navegador y se recupera al volver).
+let mfVersionInicial = null;
+async function revisarVersionPanel() {
+  if (!getAdminPassword() && !getStaffCreds()) return;
+  try {
+    const r = await fetch('/api/version', { cache: 'no-store' });
+    if (!r.ok) return;
+    const { version } = await r.json();
+    if (!version) return;
+    if (!mfVersionInicial) { mfVersionInicial = version; return; }
+    if (version !== mfVersionInicial && !document.getElementById('mfVersionAviso')) {
+      const div = document.createElement('div');
+      div.id = 'mfVersionAviso';
+      div.style.cssText = 'position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:200; background:#2e1065; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3); display:flex; gap:12px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); flex-wrap:wrap;';
+      div.innerHTML = '<span>Hay una versión nueva del panel.</span><button type="button" class="btn small primary" onclick="location.reload()">Actualizar ahora</button>';
+      document.body.appendChild(div);
+    }
+  } catch (e) { /* sin conexión: se vuelve a revisar después */ }
+}
+revisarVersionPanel();
+setInterval(revisarVersionPanel, 3 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisarVersionPanel(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshStockAuto(); });
 
 // INVENTORY MATRIX RENDERER
@@ -12608,6 +12634,11 @@ function loadMovDraft() {
 // Carga un estado completo en el editor (borrador guardado o un movimiento
 // revertido para corregirlo).
 function applyMovState(d) {
+  // El botón "Ajuste de entrada" ya no existe: una lista guardada en el navegador con ese tipo (o un
+  // borrador de conteo físico) se abre como Ajuste, donde lo capturado es la cantidad final.
+  if (d.tipo === 'entrada' && (!d.docId || /^conteo:/i.test(String(d.motivo || '')))) {
+    d = { ...d, tipo: 'ajuste', motivo: String(d.motivo || '').replace(MOV_AJUSTE_RE, '') };
+  }
   movEditingDocId = d.docId || null;
   if (d.origen) document.getElementById('traspasoOrigen').value = d.origen;
   if (d.destino) document.getElementById('traspasoDestino').value = d.destino;
