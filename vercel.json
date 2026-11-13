@@ -97,6 +97,9 @@
     "api/v1/branch-sales/index.js": {
       "maxDuration": 30
     },
+    "api/v1/manual-online-sales/index.js": {
+      "maxDuration": 30
+    },
     "api/v1/customers/index.js": {
       "maxDuration": 30
     },
