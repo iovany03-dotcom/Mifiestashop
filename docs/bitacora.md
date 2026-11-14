@@ -13,6 +13,10 @@ Registro de lo esencial: qué se hizo, por qué, y qué queda pendiente. Lo más
 - La tabla `ps_inventory_movements` y `ps_inventory_documents` son privadas: solo escribe la llave `service_role` (`SUPABASE_SERVICE_ROLE_KEY`).
 - Variables de entorno en Vercel (solo nombres): `MP_ACCESS_TOKEN`, `SUPABASE_SERVICE_ROLE_KEY`, `META_CAPI_TOKEN` (solo Production), `SKYDROPX_API_KEY`, `SKYDROPX_API_SECRET`, `SMTP_*`, `OPENAI_API_KEY` u `ANTHROPIC_API_KEY` (lectura de notas en Recepción de mercancía). Las variables nuevas solo aplican a despliegues nuevos.
 
+## 2026-11-14
+
+- **Check-in en HR PRO obligatorio para usar el panel.** Quien trabaja en HR (personal con correo + PIN/contraseña cuyo correo está en HR, o en sus "correos en otros sistemas") y no ha registrado hoy su **entrada** en HR solo ve la pantalla "Registra tu entrada": la registra ahí con su GPS (se guarda en HR, con la geocerca de HR) o en la app de HR / por WhatsApp; el panel revisa cada minuto y se desbloquea en cuanto HR la detecta. El administrador (contraseña de admin) y los exentos que marca HR (Giovany, Lucía, Montse) no se bloquean; si HR no responde, nadie se bloquea. Código: `api/hr-checkin.js` (+ `tests/hr-checkin.test.cjs`) y `hrCheckinRevisar` en `index.html` (al abrir el panel). Llave de HR en la tabla privada `hr_bridge_config` (`docs/supabase-hr-bridge.sql`, solo `service_role`) o la variable `HR_CHECKIN_KEY`.
+
 ## 2026-10-16
 
 - **Facturación: tickets del POS con IVA no se podían facturar** ("los productos suman $895.20 pero su total es $1,038.43"). Con "Aplicar IVA" el POS suma el 16% encima de los precios de los productos (subtotal + IVA = total), pero `api/facturama.js` comparaba esos precios, sin IVA, contra el total con IVA. Ahora, si el ticket trae IVA agregado y su subtotal + IVA cuadra con el total, los precios se pasan a "con IVA" antes de desglosar: el CFDI sale con el subtotal de los productos, el IVA del ticket y el total cobrado. Los tickets sin IVA (396 de 413) facturan igual que antes, y uno con IVA que no cuadra sigue bloqueado. Probado con el ticket real #POS-12278 (`tests/facturama.test.cjs`).

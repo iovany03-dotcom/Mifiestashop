@@ -18715,7 +18715,68 @@ function cargarDatosPanel() {
   loadCartsFromAPI();
   loadSuppliersFromAPI();
 }
+// ---- Check-in en HR PRO obligatorio (api/hr-checkin.js) ----
+// Quien trabaja en HR y no ha registrado hoy su entrada no ve nada del panel hasta registrarla
+// (aquí con su GPS, o en la app de HR / por WhatsApp). Se revisa cada minuto mientras esté
+// bloqueado y al volver a la pestaña; en cuanto HR la detecta, el panel se desbloquea.
+let hrCkTimer = null;
+async function hrCheckinApi(accion, extra = {}) {
+  const r = await fetch('/api/hr-checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...extra }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+  return d;
+}
+function hrCheckinOverlay(mostrar, nombre) {
+  let el = document.getElementById('hrCheckinGate');
+  if (!mostrar) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'hrCheckinGate';
+    el.setAttribute('role', 'dialog');
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#f8fafc;display:flex;align-items:center;justify-content:center;padding:24px;';
+    el.innerHTML = `<div style="background:#fff;border-radius:28px;padding:32px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit;color:#0f172a;">
+      <div style="font-size:44px;margin-bottom:8px;">⏰</div>
+      <h2 style="margin:0 0 10px;font-size:22px;font-weight:800;">Registra tu entrada</h2>
+      <p id="hrCkTexto" style="margin:0 0 18px;font-size:14px;color:#475569;"></p>
+      <p id="hrCkError" style="display:none;margin:0 0 14px;font-size:13px;font-weight:700;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px;"></p>
+      <button id="hrCkBtn" type="button" onclick="hrCheckinRegistrar()" style="width:100%;padding:14px;border:0;border-radius:14px;background:#7c3aed;color:#fff;font-weight:800;font-size:14px;cursor:pointer;">📍 Registrar mi entrada</button>
+      <button type="button" onclick="hrCheckinRevisar(true)" style="width:100%;margin-top:10px;padding:10px;border:0;background:none;color:#64748b;font-weight:700;font-size:12px;cursor:pointer;">Ya la registré en HR · Volver a revisar</button>
+      <button type="button" onclick="logoutAdmin()" style="width:100%;margin-top:4px;padding:10px;border:0;background:none;color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer;">Cerrar sesión</button>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  const first = String(nombre || (currentStaffSession && currentStaffSession.nombre) || '').trim().split(/\s+/)[0];
+  document.getElementById('hrCkTexto').textContent = `${first ? first + ', p' : 'P'}ara usar el panel primero registra tu entrada de hoy en HR PRO. Puedes hacerlo aquí, en la app de HR o por WhatsApp.`;
+}
+async function hrCheckinRevisar(manual) {
+  if (!currentStaffSession || localStorage.getItem('mf_admin_logged_in') !== 'true') { hrCheckinOverlay(false); return; }
+  let d;
+  try { d = await hrCheckinApi('estado'); } catch (e) { return; } // sin red / HR caído: no se bloquea
+  const bloquear = !!(d && d.required);
+  hrCheckinOverlay(bloquear, d && d.employeeName);
+  clearInterval(hrCkTimer); hrCkTimer = null;
+  if (bloquear) hrCkTimer = setInterval(() => hrCheckinRevisar(), 60000);
+}
+function hrCheckinRegistrar() {
+  const btn = document.getElementById('hrCkBtn');
+  const err = document.getElementById('hrCkError');
+  const fallo = (m) => { err.textContent = m; err.style.display = 'block'; btn.disabled = false; btn.textContent = '📍 Registrar mi entrada'; };
+  if (!navigator.geolocation) return fallo('Tu dispositivo no permite obtener la ubicación.');
+  err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Registrando…';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const r = await hrCheckinApi('checkin', { latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      if (r && r.ok === false) throw new Error(r.error || 'No se pudo registrar tu entrada.');
+      await hrCheckinRevisar(true);
+    } catch (e) { fallo(e.message || 'No se pudo registrar tu entrada.'); }
+  }, () => fallo('No se pudo obtener tu ubicación. Activa el GPS y da permiso de ubicación.'),
+  { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && document.getElementById('hrCheckinGate')) hrCheckinRevisar(); });
+
 function showAdminDashboard() {
+  hrCheckinRevisar();
   cargarDatosPanel();
   const sf = document.getElementById('view-storefront');
   const portal = document.getElementById('view-cliente-portal');
