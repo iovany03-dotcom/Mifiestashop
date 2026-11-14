@@ -6228,6 +6228,14 @@
       <button class="btn primary" onclick="printTicket()"> Imprimir Ticket</button>
       <button class="btn" onclick="closeTicketModal()">Aceptar</button>
     </div>
+    <!-- Reseña del cliente de esta venta (no se imprime: va fuera de #printableTicket). -->
+    <div id="tResenaBox" style="margin-top:12px; padding:10px 12px; border:1px dashed var(--border); border-radius:10px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+      <span id="tResenaEstado" style="font-size:13px; color:var(--text-secondary);">⭐ Reseña del cliente: sin adjuntar</span>
+      <span style="display:flex; gap:6px;">
+        <button class="btn small" id="tResenaBtn" onclick="document.getElementById('tResenaInput').click()">📷 Adjuntar reseña</button>
+        <input type="file" id="tResenaInput" accept="image/*" style="display:none;" onchange="tResenaSubir(this)">
+      </span>
+    </div>
   </div>
 </div>
 
@@ -6248,10 +6256,10 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
+          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Reseña</th><th>Acciones</th></tr>
         </thead>
         <tbody id="ticketHistorialTableBody">
-          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+          <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -9053,6 +9061,7 @@ async function confirmPOSSale() {
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(cart);
 
   closeCheckoutModal();
+  tResenaPreparar(folio, null);
   document.getElementById('ticketModal').classList.remove('hidden');
 
   // Add to orders table
@@ -9258,6 +9267,7 @@ function reprintTicket(folio, total) {
   document.getElementById('tMetodoNombre').textContent = 'Pago En Efectivo';
   document.getElementById('tMetodoValor').textContent = fmtMoney(total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML([{ name: 'Venta Registrada POS', qty: 1, price: total }]);
+  tResenaPreparar(folio, null);
   document.getElementById('ticketModal').classList.remove('hidden');
 }
 
@@ -9278,7 +9288,7 @@ function closeTicketHistorialModal() {
 async function loadTicketHistorial() {
   const tbody = document.getElementById('ticketHistorialTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   // El Historial de Tickets combina dos fuentes:
   // 1) pos_tickets (tabla propia, vía rpc_pos_ticket_list) — el checkout
@@ -9321,7 +9331,7 @@ async function loadTicketHistorial() {
     // Solo se avisa del problema de sesión si de verdad no quedó nada que
     // mostrar (si los pedidos reales sí cargaron, no vale la pena
     // interrumpir con un error sobre pos_tickets, que ni se usa).
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
     return;
   }
 
@@ -9348,7 +9358,7 @@ function renderTicketHistorialTable(tickets) {
   ticketHistorialVisible = tickets;
 
   if (tickets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
     return;
   }
 
@@ -9363,9 +9373,11 @@ function renderTicketHistorialTable(tickets) {
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
+      <td>${resenasPorFolio[String(t.folio).trim()] ? `<a href="${escapeHtml(resenasPorFolio[String(t.folio).trim()].url || '#')}" target="_blank" rel="noopener" title="Subida por ${escapeHtml(resenasPorFolio[String(t.folio).trim()].subido_por)}">✅ Ver</a>` : `<button class="btn small" onclick="resenaDesdeHistorial('${t.id}')">📷 Adjuntar</button>`}</td>
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
   }).join('');
+  cargarResenasHistorial(tickets.slice(0, 200));
 }
 
 // Arma y descarga un CSV (se abre directo en Excel) con el historial de
@@ -9778,7 +9790,74 @@ function viewPosTicketFromHistorial(id) {
   document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(t.metodo);
   document.getElementById('tMetodoValor').textContent = fmtMoney(t.total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
+  tResenaPreparar(t.folio, t.almacen || null);
   document.getElementById('ticketModal').classList.remove('hidden');
+}
+
+// ---- Reseña del cliente por venta (api/resenas-venta.js) ----
+// En cada ticket se puede adjuntar la foto de la reseña que dejó el cliente (captura de Google,
+// Facebook, etc.). Una por venta; si se vuelve a subir, reemplaza la anterior.
+let tResenaFolio = null, tResenaSucursal = null;
+const resenasPorFolio = {};
+async function resenaApi(accion, datos = {}) {
+  const r = await fetch('/api/resenas-venta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...datos }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+  return d;
+}
+function tResenaPintar() {
+  const est = document.getElementById('tResenaEstado'), btn = document.getElementById('tResenaBtn');
+  if (!est || !btn) return;
+  const r = tResenaFolio && resenasPorFolio[tResenaFolio];
+  est.innerHTML = r
+    ? `✅ Reseña adjunta por ${escapeHtml(r.subido_por)}${r.url ? ` · <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">Ver foto</a>` : ''}`
+    : '⭐ Reseña del cliente: sin adjuntar';
+  btn.textContent = r ? '📷 Cambiar foto' : '📷 Adjuntar reseña';
+}
+async function tResenaPreparar(folio, sucursal) {
+  tResenaFolio = folio ? String(folio).trim() : null;
+  tResenaSucursal = sucursal;
+  const box = document.getElementById('tResenaBox');
+  if (box) box.style.display = tResenaFolio && haySesionPanel() ? 'flex' : 'none';
+  tResenaPintar();
+  if (!tResenaFolio || !haySesionPanel()) return;
+  try { const d = await resenaApi('listar', { folios: [tResenaFolio] }); Object.assign(resenasPorFolio, d.resenas); if (!d.resenas[tResenaFolio]) delete resenasPorFolio[tResenaFolio]; tResenaPintar(); }
+  catch (e) { /* sin conexión: se queda "sin adjuntar" */ }
+}
+async function tResenaSubir(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file || !tResenaFolio) return;
+  const folio = tResenaFolio;
+  const est = document.getElementById('tResenaEstado');
+  if (est) est.textContent = 'Subiendo reseña…';
+  try {
+    const data = await fcComprimir(file);
+    await resenaApi('subir', { folio, sucursal: tResenaSucursal, archivo: { media_type: 'image/jpeg', data } });
+    const d = await resenaApi('listar', { folios: [folio] });
+    Object.assign(resenasPorFolio, d.resenas);
+    if (tResenaFolio === folio) tResenaPintar();
+    if (typeof renderTicketHistorialTable === 'function' && ticketHistorialVisible.length) renderTicketHistorialTable(ticketHistorialVisible);
+  } catch (e) {
+    alert('No se pudo adjuntar la reseña: ' + e.message);
+    tResenaPintar();
+  }
+}
+async function cargarResenasHistorial(tickets) {
+  const folios = tickets.map(t => t.folio).filter(f => f && !(f in resenasPorFolio));
+  if (!folios.length || !haySesionPanel()) return;
+  try {
+    const d = await resenaApi('listar', { folios: folios.slice(0, 500) });
+    folios.forEach(f => { resenasPorFolio[f] = d.resenas[f] || null; });
+    renderTicketHistorialTable(ticketHistorialVisible);
+  } catch (e) { /* la columna se queda en "—" */ }
+}
+function resenaDesdeHistorial(id) {
+  const t = ticketHistorialCache.find(x => x.id === id);
+  if (!t) return;
+  tResenaFolio = String(t.folio).trim(); tResenaSucursal = t.almacen || null;
+  document.getElementById('tResenaInput').click();
 }
 
 // ================= INFORME DE VENTAS (tendencia + método de pago) =================
