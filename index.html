@@ -2860,6 +2860,7 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
+        <a class="submenu-link" data-view="fotos-comision">Fotos de tienda (comisiones)</a>
       </div>
     </div>
 
@@ -2937,6 +2938,7 @@
   </header>
 
   <div class="content-body">
+    <div id="fcAviso" class="hidden"></div>
 
     <!-- ================= VIEW 1: SISTEMA POS ================= -->
     <section id="view-pos" class="view-panel">
@@ -4389,6 +4391,22 @@
     </section>
 
     <!-- ================= VIEW 6: PERSONAL ================= -->
+    <section id="view-fotos-comision" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+          <div>
+            <h3 style="margin:0;">Fotos de tienda por quincena</h3>
+            <p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">El aviso para subirlas sale un día antes del pago (el 14; si el 15 cae en domingo, el viernes). Aquí se revisan por sucursal y persona para pagar la comisión.</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select id="fcFiltroPeriodo" onchange="fcCargarHistorial()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Todas las quincenas</option></select>
+            <select id="fcFiltroSucursal" onchange="fcCargarHistorial()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Todas las sucursales</option><option value="rumania">CDMX Rumania</option><option value="puebla">Puebla</option><option value="queretaro">Querétaro</option></select>
+          </div>
+        </div>
+        <div id="fcHistorial"><p style="color:var(--text-muted);">Cargando…</p></div>
+      </div>
+    </section>
+
     <section id="view-personal" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
@@ -6955,6 +6973,7 @@ const PERMISSION_GROUPS = [
   ]},
   { group: 'Contactos & Equipo', items: [
     { key: 'personal', label: 'Personal / Equipo' },
+    { key: 'fotos-comision', label: 'Fotos de tienda: ver y aprobar las de todo el equipo' },
     { key: 'clientes', label: 'Clientes' },
     { key: 'direcciones', label: 'Direcciones de clientes' },
     { key: 'proveedores', label: 'Proveedores' }
@@ -8463,6 +8482,7 @@ function switchView(viewName) {
     proveedores: ['Proveedores', 'Directorio de Insumos'],
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
+    'fotos-comision': ['Fotos de tienda', 'Comisión quincenal del equipo por sucursal'],
     costos: ['Costos & Gastos', 'Control de Gastos'],
     configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
     'param-tienda-general': ['Parámetros de la Tienda', 'General, pagos por transferencia y contacto'],
@@ -8494,6 +8514,7 @@ function switchView(viewName) {
   if (viewName === 'clientes') switchClientesAdminTab('directorio');
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
+  if (viewName === 'fotos-comision') fcCargarHistorial();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'competencia') loadCompetenciaView();
@@ -18521,9 +18542,172 @@ async function handleAdminLogin() {
 }
 
 let datosPanelCargados = false;
+// ---- Fotos de tienda para la comisión quincenal (api/fotos-comision.js) ----
+// Un día antes del pago de la quincena (el 14; si el 15 cae en domingo, el viernes) a cada persona del
+// equipo le sale arriba del panel el aviso para adjuntar las fotos de su tienda. Se guardan con la
+// sucursal que tiene ligada en Personal / Equipo (si tiene "Todas", la elige al subir).
+let fcEstado = null;
+async function fcApi(accion, datos = {}) {
+  const r = await fetch('/api/fotos-comision', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...datos }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+  return d;
+}
+const fcFechaLarga = f => new Date(`${f}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+
+// El panel se queda abierto días enteros: el aviso se vuelve a revisar cada hora y al regresar a la pestaña.
+let fcRevisadoAt = 0;
+function fcRevisarSiToca() {
+  if (document.visibilityState !== 'visible' || !currentStaffSession || Date.now() - fcRevisadoAt < 30 * 60000) return;
+  fcRevisarAviso();
+}
+document.addEventListener('visibilitychange', fcRevisarSiToca);
+setInterval(fcRevisarSiToca, 60 * 60000);
+async function fcRevisarAviso() {
+  const caja = document.getElementById('fcAviso');
+  if (!caja || !currentStaffSession) return; // el administrador no sube fotos
+  fcRevisadoAt = Date.now();
+  try { fcEstado = await fcApi('estado'); } catch (e) { return; }
+  fcPintarAviso();
+}
+
+function fcPintarAviso() {
+  const caja = document.getElementById('fcAviso');
+  const st = fcEstado;
+  if (!caja || !st || !st.abierta || !st.empleado) { caja && caja.classList.add('hidden'); return; }
+  const n = (st.envios || []).reduce((t, f) => t + (f.archivos || []).length, 0);
+  const esPago = st.hoy === st.abierta.pago;
+  caja.className = '';
+  caja.style.cssText = `margin:0 0 16px; padding:14px 16px; border-radius:12px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; ${n ? 'background:rgba(22,163,74,0.10); border:1px solid rgba(22,163,74,0.4);' : 'background:rgba(211,0,123,0.10); border:2px solid #d3007b;'}`;
+  caja.innerHTML = `<div style="min-width:0;">
+      <div style="font-weight:800; font-size:15px;">${n ? '✅ Ya enviaste ' + n + (n === 1 ? ' foto' : ' fotos') + ' de tu tienda' : '📸 Adjunta las fotos de tu tienda para tu comisión'}</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:2px;">Quincena que se paga el ${escapeHtml(fcFechaLarga(st.abierta.pago))}. ${esPago ? '<b>Hoy es el último día para subirlas.</b>' : 'Puedes subirlas hoy y mañana.'}</div>
+    </div>
+    <button class="btn ${n ? '' : 'primary'}" onclick="fcAbrirModal()">${n ? 'Ver o agregar fotos' : 'Subir fotos'}</button>`;
+}
+
+function fcAbrirModal() {
+  const st = fcEstado;
+  if (!st || !st.abierta) return;
+  let m = document.getElementById('fcModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'fcModal';
+    m.className = 'modal-overlay';
+    m.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:3000; display:flex; align-items:center; justify-content:center; padding:16px;';
+    m.addEventListener('click', e => { if (e.target === m) fcCerrarModal(); });
+    document.body.appendChild(m);
+  }
+  const fija = st.empleado && st.empleado.sucursal_fija;
+  const opciones = Object.entries(st.sucursales || {}).map(([k, v]) => `<option value="${k}">${escapeHtml(v)}</option>`).join('');
+  const fotos = (st.envios || []).flatMap(f => (f.archivos || []).map(a => ({ ...a, sucursal: f.sucursal, estado: f.estado })));
+  m.innerHTML = `<div class="card" style="max-width:560px; width:100%; max-height:90vh; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><h3 style="margin:0;">Fotos de tu tienda</h3><button class="btn small" onclick="fcCerrarModal()">✕</button></div>
+    <p style="font-size:13px; color:var(--text-secondary); margin:0 0 12px;">Quincena que se paga el ${escapeHtml(fcFechaLarga(st.abierta.pago))}. Toma fotos claras de exhibición, anaqueles y mostrador.</p>
+    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:10px;">Sucursal:
+      ${fija ? `<b>${escapeHtml(st.sucursales[fija])}</b>` : `<select id="fcSucursal" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Elige…</option>${opciones}</select>`}
+    </label>
+    <input type="file" id="fcArchivos" accept="image/*" multiple style="display:block; margin-bottom:10px;">
+    <button class="btn primary" id="fcBtnSubir" onclick="fcSubir()">Subir fotos</button>
+    <div id="fcProgreso" style="font-size:13px; margin-top:8px; color:var(--text-secondary);"></div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-top:14px;">
+      ${fotos.map(a => `<div style="position:relative;"><a href="${escapeHtml(a.url || '#')}" target="_blank" rel="noopener"><img src="${escapeHtml(a.url || '')}" alt="Foto de tienda" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--border);"></a>${a.estado !== 'aprobado' ? `<button class="btn small" title="Quitar" style="position:absolute; top:4px; right:4px; padding:2px 6px;" onclick="fcQuitar('${escapeHtml(a.path)}')">✕</button>` : ''}</div>`).join('') || '<p style="font-size:13px; color:var(--text-muted); grid-column:1/-1;">Todavía no has subido fotos.</p>'}
+    </div>
+  </div>`;
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function fcCerrarModal() { const m = document.getElementById('fcModal'); if (m) m.style.display = 'none'; }
+
+// Reduce la foto (lado mayor 1600 px, JPEG) para que suba rápido desde el celular.
+function fcComprimir(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la foto ' + file.name)); };
+    img.src = url;
+  });
+}
+
+async function fcSubir() {
+  const files = Array.from(document.getElementById('fcArchivos')?.files || []);
+  if (!files.length) { alert('Elige una o varias fotos.'); return; }
+  const fija = fcEstado.empleado && fcEstado.empleado.sucursal_fija;
+  const sucursal = fija || document.getElementById('fcSucursal')?.value;
+  if (!sucursal) { alert('Elige la sucursal.'); return; }
+  const btn = document.getElementById('fcBtnSubir'), prog = document.getElementById('fcProgreso');
+  btn.disabled = true;
+  let ok = 0;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      prog.textContent = `Subiendo ${i + 1} de ${files.length}…`;
+      const data = await fcComprimir(files[i]);
+      await fcApi('subir', { sucursal, archivo: { media_type: 'image/jpeg', data } });
+      ok++;
+    }
+    prog.textContent = '';
+  } catch (e) {
+    alert(`Se subieron ${ok} de ${files.length}. ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    try { fcEstado = await fcApi('estado'); } catch (e) {}
+    fcPintarAviso();
+    fcAbrirModal();
+  }
+}
+
+async function fcQuitar(path) {
+  if (!confirm('¿Quitar esta foto?')) return;
+  try { await fcApi('quitar', { path }); fcEstado = await fcApi('estado'); fcPintarAviso(); fcAbrirModal(); }
+  catch (e) { alert(e.message); }
+}
+
+async function fcCargarHistorial() {
+  const caja = document.getElementById('fcHistorial');
+  if (!caja) return;
+  const selP = document.getElementById('fcFiltroPeriodo'), selS = document.getElementById('fcFiltroSucursal');
+  caja.innerHTML = '<p style="color:var(--text-muted);">Cargando…</p>';
+  let d;
+  try { d = await fcApi('historial', { periodo: selP.value, sucursal: selS.value }); }
+  catch (e) { caja.innerHTML = `<p style="color:var(--danger, #dc2626);">${escapeHtml(e.message)}</p>`; return; }
+  const elegido = selP.value;
+  selP.innerHTML = '<option value="">Todas las quincenas</option>' + d.periodos.map(p => `<option value="${p}"${p === elegido ? ' selected' : ''}>Quincena del ${escapeHtml(fcFechaLarga(p))}</option>`).join('');
+  if (!d.filas.length) { caja.innerHTML = '<p style="color:var(--text-muted);">No hay fotos con estos filtros.</p>'; return; }
+  const COLOR = { enviado: '#d97706', aprobado: '#16a34a', rechazado: '#dc2626' };
+  const NOMBRE = { enviado: 'Por revisar', aprobado: 'Aprobado', rechazado: 'Rechazado' };
+  caja.innerHTML = d.filas.map(f => `<div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+      <div><b>${escapeHtml(f.empleado)}</b> · ${escapeHtml(d.sucursales[f.sucursal] || f.sucursal)} · quincena del ${escapeHtml(fcFechaLarga(f.periodo))}
+        <div style="font-size:12px; color:var(--text-muted);">${(f.archivos || []).length} fotos · última ${escapeHtml(new Date(f.actualizado_at).toLocaleString('es-MX'))}${f.revisado_por ? ` · revisó ${escapeHtml(f.revisado_por)}` : ''}${f.nota ? ` · ${escapeHtml(f.nota)}` : ''}</div></div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span style="font-size:12px; font-weight:700; color:${COLOR[f.estado]};">${NOMBRE[f.estado]}</span>
+        ${f.estado !== 'aprobado' ? `<button class="btn small primary" onclick="fcRevisar(${f.id}, 'aprobado')">Aprobar</button>` : ''}
+        ${f.estado !== 'rechazado' ? `<button class="btn small" onclick="fcRevisar(${f.id}, 'rechazado')">Rechazar</button>` : ''}
+      </div>
+    </div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">${(f.archivos || []).map(a => `<a href="${escapeHtml(a.url || '#')}" target="_blank" rel="noopener"><img src="${escapeHtml(a.url || '')}" alt="Foto de ${escapeHtml(f.empleado)}" loading="lazy" style="width:96px; height:96px; object-fit:cover; border-radius:8px; border:1px solid var(--border);"></a>`).join('')}</div>
+  </div>`).join('');
+}
+
+async function fcRevisar(id, estado) {
+  const nota = estado === 'rechazado' ? prompt('¿Por qué se rechaza? (lo verá quien revise el historial)') : '';
+  if (nota === null) return;
+  try { await fcApi('revisar', { id, estado, nota }); fcCargarHistorial(); } catch (e) { alert(e.message); }
+}
+
 function cargarDatosPanel() {
   if (datosPanelCargados || !haySesionPanel() || !document.getElementById('adminDashboardWrapper')) return;
   datosPanelCargados = true;
+  fcRevisarAviso();
   loadHistVentasLive();
   loadCustomersFromAPI();
   loadOrdersFromAPI();
