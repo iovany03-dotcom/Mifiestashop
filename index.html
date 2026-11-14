@@ -4396,7 +4396,7 @@
         <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
           <div>
             <h3 style="margin:0;">Fotos de tienda por quincena</h3>
-            <p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">El aviso para subirlas sale un día antes del pago (el 14; si el 15 cae en domingo, el viernes). Aquí se revisan por sucursal y persona para pagar la comisión.</p>
+            <p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">El aviso para subirlas sale un día antes del pago: el 14 y el 29 o 30 (un día antes del último del mes). Si la quincena cae en domingo, se paga el sábado y el aviso sale el viernes. Aquí se revisan por sucursal y persona para pagar la comisión.</p>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <select id="fcFiltroPeriodo" onchange="fcCargarHistorial()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Todas las quincenas</option></select>
@@ -18543,7 +18543,7 @@ async function handleAdminLogin() {
 
 let datosPanelCargados = false;
 // ---- Fotos de tienda para la comisión quincenal (api/fotos-comision.js) ----
-// Un día antes del pago de la quincena (el 14; si el 15 cae en domingo, el viernes) a cada persona del
+// Un día antes del pago de cada quincena (15 y último del mes; si cae en domingo se paga el sábado y el aviso es el viernes) a cada persona del
 // equipo le sale arriba del panel el aviso para adjuntar las fotos de su tienda. Se guardan con la
 // sucursal que tiene ligada en Personal / Equipo (si tiene "Todas", la elige al subir).
 let fcEstado = null;

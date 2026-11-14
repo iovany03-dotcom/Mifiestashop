@@ -10,6 +10,17 @@ test('calendario: aviso un día antes del pago; si el 15 es domingo, pago sábad
   assert.deepEqual(cal.calendarioDe('2027-03-15'), { periodo: '2027-03-15', pago: '2027-03-15', aviso: '2027-03-14' }); // lunes: aviso domingo 14
 });
 
+test('fin de mes: 31 -> aviso 30; 30 -> aviso 29; febrero en su último día; domingo -> sábado y viernes', () => {
+  assert.deepEqual(cal.calendarioDe('2026-12-31'), { periodo: '2026-12-31', pago: '2026-12-31', aviso: '2026-12-30' }); // jueves
+  assert.equal(cal.ventanaAbierta('2026-11-29').periodo, '2026-11-30');   // lunes 30
+  assert.equal(cal.ventanaAbierta('2026-11-28'), null);
+  assert.equal(cal.ventanaAbierta('2027-02-27').periodo, '2027-02-28');   // domingo 28 -> pago sábado 27
+  assert.deepEqual(cal.calendarioDe('2027-02-28'), { periodo: '2027-02-28', pago: '2027-02-27', aviso: '2027-02-26' });
+  assert.deepEqual(cal.calendarioDe('2027-01-31'), { periodo: '2027-01-31', pago: '2027-01-30', aviso: '2027-01-29' }); // domingo 31
+  assert.equal(cal.ventanaAbierta('2027-01-29').periodo, '2027-01-31');
+  assert.equal(cal.proxima('2026-11-16').periodo, '2026-11-30');
+});
+
 test('ventana: abierta del aviso al pago, cerrada el resto del mes', () => {
   assert.equal(cal.ventanaAbierta('2026-12-13'), null);
   assert.equal(cal.ventanaAbierta('2026-12-14').periodo, '2026-12-15');
@@ -17,8 +28,8 @@ test('ventana: abierta del aviso al pago, cerrada el resto del mes', () => {
   assert.equal(cal.ventanaAbierta('2026-12-16'), null);
   assert.equal(cal.ventanaAbierta('2026-11-13').pago, '2026-11-14');
   assert.equal(cal.ventanaAbierta('2026-11-15'), null, 'el domingo ya pasó el pago');
-  assert.equal(cal.proxima('2026-11-16').periodo, '2026-12-15');
-  assert.equal(cal.proxima('2026-12-20').periodo, '2027-01-15');
+  assert.equal(cal.proxima('2026-12-20').periodo, '2026-12-31');
+  assert.equal(cal.proxima('2027-01-01').periodo, '2027-01-15');
 });
 
 test('hora de CDMX: a las 11 pm del 13 en CDMX (5 am UTC del 14) sigue siendo 13', () => {
