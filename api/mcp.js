@@ -215,7 +215,7 @@ const TOOLS_INVENTARIO = [
   },
   {
     name: 'crear_movimiento_inventario', scope: 'inventory:write',
-    description: 'Crea un BORRADOR de movimiento de inventario; no cambia las existencias hasta que se apruebe. tipo "salida" (merma, regalo, consumo…: pide desde y motivo), "traspaso" (desde una sucursal hacia otra) o "ajuste_entrada" (devolución, corrección o conteo: pide hacia, tipo_ajuste y motivo de al menos 5 letras). Las compras NO se registran aquí: entran por Recepción de mercancía. Sucursales: rumania (CDMX), puebla, queretaro.',
+    description: 'Crea un BORRADOR de movimiento de inventario; no cambia las existencias hasta que se apruebe. tipo "salida" (merma, regalo, consumo…: pide desde y motivo), "traspaso" (desde una sucursal hacia otra) o "ajuste_entrada" (devolución, corrección o conteo: pide hacia, tipo_ajuste y motivo de al menos 5 letras). En tipo_ajuste "conteo" la cantidad de cada partida es lo CONTADO físicamente: solo se suma la diferencia contra el sistema (se recalcula al aprobar). Las compras NO se registran aquí: entran por Recepción de mercancía. Sucursales: rumania (CDMX), puebla, queretaro.',
     inputSchema: {
       type: 'object', required: ['tipo', 'partidas'],
       properties: {
@@ -251,6 +251,13 @@ const TOOLS_INVENTARIO = [
       if (falta.length) throw new ToolError(`No existen estos productos: ${falta.join(', ')}.`);
       items.forEach(i => { i.name = porId.get(i.id_product).name; i.sku = porId.get(i.id_product).sku; });
       let advertencias = [];
+      // Conteo físico: la cantidad es lo contado; entra solo la diferencia contra el sistema.
+      if (tipo === 'ajuste_entrada' && a.tipo_ajuste === 'conteo') {
+        const ex = await existencias(items.map(i => i.id_product));
+        const sinDif = [];
+        items.forEach(i => { const sis = Math.round(ex[i.id_product][destino] || 0); i.contado = i.qty; i.sistema = sis; i.qty = i.contado - sis; if (i.qty <= 0) sinDif.push(`${i.name}: contado ${i.contado}, sistema ${sis}`); });
+        if (sinDif.length) throw new ToolError(`En estos productos el sistema ya tiene lo contado o más; no hay nada que sumar: ${sinDif.join('; ')}.`);
+      }
       if (origen) {
         const ex = await existencias(items.map(i => i.id_product));
         advertencias = items.filter(i => i.qty > ex[i.id_product][origen]).map(i => `${i.name}: pides ${i.qty} y en ${NOMBRE_ALMACEN[origen]} hay ${ex[i.id_product][origen]}.`);

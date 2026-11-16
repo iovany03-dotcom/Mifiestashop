@@ -1,0 +1,11 @@
+-- Ajuste por conteo físico (aplicado en Supabase el 2026-11-06, migración mov_conteo_fisico_por_diferencia).
+-- Antes, en "Diferencia en conteo físico" se capturaba la cantidad a SUMAR y se sumaba completa: el
+-- 2026-11-06 se metieron 400 tubos de espuma por conteo encima de 400 que ya habían entrado por compra.
+-- Ahora:
+--  * El panel (y el conector MCP) mandan en cada partida `contado` (piezas contadas) y `sistema`.
+--  * mov_doc_save_core conserva esos dos campos en los ajustes de conteo.
+--  * mov_doc_approve_core, en un ajuste "conteo:", recalcula qty = contado - existencia actual
+--    (stock_totales de la bodega destino) y guarda ese qty en el documento. Si en algún producto no
+--    hay diferencia positiva, no aprueba nada: raise 'conteo_sin_diferencia: <producto (contado, sistema)>'.
+--    Así un conteo aprobado dos veces, o capturado después de una entrada, no duplica existencias.
+-- La definición completa está en Supabase (pg_get_functiondef('mov_doc_approve_core'::regproc)).

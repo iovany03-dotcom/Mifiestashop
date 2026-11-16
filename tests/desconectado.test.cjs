@@ -122,12 +122,12 @@ test('crear-pedido: recoger en tienda no pide dirección, no cobra envío y guar
   assert.equal(sinDir.code, 400, 'a domicilio sigue exigiendo dirección');
 });
 
-test('stock-sucursal: existencias de ps_stock, sin las sucursales ocultas', async () => {
-  const seen = mockSupabase({ ps_stock: [{ id_warehouse: 53, quantity: 12 }, { id_warehouse: 54, quantity: 7 }, { id_warehouse: 55, quantity: 3.4 }] });
+test('stock-sucursal: existencias reales (ps_stock + movimientos), sin las sucursales ocultas ni negativos', async () => {
+  const seen = mockSupabase({ rpc: [{ id_warehouse: 53, cantidad: 12 }, { id_warehouse: 54, cantidad: 7 }, { id_warehouse: 55, cantidad: 3.4 }, { id_warehouse: 56, cantidad: -4 }] });
   const res = response();
   await require('../api/stock-sucursal.js')({ query: { id: '101' } }, res);
-  assert.deepEqual(res.data, { branches: [{ warehouseId: '53', name: 'CDMX Rumania', qty: 12 }, { warehouseId: '55', name: 'Puebla', qty: 3 }], total: 15 });
-  assert.ok(seen.some(u => u.includes('id_product=eq.101')));
+  assert.deepEqual(res.data, { branches: [{ warehouseId: '53', name: 'CDMX Rumania', qty: 12 }, { warehouseId: '55', name: 'Puebla', qty: 3 }, { warehouseId: '56', name: 'Querétaro', qty: 0 }], total: 15 });
+  assert.ok(seen.some(u => u.includes('/rpc/stock_publico?p_ids=%7B101%7D')));
   const bad = response();
   await require('../api/stock-sucursal.js')({ query: { id: '1;drop' } }, bad);
   assert.equal(bad.code, 400);

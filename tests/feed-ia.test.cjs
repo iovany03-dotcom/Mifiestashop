@@ -41,14 +41,14 @@ test('feed completo: RSS válido con existencias sumadas de todas las sucursales
     if (u.includes('/catalogo_productos')) return ok([PROD, { ...PROD, id: 2, link_rewrite: 'otro', barcode: null }]);
     if (u.includes('/productos_migrados')) return ok([]);
     if (u.includes('/ps_categorias')) return ok([CAT]);
-    if (u.includes('/ps_stock')) return ok([{ id_product: 83389, quantity: 2 }, { id_product: 83389, quantity: -2 }]);
+    if (u.includes('/rpc/stock_publico')) return ok([{ id_product: 83389, id_warehouse: 53, cantidad: 0 }, { id_product: 83389, id_warehouse: 56, cantidad: -2 }]);
     return ok([]);
   };
   try {
     const { total, xml } = await feed.generarFeed();
     assert.equal(total, 2);
     assert.match(xml, /^<\?xml version="1\.0" encoding="UTF-8"\?>\n<rss version="2\.0" xmlns:g="http:\/\/base\.google\.com\/ns\/1\.0">/);
-    assert.match(xml, /<g:id>83389<\/g:id>[\s\S]*?<g:availability>out_of_stock/);  // 2 + (-2) = 0
+    assert.match(xml, /<g:id>83389<\/g:id>[\s\S]*?<g:availability>out_of_stock/);  // 0 y una sucursal en negativo = agotado
     assert.match(xml, /<g:id>2<\/g:id>[\s\S]*?<g:availability>in_stock/);          // sin registro
   } finally { global.fetch = prev; }
 });

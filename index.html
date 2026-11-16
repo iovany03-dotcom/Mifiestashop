@@ -2845,10 +2845,7 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="productos">Productos</a>
-        <a class="submenu-link" data-view="bodegas">Almacenes / Bodegas</a>
-        <a class="submenu-link" data-view="recepcion">Recepción de mercancía</a>
-        <a class="submenu-link" data-view="movimientos">Movimientos (Kardex)</a>
-        <a class="submenu-link" data-view="etiquetas">Etiquetas de precio</a>
+        <a class="submenu-link" data-view="bodegas" id="navInventario">Inventario</a>
         <a class="submenu-link" data-view="competencia">Competencia (Mercado Libre)</a>
       </div>
     </div>
@@ -2863,6 +2860,7 @@
       </div>
       <div class="submenu">
         <a class="submenu-link" data-view="personal">Personal / Equipo</a>
+        <a class="submenu-link" data-view="fotos-comision">Fotos de tienda (comisiones)</a>
       </div>
     </div>
 
@@ -2940,6 +2938,7 @@
   </header>
 
   <div class="content-body">
+    <div id="fcAviso" class="hidden"></div>
 
     <!-- ================= VIEW 1: SISTEMA POS ================= -->
     <section id="view-pos" class="view-panel">
@@ -3635,7 +3634,7 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
           <div>
-            <h2 style="margin:0 0 4px;">Movimientos de inventario</h2>
+            <h2 style="margin:0 0 4px;">Kardex por producto</h2>
             <div style="font-size:13px; color:var(--text-muted);">Entradas, salidas, ventas, traspasos y ajustes por bodega: los de las cajas de PrestaShop y los de este sistema (POS, pedidos manuales, cancelaciones).</div>
           </div>
           <button class="btn secondary" onclick="exportKardexCsv()">Exportar CSV</button>
@@ -3686,6 +3685,38 @@
           </table>
         </div>
         <div id="kxFoot" style="font-size:12px; color:var(--text-muted); margin-top:8px;"></div>
+      </div>
+    </section>
+
+    <!-- ================= HISTORIAL DE MOVIMIENTOS (pestaña de Inventario) ================= -->
+    <section id="view-mov-historial" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:10px;">
+          <div>
+            <h2 style="margin:0 0 4px;">Historial de movimientos</h2>
+            <div style="font-size:13px; color:var(--text-muted);">Todo lo que mueve el inventario: entradas de mercancía, ajustes, salidas, traspasos y cancelaciones. Los ajustes, salidas y traspasos se guardan como borrador y cambian el inventario hasta que se aprueban. Las ventas de cada producto están en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Kardex por producto</a>.</div>
+          </div>
+          <button class="btn primary" onclick="openTraspasoModal()">+ Nuevo movimiento</button>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+          <div id="movHistFilters" style="display:flex; gap:6px; flex-wrap:wrap;">
+            <button type="button" class="btn small primary" data-f="todos" onclick="setMovHistFilter('todos')">Todos</button>
+            <button type="button" class="btn small" data-f="borrador" onclick="setMovHistFilter('borrador')">Pendientes de aprobar</button>
+            <button type="button" class="btn small" data-f="aprobado" onclick="setMovHistFilter('aprobado')">Aplicados</button>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select id="movHistTipo" onchange="renderMovHistory()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+              <option value="">Todos los tipos</option>
+              <option value="compra">Entradas de mercancía</option>
+              <option value="entrada">Ajustes de entrada</option>
+              <option value="salida">Salidas</option>
+              <option value="traspaso">Traspasos</option>
+              <option value="otros">Otros (ajustes antiguos, cancelaciones, reversas)</option>
+            </select>
+            <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
+          </div>
+        </div>
+        <div id="traspasoHistoryList" style="font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;"></div>
       </div>
     </section>
 
@@ -4096,25 +4127,24 @@
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">Bodega Principal (Rumania)</div>
-          <div class="value">720,999 u.</div>
-          <div class="sub">2,050 SKUs activos</div>
+          <div class="value" id="invWhUnits-rumania">—</div>
+          <div class="sub" id="invWhSkus-rumania"></div>
         </div>
         <div class="kpi-card">
           <div class="label">Puebla</div>
-          <div class="value">546,866 u.</div>
-          <div class="sub">1,262 SKUs activos (193 agotados)</div>
+          <div class="value" id="invWhUnits-puebla">—</div>
+          <div class="sub" id="invWhSkus-puebla"></div>
         </div>
         <div class="kpi-card">
           <div class="label">Querétaro</div>
-          <div class="value">548,907 u.</div>
-          <div class="sub">1,373 SKUs activos</div>
+          <div class="value" id="invWhUnits-queretaro">—</div>
+          <div class="sub" id="invWhSkus-queretaro"></div>
         </div>
       </div>
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <h2>Inventario por Almacén / Bodega</h2>
-          <button class="btn primary" onclick="openTraspasoModal()">Traspaso entre Bodegas</button>
         </div>
         <div class="table-wrap">
           <table>
@@ -4122,9 +4152,9 @@
               <tr><th>Bodega</th><th>Ubicación</th><th>Unidades Stock</th><th>SKUs Registrados</th><th>Estado</th></tr>
             </thead>
             <tbody>
-              <tr><td><b>CDMX Rumania</b></td><td>CDMX centro</td><td>720,999</td><td>2,050</td><td><span class="pill ok">Operativo</span></td></tr>
-              <tr><td><b>Querétaro</b></td><td>Qro. El Marqués</td><td>548,907</td><td>1,373</td><td><span class="pill ok">Operativo</span></td></tr>
-              <tr><td><b>Puebla</b></td><td>Puebla Capital</td><td>546,866</td><td>1,262</td><td><span class="pill ok">Operativo</span></td></tr>
+              <tr><td><b>CDMX Rumania</b></td><td>CDMX centro</td><td id="invWhRowUnits-rumania">—</td><td id="invWhRowSkus-rumania">—</td><td><span class="pill ok">Operativo</span></td></tr>
+              <tr><td><b>Querétaro</b></td><td>Qro. El Marqués</td><td id="invWhRowUnits-queretaro">—</td><td id="invWhRowSkus-queretaro">—</td><td><span class="pill ok">Operativo</span></td></tr>
+              <tr><td><b>Puebla</b></td><td>Puebla Capital</td><td id="invWhRowUnits-puebla">—</td><td id="invWhRowSkus-puebla">—</td><td><span class="pill ok">Operativo</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -4133,13 +4163,13 @@
       <div class="kpis">
         <div class="kpi-card">
           <div class="label">Total Unidades en Stock</div>
-          <div class="value" id="invKpiTotalUnits">1,816,772 u.</div>
+          <div class="value" id="invKpiTotalUnits">—</div>
           <div class="sub">Distribuido en 3 almacenes activos</div>
         </div>
         <div class="kpi-card">
           <div class="label">Bodega Mayor Existencia</div>
-          <div class="value" id="invKpiTopWarehouse">CDMX Rumania</div>
-          <div class="sub">720,999 unidades en almacén</div>
+          <div class="value" id="invKpiTopWarehouse">—</div>
+          <div class="sub" id="invKpiTopWarehouseSub"></div>
         </div>
         <div class="kpi-card">
           <div class="label"> Alertas de Stock Bajo</div>
@@ -4148,7 +4178,7 @@
         </div>
         <div class="kpi-card">
           <div class="label">Valor Estimado Inventario</div>
-          <div class="value" id="invKpiTotalValue">$88.2M MXN</div>
+          <div class="value" id="invKpiTotalValue">—</div>
           <div class="sub">Precio costo promedio</div>
         </div>
       </div>
@@ -4160,8 +4190,7 @@
             <p style="margin:4px 0 0 0; color:var(--text-muted); font-size:0.9rem;">Existencias en tiempo real de cada producto desglosadas por cada una de nuestras 3 sucursales.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn primary" onclick="syncInventoryData()">Actualizar Stock</button>
-            <button class="btn secondary" onclick="openTraspasoModal()">Movimientos & Traspasos</button>
+            <button class="btn primary" onclick="openTraspasoModal()">+ Nuevo movimiento</button>
           </div>
         </div>
 
@@ -4208,10 +4237,10 @@
 
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
-          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos)</span></h2>
+          <h2 style="margin:0;">Stock Bajo por Sucursal <span class="sub" style="font-weight:400; color:var(--text-muted); font-size:13px;">(<span id="lowStockByStoreCount">0</span> productos<span id="lowStockSelectedCount"></span>)</span></h2>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <button class="btn secondary small" onclick="downloadLowStockCSV()">Descargar (CSV)</button>
-          <select id="lowStockStoreFilter" onchange="renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+          <button class="btn secondary small" id="lowStockDownloadBtn" onclick="downloadLowStockCSV()">Descargar (CSV)</button>
+          <select id="lowStockStoreFilter" onchange="lowStockShown = LOW_STOCK_PAGE; lowStockSelected.clear(); renderLowStockByStoreCard()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
             <option value="all">Todas las sucursales</option>
             <option value="puebla">Puebla</option>
             <option value="rumania">CDMX Rumania</option>
@@ -4222,12 +4251,15 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
+              <tr><th style="width:30px;"><input type="checkbox" id="lowStockSelectAllCheck" onchange="toggleLowStockSelectAll(this.checked)"></th><th>Producto</th><th>SKU</th><th>Sucursal</th><th style="text-align:center;">Stock</th><th style="text-align:center;">Umbral</th></tr>
             </thead>
             <tbody id="lowStockByStoreTableBody">
-              <tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
+              <tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Cargando…</td></tr>
             </tbody>
           </table>
+        </div>
+        <div id="lowStockMoreWrap" style="display:none; text-align:center; margin-top:12px;">
+          <button class="btn secondary" id="lowStockMoreBtn" onclick="lowStockShown += LOW_STOCK_PAGE; renderLowStockByStoreCard()">Cargar más</button>
         </div>
       </div>
     </section>
@@ -4359,6 +4391,22 @@
     </section>
 
     <!-- ================= VIEW 6: PERSONAL ================= -->
+    <section id="view-fotos-comision" class="view-panel hidden">
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+          <div>
+            <h3 style="margin:0;">Fotos de tienda por quincena</h3>
+            <p style="margin:4px 0 0; font-size:13px; color:var(--text-secondary);">El aviso para subirlas sale un día antes del pago: el 14 y el 29 o 30 (un día antes del último del mes). Si la quincena cae en domingo, se paga el sábado y el aviso sale el viernes. Aquí se revisan por sucursal y persona para pagar la comisión.</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select id="fcFiltroPeriodo" onchange="fcCargarHistorial()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Todas las quincenas</option></select>
+            <select id="fcFiltroSucursal" onchange="fcCargarHistorial()" style="padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Todas las sucursales</option><option value="rumania">CDMX Rumania</option><option value="puebla">Puebla</option><option value="queretaro">Querétaro</option></select>
+          </div>
+        </div>
+        <div id="fcHistorial"><p style="color:var(--text-muted);">Cargando…</p></div>
+      </div>
+    </section>
+
     <section id="view-personal" class="view-panel hidden">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
@@ -4707,27 +4755,6 @@
     </section>
 
       <!-- RECEPCIÓN INTELIGENTE DE MERCANCÍA (docs/supabase-recepcion.sql, api/recepcion.js) -->
-      <section id="view-recepcion" class="view-panel hidden">
-        <div class="card">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
-            <div>
-              <h2 style="margin:0;">Recepción de mercancía</h2>
-              <p style="margin:6px 0 0; font-size:13px; color:var(--text-secondary); max-width:780px;">
-                Toda compra entra al inventario por aquí: primero se escanea la nota del proveedor, la IA lee códigos, cantidades y precios,
-                se vinculan los códigos nuevos, se cuenta la mercancía y un supervisor autoriza el ingreso.
-              </p>
-            </div>
-            <button class="btn primary" onclick="recNueva()">+ Nueva recepción</button>
-          </div>
-          <div class="rec-tabs" style="display:flex; gap:6px; margin:16px 0 12px; flex-wrap:wrap;">
-            <button class="btn small primary" data-rectab="recepciones" onclick="recTab('recepciones')">Recepciones</button>
-            <button class="btn small" data-rectab="equivalencias" onclick="recTab('equivalencias')">Equivalencias de códigos</button>
-            <button class="btn small" data-rectab="proveedores" onclick="recTab('proveedores')">Proveedores</button>
-            <button class="btn small" data-rectab="reportes" onclick="recTab('reportes')">Reportes</button>
-          </div>
-          <div id="recCuerpo"><p style="color:var(--text-muted);">Cargando…</p></div>
-        </div>
-      </section>
 
     <section id="view-etiquetas" class="view-panel hidden">
       <div class="card">
@@ -6204,6 +6231,14 @@
       <button class="btn primary" onclick="printTicket()"> Imprimir Ticket</button>
       <button class="btn" onclick="closeTicketModal()">Aceptar</button>
     </div>
+    <!-- Reseña del cliente de esta venta (no se imprime: va fuera de #printableTicket). -->
+    <div id="tResenaBox" style="margin-top:12px; padding:10px 12px; border:1px dashed var(--border); border-radius:10px; display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+      <span id="tResenaEstado" style="font-size:13px; color:var(--text-secondary);">⭐ Reseña del cliente: sin adjuntar</span>
+      <span style="display:flex; gap:6px;">
+        <button class="btn small" id="tResenaBtn" onclick="document.getElementById('tResenaInput').click()">📷 Adjuntar reseña</button>
+        <input type="file" id="tResenaInput" accept="image/*" style="display:none;" onchange="tResenaSubir(this)">
+      </span>
+    </div>
   </div>
 </div>
 
@@ -6224,10 +6259,10 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Acciones</th></tr>
+          <tr><th>Folio</th><th>Fecha</th><th>Sucursal</th><th>Cliente</th><th>Artículos</th><th>Total</th><th>Reseña</th><th>Acciones</th></tr>
         </thead>
         <tbody id="ticketHistorialTableBody">
-          <tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
+          <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>
         </tbody>
       </table>
     </div>
@@ -6617,7 +6652,7 @@
 
 <!-- ================= MOVIMIENTOS E HISTORIAL DE INVENTARIO MODAL ================= -->
 <!-- Diálogo genérico de Recepción de mercancía (vincular, contar, editar renglón, nueva recepción…) -->
-<div class="modal-overlay hidden" id="recModal">
+<div class="modal-overlay hidden" id="recModal" style="z-index:120;">
   <div class="modal" style="max-width: 720px;">
     <div class="modal-header">
       <h2 id="recModalTitulo">Recepción</h2>
@@ -6628,39 +6663,56 @@
 </div>
 
 <div class="modal-overlay hidden" id="traspasoModal">
-  <div class="modal" style="max-width: 760px;">
+  <div class="modal" id="traspasoModalBox" style="max-width: 760px;">
     <div class="modal-header">
-      <h2>Movimientos de Inventario & Traspasos</h2>
+      <h2>Nuevo movimiento</h2>
       <div style="display:flex; gap:8px; align-items:center;">
         <button class="btn small" id="btnMovHistorial" onclick="openMovHistory()">Historial</button>
         <button class="btn small" onclick="closeTraspasoModal()">✕</button>
       </div>
     </div>
 
-    <p style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
-      Elige el tipo de movimiento y la bodega, agrega los productos con el buscador y guárdalo como borrador. El inventario no cambia hasta que un responsable lo apruebe en el Historial.
+    <p id="movIntro" style="font-size:13px; color:var(--text-secondary); margin-top:0; margin-bottom:14px;">
+      Elige el tipo de movimiento y la bodega y agrega los productos. Con <b>Guardar borrador</b> queda pendiente hasta que un responsable lo apruebe en el Historial; quien puede aprobar también tiene <b>Guardar y aplicar</b>, que lo aplica al momento.
     </p>
 
     <!-- Movement Type Toggle Buttons -->
-    <div style="display:flex; gap:8px; margin-bottom:16px;">
-      <button type="button" class="btn primary" id="btnTipoEntrada" onclick="setMovimientoType('entrada')" style="flex:1; justify-content:center; font-weight:700;">Ajuste de entrada</button>
-      <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
-      <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; justify-content:center; font-weight:700;">Traspaso</button>
+    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+      <button type="button" class="btn" id="btnTipoCompra" onclick="setMovimientoType('compra')" title="Mercancía comprada a un proveedor, con su nota" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Entrada de mercancía</button>
+      <button type="button" class="btn primary" id="btnTipoAjuste" onclick="setMovimientoType('ajuste')" title="Deja la cantidad que escribas en la bodega: sube o baja según lo que haya" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Ajuste</button>
+      <button type="button" class="btn" id="btnTipoSalida" onclick="setMovimientoType('salida')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Salida (Baja/Merma)</button>
+      <button type="button" class="btn" id="btnTipoTraspaso" onclick="setMovimientoType('traspaso')" style="flex:1; min-width:140px; justify-content:center; font-weight:700;">Traspaso</button>
     </div>
 
-    <div id="movAvisoCompras" style="background:rgba(211,0,123,0.08); border:1px solid rgba(211,0,123,0.35); border-radius:10px; padding:10px 12px; margin-bottom:14px; font-size:13px; color:var(--text-primary);">
-      <b>Las compras a proveedores ya no se registran aquí.</b> Toda mercancía comprada entra por
-      <a href="#" onclick="event.preventDefault(); closeTraspasoModal(); switchView('recepcion');" style="color:#d3007b; font-weight:700;">Recepción de mercancía</a>
-      con la nota del proveedor escaneada. El ajuste de entrada es solo para devoluciones, correcciones o diferencias de conteo, con justificación y aprobación de un supervisor.
-      <div id="movAjusteCatWrap" style="margin-top:8px;">
-        <label style="font-weight:600;">Tipo de ajuste:
-          <select id="movAjusteCat" onchange="saveMovDraft()" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);">
-            <option value="devolucion">Devolución de cliente</option>
-            <option value="correccion">Corrección de un error de captura</option>
-            <option value="conteo">Diferencia en conteo físico</option>
-          </select>
-        </label>
+    <!-- Entrada de mercancía (Recepción): nota del proveedor escaneada, vinculación de códigos, conteo y autorización -->
+    <div id="movRecepcionPanel" class="hidden">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+        <p style="margin:0; font-size:13px; color:var(--text-secondary); max-width:640px;">
+          Mercancía comprada a un proveedor: escanea la nota, la IA lee códigos, cantidades y precios; vinculas los códigos nuevos, cuentas la mercancía y un supervisor autoriza el ingreso.
+        </p>
+        <button class="btn primary" onclick="recNueva()">+ Nueva entrada</button>
       </div>
+      <div class="rec-tabs" style="display:flex; gap:6px; margin:14px 0 12px; flex-wrap:wrap;">
+        <button class="btn small primary" data-rectab="recepciones" onclick="recTab('recepciones')">Entradas</button>
+        <button class="btn small" data-rectab="equivalencias" onclick="recTab('equivalencias')">Equivalencias de códigos</button>
+        <button class="btn small" data-rectab="proveedores" onclick="recTab('proveedores')">Proveedores</button>
+        <button class="btn small" data-rectab="reportes" onclick="recTab('reportes')">Reportes</button>
+      </div>
+      <div id="recCuerpo"><p style="color:var(--text-muted);">Cargando…</p></div>
+    </div>
+
+    <div id="movAjusteGeneralAyuda" style="display:none; margin-bottom:14px; font-size:12.5px; color:var(--text-secondary);">
+      Escribe la <b>cantidad que debe quedar</b> de cada producto en la bodega. El sistema sube o baja la diferencia al aprobarse.
+    </div>
+    <div id="movAjusteCatWrap" style="margin-bottom:14px;">
+      <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">¿Por qué entran estas piezas?</label>
+      <select id="movAjusteCat" onchange="saveMovDraft(); renderMovLote();" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+        <option value="devolucion">Devolución de un cliente</option>
+        <option value="correccion">Corrección de un error de captura</option>
+        <option value="conteo">Conteo físico (hay más piezas de las que dice el sistema)</option>
+      </select>
+      <div style="margin-top:6px; font-size:12px; color:var(--text-muted);">Suma piezas a la bodega. Escribe abajo qué pasó; se aplica cuando un responsable lo aprueba.</div>
+      <div id="movConteoAyuda" style="display:none; margin-top:6px; font-size:12px;">En conteo físico escribe <b>cuántas piezas contaste</b>. El sistema suma solo la diferencia contra lo que tiene registrado al momento de aprobar.</div>
     </div>
 
     <form id="traspasoForm" onsubmit="event.preventDefault(); reviewStockMovement();">
@@ -6702,13 +6754,14 @@
       </div>
 
       <div style="margin-bottom:18px;">
-        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;">Motivo / Observaciones (Opcional):</label>
+        <label style="font-size:13px; font-weight:600; color:var(--text-primary); display:block; margin-bottom:6px;" id="lblMovMotivo">Motivo / Observaciones (Opcional):</label>
         <input type="text" id="traspasoMotivo" oninput="saveMovDraft()" placeholder="Ej. merma por daño, traspaso para surtir sucursal, devolución ticket #1234" style="width:100%; padding:10px 14px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
       </div>
 
-      <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
         <button type="button" class="btn" onclick="closeTraspasoModal()">Cancelar</button>
         <button type="button" class="btn" id="btnGuardarBorradorForm" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700;">Guardar borrador</button>
+        <button type="button" class="btn mov-aplicar-btn hidden" id="btnAplicarForm" onclick="saveMovAsDraft(true)" title="Se guarda y se aplica al inventario de una vez (solo quien puede aprobar)" style="padding:10px 20px; font-weight:700; background:#16a34a; color:#fff; border-color:#16a34a;">Guardar y aplicar</button>
         <button type="submit" class="btn primary" id="btnConfirmMovimiento" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">
            Revisar entrada
         </button>
@@ -6721,30 +6774,9 @@
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap;">
         <button type="button" class="btn" onclick="backToMovEditor()">← Regresar a editar</button>
         <button type="button" class="btn primary" id="btnSaveMovBorrador" onclick="saveMovAsDraft()" style="padding:10px 20px; font-weight:700; background:linear-gradient(90deg, #e85d04, #f97316);">Guardar borrador</button>
+        <button type="button" class="btn mov-aplicar-btn hidden" id="btnAplicarReview" onclick="saveMovAsDraft(true)" title="Se guarda y se aplica al inventario de una vez (solo quien puede aprobar)" style="padding:10px 20px; font-weight:700; background:#16a34a; color:#fff; border-color:#16a34a;">Guardar y aplicar</button>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- ================= HISTORIAL DE MOVIMIENTOS (entradas, salidas y traspasos; con borradores y aprobación) ================= -->
-<div class="modal-overlay hidden" id="movHistoryModal">
-  <div class="modal" style="max-width: 820px;">
-    <div class="modal-header">
-      <h2>Historial de movimientos</h2>
-      <button class="btn small" onclick="closeMovHistory()">✕</button>
-    </div>
-    <p style="font-size:12.5px; color:var(--text-secondary); margin-top:0; margin-bottom:12px;">
-      Entradas, salidas y traspasos. Cada uno se guarda como borrador y no afecta el inventario hasta que se aprueba; ahí queda registrado quién lo aprobó. Las ventas y los movimientos de las cajas se ven en <a href="#" onclick="event.preventDefault(); openKardexFromMovHistory();">Movimientos de inventario</a>.
-    </p>
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
-      <div id="movHistFilters" style="display:flex; gap:6px; flex-wrap:wrap;">
-        <button type="button" class="btn small primary" data-f="todos" onclick="setMovHistFilter('todos')">Todos</button>
-        <button type="button" class="btn small" data-f="borrador" onclick="setMovHistFilter('borrador')">Pendientes de aprobar</button>
-        <button type="button" class="btn small" data-f="aprobado" onclick="setMovHistFilter('aprobado')">Aprobados</button>
-      </div>
-      <span style="font-size:11px; color:var(--text-muted);" id="movCountBadge"></span>
-    </div>
-    <div id="traspasoHistoryList" style="max-height:60vh; overflow-y:auto; font-size:12px; color:var(--text-muted); display:flex; flex-direction:column; gap:8px;"></div>
   </div>
 </div>
 
@@ -6834,6 +6866,31 @@ async function sbRpc(fnName, params){
   return text ? JSON.parse(text) : null;
 }
 
+// Supabase entrega como máximo 1,000 renglones por respuesta: una función que regresa más (como
+// los totales del kardex, que ya pasan de 1,000 producto/sucursal) se pide por páginas. La función
+// debe regresar en orden fijo (ORDER BY) para que las páginas no se encimen.
+async function sbRpcTodo(fnName, params, pagina = 1000) {
+  const todos = [];
+  for (let offset = 0; offset < 200000; offset += pagina) {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}?limit=${pagina}&offset=${offset}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(params || {})
+    });
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      const err = new Error(text.includes('unauthorized') ? 'unauthorized' : `RPC ${fnName} -> ${r.status}`);
+      err.detail = text;
+      throw err;
+    }
+    const filas = await r.json();
+    if (!Array.isArray(filas)) return filas;
+    todos.push(...filas);
+    if (filas.length < pagina) break;
+  }
+  return todos;
+}
+
 // Contraseña de administrador / de edición de la sesión actual, guardadas
 // en este navegador (nunca en el HTML ni en un repositorio) para poder
 // acompañar cada llamada RPC sin pedirlas de nuevo en cada acción.
@@ -6917,8 +6974,8 @@ const PERMISSION_GROUPS = [
   { group: 'Catálogo & Stock', items: [
     { key: 'productos', label: 'Productos' },
     { key: 'bodegas', label: 'Almacenes / Bodegas' },
-    { key: 'movimientos', label: 'Movimientos de inventario (Kardex)' },
-    { key: 'recepcion', label: 'Recepción de mercancía (escanear notas, vincular códigos, contar)' },
+    { key: 'movimientos', label: 'Kardex por producto (ventas y movimientos de cada producto)' },
+    { key: 'recepcion', label: 'Entrada de mercancía (escanear notas, vincular códigos, contar)' },
     { key: 'etiquetas', label: 'Etiquetas de precio (imprimir con mayoreo y código de barras)' },
     { key: 'competencia', label: 'Competencia en Mercado Libre (precios por pieza)' },
     { key: 'blog', label: 'Blog: escribir y administrar artículos (SEO)' },
@@ -6927,6 +6984,7 @@ const PERMISSION_GROUPS = [
   ]},
   { group: 'Contactos & Equipo', items: [
     { key: 'personal', label: 'Personal / Equipo' },
+    { key: 'fotos-comision', label: 'Fotos de tienda: ver y aprobar las de todo el equipo' },
     { key: 'clientes', label: 'Clientes' },
     { key: 'direcciones', label: 'Direcciones de clientes' },
     { key: 'proveedores', label: 'Proveedores' }
@@ -6994,6 +7052,8 @@ function hasPermission(viewName) {
   const permisos = currentStaffSession.permisos || [];
   // Quien ya veía Almacenes / Bodegas también ve sus movimientos.
   if (viewName === 'movimientos' && permisos.includes('bodegas')) return true;
+  // El historial de movimientos (pestaña de Inventario) lo ve quien maneja inventario.
+  if (viewName === 'mov-historial') return ['bodegas', 'movimientos', 'recepcion', 'aprobar-movimientos'].some(k => permisos.includes(k));
   // La recepción la hacen quienes manejan bodegas; los supervisores la autorizan.
   if (viewName === 'recepcion' && (permisos.includes('bodegas') || permisos.includes('aprobar-movimientos'))) return true;
   // Las direcciones ahora son una pestaña dentro de Clientes.
@@ -7011,6 +7071,14 @@ function applyStaffPermissionsUI() {
     const allowed = !restricted || hasPermission(view);
     el.classList.toggle('perm-hidden', !allowed);
   });
+
+  // "Inventario" abre la primera de sus pestañas que esta persona puede ver.
+  const navInv = document.getElementById('navInventario');
+  if (navInv) {
+    const first = inventarioTabs().find(t => !restricted || hasPermission(t.view));
+    navInv.dataset.view = first ? first.view : 'bodegas';
+    navInv.classList.toggle('perm-hidden', !first);
+  }
 
   // Which cash registers (bodegas) this person can operate in the POS. Only
   // restrict once at least one caja-* permission is explicitly set for them —
@@ -8355,11 +8423,43 @@ if (document.getElementById('sidebarBackdrop')) {
 }
 
 // NAVIGATION
+// ---- Inventario: Existencias, Recepción, Movimientos y Etiquetas en una sola entrada del menú ----
+// Cada parte sigue siendo su propia vista (con su carga y sus permisos); arriba de las cuatro va la
+// misma tira de pestañas para moverse entre ellas.
+// (Función y no constante: applyStaffPermissionsUI la usa y puede correr antes que esta parte del script.)
+function inventarioTabs() {
+  return [
+    { view: 'bodegas', label: 'Existencias por bodega' },
+    { view: 'mov-historial', label: 'Historial de movimientos' },
+    { view: 'movimientos', label: 'Kardex por producto' },
+    { view: 'etiquetas', label: 'Etiquetas de precio' }
+  ];
+}
+
+function renderInventarioTabs(active) {
+  const tabs = inventarioTabs();
+  tabs.forEach(t => {
+    const section = document.getElementById('view-' + t.view);
+    if (!section) return;
+    let bar = section.querySelector(':scope > .inv-tabs');
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.className = 'inv-tabs';
+      bar.style.cssText = 'display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; border-bottom:1px solid var(--border);';
+      section.insertBefore(bar, section.firstChild);
+    }
+    bar.innerHTML = tabs.filter(x => hasPermission(x.view)).map(x =>
+      `<button type="button" class="btn${x.view === active ? ' primary' : ''}" onclick="switchView('${x.view}')" style="border-radius:6px 6px 0 0; padding:8px 14px; font-size:12px; font-weight:700;">${x.label}</button>`
+    ).join('');
+  });
+}
+
 function switchView(viewName) {
   if (currentStaffSession && !hasPermission(viewName)) {
     alert('No tienes permiso para acceder a esta sección. Contacta al administrador si crees que es un error.');
     return;
   }
+  if (viewName === 'recepcion') { openEntradaMercancia(); return; }
 
   document.querySelectorAll('.view-panel').forEach(p => p.classList.add('hidden'));
   const target = document.getElementById('view-' + viewName);
@@ -8379,10 +8479,11 @@ function switchView(viewName) {
     embudo: ['Embudo de Compra', 'En qué paso se queda cada visitante'],
     retransmisiones: ['Retransmisiones', 'Mensajes y cupones para recuperar ventas'],
     productos: ['Catálogo de Productos', 'Catálogo, categorías y promociones'],
-    bodegas: ['Almacenes & Bodegas', 'Control de Inventario Multibodega'],
-    movimientos: ['Movimientos de Inventario', 'Kardex por producto y bodega'],
-    etiquetas: ['Etiquetas de precio', 'Imprimir etiquetas con precio y mayoreo'],
-    recepcion: ['Recepción de mercancía', 'Nota escaneada con IA, vinculación de códigos, conteo y autorización'],
+    bodegas: ['Inventario', 'Existencias por bodega'],
+    movimientos: ['Inventario', 'Kardex por producto: ventas y movimientos de cada producto por bodega'],
+    'mov-historial': ['Inventario', 'Historial de movimientos'],
+    etiquetas: ['Inventario', 'Etiquetas de precio con mayoreo'],
+    recepcion: ['Inventario', 'Recepción de mercancía: nota escaneada, vinculación de códigos, conteo y autorización'],
     competencia: ['Competencia', 'Precios por pieza en Mercado Libre'],
     blog: ['Blog', 'Artículos para atraer visitas desde Google'],
     'paginas-cms': ['Páginas CMS', 'Contenido de PrestaShop y reseñas de clientes'],
@@ -8392,6 +8493,7 @@ function switchView(viewName) {
     proveedores: ['Proveedores', 'Directorio de Insumos'],
     facturacion: ['Facturación CFDI', 'Comprobantes Emitidos'],
     personal: ['Personal & Cajeros', 'Gestión de Equipo'],
+    'fotos-comision': ['Fotos de tienda', 'Comisión quincenal del equipo por sucursal'],
     costos: ['Costos & Gastos', 'Control de Gastos'],
     configuracion: ['Configuración del Ticket POS', 'Personalización de comprobantes'],
     'param-tienda-general': ['Parámetros de la Tienda', 'General, pagos por transferencia y contacto'],
@@ -8423,13 +8525,18 @@ function switchView(viewName) {
   if (viewName === 'clientes') switchClientesAdminTab('directorio');
   if (viewName === 'pedidos') loadOrdersFromAPI();
   if (viewName === 'personal' || viewName === 'param-avanzados-equipo') loadPersonalFromAPI();
+  if (viewName === 'fotos-comision') fcCargarHistorial();
   if (viewName === 'proveedores') loadSuppliersFromAPI();
   if (viewName === 'direcciones') loadDirecciones(0);
   if (viewName === 'competencia') loadCompetenciaView();
   if (viewName === 'etiquetas') etqIniciar();
-  if (viewName === 'recepcion') recIniciar();
+  if (viewName === 'mov-historial') cargarMovHistorial();
   if (viewName === 'param-tienda-seo') seoIniciar();
   if (viewName === 'blog') blogMostrarLista();
+  if (inventarioTabs().some(t => t.view === viewName)) {
+    renderInventarioTabs(viewName);
+    document.querySelectorAll('.submenu-link').forEach(l => l.classList.toggle('active', l.id === 'navInventario'));
+  }
   if (viewName === 'bodegas') { renderInventarioTable(); renderLowStockByStoreCard(); if (!realStockLoaded) loadRealStockData().then(() => { renderInventarioTable(); renderLowStockByStoreCard(); }); }
   if (viewName === 'dashboard') { checkNegativeStockWarning(); loadStoreToggles(); }
   if (viewName === 'informe-ventas') loadInformeVentas();
@@ -8957,6 +9064,7 @@ async function confirmPOSSale() {
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(cart);
 
   closeCheckoutModal();
+  tResenaPreparar(folio, null);
   document.getElementById('ticketModal').classList.remove('hidden');
 
   // Add to orders table
@@ -9162,6 +9270,7 @@ function reprintTicket(folio, total) {
   document.getElementById('tMetodoNombre').textContent = 'Pago En Efectivo';
   document.getElementById('tMetodoValor').textContent = fmtMoney(total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML([{ name: 'Venta Registrada POS', qty: 1, price: total }]);
+  tResenaPreparar(folio, null);
   document.getElementById('ticketModal').classList.remove('hidden');
 }
 
@@ -9182,7 +9291,7 @@ function closeTicketHistorialModal() {
 async function loadTicketHistorial() {
   const tbody = document.getElementById('ticketHistorialTableBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Cargando…</td></tr>';
 
   // El Historial de Tickets combina dos fuentes:
   // 1) pos_tickets (tabla propia, vía rpc_pos_ticket_list) — el checkout
@@ -9225,7 +9334,7 @@ async function loadTicketHistorial() {
     // Solo se avisa del problema de sesión si de verdad no quedó nada que
     // mostrar (si los pedidos reales sí cargaron, no vale la pena
     // interrumpir con un error sobre pos_tickets, que ni se usa).
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">Tu sesión ya no es válida (contraseña o PIN desactualizados en este navegador). Cierra sesión y vuelve a entrar.</td></tr>';
     return;
   }
 
@@ -9252,7 +9361,7 @@ function renderTicketHistorialTable(tickets) {
   ticketHistorialVisible = tickets;
 
   if (tickets.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--text-muted);">${ticketHistorialCache.length === 0 ? 'Aún no hay tickets registrados.' : 'Ningún ticket coincide con tu búsqueda.'}</td></tr>`;
     return;
   }
 
@@ -9267,9 +9376,11 @@ function renderTicketHistorialTable(tickets) {
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
       <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
+      <td>${resenasPorFolio[String(t.folio).trim()] ? `<a href="${escapeHtml(resenasPorFolio[String(t.folio).trim()].url || '#')}" target="_blank" rel="noopener" title="Subida por ${escapeHtml(resenasPorFolio[String(t.folio).trim()].subido_por)}">✅ Ver</a>` : `<button class="btn small" onclick="resenaDesdeHistorial('${t.id}')">📷 Adjuntar</button>`}</td>
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
   }).join('');
+  cargarResenasHistorial(tickets.slice(0, 200));
 }
 
 // Arma y descarga un CSV (se abre directo en Excel) con el historial de
@@ -9682,7 +9793,74 @@ function viewPosTicketFromHistorial(id) {
   document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(t.metodo);
   document.getElementById('tMetodoValor').textContent = fmtMoney(t.total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
+  tResenaPreparar(t.folio, t.almacen || null);
   document.getElementById('ticketModal').classList.remove('hidden');
+}
+
+// ---- Reseña del cliente por venta (api/resenas-venta.js) ----
+// En cada ticket se puede adjuntar la foto de la reseña que dejó el cliente (captura de Google,
+// Facebook, etc.). Una por venta; si se vuelve a subir, reemplaza la anterior.
+let tResenaFolio = null, tResenaSucursal = null;
+const resenasPorFolio = {};
+async function resenaApi(accion, datos = {}) {
+  const r = await fetch('/api/resenas-venta', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...datos }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+  return d;
+}
+function tResenaPintar() {
+  const est = document.getElementById('tResenaEstado'), btn = document.getElementById('tResenaBtn');
+  if (!est || !btn) return;
+  const r = tResenaFolio && resenasPorFolio[tResenaFolio];
+  est.innerHTML = r
+    ? `✅ Reseña adjunta por ${escapeHtml(r.subido_por)}${r.url ? ` · <a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">Ver foto</a>` : ''}`
+    : '⭐ Reseña del cliente: sin adjuntar';
+  btn.textContent = r ? '📷 Cambiar foto' : '📷 Adjuntar reseña';
+}
+async function tResenaPreparar(folio, sucursal) {
+  tResenaFolio = folio ? String(folio).trim() : null;
+  tResenaSucursal = sucursal;
+  const box = document.getElementById('tResenaBox');
+  if (box) box.style.display = tResenaFolio && haySesionPanel() ? 'flex' : 'none';
+  tResenaPintar();
+  if (!tResenaFolio || !haySesionPanel()) return;
+  try { const d = await resenaApi('listar', { folios: [tResenaFolio] }); Object.assign(resenasPorFolio, d.resenas); if (!d.resenas[tResenaFolio]) delete resenasPorFolio[tResenaFolio]; tResenaPintar(); }
+  catch (e) { /* sin conexión: se queda "sin adjuntar" */ }
+}
+async function tResenaSubir(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file || !tResenaFolio) return;
+  const folio = tResenaFolio;
+  const est = document.getElementById('tResenaEstado');
+  if (est) est.textContent = 'Subiendo reseña…';
+  try {
+    const data = await fcComprimir(file);
+    await resenaApi('subir', { folio, sucursal: tResenaSucursal, archivo: { media_type: 'image/jpeg', data } });
+    const d = await resenaApi('listar', { folios: [folio] });
+    Object.assign(resenasPorFolio, d.resenas);
+    if (tResenaFolio === folio) tResenaPintar();
+    if (typeof renderTicketHistorialTable === 'function' && ticketHistorialVisible.length) renderTicketHistorialTable(ticketHistorialVisible);
+  } catch (e) {
+    alert('No se pudo adjuntar la reseña: ' + e.message);
+    tResenaPintar();
+  }
+}
+async function cargarResenasHistorial(tickets) {
+  const folios = tickets.map(t => t.folio).filter(f => f && !(f in resenasPorFolio));
+  if (!folios.length || !haySesionPanel()) return;
+  try {
+    const d = await resenaApi('listar', { folios: folios.slice(0, 500) });
+    folios.forEach(f => { resenasPorFolio[f] = d.resenas[f] || null; });
+    renderTicketHistorialTable(ticketHistorialVisible);
+  } catch (e) { /* la columna se queda en "—" */ }
+}
+function resenaDesdeHistorial(id) {
+  const t = ticketHistorialCache.find(x => x.id === id);
+  if (!t) return;
+  tResenaFolio = String(t.folio).trim(); tResenaSucursal = t.almacen || null;
+  document.getElementById('tResenaInput').click();
 }
 
 // ================= INFORME DE VENTAS (tendencia + método de pago) =================
@@ -11181,7 +11359,7 @@ async function loadRealStockData() {
   try {
     const [stockRes, ledgerRows] = await Promise.all([
       fetch('/api/stock-all').then(r => { if (!r.ok) throw new Error('stock'); return r.json(); }).catch(() => { stockOk = false; return null; }),
-      sbRpc('rpc_stock_move_totals', getSessionCredsParams()).catch(() => { ledgerOk = false; return null; })
+      sbRpcTodo('rpc_stock_move_totals', getSessionCredsParams()).catch(() => { ledgerOk = false; return null; })
     ]);
     if (stockOk && stockRes && stockRes.stock && !stockRes.fallback) realStockData = stockRes.stock;
     else stockOk = false;
@@ -11216,6 +11394,32 @@ async function refreshStockAuto() {
   } finally { stockAutoRefreshBusy = false; }
 }
 setInterval(refreshStockAuto, 60000);
+
+// ---- Aviso de versión nueva del panel ----
+// El panel se queda abierto días sin recargarse; cuando se publica una versión nueva (api/version.js)
+// aparece un aviso con "Actualizar". No recarga solo para no perder lo que se esté capturando (de todos
+// modos la lista de un movimiento se guarda en este navegador y se recupera al volver).
+let mfVersionInicial = null;
+async function revisarVersionPanel() {
+  if (!getAdminPassword() && !getStaffCreds()) return;
+  try {
+    const r = await fetch('/api/version', { cache: 'no-store' });
+    if (!r.ok) return;
+    const { version } = await r.json();
+    if (!version) return;
+    if (!mfVersionInicial) { mfVersionInicial = version; return; }
+    if (version !== mfVersionInicial && !document.getElementById('mfVersionAviso')) {
+      const div = document.createElement('div');
+      div.id = 'mfVersionAviso';
+      div.style.cssText = 'position:fixed; left:50%; bottom:20px; transform:translateX(-50%); z-index:200; background:#2e1065; color:#fff; padding:12px 16px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.3); display:flex; gap:12px; align-items:center; font-size:14px; max-width:calc(100vw - 32px); flex-wrap:wrap;';
+      div.innerHTML = '<span>Hay una versión nueva del panel.</span><button type="button" class="btn small primary" onclick="location.reload()">Actualizar ahora</button>';
+      document.body.appendChild(div);
+    }
+  } catch (e) { /* sin conexión: se vuelve a revisar después */ }
+}
+revisarVersionPanel();
+setInterval(revisarVersionPanel, 3 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') revisarVersionPanel(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refreshStockAuto(); });
 
 // INVENTORY MATRIX RENDERER
@@ -11264,6 +11468,24 @@ function renderInventarioTable() {
     return matchQ && matchWh && matchSt;
   });
 
+  // Totales reales por bodega (antes eran números fijos escritos en la página).
+  const WH = [['rumania', 'CDMX Rumania', '_stRumania'], ['puebla', 'Puebla', '_stPuebla'], ['queretaro', 'Querétaro', '_stQueretaro']];
+  const porBodega = WH.map(([key, label, campo]) => {
+    let units = 0, skus = 0, agotados = 0;
+    dataset.forEach(p => { const q = p[campo] || 0; units += q; if (q > 0) skus++; else agotados++; });
+    return { key, label, units, skus, agotados };
+  });
+  const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  porBodega.forEach(b => {
+    setTxt('invWhUnits-' + b.key, b.units.toLocaleString('es-MX') + ' u.');
+    setTxt('invWhSkus-' + b.key, `${b.skus.toLocaleString('es-MX')} productos con existencia (${b.agotados.toLocaleString('es-MX')} agotados)`);
+    setTxt('invWhRowUnits-' + b.key, b.units.toLocaleString('es-MX'));
+    setTxt('invWhRowSkus-' + b.key, b.skus.toLocaleString('es-MX'));
+  });
+  const mayor = porBodega.reduce((a, b) => (b.units > a.units ? b : a), porBodega[0]);
+  setTxt('invKpiTopWarehouse', mayor.label);
+  setTxt('invKpiTopWarehouseSub', mayor.units.toLocaleString('es-MX') + ' unidades en almacén');
+
   // Update KPIs
   if (document.getElementById('invKpiTotalUnits')) document.getElementById('invKpiTotalUnits').textContent = totalUnitsCount.toLocaleString() + ' u.';
   if (document.getElementById('invKpiLowStockCount')) document.getElementById('invKpiLowStockCount').textContent = lowStockCount + ' SKUs';
@@ -11292,17 +11514,11 @@ function renderInventarioTable() {
         <td style="text-align:center; font-weight:700; color:var(--series-2);">${p._stTotal.toLocaleString()} u.</td>
         <td style="text-align:center;">${statusPill}</td>
         <td style="text-align:center;">
-          <button class="btn small" style="padding:4px 8px; font-size:0.75rem;" onclick="openStockAdjustModal(${p.id})"> Ajustar</button>
-          <button class="btn small secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openKardexForProduct(${p.id})">Movimientos</button>
+          <button class="btn small secondary" style="padding:4px 8px; font-size:0.75rem;" onclick="openKardexForProduct(${p.id})">Kardex</button>
         </td>
       </tr>
     `;
   }).join('');
-}
-
-function syncInventoryData() {
-  renderInventarioTable();
-  alert('Inventario por almacén sincronizado correctamente.');
 }
 
 // ================= EMBUDO DE COMPRA (panel del admin) =================
@@ -12438,7 +12654,7 @@ async function loadRtHistorial() {
 }
 
 // ================= MODULO DE MOVIMIENTOS E HISTORIAL DE INVENTARIO =================
-let currentMovType = 'entrada'; // 'entrada', 'salida', 'traspaso'
+let currentMovType = 'ajuste'; // 'ajuste', 'salida', 'traspaso' ('entrada' = ajuste de entrada, solo borradores viejos)
 
 // Historial de movimientos: documentos (borradores y aprobados, mov_documentos)
 // y renglones manuales de pos_stock_moves, cargados por refreshMovHistoryData().
@@ -12457,10 +12673,31 @@ const WAREHOUSE_LABELS = { puebla: 'Puebla', rumania: 'CDMX Rumania', queretaro:
 let movLote = [];              // [{ id, qty }]
 let movSearchActive = 0;       // resultado resaltado con las flechas
 const MOV_DRAFT_KEY = 'mf_mov_lote_borrador';
-const MOV_TIPO_LABEL = { entrada: 'Ajuste de entrada', salida: 'Salida', traspaso: 'Traspaso' };
+const MOV_TIPO_LABEL = { ajuste: 'Ajuste', entrada: 'Ajuste de entrada', salida: 'Salida', traspaso: 'Traspaso' };
 // Los ajustes de entrada se guardan como tipo 'ajuste_entrada' con el motivo "categoría: justificación"
 // (docs/supabase-recepcion.sql); las compras solo entran por Recepción de mercancía.
 const MOV_AJUSTE_RE = /^(devolucion|correccion|conteo):\s*/i;
+
+// Ajuste por conteo físico: en la lista se captura lo CONTADO (no lo que hay que sumar). Lo que entra es
+// la diferencia contra el sistema; al aprobar, el servidor la vuelve a calcular con la existencia de ese
+// momento, así que un conteo aprobado dos veces (o capturado sobre una entrada que ya se hizo) no duplica.
+function movEsConteo() {
+  return currentMovType === 'entrada' && document.getElementById('movAjusteCat')?.value === 'conteo';
+}
+function movConteoDiff(it) {
+  return (it.qty || 0) - movStockInfo(it.id).stock;
+}
+
+// Ajuste general: en la lista se captura la CANTIDAD NUEVA de cada producto en la bodega (puede ser 0);
+// al aprobar, el servidor aplica la diferencia contra la existencia de ese momento (sube o baja).
+function movEsAjuste() {
+  return currentMovType === 'ajuste';
+}
+function movAjusteTexto(it) {
+  if (it.qty === null || it.qty === undefined) return '';
+  const d = it.qty - movStockInfo(it.id).stock;
+  return d > 0 ? `Sube +${d}` : d < 0 ? `Baja ${d}` : 'Sin cambio';
+}
 
 function movDataset() {
   return adminCatalogDataset();
@@ -12500,6 +12737,11 @@ function loadMovDraft() {
 // Carga un estado completo en el editor (borrador guardado o un movimiento
 // revertido para corregirlo).
 function applyMovState(d) {
+  // El botón "Ajuste de entrada" ya no existe: una lista guardada en el navegador con ese tipo (o un
+  // borrador de conteo físico) se abre como Ajuste, donde lo capturado es la cantidad final.
+  if (d.tipo === 'entrada' && (!d.docId || /^conteo:/i.test(String(d.motivo || '')))) {
+    d = { ...d, tipo: 'ajuste', motivo: String(d.motivo || '').replace(MOV_AJUSTE_RE, '') };
+  }
   movEditingDocId = d.docId || null;
   if (d.origen) document.getElementById('traspasoOrigen').value = d.origen;
   if (d.destino) document.getElementById('traspasoDestino').value = d.destino;
@@ -12507,27 +12749,61 @@ function applyMovState(d) {
   if (mCat && document.getElementById('movAjusteCat')) document.getElementById('movAjusteCat').value = mCat[1].toLowerCase();
   document.getElementById('traspasoMotivo').value = String(d.motivo || '').replace(MOV_AJUSTE_RE, '');
   movLote = d.items
-    .map(it => ({ id: String(it.id), qty: Math.max(1, parseInt(it.qty, 10) || 1) }))
+    .map(it => {
+      if (d.tipo === 'ajuste') { const n = parseInt(it.qty, 10); return { id: String(it.id), qty: Number.isFinite(n) && n >= 0 ? n : null }; }
+      return { id: String(it.id), qty: Math.max(1, parseInt(it.qty, 10) || 1) };
+    })
     .filter(it => it.id);
-  setMovimientoType(MOV_TIPO_LABEL[d.tipo] ? d.tipo : 'entrada');
+  setMovimientoType(MOV_TIPO_LABEL[d.tipo] ? d.tipo : 'ajuste');
+}
+
+// "Entrada de mercancía" no es un tipo de movimiento: muestra, dentro de la misma ventana, la
+// recepción de mercancía (nota escaneada, vinculación, conteo y autorización; funciones rec*).
+let movModoRecepcion = false;
+function setMovModoRecepcion(on) {
+  movModoRecepcion = on;
+  document.getElementById('movRecepcionPanel')?.classList.toggle('hidden', !on);
+  // Al salir, setMovimientoType vuelve a decidir qué ayudas del tipo se ven.
+  ['traspasoForm', 'movIntro'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = on ? 'none' : ''; });
+  if (on) ['movAjusteGeneralAyuda', 'movAjusteCatWrap'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  document.getElementById('movReviewPanel')?.classList.add('hidden');
+  const box = document.getElementById('traspasoModalBox');
+  if (box) box.style.maxWidth = on ? '1100px' : '760px';
+  const btnCompra = document.getElementById('btnTipoCompra');
+  if (btnCompra) btnCompra.classList.toggle('primary', on);
 }
 
 function setMovimientoType(tipo) {
+  if (tipo === 'compra') {
+    if (!hasPermission('recepcion')) { alert('Tu usuario no tiene permiso de "Entrada de mercancía".'); return; }
+    ['btnTipoAjuste', 'btnTipoSalida', 'btnTipoTraspaso'].forEach(id => document.getElementById(id)?.classList.remove('primary'));
+    setMovModoRecepcion(true);
+    hideMovSearchResults();
+    recIniciar();
+    return;
+  }
+  if (movModoRecepcion) setMovModoRecepcion(false);
   currentMovType = tipo;
-  const btnEntrada = document.getElementById('btnTipoEntrada');
+  const btnAjuste = document.getElementById('btnTipoAjuste');
   const btnSalida = document.getElementById('btnTipoSalida');
   const btnTraspaso = document.getElementById('btnTipoTraspaso');
 
-  if(btnEntrada) btnEntrada.className = tipo === 'entrada' ? 'btn primary' : 'btn';
-  if(btnSalida) btnSalida.className = tipo === 'salida' ? 'btn primary' : 'btn';
-  if(btnTraspaso) btnTraspaso.className = tipo === 'traspaso' ? 'btn primary' : 'btn';
+  if(btnAjuste) btnAjuste.classList.toggle('primary', tipo === 'ajuste' || tipo === 'entrada');
+  if(btnSalida) btnSalida.classList.toggle('primary', tipo === 'salida');
+  if(btnTraspaso) btnTraspaso.classList.toggle('primary', tipo === 'traspaso');
 
   const wrapOrigen = document.getElementById('wrapperBodegaOrigen');
   const wrapDestino = document.getElementById('wrapperBodegaDestino');
 
   const catWrap = document.getElementById('movAjusteCatWrap');
   if (catWrap) catWrap.style.display = tipo === 'entrada' ? 'block' : 'none';
-  if (tipo === 'entrada') {
+  const ajusteAyuda = document.getElementById('movAjusteGeneralAyuda');
+  if (ajusteAyuda) ajusteAyuda.style.display = tipo === 'ajuste' ? 'block' : 'none';
+  const lblMotivo = document.getElementById('lblMovMotivo');
+  if (lblMotivo) lblMotivo.textContent = (tipo === 'entrada' || tipo === 'ajuste') ? 'Motivo (obligatorio): qué pasó' : 'Motivo / Observaciones (Opcional):';
+  const lblDestino = document.getElementById('lblBodegaDestino');
+  if (lblDestino) lblDestino.textContent = tipo === 'ajuste' ? 'Bodega:' : 'Bodega Entrada / Destino:';
+  if (tipo === 'entrada' || tipo === 'ajuste') {
     if(wrapOrigen) wrapOrigen.style.display = 'none';
     if(wrapDestino) wrapDestino.style.display = 'block';
   } else if (tipo === 'salida') {
@@ -12543,9 +12819,18 @@ function setMovimientoType(tipo) {
   saveMovDraft();
 }
 
-function openTraspasoModal() {
+function openTraspasoModal(modo) {
   const modal = document.getElementById('traspasoModal');
   if(!modal) return;
+  // Quien solo tiene permiso de entrada de mercancía ve solo esa opción.
+  const puedeMov = hasPermission('bodegas'), puedeRec = hasPermission('recepcion');
+  ['btnTipoAjuste', 'btnTipoSalida', 'btnTipoTraspaso'].forEach(id => document.getElementById(id)?.classList.toggle('perm-hidden', !puedeMov));
+  document.getElementById('btnTipoCompra')?.classList.toggle('perm-hidden', !puedeRec);
+  if (modo === 'compra' || !puedeMov) {
+    modal.classList.remove('hidden');
+    setMovimientoType('compra');
+    return;
+  }
 
   // Si quedó un movimiento a medias (se cerró el modal o se recargó la
   // página), se recupera tal cual.
@@ -12575,7 +12860,7 @@ function closeTraspasoModal() {
 function movStockInfo(pId) {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
-  if (currentMovType === 'entrada') {
+  if (currentMovType === 'entrada' || currentMovType === 'ajuste') {
     return { bodega: destino, stock: getStockFor(pId, destino), limit: Infinity };
   }
   const stock = getStockFor(pId, origen);
@@ -12674,8 +12959,8 @@ function onMovSearchKey(e) {
 function addMovProduct(id) {
   id = String(id);
   const existing = movLote.find(it => it.id === id);
-  if (existing) existing.qty += 1;
-  else movLote.push({ id, qty: 1 });
+  if (existing) { if (!movEsAjuste()) existing.qty += 1; }
+  else movLote.push({ id, qty: movEsAjuste() ? null : 1 });
   const search = document.getElementById('movSearch');
   if (search) search.value = '';
   hideMovSearchResults();
@@ -12690,11 +12975,14 @@ function setMovQty(id, value) {
   const it = movLote.find(x => x.id === String(id));
   if (!it) return;
   const qty = parseInt(value, 10);
-  it.qty = Number.isFinite(qty) && qty > 0 ? Math.min(qty, 99999) : 0;
+  if (movEsAjuste()) it.qty = String(value).trim() === '' || !Number.isFinite(qty) || qty < 0 ? null : Math.min(qty, 999999);
+  else it.qty = Number.isFinite(qty) && qty > 0 ? Math.min(qty, 99999) : 0;
   saveMovDraft();
   updateMovLoteSummary();
   const row = document.querySelector(`#movLoteList .mov-lote-row[data-id="${CSS.escape(String(id))}"]`);
   if (row) row.classList.toggle('error', movRowError(it) !== '');
+  const diff = row && row.querySelector('.mov-conteo-diff');
+  if (diff) { const e = movRowError(it); diff.textContent = e || (movEsAjuste() ? movAjusteTexto(it) : `Entran +${movConteoDiff(it)}`); }
 }
 
 function removeMovProduct(id) {
@@ -12712,8 +13000,17 @@ function clearMovLote() {
 }
 
 function movRowError(it) {
+  if (movEsAjuste()) {
+    if (it.qty === null || it.qty === undefined) return 'Escribe la cantidad nueva';
+    if (it.qty === movStockInfo(it.id).stock) return 'Es la misma cantidad que tiene el sistema';
+    return '';
+  }
   if (!(it.qty > 0)) return 'Cantidad inválida';
   const info = movStockInfo(it.id);
+  if (movEsConteo()) {
+    if (it.qty <= info.stock) return `Contaste ${it.qty} y el sistema tiene ${info.stock}: no falta nada${it.qty < info.stock ? ' (si sobran en sistema, usa Salida)' : ''}`;
+    return '';
+  }
   if (it.qty > info.limit) return `Solo hay ${info.stock} u. en ${movBodegaLabel(info.bodega)}`;
   return '';
 }
@@ -12721,9 +13018,13 @@ function movRowError(it) {
 function renderMovLote() {
   const list = document.getElementById('movLoteList');
   if (!list) return;
+  const ayuda = document.getElementById('movConteoAyuda');
+  if (ayuda) ayuda.style.display = movEsConteo() ? 'block' : 'none';
   if (movLote.length === 0) {
     list.innerHTML = '<div style="padding:18px; text-align:center; font-size:13px; color:var(--text-muted);">Busca un producto arriba y dale clic (o Enter) para agregarlo. Puedes agregar todos los que necesites.</div>';
   } else {
+    const conteo = movEsConteo();
+    const ajuste = movEsAjuste();
     list.innerHTML = movLote.map(it => {
       const p = movFindProduct(it.id);
       const info = movStockInfo(it.id);
@@ -12734,8 +13035,8 @@ function renderMovLote() {
             <div style="font-size:13px; font-weight:600; color:var(--text-primary);">${escapeHtml(p ? p.name : 'Producto #' + it.id)}</div>
             <div style="font-size:11px; color:var(--text-muted);">ID ${escapeHtml(it.id)}</div>
           </div>
-          <div class="mov-lote-stock" title="${escapeHtml(err)}">${escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.</div>
-          <input type="number" min="1" inputmode="numeric" value="${it.qty || ''}" data-id="${escapeHtml(it.id)}" aria-label="Cantidad de ${escapeHtml(p ? p.name : it.id)}"
+          <div class="mov-lote-stock" title="${escapeHtml(err)}">${conteo || ajuste ? 'Sistema' : escapeHtml(movBodegaLabel(info.bodega))}: ${info.stock} u.${conteo || ajuste ? `<br><span class="mov-conteo-diff" style="font-weight:700;">${err ? escapeHtml(err) : (ajuste ? movAjusteTexto(it) : `Entran +${movConteoDiff(it)}`)}</span>` : ''}</div>
+          <input type="number" min="${ajuste ? 0 : 1}" inputmode="numeric" value="${ajuste ? (it.qty ?? '') : (it.qty || '')}" data-id="${escapeHtml(it.id)}" placeholder="${ajuste ? 'Nueva cant.' : conteo ? 'Contado' : ''}" aria-label="${ajuste ? 'Cantidad nueva' : conteo ? 'Piezas contadas' : 'Cantidad'} de ${escapeHtml(p ? p.name : it.id)}"
             oninput="setMovQty('${escapeHtml(it.id)}', this.value)"
             onkeydown="if (event.key === 'Enter') { event.preventDefault(); document.getElementById('movSearch').focus(); }">
           <button type="button" class="btn small" title="Quitar" aria-label="Quitar" onclick="removeMovProduct('${escapeHtml(it.id)}')">✕</button>
@@ -12748,7 +13049,7 @@ function renderMovLote() {
 function updateMovLoteSummary() {
   const units = movLote.reduce((s, it) => s + (it.qty || 0), 0);
   const title = document.getElementById('movLoteTitle');
-  if (title) title.textContent = `Productos en este movimiento (${movLote.length})${movLote.length ? ` · ${units.toLocaleString('es-MX')} u.` : ''}`;
+  if (title) title.textContent = `Productos en este movimiento (${movLote.length})${movLote.length && !movEsAjuste() ? ` · ${units.toLocaleString('es-MX')} u.` : ''}`;
   const clearBtn = document.getElementById('movLoteClear');
   if (clearBtn) clearBtn.style.display = movLote.length ? '' : 'none';
   const btn = document.getElementById('btnConfirmMovimiento');
@@ -12765,7 +13066,7 @@ function movValidate(soloBasico) {
   const destino = document.getElementById('traspasoDestino').value;
   if (movLote.length === 0) return 'Agrega al menos un producto con el buscador.';
   if (currentMovType === 'traspaso' && origen === destino) return 'En un traspaso, la bodega de origen y destino deben ser diferentes.';
-  if (soloBasico) {
+  if (soloBasico && !movEsConteo() && !movEsAjuste()) {
     return movLote.some(it => !(it.qty > 0)) ? 'Hay productos con cantidad inválida.' : '';
   }
   const bad = movLote.filter(it => movRowError(it));
@@ -12784,15 +13085,23 @@ function reviewStockMovement() {
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   const motivo = document.getElementById('traspasoMotivo').value.trim();
-  const units = movLote.reduce((s, it) => s + it.qty, 0);
-  const ruta = currentMovType === 'entrada' ? `a ${movBodegaLabel(destino)}`
+  const ajuste = movEsAjuste();
+  const units = movLote.reduce((s, it) => s + (ajuste ? Math.abs((it.qty || 0) - getStockFor(parseInt(it.id, 10), destino)) : movEsConteo() ? movConteoDiff(it) : it.qty), 0);
+  const ruta = ajuste ? `en ${movBodegaLabel(destino)}`
+    : currentMovType === 'entrada' ? `a ${movBodegaLabel(destino)}`
     : currentMovType === 'salida' ? `de ${movBodegaLabel(origen)}`
     : `de ${movBodegaLabel(origen)} a ${movBodegaLabel(destino)}`;
 
   const rows = movLote.map(it => {
     const p = movFindProduct(it.id);
     let cols;
-    if (currentMovType === 'entrada') {
+    if (ajuste) {
+      const a = getStockFor(parseInt(it.id, 10), destino), dd = it.qty - a;
+      return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right;">${a}</td><td style="text-align:right; font-weight:700;">${it.qty}</td><td style="text-align:right; font-weight:700; color:${dd > 0 ? '#16a34a' : '#dc2626'};">${dd > 0 ? '+' : ''}${dd}</td></tr>`;
+    } else if (movEsConteo()) {
+      const a = getStockFor(parseInt(it.id, 10), destino);
+      return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right;">${it.qty}</td><td style="text-align:right;">${a}</td><td style="text-align:right; font-weight:700;">+${it.qty - a}</td></tr>`;
+    } else if (currentMovType === 'entrada') {
       const a = getStockFor(parseInt(it.id, 10), destino);
       cols = `<td style="text-align:right;">${a} → <b>${a + it.qty}</b></td>`;
     } else if (currentMovType === 'salida') {
@@ -12804,19 +13113,19 @@ function reviewStockMovement() {
     }
     return `<tr><td>${escapeHtml(p ? p.name : 'Producto #' + it.id)}</td><td style="text-align:right; font-weight:700;">${it.qty}</td>${cols}</tr>`;
   }).join('');
-  const heads = currentMovType === 'entrada' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`
+  const heads = movEsConteo() ? '' : currentMovType === 'entrada' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`
     : currentMovType === 'salida' ? `<th style="text-align:right;">${escapeHtml(movBodegaLabel(origen))}</th>`
     : `<th style="text-align:right;">${escapeHtml(movBodegaLabel(origen))}</th><th style="text-align:right;">${escapeHtml(movBodegaLabel(destino))}</th>`;
 
   document.getElementById('movReviewBody').innerHTML = `
     <div style="padding:12px 14px; border-radius:10px; background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.35); margin-bottom:12px;">
       <div style="font-size:15px; font-weight:800; color:var(--text-primary);">${MOV_TIPO_LABEL[currentMovType]} ${escapeHtml(ruta)}</div>
-      <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades${motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:4px;">${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades${ajuste ? ' de diferencia' : ''}${motivo ? ' · ' + escapeHtml(motivo) : ''}</div>
       <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">Todavía no se ha guardado nada. Al guardar queda como <b>borrador</b>: el inventario no cambia hasta que un responsable lo apruebe en el Historial. Revisa las cantidades y la existencia que quedaría; si algo está mal, regresa a editar.</div>
     </div>
     <div style="max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:10px;">
       <table style="width:100%; font-size:13px; border-collapse:collapse;">
-        <thead><tr><th style="text-align:left;">Producto</th><th style="text-align:right;">Cant.</th>${heads}</tr></thead>
+        <thead><tr><th style="text-align:left;">Producto</th>${ajuste ? '<th style="text-align:right;">Sistema</th><th style="text-align:right;">Queda en</th><th style="text-align:right;">Cambio</th>' : movEsConteo() ? '<th style="text-align:right;">Contado</th><th style="text-align:right;">Sistema</th><th style="text-align:right;">Entran</th>' : `<th style="text-align:right;">Cant.</th>${heads}`}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
@@ -12846,6 +13155,9 @@ function movErrorMessage(e, fallback) {
   if (/partida_invalida/.test(m)) return 'Hay productos con cantidad inválida (deben ser números enteros mayores a 0).';
   if (/bodega_invalida/.test(m)) return 'Revisa la bodega de origen y destino.';
   if (/INGRESO NO PERMITIDO/.test(m)) return 'INGRESO NO PERMITIDO. Para registrar mercancía es obligatorio escanear primero la nota de compra del proveedor y completar el proceso de recepción inteligente.';
+  if (/conteo_sin_diferencia/.test(m)) return 'No se aprobó: en estos productos el sistema ya tiene lo que se contó (o más), así que no hay nada que sumar. Puede que el ajuste ya se haya aplicado o que entró la mercancía por otro lado:\n\n' + m.replace(/^[\s\S]*conteo_sin_diferencia:\s*/, '').replace(/"[\s\S]*$/, '').split('; ').map(x => '• ' + x).join('\n') + '\n\nEdita el borrador (quita esos productos) o descártalo.';
+  if (/ajuste_sin_diferencia/.test(m)) return 'No se aprobó: todos los productos ya tienen en el sistema la cantidad que se capturó, no hay nada que ajustar. Edita el borrador o descártalo.';
+  if (/ajuste_sin_motivo/.test(m)) return 'Escribe el motivo del ajuste (al menos 5 letras).';
   if (/ajuste_sin_justificacion/.test(m)) return 'El ajuste de entrada necesita tipo (devolución, corrección o conteo) y una justificación de al menos 5 letras.';
   return fallback;
 }
@@ -12865,6 +13177,8 @@ async function refreshMovHistoryData() {
 }
 
 function updateMovHistorialButton() {
+  // "Guardar y aplicar" solo para quien puede aprobar (el servidor lo vuelve a revisar al aprobar).
+  document.querySelectorAll('.mov-aplicar-btn').forEach(b => b.classList.toggle('hidden', !movCanApprove));
   const btn = document.getElementById('btnMovHistorial');
   if (!btn) return;
   const pending = movDocs.filter(d => d.estado === 'borrador').length;
@@ -12875,7 +13189,9 @@ const MOV_MANUAL_TAGS = ['entrada', 'salida', 'traspaso_salida', 'traspaso_entra
 
 function movRowTag(row) {
   const tagRaw = String(row.motivo || '').split(':')[0].trim();
-  return [...MOV_MANUAL_TAGS, 'venta_pos'].includes(tagRaw) ? tagRaw : 'ajuste';
+  if (tagRaw === 'ajuste_entrada') return 'entrada';
+  if (tagRaw === 'ajuste_salida') return 'ajuste';
+  return [...MOV_MANUAL_TAGS, 'venta_pos', 'compra', 'cancelacion'].includes(tagRaw) ? tagRaw : 'ajuste';
 }
 
 function movItemName(it) {
@@ -12901,7 +13217,7 @@ function movHistoryEntries() {
   const entries = movDocs.map(d => ({
     key: 'd:' + d.id, source: 'doc', doc: d, folio: d.folio, tipo: d.tipo, estado: d.estado,
     reverted: d.estado === 'aprobado' && revertedFolios.has(d.folio),
-    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR|AJE)-/.test(d.folio),
+    revertible: d.estado === 'aprobado' && !revertedFolios.has(d.folio) && /^(ENT|SAL|TR|AJE|AJU)-/.test(d.folio),
     isReversal: false, origen: d.origen || '', destino: d.destino || '', nota: d.motivo || '',
     por: d.creado_por || '', date: d.creado_at, aprobadoPor: d.aprobado_por || '', aprobadoAt: d.aprobado_at || '',
     items: (Array.isArray(d.items) ? d.items : []).map(it => ({ id_product: it.id_product, name: it.name || '', qty: Number(it.qty) || 0 }))
@@ -12927,14 +13243,15 @@ function movHistoryEntries() {
     if (!isReversal && !MOV_HIST_TIPOS.includes(tipo)) return;
     const reverted = !!g.folio && revertedFolios.has(g.folio);
     const pos = g.rows.filter(r => parseFloat(r.qty) > 0), neg = g.rows.filter(r => parseFloat(r.qty) < 0);
-    const itemRows = tipo === 'traspaso' ? pos : (isReversal ? g.rows : g.rows);
+    const itemRows = tipo === 'traspaso' ? pos : g.rows;
+    const conSigno = isReversal || tipo === 'ajuste';
     entries.push({
       key: g.key, source: 'legacy', rows: g.rows, folio: g.folio || '', tipo, estado: 'aprobado', reverted, isReversal,
       revertible: !!g.folio && /^(ENT|SAL|TR)-/.test(g.folio) && !isReversal && !reverted && g.rows.every(r => MOV_MANUAL_TAGS.includes(movRowTag(r))),
       origen: neg[0] ? neg[0].almacen : '', destino: pos[0] ? pos[0].almacen : '',
       nota: String(g.rows[0].motivo || '').split(':').slice(1).join(':').trim(),
       por: g.rows[0].registrado_por || '', date: g.rows[0].created_at, aprobadoPor: '', aprobadoAt: '',
-      items: itemRows.map(r => ({ id_product: r.id_product, name: '', qty: isReversal ? parseFloat(r.qty) || 0 : Math.abs(parseFloat(r.qty) || 0), almacen: r.almacen }))
+      items: itemRows.map(r => ({ id_product: r.id_product, name: '', qty: conSigno ? parseFloat(r.qty) || 0 : Math.abs(parseFloat(r.qty) || 0), almacen: r.almacen }))
     });
   });
 
@@ -12942,7 +13259,7 @@ function movHistoryEntries() {
   return entries;
 }
 
-const MOV_HIST_TIPOS = ['entrada', 'salida', 'traspaso'];
+const MOV_HIST_TIPOS = ['entrada', 'salida', 'traspaso', 'compra', 'ajuste', 'cancelacion'];
 let movHistShown = [];
 
 function setMovHistFilter(f) {
@@ -12950,22 +13267,35 @@ function setMovHistFilter(f) {
   renderMovHistory();
 }
 
+// La entrada de mercancía (antes la pestaña "Recepción de mercancía") vive en Nuevo movimiento.
+function openEntradaMercancia() {
+  const enInventario = inventarioTabs().some(t => !document.getElementById('view-' + t.view)?.classList.contains('hidden'));
+  if (!enInventario) switchView(hasPermission('bodegas') ? 'bodegas' : 'mov-historial');
+  openTraspasoModal('compra');
+}
+
+// El historial es una pestaña de Inventario (ya no una ventana flotante).
 async function openMovHistory(filter) {
   if (filter) movHistFilter = filter;
-  document.getElementById('movHistoryModal')?.classList.remove('hidden');
+  closeTraspasoModal();
+  switchView('mov-historial');
+}
+
+async function cargarMovHistorial() {
   const list = document.getElementById('traspasoHistoryList');
   if (list) list.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:14px;">Cargando…</div>';
   await refreshMovHistoryData();
   renderMovHistory();
 }
 
-function closeMovHistory() {
-  document.getElementById('movHistoryModal')?.classList.add('hidden');
+// Vuelve a mostrar la ventana de movimientos tal como está (para editar un borrador o corregir).
+function showTraspasoModal() {
+  document.getElementById('traspasoModal')?.classList.remove('hidden');
+  if (adminCatalogProducts.length === 0) loadAdminCatalogProducts().then(() => renderMovLote()).catch(() => {});
 }
 
 function openKardexFromMovHistory() {
-  if (!hasPermission('movimientos')) { alert('Tu usuario no tiene acceso a "Movimientos de inventario".'); return; }
-  closeMovHistory();
+  if (!hasPermission('movimientos')) { alert('Tu usuario no tiene acceso a "Kardex por producto".'); return; }
   closeTraspasoModal();
   switchView('movimientos');
 }
@@ -12976,8 +13306,11 @@ function renderMovHistory() {
   document.querySelectorAll('#movHistFilters button').forEach(b => b.classList.toggle('primary', b.dataset.f === movHistFilter));
 
   const all = movHistoryEntries();
-  const shown = all.filter(e => movHistFilter === 'borrador' ? e.estado === 'borrador'
-    : movHistFilter === 'aprobado' ? (e.estado === 'aprobado' && !e.isReversal) : true);
+  const tipoSel = document.getElementById('movHistTipo')?.value || '';
+  const tipoDe = e => e.isReversal ? 'otros' : (['ajuste', 'cancelacion'].includes(e.tipo) ? 'otros' : e.tipo);
+  const shown = all.filter(e => (movHistFilter === 'borrador' ? e.estado === 'borrador'
+    : movHistFilter === 'aprobado' ? (e.estado === 'aprobado' && !e.isReversal) : true)
+    && (!tipoSel || tipoDe(e) === tipoSel));
   movHistShown = shown;
   const badge = document.getElementById('movCountBadge');
   if (badge) badge.textContent = `${shown.length} movimiento${shown.length === 1 ? '' : 's'}`;
@@ -12989,7 +13322,10 @@ function renderMovHistory() {
   }
 
   const TIPO_PILL = {
-    entrada: ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada'],
+    compra: ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada de mercancía'],
+    entrada: ['rgba(34,197,94,0.15)', '#16a34a', 'Ajuste de entrada'],
+    ajuste: ['rgba(139,92,246,0.15)', '#7c3aed', 'Ajuste'],
+    cancelacion: ['rgba(245,158,11,0.18)', '#b45309', 'Cancelación de venta'],
     salida: ['rgba(239,68,68,0.15)', '#dc2626', 'Salida'],
     traspaso: ['rgba(59,130,246,0.15)', '#2563eb', 'Traspaso'],
     reversa: ['rgba(148,163,184,0.15)', '#64748b', 'Reversa']
@@ -12998,22 +13334,25 @@ function renderMovHistory() {
 
   container.innerHTML = warn + shown.map((g, i) => {
     const units = g.isReversal ? 0 : g.items.reduce((s, it) => s + (it.qty || 0), 0);
+    const unitsTxt = g.tipo === 'ajuste' && units > 0 ? '+' + units.toLocaleString('es-MX') : units.toLocaleString('es-MX');
     const nProductos = new Set(g.items.map(it => String(it.id_product))).size;
     const first = g.items[0];
     const resumen = nProductos === 1 ? escapeHtml(first ? movItemName(first) : '—') : `${nProductos} productos`;
     const bodegaText = g.tipo === 'traspaso' ? `${movBodegaLabel(g.origen)} → ${movBodegaLabel(g.destino)}`
-      : g.tipo === 'entrada' ? movBodegaLabel(g.destino)
+      : (g.tipo === 'entrada' || g.tipo === 'compra' || g.tipo === 'cancelacion' || (g.tipo === 'ajuste' && g.source === 'doc')) ? movBodegaLabel(g.destino)
       : g.tipo === 'salida' ? movBodegaLabel(g.origen)
       : [...new Set(g.items.map(it => movBodegaLabel(it.almacen)))].join(', ');
     const folioLabel = g.folio ? (g.folio.startsWith('#') ? g.folio : '#' + g.folio) : '—';
-    const estadoPill = g.isReversal ? '' : g.estado === 'borrador' ? pill(['rgba(245,158,11,0.18)', '#b45309', 'Borrador · pendiente de aprobar'])
-      : g.reverted ? pill(['rgba(148,163,184,0.2)', '#64748b', 'Revertido']) : pill(['rgba(34,197,94,0.15)', '#16a34a', 'Aprobado']);
+    const estadoPill = g.isReversal ? '' : g.estado === 'borrador' ? pill(['rgba(245,158,11,0.18)', '#b45309', 'Pendiente de aprobar'])
+      : g.reverted ? pill(['rgba(148,163,184,0.2)', '#64748b', 'Revertido']) : pill(['rgba(34,197,94,0.15)', '#16a34a', 'Aplicado']);
     const aprobacion = g.isReversal ? ''
       : g.estado === 'borrador' ? '<span style="color:#b45309; font-weight:600;">Pendiente de aprobación</span>'
       : g.source === 'doc' ? `Aprobado por <b style="color:var(--text-primary);">${escapeHtml(g.aprobadoPor)}</b> · ${escapeHtml(movFmtDate(g.aprobadoAt))}`
-      : '<i>Registrado antes de que existieran las aprobaciones</i>';
+      : g.tipo === 'compra' ? 'Autorizado al recibir la mercancía'
+      : g.tipo === 'cancelacion' ? 'Regresó al inventario al cancelar la venta'
+      : '<i>Aplicado directo, sin pasar por aprobación</i>';
     const detail = g.items.map(it => `<div style="display:flex; justify-content:space-between; gap:8px; padding:3px 0; border-top:1px dashed var(--border);">
-        <span>${escapeHtml(movItemName(it))}${g.isReversal ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(it.almacen))})</span>` : ''}</span><b>${g.isReversal ? (it.qty > 0 ? '+' : '') + it.qty : it.qty} u.</b></div>`).join('');
+        <span>${escapeHtml(movItemName(it))}${g.isReversal || g.tipo === 'ajuste' ? ` <span style="color:var(--text-muted);">(${escapeHtml(movBodegaLabel(it.almacen))})</span>` : ''}</span><b>${g.isReversal || g.tipo === 'ajuste' ? (it.qty > 0 ? '+' : '') + it.qty : it.qty} u.</b></div>`).join('');
 
     const btns = [];
     if (g.items.length > 1) btns.push(`<button type="button" class="btn small" onclick="document.getElementById('movHistDet${i}').classList.toggle('hidden')">Ver productos</button>`);
@@ -13035,10 +13374,10 @@ function renderMovHistory() {
           <div style="min-width:0;">
             <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px; flex-wrap:wrap;">
               <b style="color:var(--text-primary);">${escapeHtml(folioLabel)}</b>
-              ${pill(TIPO_PILL[g.tipo] || TIPO_PILL.reversa)}
+              ${pill(g.tipo === 'entrada' && g.source !== 'doc' ? ['rgba(34,197,94,0.15)', '#16a34a', 'Entrada'] : (TIPO_PILL[g.tipo] || TIPO_PILL.reversa))}
               ${estadoPill}
               <span style="font-weight:600; color:var(--text-primary);">${resumen}</span>
-              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${units.toLocaleString('es-MX')} u.)</b>`}
+              ${g.isReversal ? '' : `<b style="color:var(--series-2); font-size:12px;">(${unitsTxt} u.)</b>`}
             </div>
             <div style="font-size:11px; color:var(--text-muted);">
               <b>Bodega:</b> ${escapeHtml(bodegaText)} ${g.nota ? '• <i>' + escapeHtml(g.nota) + '</i>' : ''} ${g.por ? '• Capturó: ' + escapeHtml(g.por) : ''}
@@ -13065,33 +13404,54 @@ function movHistAction(action, idx) {
 }
 
 // ---- Guardar borrador ----
-async function saveMovAsDraft() {
-  const err = movValidate(true);
+// Con aplicar=true ("Guardar y aplicar", solo quien puede aprobar) se guarda y se aprueba de una vez:
+// queda en el Historial como aprobado por esta persona, igual que si lo aprobara ahí.
+async function saveMovAsDraft(aplicar = false) {
+  if (aplicar && !movCanApprove) { alert(movErrorMessage({ message: 'sin_permiso_aprobar' })); return; }
+  const err = movValidate(!aplicar);
   if (err) { alert(err); renderMovLote(); return; }
   const origen = document.getElementById('traspasoOrigen').value;
   const destino = document.getElementById('traspasoDestino').value;
   let motivo = document.getElementById('traspasoMotivo').value.trim().replace(MOV_AJUSTE_RE, '');
+  if (currentMovType === 'ajuste') {
+    if (motivo.replace(/\s/g, '').length < 5) { alert('Escribe el motivo del ajuste (por ejemplo: conteo físico, merma, producto dañado, error de captura).'); return; }
+    const errA = movValidate(false);
+    if (errA) { alert(errA); renderMovLote(); return; }
+  }
   if (currentMovType === 'entrada') {
     if (motivo.length < 5) { alert('Escribe la justificación del ajuste de entrada (qué pasó y el documento que lo respalda: ticket de devolución, conteo, etc.).'); return; }
     motivo = `${document.getElementById('movAjusteCat').value}: ${motivo}`;
   }
+  const conteo = movEsConteo();
+  if (conteo) {
+    const err2 = movValidate(false);
+    if (err2) { alert(err2); renderMovLote(); return; }
+  }
   const items = movLote.map(it => {
     const p = movFindProduct(it.id);
-    return { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
+    const base = { id_product: parseInt(it.id, 10), qty: it.qty, name: p ? p.name : '', sku: p ? (p.sku || '') : '' };
+    // Conteo: qty = diferencia (lo que se espera sumar); el servidor la recalcula al aprobar.
+    if (conteo || currentMovType === 'ajuste') { const sistema = movStockInfo(it.id).stock; return { ...base, qty: it.qty - sistema, contado: it.qty, sistema }; }
+    return base;
   });
-  const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm'].map(id => document.getElementById(id)).filter(Boolean);
+  if (aplicar) {
+    const ruta = currentMovType === 'traspaso' ? `de ${movBodegaLabel(origen)} a ${movBodegaLabel(destino)}`
+      : currentMovType === 'salida' ? `de ${movBodegaLabel(origen)}` : `en ${movBodegaLabel(destino)}`;
+    if (!confirm(`${MOV_TIPO_LABEL[currentMovType]} ${ruta}: ${movLote.length} ${movLote.length === 1 ? 'producto' : 'productos'}.\n\nSe aplica al inventario AHORA y queda en el Historial como aprobado por ${nombreSesionActual()}.\n\n¿Guardar y aplicar?`)) return;
+  }
+  const btns = ['btnSaveMovBorrador', 'btnGuardarBorradorForm', 'btnAplicarForm', 'btnAplicarReview'].map(id => document.getElementById(id)).filter(Boolean);
   btns.forEach(b => { b.disabled = true; });
   try {
     const doc = await sbRpc('rpc_mov_doc_save', {
       ...getSessionCredsParams(),
       p_id: movEditingDocId, p_tipo: currentMovType,
-      p_origen: currentMovType === 'entrada' ? null : origen,
+      p_origen: (currentMovType === 'entrada' || currentMovType === 'ajuste') ? null : origen,
       p_destino: currentMovType === 'salida' ? null : destino,
       p_motivo: motivo, p_items: items
     });
     const editado = !!movEditingDocId;
     const n = movLote.length;
-    const units = movLote.reduce((s, it) => s + it.qty, 0);
+    const units = items.reduce((s, it) => s + Math.abs(it.qty), 0);
     movLote = [];
     movEditingDocId = null;
     document.getElementById('traspasoMotivo').value = '';
@@ -13099,6 +13459,23 @@ async function saveMovAsDraft() {
     saveMovDraft();
     backToMovEditor();
     renderMovLote();
+    if (aplicar) {
+      try {
+        const aprobado = await sbRpc('rpc_mov_doc_approve', { ...getSessionCredsParams(), p_id: doc.id });
+        movDocLedgerMoves(aprobado).forEach(m => {
+          const key = `${m.id_product}|${m.almacen}`;
+          stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + m.qty;
+        });
+        renderInventarioTable();
+        renderLowStockByStoreCard();
+        alert(`Listo: #${aprobado.folio} se aplicó al inventario.\n\n${MOV_TIPO_LABEL[aprobado.tipo]}: ${n} ${n === 1 ? 'producto' : 'productos'}. Queda en el Historial como aprobado por ${aprobado.aprobado_por}.`);
+        await openMovHistory('todos');
+      } catch (e) {
+        alert(movErrorMessage(e, 'No se pudo aplicar.') + `\n\nEl movimiento #${doc.folio} quedó guardado como pendiente en el Historial.`);
+        await openMovHistory('borrador');
+      }
+      return;
+    }
     alert(`Borrador #${doc.folio} ${editado ? 'actualizado' : 'guardado'}.\n\n${MOV_TIPO_LABEL[doc.tipo]}: ${n} ${n === 1 ? 'producto' : 'productos'}, ${units.toLocaleString('es-MX')} unidades.\n\nTodavía NO cambia el inventario: debe aprobarse en el Historial.`);
     await openMovHistory('borrador');
   } catch (e) {
@@ -13114,12 +13491,12 @@ function editMovDoc(doc) {
   if (movLote.length > 0 && movEditingDocId !== doc.id && !confirm('Tienes productos en la lista del movimiento actual. Se reemplazarán por los de este borrador. ¿Continuar?')) return;
   applyMovState({
     docId: doc.id, tipo: doc.tipo, origen: doc.origen || undefined, destino: doc.destino || undefined, motivo: doc.motivo || '',
-    items: (Array.isArray(doc.items) ? doc.items : []).map(it => ({ id: String(it.id_product), qty: it.qty }))
+    items: (Array.isArray(doc.items) ? doc.items : []).map(it => ({ id: String(it.id_product), qty: it.contado != null ? it.contado : it.qty }))
   });
   saveMovDraft();
   const notice = document.getElementById('movLoteNotice');
   if (notice) { notice.textContent = `Editando el borrador #${doc.folio}. Al guardar se actualiza ese borrador.`; notice.classList.remove('hidden'); }
-  closeMovHistory();
+  showTraspasoModal();
   document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -13143,7 +13520,7 @@ function movDocLedgerMoves(doc) {
   const moves = [];
   (doc.items || []).forEach(it => {
     const qty = Number(it.qty) || 0;
-    if (doc.tipo === 'entrada') moves.push({ id_product: it.id_product, almacen: doc.destino, qty });
+    if (doc.tipo === 'entrada' || doc.tipo === 'ajuste') moves.push({ id_product: it.id_product, almacen: doc.destino, qty });
     else if (doc.tipo === 'salida') moves.push({ id_product: it.id_product, almacen: doc.origen, qty: -qty });
     else { moves.push({ id_product: it.id_product, almacen: doc.origen, qty: -qty }); moves.push({ id_product: it.id_product, almacen: doc.destino, qty }); }
   });
@@ -13156,7 +13533,7 @@ async function approveMovDoc(id) {
   if (!movCanApprove) { alert(movErrorMessage({ message: 'sin_permiso_aprobar' })); return; }
 
   if (!realStockLoaded) { try { await loadRealStockData(); } catch (e) { /* se revisa abajo */ } }
-  if (doc.tipo !== 'entrada') {
+  if (doc.tipo === 'salida' || doc.tipo === 'traspaso') {
     if (!realStockLoaded) { alert('No se pudo leer la existencia actual para comprobar el movimiento. Intenta de nuevo en unos segundos.'); return; }
     const faltan = (doc.items || []).filter(it => (Number(it.qty) || 0) > getStockFor(it.id_product, doc.origen));
     if (faltan.length) {
@@ -13166,8 +13543,9 @@ async function approveMovDoc(id) {
       return;
     }
   }
-  const units = (doc.items || []).reduce((s, it) => s + (Number(it.qty) || 0), 0);
-  const ruta = doc.tipo === 'entrada' ? `a ${movBodegaLabel(doc.destino)}` : doc.tipo === 'salida' ? `de ${movBodegaLabel(doc.origen)}` : `de ${movBodegaLabel(doc.origen)} a ${movBodegaLabel(doc.destino)}`;
+  const units = (doc.items || []).reduce((s, it) => s + Math.abs(Number(it.qty) || 0), 0);
+  const ruta = doc.tipo === 'ajuste' ? `en ${movBodegaLabel(doc.destino)} (deja la cantidad capturada; se aplica la diferencia contra la existencia de este momento)`
+    : doc.tipo === 'entrada' ? `a ${movBodegaLabel(doc.destino)}` : doc.tipo === 'salida' ? `de ${movBodegaLabel(doc.origen)}` : `de ${movBodegaLabel(doc.origen)} a ${movBodegaLabel(doc.destino)}`;
   if (!confirm(`Aprobar ${MOV_TIPO_LABEL[doc.tipo].toLowerCase()} #${doc.folio}\n${ruta}\n${doc.items.length} ${doc.items.length === 1 ? 'producto' : 'productos'} · ${units.toLocaleString('es-MX')} unidades\n\nAl aprobar se aplica al inventario y queda registrado que lo aprobó ${nombreSesionActual()}.\n\n¿Aprobar?`)) return;
 
   try {
@@ -13194,7 +13572,7 @@ async function downloadMovPdf(g) {
   const doc = new JsPDF({ unit: 'mm', format: 'a4' });
   const L = 15, R = 195, BOTTOM = 270;
   const purple = [46, 16, 101], pink = [211, 0, 123], grey = [110, 100, 120], ink = [30, 20, 45];
-  const TITULO = { entrada: 'ENTRADA DE INVENTARIO', salida: 'SALIDA DE INVENTARIO', traspaso: 'TRASPASO ENTRE BODEGAS' };
+  const TITULO = { ajuste: 'AJUSTE DE INVENTARIO', entrada: 'ENTRADA DE INVENTARIO', salida: 'SALIDA DE INVENTARIO', traspaso: 'TRASPASO ENTRE BODEGAS' };
   const estadoTxt = g.estado === 'borrador' ? 'BORRADOR' : (g.reverted ? 'REVERTIDO' : 'APROBADO');
   const estadoColor = g.estado === 'borrador' ? [217, 119, 6] : (g.reverted ? [100, 116, 139] : [22, 163, 74]);
 
@@ -13221,7 +13599,7 @@ async function downloadMovPdf(g) {
     y += Math.max(1, lines.length) * 5 + 1;
   };
   if (g.tipo === 'traspaso') { info('Bodega origen:', movBodegaLabel(g.origen)); info('Bodega destino:', movBodegaLabel(g.destino)); }
-  else if (g.tipo === 'entrada') info('Bodega:', movBodegaLabel(g.destino));
+  else if (g.tipo === 'entrada' || (g.tipo === 'ajuste' && g.source === 'doc')) info('Bodega:', movBodegaLabel(g.destino));
   else info('Bodega:', movBodegaLabel(g.origen));
   info('Motivo:', g.nota);
   info('Capturó:', g.por);
@@ -13330,7 +13708,7 @@ async function revertStockMovement(folio, corregir) {
     saveMovDraft();
     const notice = document.getElementById('movLoteNotice');
     if (notice) { notice.textContent = `Se revirtió #${folio}. Corrige los productos y cantidades y guárdalo como borrador; tendrá que aprobarse.`; notice.classList.remove('hidden'); }
-    closeMovHistory();
+    showTraspasoModal();
     document.getElementById('traspasoModal')?.querySelector('.modal')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
   await refreshMovHistoryData();
@@ -13968,39 +14346,6 @@ function repeatCustomerOrder(folio) {
   });
   switchClienteTab('nuevo');
   alert(`🛒 Productos del pedido #${folio} agregados al carrito.`);
-}
-
-async function openStockAdjustModal(pId) {
-  const dataset = liveProducts.length > 0 ? liveProducts : PRODUCTS_DATA;
-  const product = dataset.find(p => String(p.id) === String(pId));
-  if(!product) return;
-
-  const current = getStockFor(pId, 'rumania');
-  const newStockStr = prompt(`Ajuste de inventario para:\n${product.sku} - ${product.name}\n\nIngrese la nueva existencia para la bodega CDMX Rumania:`, current);
-  if (newStockStr === null) return;
-
-  const parsed = parseInt(newStockStr);
-  if (isNaN(parsed) || parsed < 0) return;
-
-  const delta = parsed - current;
-  if (delta === 0) return;
-  if (delta > 0) {
-    alert('INGRESO NO PERMITIDO desde aquí.\n\nSi es mercancía comprada, regístrala en Catálogo & Stock → Recepción de mercancía con la nota del proveedor.\nSi es una devolución o una corrección, usa Movimientos & Traspasos → Ajuste de entrada (requiere justificación y aprobación).');
-    return;
-  }
-
-  try {
-    await sbRpc('rpc_stock_move_insert_bulk', {
-      ...getSessionCredsParams(),
-      p_moves: [{ id_product: pId, almacen: 'rumania', qty: delta, motivo: 'ajuste', folio: 'AJU-' + Math.floor(1000 + Math.random() * 9000), registrado_por: nombreSesionActual() }]
-    });
-    const key = `${pId}|rumania`;
-    stockLedgerTotals[key] = (stockLedgerTotals[key] || 0) + delta;
-    renderInventarioTable();
-    alert(` Existencia actualizada a ${parsed} u. para CDMX Rumania.`);
-  } catch (e) {
-    alert(e.message === 'unauthorized' ? 'Tu sesión expiró. Vuelve a iniciar sesión.' : 'No se pudo actualizar la existencia.');
-  }
 }
 
 if(document.getElementById('invSearchInput')) document.getElementById('invSearchInput').addEventListener('input', renderInventarioTable);
@@ -16007,7 +16352,7 @@ function recError(e) {
   try { const j = JSON.parse(m); if (j && j.message) m = j.message; } catch (x) {}
   const T = {
     unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión.',
-    sin_permiso_recepcion: 'Tu usuario no tiene permiso de recepción de mercancía (pídelo al administrador: permiso "Recepción de mercancía").',
+    sin_permiso_recepcion: 'Tu usuario no tiene permiso de recepción de mercancía (pídelo al administrador: permiso "Entrada de mercancía").',
     solo_supervisor: 'Solo un supervisor (permiso "Aprobar movimientos de inventario") o el administrador puede hacerlo.',
     solo_admin: 'Solo el administrador puede corregir equivalencias confirmadas.',
     equivalencia_existente: 'Ese código ya está vinculado a otro producto para este proveedor. Solo un supervisor puede cambiarlo (queda en el historial).',
@@ -17886,44 +18231,100 @@ function lowStockEntries(filterWh) {
     branches.forEach(wh => {
       if (filterWh !== 'all' && wh !== filterWh) return;
       const qty = getStockFor(pId, wh);
-      if (qty <= threshold) entries.push({ name: p.name, sku: p.sku, branch: WAREHOUSE_LABELS[wh] || wh, qty, threshold });
+      if (qty <= threshold) entries.push({ id: pId, whKey: wh, name: p.name, sku: p.sku, branch: WAREHOUSE_LABELS[wh] || wh, qty, threshold });
     });
   });
   entries.sort((a, b) => a.qty - b.qty);
   return entries;
 }
 
+function lowStockKey(e) { return `${e.id}_${e.whKey}`; }
+
+// Se muestran de LOW_STOCK_PAGE en LOW_STOCK_PAGE con el botón "Cargar más"; cambiar de sucursal
+// regresa a la primera tanda (la actualización automática de cada minuto conserva lo ya cargado).
+const LOW_STOCK_PAGE = 10;
+let lowStockShown = LOW_STOCK_PAGE;
+// Selección para descargar solo algunos productos (en vez de todos) — persiste entre
+// "Cargar más" y la actualización automática, se limpia al cambiar de sucursal.
+let lowStockSelected = new Set();
+
 function renderLowStockByStoreCard() {
   const tbody = document.getElementById('lowStockByStoreTableBody');
   const countEl = document.getElementById('lowStockByStoreCount');
+  const selCountEl = document.getElementById('lowStockSelectedCount');
+  const downloadBtn = document.getElementById('lowStockDownloadBtn');
+  const selectAllCheck = document.getElementById('lowStockSelectAllCheck');
   if (!tbody) return;
 
   const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
   const entries = lowStockEntries(filterWh);
 
   if (countEl) countEl.textContent = entries.length;
+  if (selCountEl) selCountEl.textContent = lowStockSelected.size > 0 ? `, ${lowStockSelected.size} seleccionado(s)` : '';
+  if (downloadBtn) downloadBtn.textContent = lowStockSelected.size > 0 ? `Descargar seleccionados (${lowStockSelected.size})` : 'Descargar (CSV)';
 
+  const moreWrap = document.getElementById('lowStockMoreWrap');
   if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px; color:var(--text-muted);">Sin productos en stock bajo en este filtro.</td></tr>';
+    if (moreWrap) moreWrap.style.display = 'none';
+    if (selectAllCheck) { selectAllCheck.checked = false; selectAllCheck.indeterminate = false; }
     return;
   }
-  tbody.innerHTML = entries.slice(0, 150).map(e => `
+  const restantes = entries.length - lowStockShown;
+  if (moreWrap) {
+    moreWrap.style.display = restantes > 0 ? 'block' : 'none';
+    const btn = document.getElementById('lowStockMoreBtn');
+    if (btn) btn.textContent = `Cargar más (${restantes.toLocaleString('es-MX')} restantes)`;
+  }
+  tbody.innerHTML = entries.slice(0, lowStockShown).map(e => {
+    const key = lowStockKey(e);
+    return `
     <tr>
+      <td><input type="checkbox" ${lowStockSelected.has(key) ? 'checked' : ''} onchange="toggleLowStockSelect('${key}', this.checked)"></td>
       <td>${escapeHtml(e.name)}</td>
       <td style="font-size:11px; color:var(--text-muted);">${escapeHtml(e.sku || '—')}</td>
       <td>${escapeHtml(e.branch)}</td>
       <td style="text-align:center; font-weight:700; color:${e.qty < 0 ? '#dc2626' : 'var(--series-2)'};">${e.qty}</td>
       <td style="text-align:center; color:var(--text-muted);">${e.threshold}</td>
     </tr>
-  `).join('') + (entries.length > 150 ? `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">y ${entries.length - 150} más… (la descarga trae todos)</td></tr>` : '');
+  `;
+  }).join('');
+
+  if (selectAllCheck) {
+    const allSelected = entries.every(e => lowStockSelected.has(lowStockKey(e)));
+    selectAllCheck.checked = allSelected;
+    selectAllCheck.indeterminate = !allSelected && lowStockSelected.size > 0;
+  }
 }
 
-// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla muestra solo los primeros 150).
+function toggleLowStockSelect(key, checked) {
+  if (checked) lowStockSelected.add(key); else lowStockSelected.delete(key);
+  renderLowStockByStoreCard();
+}
+
+// Selecciona/deselecciona TODOS los productos del filtro actual, no solo los ya cargados en pantalla.
+function toggleLowStockSelectAll(checked) {
+  const filterWh = document.getElementById('lowStockStoreFilter')?.value || 'all';
+  const entries = lowStockEntries(filterWh);
+  entries.forEach(e => {
+    const key = lowStockKey(e);
+    if (checked) lowStockSelected.add(key); else lowStockSelected.delete(key);
+  });
+  renderLowStockByStoreCard();
+}
+
+// Descarga TODOS los productos en stock bajo del filtro elegido (la tabla de pantalla va por
+// tandas, pero la descarga no depende de cuántas se hayan cargado). Si hay productos marcados
+// con su casilla, descarga solo esos en vez de todos.
 function downloadLowStockCSV() {
   const sel = document.getElementById('lowStockStoreFilter');
   const filterWh = sel?.value || 'all';
-  const entries = lowStockEntries(filterWh);
+  let entries = lowStockEntries(filterWh);
   if (entries.length === 0) { alert('No hay productos en stock bajo para descargar.'); return; }
+  if (lowStockSelected.size > 0) {
+    entries = entries.filter(e => lowStockSelected.has(lowStockKey(e)));
+    if (entries.length === 0) { alert('Los productos seleccionados no están en este filtro de sucursal.'); return; }
+  }
   const headers = ['Producto', 'SKU', 'Sucursal', 'Stock', 'Umbral', 'Faltan para el umbral'];
   const rows = entries.map(e => [e.name, e.sku || '', e.branch, e.qty, e.threshold, Math.max(0, e.threshold - e.qty)]);
   const csv = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
@@ -17933,8 +18334,9 @@ function downloadLowStockCSV() {
   const link = document.createElement('a');
   const stamp = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Mexico_City' });
   const sucursal = filterWh === 'all' ? 'todas' : filterWh;
+  const sufijo = lowStockSelected.size > 0 ? '-seleccion' : '';
   link.href = url;
-  link.download = `stock-bajo-${sucursal}-${stamp}.csv`;
+  link.download = `stock-bajo-${sucursal}${sufijo}-${stamp}.csv`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
@@ -18280,9 +18682,172 @@ async function handleAdminLogin() {
 }
 
 let datosPanelCargados = false;
+// ---- Fotos de tienda para la comisión quincenal (api/fotos-comision.js) ----
+// Un día antes del pago de cada quincena (15 y último del mes; si cae en domingo se paga el sábado y el aviso es el viernes) a cada persona del
+// equipo le sale arriba del panel el aviso para adjuntar las fotos de su tienda. Se guardan con la
+// sucursal que tiene ligada en Personal / Equipo (si tiene "Todas", la elige al subir).
+let fcEstado = null;
+async function fcApi(accion, datos = {}) {
+  const r = await fetch('/api/fotos-comision', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...datos }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+  return d;
+}
+const fcFechaLarga = f => new Date(`${f}T12:00:00`).toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+
+// El panel se queda abierto días enteros: el aviso se vuelve a revisar cada hora y al regresar a la pestaña.
+let fcRevisadoAt = 0;
+function fcRevisarSiToca() {
+  if (document.visibilityState !== 'visible' || !currentStaffSession || Date.now() - fcRevisadoAt < 30 * 60000) return;
+  fcRevisarAviso();
+}
+document.addEventListener('visibilitychange', fcRevisarSiToca);
+setInterval(fcRevisarSiToca, 60 * 60000);
+async function fcRevisarAviso() {
+  const caja = document.getElementById('fcAviso');
+  if (!caja || !currentStaffSession) return; // el administrador no sube fotos
+  fcRevisadoAt = Date.now();
+  try { fcEstado = await fcApi('estado'); } catch (e) { return; }
+  fcPintarAviso();
+}
+
+function fcPintarAviso() {
+  const caja = document.getElementById('fcAviso');
+  const st = fcEstado;
+  if (!caja || !st || !st.abierta || !st.empleado) { caja && caja.classList.add('hidden'); return; }
+  const n = (st.envios || []).reduce((t, f) => t + (f.archivos || []).length, 0);
+  const esPago = st.hoy === st.abierta.pago;
+  caja.className = '';
+  caja.style.cssText = `margin:0 0 16px; padding:14px 16px; border-radius:12px; display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; ${n ? 'background:rgba(22,163,74,0.10); border:1px solid rgba(22,163,74,0.4);' : 'background:rgba(211,0,123,0.10); border:2px solid #d3007b;'}`;
+  caja.innerHTML = `<div style="min-width:0;">
+      <div style="font-weight:800; font-size:15px;">${n ? '✅ Ya enviaste ' + n + (n === 1 ? ' foto' : ' fotos') + ' de tu tienda' : '📸 Adjunta las fotos de tu tienda para tu comisión'}</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-top:2px;">Quincena que se paga el ${escapeHtml(fcFechaLarga(st.abierta.pago))}. ${esPago ? '<b>Hoy es el último día para subirlas.</b>' : 'Puedes subirlas hoy y mañana.'}</div>
+    </div>
+    <button class="btn ${n ? '' : 'primary'}" onclick="fcAbrirModal()">${n ? 'Ver o agregar fotos' : 'Subir fotos'}</button>`;
+}
+
+function fcAbrirModal() {
+  const st = fcEstado;
+  if (!st || !st.abierta) return;
+  let m = document.getElementById('fcModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'fcModal';
+    m.className = 'modal-overlay';
+    m.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:3000; display:flex; align-items:center; justify-content:center; padding:16px;';
+    m.addEventListener('click', e => { if (e.target === m) fcCerrarModal(); });
+    document.body.appendChild(m);
+  }
+  const fija = st.empleado && st.empleado.sucursal_fija;
+  const opciones = Object.entries(st.sucursales || {}).map(([k, v]) => `<option value="${k}">${escapeHtml(v)}</option>`).join('');
+  const fotos = (st.envios || []).flatMap(f => (f.archivos || []).map(a => ({ ...a, sucursal: f.sucursal, estado: f.estado })));
+  m.innerHTML = `<div class="card" style="max-width:560px; width:100%; max-height:90vh; overflow:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><h3 style="margin:0;">Fotos de tu tienda</h3><button class="btn small" onclick="fcCerrarModal()">✕</button></div>
+    <p style="font-size:13px; color:var(--text-secondary); margin:0 0 12px;">Quincena que se paga el ${escapeHtml(fcFechaLarga(st.abierta.pago))}. Toma fotos claras de exhibición, anaqueles y mostrador.</p>
+    <label style="font-size:13px; font-weight:600; display:block; margin-bottom:10px;">Sucursal:
+      ${fija ? `<b>${escapeHtml(st.sucursales[fija])}</b>` : `<select id="fcSucursal" style="margin-left:6px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary);"><option value="">Elige…</option>${opciones}</select>`}
+    </label>
+    <input type="file" id="fcArchivos" accept="image/*" multiple style="display:block; margin-bottom:10px;">
+    <button class="btn primary" id="fcBtnSubir" onclick="fcSubir()">Subir fotos</button>
+    <div id="fcProgreso" style="font-size:13px; margin-top:8px; color:var(--text-secondary);"></div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:8px; margin-top:14px;">
+      ${fotos.map(a => `<div style="position:relative;"><a href="${escapeHtml(a.url || '#')}" target="_blank" rel="noopener"><img src="${escapeHtml(a.url || '')}" alt="Foto de tienda" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--border);"></a>${a.estado !== 'aprobado' ? `<button class="btn small" title="Quitar" style="position:absolute; top:4px; right:4px; padding:2px 6px;" onclick="fcQuitar('${escapeHtml(a.path)}')">✕</button>` : ''}</div>`).join('') || '<p style="font-size:13px; color:var(--text-muted); grid-column:1/-1;">Todavía no has subido fotos.</p>'}
+    </div>
+  </div>`;
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function fcCerrarModal() { const m = document.getElementById('fcModal'); if (m) m.style.display = 'none'; }
+
+// Reduce la foto (lado mayor 1600 px, JPEG) para que suba rápido desde el celular.
+function fcComprimir(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.82).split(',')[1]);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer la foto ' + file.name)); };
+    img.src = url;
+  });
+}
+
+async function fcSubir() {
+  const files = Array.from(document.getElementById('fcArchivos')?.files || []);
+  if (!files.length) { alert('Elige una o varias fotos.'); return; }
+  const fija = fcEstado.empleado && fcEstado.empleado.sucursal_fija;
+  const sucursal = fija || document.getElementById('fcSucursal')?.value;
+  if (!sucursal) { alert('Elige la sucursal.'); return; }
+  const btn = document.getElementById('fcBtnSubir'), prog = document.getElementById('fcProgreso');
+  btn.disabled = true;
+  let ok = 0;
+  try {
+    for (let i = 0; i < files.length; i++) {
+      prog.textContent = `Subiendo ${i + 1} de ${files.length}…`;
+      const data = await fcComprimir(files[i]);
+      await fcApi('subir', { sucursal, archivo: { media_type: 'image/jpeg', data } });
+      ok++;
+    }
+    prog.textContent = '';
+  } catch (e) {
+    alert(`Se subieron ${ok} de ${files.length}. ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    try { fcEstado = await fcApi('estado'); } catch (e) {}
+    fcPintarAviso();
+    fcAbrirModal();
+  }
+}
+
+async function fcQuitar(path) {
+  if (!confirm('¿Quitar esta foto?')) return;
+  try { await fcApi('quitar', { path }); fcEstado = await fcApi('estado'); fcPintarAviso(); fcAbrirModal(); }
+  catch (e) { alert(e.message); }
+}
+
+async function fcCargarHistorial() {
+  const caja = document.getElementById('fcHistorial');
+  if (!caja) return;
+  const selP = document.getElementById('fcFiltroPeriodo'), selS = document.getElementById('fcFiltroSucursal');
+  caja.innerHTML = '<p style="color:var(--text-muted);">Cargando…</p>';
+  let d;
+  try { d = await fcApi('historial', { periodo: selP.value, sucursal: selS.value }); }
+  catch (e) { caja.innerHTML = `<p style="color:var(--danger, #dc2626);">${escapeHtml(e.message)}</p>`; return; }
+  const elegido = selP.value;
+  selP.innerHTML = '<option value="">Todas las quincenas</option>' + d.periodos.map(p => `<option value="${p}"${p === elegido ? ' selected' : ''}>Quincena del ${escapeHtml(fcFechaLarga(p))}</option>`).join('');
+  if (!d.filas.length) { caja.innerHTML = '<p style="color:var(--text-muted);">No hay fotos con estos filtros.</p>'; return; }
+  const COLOR = { enviado: '#d97706', aprobado: '#16a34a', rechazado: '#dc2626' };
+  const NOMBRE = { enviado: 'Por revisar', aprobado: 'Aprobado', rechazado: 'Rechazado' };
+  caja.innerHTML = d.filas.map(f => `<div style="border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:12px;">
+    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center;">
+      <div><b>${escapeHtml(f.empleado)}</b> · ${escapeHtml(d.sucursales[f.sucursal] || f.sucursal)} · quincena del ${escapeHtml(fcFechaLarga(f.periodo))}
+        <div style="font-size:12px; color:var(--text-muted);">${(f.archivos || []).length} fotos · última ${escapeHtml(new Date(f.actualizado_at).toLocaleString('es-MX'))}${f.revisado_por ? ` · revisó ${escapeHtml(f.revisado_por)}` : ''}${f.nota ? ` · ${escapeHtml(f.nota)}` : ''}</div></div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <span style="font-size:12px; font-weight:700; color:${COLOR[f.estado]};">${NOMBRE[f.estado]}</span>
+        ${f.estado !== 'aprobado' ? `<button class="btn small primary" onclick="fcRevisar(${f.id}, 'aprobado')">Aprobar</button>` : ''}
+        ${f.estado !== 'rechazado' ? `<button class="btn small" onclick="fcRevisar(${f.id}, 'rechazado')">Rechazar</button>` : ''}
+      </div>
+    </div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;">${(f.archivos || []).map(a => `<a href="${escapeHtml(a.url || '#')}" target="_blank" rel="noopener"><img src="${escapeHtml(a.url || '')}" alt="Foto de ${escapeHtml(f.empleado)}" loading="lazy" style="width:96px; height:96px; object-fit:cover; border-radius:8px; border:1px solid var(--border);"></a>`).join('')}</div>
+  </div>`).join('');
+}
+
+async function fcRevisar(id, estado) {
+  const nota = estado === 'rechazado' ? prompt('¿Por qué se rechaza? (lo verá quien revise el historial)') : '';
+  if (nota === null) return;
+  try { await fcApi('revisar', { id, estado, nota }); fcCargarHistorial(); } catch (e) { alert(e.message); }
+}
+
 function cargarDatosPanel() {
   if (datosPanelCargados || !haySesionPanel() || !document.getElementById('adminDashboardWrapper')) return;
   datosPanelCargados = true;
+  fcRevisarAviso();
   loadHistVentasLive();
   loadCustomersFromAPI();
   loadOrdersFromAPI();
@@ -18290,7 +18855,68 @@ function cargarDatosPanel() {
   loadCartsFromAPI();
   loadSuppliersFromAPI();
 }
+// ---- Check-in en HR PRO obligatorio (api/hr-checkin.js) ----
+// Quien trabaja en HR y no ha registrado hoy su entrada no ve nada del panel hasta registrarla
+// (aquí con su GPS, o en la app de HR / por WhatsApp). Se revisa cada minuto mientras esté
+// bloqueado y al volver a la pestaña; en cuanto HR la detecta, el panel se desbloquea.
+let hrCkTimer = null;
+async function hrCheckinApi(accion, extra = {}) {
+  const r = await fetch('/api/hr-checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ accion, creds: getSessionCredsParams(), ...extra }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+  return d;
+}
+function hrCheckinOverlay(mostrar, nombre) {
+  let el = document.getElementById('hrCheckinGate');
+  if (!mostrar) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'hrCheckinGate';
+    el.setAttribute('role', 'dialog');
+    el.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:#f8fafc;display:flex;align-items:center;justify-content:center;padding:24px;';
+    el.innerHTML = `<div style="background:#fff;border-radius:28px;padding:32px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.15);font-family:inherit;color:#0f172a;">
+      <div style="font-size:44px;margin-bottom:8px;">⏰</div>
+      <h2 style="margin:0 0 10px;font-size:22px;font-weight:800;">Registra tu entrada</h2>
+      <p id="hrCkTexto" style="margin:0 0 18px;font-size:14px;color:#475569;"></p>
+      <p id="hrCkError" style="display:none;margin:0 0 14px;font-size:13px;font-weight:700;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px;"></p>
+      <button id="hrCkBtn" type="button" onclick="hrCheckinRegistrar()" style="width:100%;padding:14px;border:0;border-radius:14px;background:#7c3aed;color:#fff;font-weight:800;font-size:14px;cursor:pointer;">📍 Registrar mi entrada</button>
+      <button type="button" onclick="hrCheckinRevisar(true)" style="width:100%;margin-top:10px;padding:10px;border:0;background:none;color:#64748b;font-weight:700;font-size:12px;cursor:pointer;">Ya la registré en HR · Volver a revisar</button>
+      <button type="button" onclick="logoutAdmin()" style="width:100%;margin-top:4px;padding:10px;border:0;background:none;color:#94a3b8;font-weight:700;font-size:12px;cursor:pointer;">Cerrar sesión</button>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  const first = String(nombre || (currentStaffSession && currentStaffSession.nombre) || '').trim().split(/\s+/)[0];
+  document.getElementById('hrCkTexto').textContent = `${first ? first + ', p' : 'P'}ara usar el panel primero registra tu entrada de hoy en HR PRO. Puedes hacerlo aquí, en la app de HR o por WhatsApp.`;
+}
+async function hrCheckinRevisar(manual) {
+  if (!currentStaffSession || localStorage.getItem('mf_admin_logged_in') !== 'true') { hrCheckinOverlay(false); return; }
+  let d;
+  try { d = await hrCheckinApi('estado'); } catch (e) { return; } // sin red / HR caído: no se bloquea
+  const bloquear = !!(d && d.required);
+  hrCheckinOverlay(bloquear, d && d.employeeName);
+  clearInterval(hrCkTimer); hrCkTimer = null;
+  if (bloquear) hrCkTimer = setInterval(() => hrCheckinRevisar(), 60000);
+}
+function hrCheckinRegistrar() {
+  const btn = document.getElementById('hrCkBtn');
+  const err = document.getElementById('hrCkError');
+  const fallo = (m) => { err.textContent = m; err.style.display = 'block'; btn.disabled = false; btn.textContent = '📍 Registrar mi entrada'; };
+  if (!navigator.geolocation) return fallo('Tu dispositivo no permite obtener la ubicación.');
+  err.style.display = 'none'; btn.disabled = true; btn.textContent = 'Registrando…';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try {
+      const r = await hrCheckinApi('checkin', { latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+      if (r && r.ok === false) throw new Error(r.error || 'No se pudo registrar tu entrada.');
+      await hrCheckinRevisar(true);
+    } catch (e) { fallo(e.message || 'No se pudo registrar tu entrada.'); }
+  }, () => fallo('No se pudo obtener tu ubicación. Activa el GPS y da permiso de ubicación.'),
+  { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && document.getElementById('hrCheckinGate')) hrCheckinRevisar(); });
+
 function showAdminDashboard() {
+  hrCheckinRevisar();
   cargarDatosPanel();
   const sf = document.getElementById('view-storefront');
   const portal = document.getElementById('view-cliente-portal');
