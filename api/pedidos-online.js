@@ -27,7 +27,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const select = 'folio,created_at,customer_name,customer_email,customer_phone,shipping_address,billing_address,bodega,nota,delivery_date,payment_method,shipping_carrier,shipping_cost,items,subtotal,discount_amount,discount_label,total,status,created_by,source,tracking_number,evidencia_tipo,evidencia_url,evidencia_id_url,comprobante_url,mp_payment_id,mp_status,mp_status_detail,paid_at';
+    const select = 'folio,created_at,customer_name,customer_email,customer_phone,shipping_address,billing_address,bodega,nota,delivery_date,payment_method,shipping_carrier,shipping_cost,items,subtotal,discount_amount,discount_label,total,status,created_by,source,tracking_number,evidencia_tipo,evidencia_url,evidencia_id_url,comprobante_url,comprobante_monto,mp_payment_id,mp_status,mp_status_detail,paid_at';
     const url = `${SUPABASE_URL}/rest/v1/pedidos_online?select=${select}&order=created_at.desc&limit=1000`;
     const r = await fetch(url, {
       headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }
@@ -62,6 +62,7 @@ module.exports = async function handler(req, res) {
       evidenciaUrl: o.evidencia_url || null,
       evidenciaIdUrl: o.evidencia_id_url || null,
       comprobanteUrl: o.comprobante_url || null,
+      comprobanteMonto: o.comprobante_monto != null ? parseFloat(o.comprobante_monto) : null,
       mpPaymentId: o.mp_payment_id || null,
       mpStatus: o.mp_status || null,
       mpStatusDetail: o.mp_status_detail || null,
