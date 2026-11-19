@@ -99,6 +99,23 @@ test('crear-pedido: el precio sale de catalogo_productos, nunca del navegador', 
   assert.equal(res2.code, 400, 'un producto inactivo no se puede comprar');
 });
 
+test('crear-pedido: "Requiero factura" suma 16% de IVA a los productos (no al envío) y lo guarda', async () => {
+  let saved = null;
+  mockSupabase({
+    catalogo_productos: [{ id: 101, name: 'Globo rojo', sku: 'GLB-1', price: 10, active: true }],
+    pedidos_online: (u, opts) => { saved = JSON.parse(opts.body); return []; }
+  });
+  const body = { items: [{ id: 101, qty: 3 }], customer_name: 'Ana', customer_email: 'ana@test.mx', customer_phone: '5555', address: 'Calle 1', colonia: 'Centro', municipio: 'BJ', estado: 'CDMX', cp: '03100', shipping_cost: 99, requiere_factura: true };
+  const res = response();
+  await require('../api/crear-pedido.js')({ method: 'POST', body }, res);
+  assert.equal(res.code, 200);
+  assert.equal(res.data.iva, 4.8); assert.equal(res.data.total, 133.8); // 30 + 4.80 + 99
+  assert.equal(saved.iva, 4.8); assert.equal(saved.requiere_factura, true); assert.equal(saved.total, 133.8);
+  const sin = response();
+  await require('../api/crear-pedido.js')({ method: 'POST', body: { ...body, requiere_factura: false } }, sin);
+  assert.equal(sin.data.iva, 0); assert.equal(sin.data.total, 129);
+});
+
 test('crear-pedido: recoger en tienda no pide dirección, no cobra envío y guarda la sucursal', async () => {
   let saved = null;
   mockSupabase({

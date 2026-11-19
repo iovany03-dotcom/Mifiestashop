@@ -3,6 +3,8 @@
 // El cliente escribe el folio de su ticket del POS y el total que pagó (los folios son números
 // de 5 cifras: con el total nadie puede facturar el ticket de otra persona adivinando folios).
 // Solo se factura un ticket que se cobró CON IVA ("Aplicar IVA" en el POS); uno sin IVA no.
+// También los pedidos de la tienda en línea (folio WEB-123456) que se pagaron con "Requiero factura
+// (+16% IVA)" en el checkout.
 //
 // POST { accion, folio, total, ... }
 //   accion "buscar"    -> { ticket } { folio, total }: lo que se va a facturar y si se puede
@@ -29,6 +31,15 @@ const diasMax = () => { const n = parseInt(process.env.AUTOFACTURA_DIAS, 10); re
 async function ticketDelCliente(api, folioTxt, totalTxt) {
   const digitos = String(folioTxt || '').replace(/\D/g, '');
   const total = Number(String(totalTxt || '').replace(/[$,\s]/g, ''));
+  // Pedido de la tienda en línea: "WEB-123456".
+  if (/^\s*#?\s*WEB/i.test(String(folioTxt || ''))) {
+    if (!/^\d{6}$/.test(digitos) || !(total > 0)) throw new ErrorCliente(400, 'Escribe el número de pedido (WEB- y 6 cifras) y el total que pagaste, tal como vienen en tu correo de confirmación.');
+    const folio = `WEB-${digitos}`;
+    const filas = await api(`pedidos_online?folio=eq.${encodeURIComponent(folio)}&total=gte.${r2(total - 0.5)}&total=lte.${r2(total + 0.5)}&select=folio,iva,total,subtotal,payment_method,status,created_at&order=created_at.desc&limit=1`);
+    const p = filas && filas[0];
+    if (!p) throw new ErrorCliente(404, 'No encontramos un pedido con ese número y ese total. Revisa que sean los de tu correo de confirmación (el total con centavos).');
+    return { folio: p.folio, iva: p.iva, total: p.total, subtotal: p.subtotal, metodo: 'card', estado: /cancel/i.test(p.status || '') ? 'Cancelado' : '', created_at: p.created_at, almacen: 'Tienda en línea', origen: 'online' };
+  }
   if (!/^\d{3,9}$/.test(digitos) || !(total > 0)) throw new ErrorCliente(400, 'Escribe el número de ticket y el total que pagaste, tal como vienen en tu ticket.');
   const folio = `#POS-${digitos}`;
   const filas = await api(`pos_tickets?folio=eq.${encodeURIComponent(folio)}&total=gte.${r2(total - 0.5)}&total=lte.${r2(total + 0.5)}&select=folio,iva,total,subtotal,metodo,estado,created_at,almacen&order=created_at.desc&limit=1`);
@@ -44,15 +55,20 @@ async function ticketDelCliente(api, folioTxt, totalTxt) {
 // ¿Se puede facturar? Devuelve el ticket listo para mostrar al cliente (sin datos de otras personas).
 async function revisar(api, body) {
   const t = await ticketDelCliente(api, body.folio, body.total);
-  const r = await cargarVenta(api, 'pos', t.folio);
+  const origen = t.origen || 'pos';
+  const r = await cargarVenta(api, origen, t.folio);
   if (r.error) throw new ErrorCliente(r.status, r.error);
   const v = r.venta;
   let motivo = null, yaFacturado = false;
   const dias = (Date.now() - new Date(t.created_at).getTime()) / 86400000;
-  if (!(Number(t.iva) > 0)) motivo = 'Este ticket se cobró sin IVA, por eso no se puede facturar. Si necesitas factura, pídela en caja antes de pagar para que te cobren el IVA.';
+  if (!(Number(t.iva) > 0)) motivo = origen === 'online'
+    ? 'Este pedido se pagó sin IVA, por eso no se puede facturar. Para tu próxima compra marca "Requiero factura (+16% IVA)" al pagar.'
+    : 'Este ticket se cobró sin IVA, por eso no se puede facturar. Si necesitas factura, pídela en caja antes de pagar para que te cobren el IVA.';
   else if (/cancel/i.test(t.estado || '')) motivo = 'Este ticket está cancelado.';
   else if (dias > diasMax()) motivo = `El ticket es de hace más de ${diasMax()} días. Para facturarlo comunícate con nosotros por WhatsApp.`;
-  else if (!v.facturable) motivo = 'No se puede facturar este ticket en línea. Comunícate con nosotros por WhatsApp y te ayudamos.';
+  else if (!v.facturable) motivo = origen === 'online' && /solo se facturan pedidos pagados/.test(v.motivo || '')
+    ? 'Tu pedido todavía no aparece como pagado. Cuando se acredite tu pago podrás facturarlo aquí.'
+    : 'No se puede facturar este ticket en línea. Comunícate con nosotros por WhatsApp y te ayudamos.';
   else {
     const previas = await api(`facturas?pedido_folio=eq.${encodeURIComponent(t.folio)}&estado=neq.cancelada&entorno=eq.${fx.entorno()}&select=id&limit=1`);
     if (previas.length) { yaFacturado = true; motivo = 'Este ticket ya está facturado. Si la factura es tuya, puedes descargarla con tu RFC.'; }
@@ -72,6 +88,7 @@ async function revisar(api, body) {
 async function emitir(api, serviceKey, body) {
   const { t, v, ticket } = await revisar(api, body);
   if (!ticket.facturable) throw new ErrorCliente(409, ticket.motivo);
+  const origen = t.origen || 'pos';
   const email = String(body.email || '').trim();
   if (!EMAIL_RE.test(email)) throw new ErrorCliente(400, 'Escribe un correo válido: ahí te llega la factura.');
   // La forma de pago sale del ticket; con tarjeta el cliente elige si fue de crédito o débito.
@@ -87,14 +104,14 @@ async function emitir(api, serviceKey, body) {
   const uuid = emitida && emitida.Complement && emitida.Complement.TaxStamp ? emitida.Complement.TaxStamp.Uuid : null;
   const fila = {
     facturama_id: emitida.Id, uuid, folio: String(emitida.Folio || cfdi.Folio), serie: emitida.Serie || cfdi.Serie || null,
-    origen: 'pos', pedido_folio: t.folio, rfc: cfdi.Receiver.Rfc, nombre: cfdi.Receiver.Name, email,
+    origen, pedido_folio: t.folio, rfc: cfdi.Receiver.Rfc, nombre: cfdi.Receiver.Name, email,
     total: Number(emitida.Total != null ? emitida.Total : cfdi.Items.reduce((s, c) => s + c.Total, 0)),
     entorno: fx.entorno(), estado: 'activa', creado_por: USUARIO
   };
   try { await api('facturas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([fila]) }); }
   catch (e) { console.error('autofactura: timbrada pero no guardada', t.folio, uuid, e.message); }
   await historial.registrar(serviceKey, {
-    folio: t.folio, origen: 'pos', accion: 'factura', usuario: USUARIO,
+    folio: t.folio, origen, accion: 'factura', usuario: USUARIO,
     detalle: `Factura emitida por el cliente en línea${uuid ? ` (UUID ${uuid})` : ''} a ${cfdi.Receiver.Rfc} por $${(Number(fila.total) || 0).toFixed(2)}`
   }).catch(() => {});
   let correoEnviado = false;

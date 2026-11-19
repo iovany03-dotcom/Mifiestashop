@@ -56,7 +56,7 @@ module.exports = async function handler(req, res) {
   const {
     items, customer_name, customer_email, customer_phone,
     address, colonia, municipio, estado, cp,
-    shipping_cost, shipping_carrier, payment_method, coupon_code, pickup_branch
+    shipping_cost, shipping_carrier, payment_method, coupon_code, pickup_branch, requiere_factura
   } = body;
 
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_LINES) {
@@ -113,7 +113,12 @@ module.exports = async function handler(req, res) {
       cuponCodigo = normalizarCodigo(coupon_code);
       cuponEtiqueta = `Cupón ${cuponCodigo} (${c.etiqueta})`;
     }
-    const total = Math.round((subtotal - descuento + shippingCostNum) * 100) / 100;
+    // "Requiero factura": los precios de la tienda son sin IVA (igual que en el POS), así que se suma el
+    // 16% sobre los productos ya con el cupón; el envío no lleva IVA aparte (como en los pedidos manuales,
+    // ver lib/factura-venta.js). Solo esos pedidos se pueden facturar en /facturar.
+    const conFactura = requiere_factura === true || requiere_factura === 'true';
+    const iva = conFactura ? Math.round((subtotal - descuento) * 0.16 * 100) / 100 : 0;
+    const total = Math.round((subtotal - descuento + iva + shippingCostNum) * 100) / 100;
     const folio = 'WEB-' + Date.now().toString().slice(-6);
     const fullAddress = pickup ? `Recoger en tienda: ${pickup.name} (${pickup.address})` : `${address}, Col. ${colonia}, ${municipio}, ${estado}, CP ${cp}`;
 
@@ -129,6 +134,8 @@ module.exports = async function handler(req, res) {
       payment_method: payment_method ? String(payment_method).slice(0, 40) : '',
       items: resolved.map(({ id, name, sku, price, qty }) => ({ id, name, sku, price, qty })),
       subtotal,
+      iva,
+      requiere_factura: conFactura,
       total,
       status: 'Pendiente',
       ...(cuponCodigo ? { discount_amount: descuento, discount_label: cuponEtiqueta, cupon_codigo: cuponCodigo } : {})
@@ -149,7 +156,7 @@ module.exports = async function handler(req, res) {
       // checkout no debe romperse por esto, igual que el resto del sitio.
     }
 
-    res.status(200).json({ folio, subtotal, descuento, cupon: cuponCodigo, total, items: orderPayload.items });
+    res.status(200).json({ folio, subtotal, descuento, cupon: cuponCodigo, iva, total, items: orderPayload.items });
   } catch (err) {
     res.status(502).json({ error: 'No se pudo validar el pedido', detail: String(err) });
   }

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Factura tu compra — Mi Fiestashop</title>
-<meta name="description" content="Genera la factura (CFDI 4.0) de tu compra en Mi Fiestashop con el número de ticket y el total.">
+<meta name="description" content="Genera la factura (CFDI 4.0) de tu compra en Mi Fiestashop con el número de ticket o de pedido en línea y el total.">
 <link rel="canonical" href="https://www.mifiestashop.com/facturar">
 <link rel="icon" type="image/webp" href="/img/cms/logo.webp">
 <style>
@@ -41,12 +41,12 @@
 <div class="card">
   <img class="logo" src="/img/cms/logo.webp" alt="Mi Fiestashop" width="64" height="64">
   <h1>Factura tu compra</h1>
-  <p class="sub">Escribe el número y el total de tu ticket. Solo se pueden facturar las compras en las que se cobró IVA.</p>
+  <p class="sub">Escribe el número y el total de tu ticket de tienda o de tu pedido en línea. Solo se pueden facturar las compras en las que se cobró IVA (en línea: las que se pagaron con "Requiero factura").</p>
 
   <form id="fBuscar" autocomplete="off">
     <div class="fila">
-      <div><label for="folio">Número de ticket <span class="ayuda">(ej. POS-12345)</span></label>
-        <input id="folio" inputmode="numeric" placeholder="POS-12345" required></div>
+      <div><label for="folio">Número de ticket o pedido <span class="ayuda">(ej. POS-12345 o WEB-123456)</span></label>
+        <input id="folio" placeholder="POS-12345 o WEB-123456" autocapitalize="characters" required></div>
       <div><label for="total">Total pagado <span class="ayuda">(con centavos)</span></label>
         <input id="total" inputmode="decimal" placeholder="$0.00" required></div>
     </div>
@@ -104,7 +104,7 @@
   const msg = (id, tipo, texto) => { $(id).innerHTML = texto ? `<div class="msg ${tipo}">${texto}</div>` : ''; };
   // El link del ticket puede traer el folio: /facturar?ticket=12345
   const q = new URLSearchParams(location.search);
-  if (q.get('ticket')) $('folio').value = q.get('ticket');
+  if (q.get('ticket') || q.get('pedido')) $('folio').value = q.get('ticket') || q.get('pedido');
 
   // Con RFC de persona física (13 caracteres) o moral (12) se sugiere el régimen más común.
   $('rfc').addEventListener('input', () => {
@@ -127,7 +127,7 @@
     $('ticket').classList.add('hidden'); $('fFactura').classList.add('hidden'); $('fDescargar').classList.add('hidden');
     try {
       const { ticket: t } = await api({ accion: 'buscar', ...venta() });
-      $('tDetalle').innerHTML = `<p style="font-size:13px; color:var(--muted); margin:0 0 8px;">Ticket ${esc(t.folio)} · ${new Date(t.fecha).toLocaleDateString('es-MX', { dateStyle: 'long' })}${t.sucursal ? ' · ' + esc(t.sucursal) : ''}</p>
+      $('tDetalle').innerHTML = `<p style="font-size:13px; color:var(--muted); margin:0 0 8px;">${/^WEB/.test(t.folio) ? 'Pedido' : 'Ticket'} ${esc(t.folio)} · ${new Date(t.fecha).toLocaleDateString('es-MX', { dateStyle: 'long' })}${t.sucursal ? ' · ' + esc(t.sucursal) : ''}</p>
         <table>${t.conceptos.map(c => `<tr><td>${esc(c.cantidad)} × ${esc(c.nombre)}</td><td class="n">${dinero(c.importe)}</td></tr>`).join('')}
         <tr><td>Subtotal</td><td class="n">${dinero(t.subtotal)}</td></tr><tr><td>IVA</td><td class="n">${dinero(t.iva)}</td></tr><tr class="tot"><td>Total</td><td class="n">${dinero(t.total)}</td></tr></table>`;
       $('ticket').classList.remove('hidden');

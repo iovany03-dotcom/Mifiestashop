@@ -14,6 +14,13 @@ const TICKETS = {
   '#POS-60000': { folio: '#POS-60000', subtotal: 100, iva: 16, total: 116, metodo: 'cash', created_at: '2020-01-01T10:00:00Z', items: [{ product_id: '7', name: 'Vela', qty: 4, price: 25 }] }
 };
 
+// Pedidos de la tienda en línea: con "Requiero factura" (iva > 0) se facturan; sin IVA o sin pagar, no.
+const PEDIDOS = {
+  'WEB-123456': { folio: 'WEB-123456', subtotal: 100, iva: 16, shipping_cost: 99, shipping_carrier: 'DHL', total: 215, status: 'Pago aceptado', created_at: hoy, items: [{ id: 1, name: 'Globo', qty: 4, price: 25 }] },
+  'WEB-222222': { folio: 'WEB-222222', subtotal: 100, iva: 0, shipping_cost: 0, total: 100, status: 'Pago aceptado', created_at: hoy, items: [{ id: 1, name: 'Globo', qty: 4, price: 25 }] },
+  'WEB-333333': { folio: 'WEB-333333', subtotal: 100, iva: 16, shipping_cost: 0, total: 116, status: 'Pendiente', created_at: hoy, items: [{ id: 1, name: 'Globo', qty: 4, price: 25 }] }
+};
+
 function fake({ facturas = [] } = {}) {
   const st = { cfdi: null, facturas: [...facturas], calls: [] };
   global.fetch = async (url, opts = {}) => {
@@ -25,6 +32,11 @@ function fake({ facturas = [] } = {}) {
     }
     if (u.includes('/rest/v1/pos_tickets')) {
       const t = TICKETS[u.match(/folio=eq\.([^&]+)/)[1]];
+      const ge = u.match(/total=gte\.([\d.]+)/), le = u.match(/total=lte\.([\d.]+)/);
+      return ok(t && (!ge || (t.total >= Number(ge[1]) && t.total <= Number(le[1]))) ? [t] : []);
+    }
+    if (u.includes('/rest/v1/pedidos_online')) {
+      const t = PEDIDOS[u.match(/folio=eq\.([^&]+)/)[1]];
       const ge = u.match(/total=gte\.([\d.]+)/), le = u.match(/total=lte\.([\d.]+)/);
       return ok(t && (!ge || (t.total >= Number(ge[1]) && t.total <= Number(le[1]))) ? [t] : []);
     }
@@ -111,4 +123,28 @@ test('buscar: si el folio trae menos de 5 cifras, avisa que puede faltar un díg
   const completo = await call({ accion: 'buscar', folio: 'POS-99999', total: '116' });
   assert.equal(completo.code, 404);
   assert.doesNotMatch(completo.data.error, /5 cifras/);
+});
+
+test('pedido en línea con "Requiero factura": se encuentra con WEB-folio y total, y se factura (IVA en productos, envío aparte)', async () => {
+  fake();
+  const r = await call({ accion: 'buscar', folio: 'web-123456', total: '215.00' });
+  assert.equal(r.code, 200, JSON.stringify(r.data));
+  assert.equal(r.data.ticket.facturable, true, r.data.ticket.motivo);
+  assert.equal(r.data.ticket.conceptos[0].importe, 116);
+  assert.equal(r.data.ticket.conceptos[1].nombre, 'Envío (DHL)');
+  const st = fake();
+  const e = await call({ accion: 'emitir', folio: 'WEB-123456', total: '215', email: 'a@b.com', receptor: RECEPTOR });
+  assert.equal(e.code, 200, JSON.stringify(e.data));
+  assert.equal(st.facturas[0].origen, 'online');
+  assert.equal(st.facturas[0].pedido_folio, 'WEB-123456');
+});
+
+test('pedido en línea sin IVA o sin pagar: no se factura', async () => {
+  fake();
+  let r = await call({ accion: 'buscar', folio: 'WEB-222222', total: '100' });
+  assert.equal(r.data.ticket.facturable, false); assert.match(r.data.ticket.motivo, /Requiero factura/);
+  r = await call({ accion: 'buscar', folio: 'WEB-333333', total: '116' });
+  assert.equal(r.data.ticket.facturable, false); assert.match(r.data.ticket.motivo, /no aparece como pagado/);
+  r = await call({ accion: 'buscar', folio: 'WEB-123456', total: '100' });
+  assert.equal(r.code, 404);
 });

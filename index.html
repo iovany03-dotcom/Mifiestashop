@@ -2162,6 +2162,12 @@
           </div>
           <div id="checkoutCouponMsg" class="hidden" style="font-size:12px; margin-top:6px;"></div>
         </div>
+        <!-- Los precios de la tienda son sin IVA: quien necesita factura paga el 16% (api/crear-pedido.js)
+             y después la genera en /facturar con su número de pedido y el total. -->
+        <label class="checkout-factura" style="display:flex; gap:10px; align-items:flex-start; margin-top:14px; padding:12px; border:1px solid #e5dce6; border-radius:10px; background:#faf7fb; cursor:pointer;">
+          <input type="checkbox" id="checkoutRequiereFactura" onchange="renderCheckoutSummary()" style="margin-top:3px; width:18px; height:18px; accent-color:#d3007b;">
+          <span style="font-size:13px; color:#2e1065;"><b>Requiero factura (+16% IVA)</b><br><span style="color:#6b5b78;">Se suma el IVA a tus productos. Después de pagar generas tu factura en <b>mifiestashop.com/facturar</b> con tu número de pedido.</span></span>
+        </label>
         <div id="checkoutUpsellSection" class="hidden" style="margin-top:18px; border-top:1px dashed var(--border); padding-top:16px;"></div>
       </div>
     </div>
@@ -22185,13 +22191,21 @@ async function applyCheckoutCoupon(codeArg) {
   }
 }
 
+// "Requiero factura": 16% sobre los productos ya con el cupón (el envío no lleva IVA aparte), igual que
+// lo calcula el servidor en api/crear-pedido.js.
+function checkoutRequiereFactura() { return !!document.getElementById('checkoutRequiereFactura')?.checked; }
+function checkoutIva(subtotal, descuento) {
+  return checkoutRequiereFactura() ? Math.round((subtotal - descuento) * 0.16 * 100) / 100 : 0;
+}
+
 function renderCheckoutSummary(){
   const el = document.getElementById('checkoutOrderSummary');
   if (!el) return;
   const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const shippingKnown = checkoutShippingCost !== null;
   const descuento = checkoutCouponDiscount(subtotal);
-  const total = subtotal - descuento + (checkoutShippingCost || 0);
+  const iva = checkoutIva(subtotal, descuento);
+  const total = subtotal - descuento + iva + (checkoutShippingCost || 0);
   el.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px; max-height:260px; overflow-y:auto;">
       ${cart.map(i => `
@@ -22207,6 +22221,9 @@ function renderCheckoutSummary(){
       </div>
       ${descuento > 0 ? `<div style="display:flex; justify-content:space-between; font-size:13px; color:#15803d; font-weight:700;">
         <span>Cupón ${escapeHtml(checkoutCoupon.codigo)}:</span><span>−${fmtMoney(descuento)}</span>
+      </div>` : ''}
+      ${iva > 0 ? `<div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
+        <span>IVA (16%):</span><span>${fmtMoney(iva)}</span>
       </div>` : ''}
       <div style="display:flex; justify-content:space-between; font-size:13px; color:#5b4a68;">
         <span>Envío:</span><span>${checkoutDeliveryMethod === 'recoger' ? (shippingKnown ? 'Gratis (recoger en tienda)' : 'Elige sucursal') : (!shippingKnown ? 'Ingresa tu C.P.' : (checkoutShippingCost === 0 ? 'Gratis' : fmtMoney(checkoutShippingCost)))}</span>
@@ -22654,7 +22671,8 @@ async function submitStorefrontOrderInner(){
         shipping_cost: checkoutShippingCost,
         shipping_carrier: checkoutShippingCarrier || '',
         payment_method: checkoutPayMethod,
-        coupon_code: checkoutCoupon ? checkoutCoupon.codigo : undefined
+        coupon_code: checkoutCoupon ? checkoutCoupon.codigo : undefined,
+        requiere_factura: checkoutRequiereFactura()
       })
     });
     const data = await r.json();
@@ -22692,6 +22710,8 @@ async function submitStorefrontOrderInner(){
     // Mercado Pago no acepta renglones negativos: con cupón se cobra el
     // pedido en un solo renglón por el total ya con descuento.
     if (order.descuento > 0) mpItems = [{ name: `Pedido ${folio} Mi Fiestashop (con cupón ${order.cupon})`, qty: 1, price: total }];
+    else if (order.iva > 0) mpItems.push({ name: 'IVA 16%', qty: 1, price: order.iva });
+    // Con cupón e IVA va en el renglón único (total ya incluye ambos).
     const mpRes = await fetch('/api/mp-crear-preferencia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -22701,6 +22721,7 @@ async function submitStorefrontOrderInner(){
     if (mpData.init_point) {
       // Se manda antes de salir del sitio (sendBeacon sobrevive la navegación).
       trackFunnel('ir_a_pago', { valor: total, datos: { folio }, urgente: true });
+      if (order.iva > 0) { try { localStorage.setItem('mfs_factura_' + folio, '1'); } catch (e) {} }
       window.location.href = mpData.init_point;
       // El botón sigue bloqueado mientras el navegador se va a Mercado Pago.
       await new Promise(() => {});
@@ -22755,7 +22776,9 @@ async function handleMercadoPagoReturn() {
   }
 
   if (estado === 'Pago aceptado' || estado === 'Pagado') {
-    setConfirmPage({ icon: '🎉', title: '¡Gracias por tu compra!', msg: 'Tu pago con Mercado Pago fue aprobado y tu pedido quedó confirmado. Te enviamos la confirmación por correo y te avisaremos cuando salga hacia tu domicilio.', folio: mpFolio, total: mpTotal });
+    let pidioFactura = false;
+    try { pidioFactura = localStorage.getItem('mfs_factura_' + mpFolio) === '1'; } catch (e) {}
+    setConfirmPage({ icon: '🎉', title: '¡Gracias por tu compra!', msg: 'Tu pago con Mercado Pago fue aprobado y tu pedido quedó confirmado. Te enviamos la confirmación por correo y te avisaremos cuando salga hacia tu domicilio.' + (pidioFactura ? ` Para tu factura entra a mifiestashop.com/facturar con tu número de pedido ${mpFolio} y el total.` : ''), folio: mpFolio, total: mpTotal });
     const mpItems = Array.isArray(cart) ? cart : [];
     if (!isNaN(mpTotal)) {
       const purchase = { value: mpTotal, currency: 'MXN' };
