@@ -1,0 +1,6 @@
+-- 2026-11-23 (migración ingreso_solo_bodega_asignada): quien tiene sucursal asignada en Personal / Equipo
+-- (personal_equipo.bodega_asignada distinta de "Todas") solo puede meter mercancía a esa sucursal.
+-- staff_bodega_ingreso(creds) -> 'rumania' | 'puebla' | 'queretaro' | null (sin restricción: admin o "Todas").
+-- staff_exigir_bodega(creds, almacen) lanza 'bodega_no_permitida: solo puedes meter mercancía a <sucursal>'.
+-- Se llama en rpc_recep_crear, rpc_recep_autorizar, rpc_mov_doc_save (tipo entrada) y rpc_mov_doc_approve (entrada).
+-- Traspasos y salidas no cambian. Definiciones completas en Supabase (pg_get_functiondef).

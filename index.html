@@ -13161,6 +13161,7 @@ function movErrorMessage(e, fallback) {
   if (/partida_invalida/.test(m)) return 'Hay productos con cantidad inválida (deben ser números enteros mayores a 0).';
   if (/bodega_invalida/.test(m)) return 'Revisa la bodega de origen y destino.';
   if (/INGRESO NO PERMITIDO/.test(m)) return 'INGRESO NO PERMITIDO. Para registrar mercancía es obligatorio escanear primero la nota de compra del proveedor y completar el proceso de recepción inteligente.';
+  { const bod = m.match(/bodega_no_permitida: (.+?)(["}]|$)/); if (bod) return `No se puede: ${bod[1]} (es la sucursal que tienes asignada en Personal / Equipo).`; }
   if (/conteo_sin_diferencia/.test(m)) return 'No se aprobó: en estos productos el sistema ya tiene lo que se contó (o más), así que no hay nada que sumar. Puede que el ajuste ya se haya aplicado o que entró la mercancía por otro lado:\n\n' + m.replace(/^[\s\S]*conteo_sin_diferencia:\s*/, '').replace(/"[\s\S]*$/, '').split('; ').map(x => '• ' + x).join('\n') + '\n\nEdita el borrador (quita esos productos) o descártalo.';
   if (/ajuste_sin_diferencia/.test(m)) return 'No se aprobó: todos los productos ya tienen en el sistema la cantidad que se capturó, no hay nada que ajustar. Edita el borrador o descártalo.';
   if (/ajuste_sin_motivo/.test(m)) return 'Escribe el motivo del ajuste (al menos 5 letras).';
@@ -16356,6 +16357,9 @@ let recFiltros = { estado: 'abiertas', proveedor: '', almacen: '', desde: '', ha
 function recError(e) {
   let m = String((e && (e.detail || e.message)) || '');
   try { const j = JSON.parse(m); if (j && j.message) m = j.message; } catch (x) {}
+  // Quien tiene sucursal asignada en Personal / Equipo solo mete mercancía a esa sucursal (staff_exigir_bodega).
+  const bod = m.match(/bodega_no_permitida: (.+?)(["}]|$)/);
+  if (bod) return `No se puede: ${bod[1]} (es la sucursal que tienes asignada en Personal / Equipo).`;
   const T = {
     unauthorized: 'Tu sesión expiró. Vuelve a iniciar sesión.',
     sin_permiso_recepcion: 'Tu usuario no tiene permiso de recepción de mercancía (pídelo al administrador: permiso "Entrada de mercancía").',
