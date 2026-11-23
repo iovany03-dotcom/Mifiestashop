@@ -2,10 +2,10 @@
 // Pop-up de aviso para las páginas CMS de una sucursal (body[data-city]): se muestra una vez por visita
 // mientras dure el aviso. Para otro cierre, cambia las constantes de abajo (y la barra superior en
 // scripts/cms-header.html, data-desde / data-hasta) y vuelve a generar las páginas (npm run build:cms).
-const CIUDAD='queretaro';
-const DESDE='2026-10-08', HASTA='2026-10-14';   // se muestra de DESDE a HASTA (inclusive), hora de México
-const TITULO='Sucursal Querétaro cerrada';
-const TEXTO='Nuestra sucursal de Querétaro estará <b>cerrada del 12 al 14 de octubre</b>. ¡Anticipa tu compra! Puedes pedir en línea o pasar por tus productos antes del cierre.';
+const CIUDAD='puebla';
+const DESDE='2026-11-23', HASTA='2026-11-23';   // se muestra de DESDE a HASTA (inclusive), hora de México
+const TITULO='Tienda de Puebla cerrada hoy';
+const TEXTO='Hoy <b>23 de noviembre</b> nuestra tienda de Puebla (35 Sur 2901) estará <b>cerrada</b>. Puedes comprar en línea y te lo enviamos, o visitarnos a partir de mañana.';
 const CLAVE='mf_aviso_'+CIUDAD+'_'+HASTA;
 function listo(){
   try{

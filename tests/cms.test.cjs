@@ -160,7 +160,7 @@ test('migrated pages and admin inventory work without PrestaShop network access'
 test('neon redesign is isolated and imported icon/location banners cannot reappear',()=>{
  const removed=['b7b3e512c4029e40','69f29cc0e2aaaeb0','6eeaeb9d458892c4'];
  for(const page of source){const html=fs.readFileSync(path.join(root,'cms-pages/'+page.id+'.html'),'utf8');const $=cheerio.load(html);assert.equal($('body').hasClass('neon-page'),page.id===410);for(const id of removed)assert.ok(!$('.source-content').html()?.includes(id),page.slug);$('script[src],link[rel=stylesheet]').each((_,e)=>{const u=$(e).attr('src')||$(e).attr('href');if(u.startsWith('/assets/'))assert.match(u,/\?v=[a-f0-9]{12}$/);});}
- const html=fs.readFileSync(path.join(root,'cms-pages/410.html'),'utf8');assert.ok(html.includes('Rumania 613'));assert.ok(!html.includes('Puebla'));new vm.Script(fs.readFileSync(path.join(root,'assets/neon-cdmx.js'),'utf8'));
+ const html=fs.readFileSync(path.join(root,'cms-pages/410.html'),'utf8');assert.ok(html.includes('Rumania 613'));assert.ok(!html.replace(/<div class="store-topbar-notice"[^>]*>[^<]*<\/div>/g,'').includes('Puebla'),'sin banners de otra sucursal (el aviso temporal de la barra no cuenta)');new vm.Script(fs.readFileSync(path.join(root,'assets/neon-cdmx.js'),'utf8'));
 });
 function redirectCall(slug){const r={statusCode:200,headers:{},body:'',setHeader(k,v){this.headers[k]=v},end(b){this.body=b||''}};require('../api/cms-redirect.js')({query:{slug}},r);return r;}
 test('/content/<id>-<slug> con un id que no existe redirige por nombre a la primera pagina con ese slug',()=>{
