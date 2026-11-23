@@ -975,3 +975,10 @@ begin
   perform recep_dividir_core(p_recepcion_id, p_linea_id, p_factor, p_partes, s.nombre);
   return recep_json(p_recepcion_id);
 end $$;
+
+-- 2026-11-23 (migración recep_autorizar_actualiza_costo): recep_autorizar_core ahora también actualiza
+-- catalogo_productos.costo_compra con el costo por pieza de la nota (precio_unitario / factor) y marca
+-- producto_privado.costo_compra_actualizado_at. No lo toca si el renglón no trae precio o si el costo por pieza
+-- es >= al precio de venta (precio por caja/docena capturado como pieza): eso queda en recepcion_eventos como
+-- 'costo_no_actualizado'; los cambios hechos quedan como 'costo_actualizado' (antes/después).
+-- La definición completa está en Supabase: pg_get_functiondef('recep_autorizar_core'::regproc).

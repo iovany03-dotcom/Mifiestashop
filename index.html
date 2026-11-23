@@ -17226,7 +17226,20 @@ async function recAutorizar() {
   const listas = (recActual.lineas || []).filter(l => !l.ingresado_at && recLineaEstado(l)[0] === 'Lista para ingresar');
   const pendientes = (recActual.lineas || []).filter(l => !l.ingresado_at).length - listas.length;
   const piezas = listas.reduce((s, l) => s + (l.cantidad_recibida - l.danadas), 0);
-  if (!confirm(`Autorizar el ingreso a ${WAREHOUSE_LABELS[recActual.recepcion.almacen]} de ${listas.length} renglones (${recNum(piezas)} piezas buenas).${pendientes ? `\n\n${pendientes} renglones siguen pendientes: quedará como entrada parcial.` : ''}\n\nEsto actualiza el inventario.`)) return;
+  // Costo de compra: al autorizar, el servidor (recep_autorizar_core) pone en el producto el costo por pieza
+  // de la nota (precio ÷ piezas por presentación). No lo toca si el renglón no trae precio o si el costo por
+  // pieza sale igual o mayor que el precio de venta (casi siempre es precio por caja/docena capturado como pieza).
+  const precioVenta = l => { const p = (typeof adminCatalogDataset === 'function' ? adminCatalogDataset() : []).find(x => String(x.id) === String(l.id_product)); return p ? Number(p.price) || 0 : 0; };
+  const nombre = l => (l.producto && l.producto.name) || l.descripcion || `Renglón ${l.renglon}`;
+  const sinPrecio = listas.filter(l => !(Number(l.precio_unitario) > 0));
+  const sospechosos = listas.filter(l => Number(l.precio_unitario) > 0 && precioVenta(l) > 0 && l.costo_pieza >= precioVenta(l));
+  const costos = listas.filter(l => !sinPrecio.includes(l) && !sospechosos.includes(l) && l.costo_pieza != null && Number(l.producto?.costo_compra) !== Number(l.costo_pieza));
+  const lista = (arr, f) => arr.slice(0, 8).map(f).join('\n') + (arr.length > 8 ? `\n… y ${arr.length - 8} más` : '');
+  let avisoCosto = '';
+  if (costos.length) avisoCosto += `\n\nSe actualizará el costo de compra de ${costos.length} producto(s):\n` + lista(costos, l => `• ${nombre(l)}: ${l.producto?.costo_compra != null ? fmtMoney(l.producto.costo_compra) : 'sin costo'} → ${fmtMoney(l.costo_pieza)}`);
+  if (sinPrecio.length) avisoCosto += `\n\n⚠️ ${sinPrecio.length} renglón(es) SIN PRECIO en la nota: su costo NO se actualiza. Si la nota sí trae precio, cancela y captúralo en el renglón (botón editar):\n` + lista(sinPrecio, l => `• ${nombre(l)}`);
+  if (sospechosos.length) avisoCosto += `\n\n⚠️ ${sospechosos.length} renglón(es) con costo por pieza igual o mayor al precio de venta (¿precio por caja o docena?): su costo NO se actualiza. Revisa las piezas por presentación:\n` + lista(sospechosos, l => `• ${nombre(l)}: ${fmtMoney(l.costo_pieza)} por pieza vs venta ${fmtMoney(precioVenta(l))}`);
+  if (!confirm(`Autorizar el ingreso a ${WAREHOUSE_LABELS[recActual.recepcion.almacen]} de ${listas.length} renglones (${recNum(piezas)} piezas buenas).${pendientes ? `\n\n${pendientes} renglones siguen pendientes: quedará como entrada parcial.` : ''}${avisoCosto}\n\nEsto actualiza el inventario.`)) return;
   try {
     const d = await recRpc('rpc_recep_autorizar', { p_recepcion_id: recActual.recepcion.id, p_lineas: null });
     recMostrar(d);
