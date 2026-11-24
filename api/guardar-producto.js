@@ -14,6 +14,7 @@
 // -> { ok: true, id }
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
+const MAX_FOTOS = 5;
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 // Genera la "liga corta" (link_rewrite) de la que depende la URL pública
@@ -95,6 +96,22 @@ module.exports = async function handler(req, res) {
   const isNew = !producto.id;
   const id = isNew ? 9000000000000 + Date.now() : Number(producto.id);
 
+  // Fotos: hasta MAX_FOTOS (la primera es la principal). El editor nuevo manda "imagenes" con todas.
+  // Un navegador con la versión anterior solo manda "img": antes eso dejaba el producto con UNA foto y
+  // borraba las demás; ahora esa foto queda como principal y se conservan las que ya tenía.
+  const limpiaFotos = arr => [...new Set((arr || []).map(u => String(u || '').trim()).filter(u => /^https?:\/\//i.test(u) && !/images\.unsplash\.com/.test(u)))].slice(0, MAX_FOTOS);
+  let fotos = Array.isArray(producto.imagenes) ? limpiaFotos(producto.imagenes) : [];
+  if (!Array.isArray(producto.imagenes) && producto.img) {
+    let previas = [];
+    if (!isNew) {
+      try {
+        const r = await fetch(`${SUPABASE_URL}/rest/v1/catalogo_productos?id=eq.${id}&select=images`, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } });
+        if (r.ok) { const rows = await r.json(); previas = (rows && rows[0] && rows[0].images) || []; }
+      } catch (e) { /* sin las previas se guarda solo la principal */ }
+    }
+    fotos = limpiaFotos([producto.img, ...previas]);
+  }
+
   const row = {
     id,
     sku,
@@ -113,12 +130,11 @@ module.exports = async function handler(req, res) {
     // Igual que api/producto-activo.js: queda marcado como decisión manual.
     active_override: producto.active !== false,
     low_stock_threshold: Number(producto.lowStockThreshold) || null,
-    legacy_image_url: producto.img ? String(producto.img).trim() : null,
-    // La tienda pública (api/productos.js, lib/productos-supabase.js) lee la
-    // foto de "images" (arreglo), nunca de legacy_image_url — ese campo solo
-    // lo usa la propia lista del admin como respaldo. Sin esto, cambiar la
-    // imagen aquí se veía reflejado en el admin pero nunca en la tienda.
-    images: producto.img ? [String(producto.img).trim()] : null,
+    legacy_image_url: fotos.length ? fotos[0] : (producto.img ? String(producto.img).trim() : null),
+    // La tienda pública (api/productos.js, lib/productos-supabase.js) lee las
+    // fotos de "images" (arreglo, la primera es la principal), nunca de
+    // legacy_image_url — ese campo solo lo usa la lista del admin como respaldo.
+    images: fotos.length ? fotos : null,
     // categoría y precios especiales adicionales se guardan como texto en
     // description hasta que el admin de catálogo tenga sus propios campos;
     // category_label se preserva aparte para no perder el nombre visible.
@@ -221,6 +237,17 @@ module.exports = async function handler(req, res) {
       const text = await r.text().catch(() => '');
       res.status(502).json({ ok: false, error: `Supabase HTTP ${r.status}`, detail: text.slice(0, 400) });
       return;
+    }
+    // La tienda muestra la lista de fotos más larga entre catalogo_productos y productos_migrados (copia
+    // de PrestaShop): si aquí se quitan fotos, la copia vieja las volvería a mostrar. Se iguala.
+    if (!isNew && fotos.length) {
+      try {
+        await fetch(`${SUPABASE_URL}/rest/v1/productos_migrados?id=eq.${id}`, {
+          method: 'PATCH',
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ images: fotos })
+        });
+      } catch (e) { /* la tienda sigue mostrando la lista más larga */ }
     }
     let privadoGuardado = true;
     if (Object.keys(privado).length) {

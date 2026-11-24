@@ -136,3 +136,43 @@ test('api/guardar-producto: sin sesión válida no guarda nada', async () => {
     assert.equal(res.code, 401);
   } finally { global.fetch = prev; }
 });
+
+// Fotos: hasta 5 por producto (la primera es la principal).
+function fakeFotos(previas) {
+  const st = { posted: null, migrados: null };
+  global.fetch = async (url, opts = {}) => {
+    const u = String(url);
+    if (u.includes('/rpc/rpc_check_session')) return { ok: true, json: async () => ({ ok: true }) };
+    if (u.includes('/rest/v1/catalogo_productos') && opts.method === 'POST') { st.posted = JSON.parse(opts.body)[0]; return { ok: true, json: async () => null, text: async () => '' }; }
+    if (u.includes('/rest/v1/catalogo_productos') && u.includes('select=images')) return { ok: true, json: async () => [{ images: previas }] };
+    if (u.includes('/rest/v1/productos_migrados') && opts.method === 'PATCH') { st.migrados = JSON.parse(opts.body); return { ok: true, json: async () => null }; }
+    return { ok: true, json: async () => ({}) };
+  };
+  return st;
+}
+
+test('api/guardar-producto: guarda hasta 5 fotos en orden, sin repetidas ni ligas inválidas, e iguala productos_migrados', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr-key';
+  try {
+    const st = fakeFotos([]);
+    const res = response();
+    const f = n => `https://x.supabase.co/assets/${n}.jpg`;
+    await require('../api/guardar-producto.js')({ method: 'POST', body: { p_admin_password: 'x', producto: { id: 83391, sku: 'L', name: 'Lente', price: 17, img: f(2),
+      imagenes: [f(2), f(1), f(2), 'no-es-liga', f(3), f(4), f(5), f(6)] } } }, res);
+    assert.equal(res.data.ok, true, JSON.stringify(res.data));
+    assert.deepEqual(st.posted.images, [f(2), f(1), f(3), f(4), f(5)]);
+    assert.equal(st.posted.legacy_image_url, f(2));
+    assert.deepEqual(st.migrados, { images: [f(2), f(1), f(3), f(4), f(5)] });
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
+test('api/guardar-producto: un panel viejo (solo "img") ya no borra las demás fotos', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr-key';
+  try {
+    const f = n => `https://x.supabase.co/assets/${n}.jpg`;
+    const st = fakeFotos([f(1), f(2), f(3)]);
+    const res = response();
+    await require('../api/guardar-producto.js')({ method: 'POST', body: { p_admin_password: 'x', producto: { id: 83391, sku: 'L', name: 'Lente', price: 17, img: f(2) } } }, res);
+    assert.deepEqual(st.posted.images, [f(2), f(1), f(3)]);
+  } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});

@@ -5688,15 +5688,17 @@
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
           <div>
-            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL de la Imagen (PrestaShop / CDN):</label>
-            <!-- type="text", no "url" — mismo motivo que editProdUrl abajo: un valor que no
-                 valide como URL absoluta bloquea el guardado del producto ENTERO en
-                 silencio, sin mostrar ningún error. -->
-            <input type="text" id="editProdImg" placeholder="https://..." oninput="refreshProductPhotoPreview()" style="width:100%; padding:8px 12px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
-            <label style="font-size:12px; font-weight:600; display:block; margin:10px 0 4px;">O sube una foto desde tu equipo:</label>
-            <input type="file" id="editProdImgFile" accept="image/*" onchange="uploadProductPhoto(this)" style="width:100%; font-size:12.5px;">
+            <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">Fotos del producto (hasta 5) — la primera es la principal:</label>
+            <!-- La foto principal sigue en editProdImg (oculto) para lo que solo usa una; todas van en editProdFotos. -->
+            <input type="hidden" id="editProdImg">
+            <div id="editProdFotos" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px;"></div>
+            <input type="file" id="editProdImgFile" accept="image/*" multiple onchange="uploadProductPhoto(this)" style="width:100%; font-size:12.5px;">
+            <div style="display:flex; gap:6px; margin-top:6px;">
+              <!-- type="text", no "url": un valor que no valide como URL bloquearía el guardado entero en silencio. -->
+              <input type="text" id="editProdImgUrl" placeholder="O pega la liga de una foto (https://...)" style="flex:1; min-width:0; padding:7px 10px; border-radius:6px; border:1px solid var(--border); background:var(--card-bg); color:var(--text-primary); font-size:12.5px;">
+              <button type="button" class="btn small" onclick="agregarFotoUrl()">Agregar</button>
+            </div>
             <div id="editProdImgStatus" style="font-size:12px; margin-top:4px; color:var(--text-muted);"></div>
-            <img id="editProdImgPreview" class="hidden" alt="Vista previa" style="margin-top:8px; max-width:110px; max-height:110px; border-radius:8px; border:1px solid var(--border); object-fit:cover;">
           </div>
           <div>
             <label style="font-size:12px; font-weight:600; display:block; margin-bottom:4px;">URL Actual del Producto (Tienda Web):</label>
@@ -10976,7 +10978,11 @@ function openEditProductModal(pId) {
   if (document.getElementById('editProdPriceVolumen')) document.getElementById('editProdPriceVolumen').value = prod ? (prod.priceVolumen || '') : '';
   if (document.getElementById('editProdPriceDistribuidor')) document.getElementById('editProdPriceDistribuidor').value = prod ? (prod.priceDistribuidor || '') : '';
   if (document.getElementById('editProdCosto')) document.getElementById('editProdCosto').value = prod ? (prod.costoCompra || '') : '';
-  document.getElementById('editProdImg').value = prod ? prod.img : 'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=300';
+  // Hasta 5 fotos: las que ya tiene el producto (la tienda usa la lista "images"; las viejas solo "img").
+  editProdFotos = (prod ? (Array.isArray(prod.images) && prod.images.length ? prod.images : [prod.img]) : [])
+    .filter(u => /^https?:\/\//i.test(u || '') && !/images\.unsplash\.com/.test(u)).slice(0, MAX_FOTOS_PRODUCTO);
+  const imgUrlInput = document.getElementById('editProdImgUrl');
+  if (imgUrlInput) imgUrlInput.value = '';
   const imgFileInput = document.getElementById('editProdImgFile');
   if (imgFileInput) imgFileInput.value = '';
   const imgStatus = document.getElementById('editProdImgStatus');
@@ -11001,36 +11007,73 @@ function closeEditProductModal() {
 
 let productPhotoUploading = false;
 
+// ---- Fotos del producto (hasta 5). La primera es la principal (tarjetas, carrito, Google). ----
+const MAX_FOTOS_PRODUCTO = 5;
+let editProdFotos = [];
+
 function refreshProductPhotoPreview() {
-  const preview = document.getElementById('editProdImgPreview');
-  const url = (document.getElementById('editProdImg')?.value || '').trim();
-  if (!preview) return;
-  if (/^https?:\/\//i.test(url)) { preview.src = url; preview.classList.remove('hidden'); }
-  else preview.classList.add('hidden');
+  const box = document.getElementById('editProdFotos');
+  const principal = document.getElementById('editProdImg');
+  if (principal) principal.value = editProdFotos[0] || '';
+  if (!box) return;
+  box.innerHTML = editProdFotos.length ? editProdFotos.map((u, i) => `
+    <div style="position:relative; width:84px;">
+      <img src="${escapeHtml(u)}" alt="Foto ${i + 1}" style="width:84px; height:84px; object-fit:cover; border-radius:8px; border:${i === 0 ? '2px solid #d3007b' : '1px solid var(--border)'}; background:#fff;">
+      <button type="button" class="btn small" title="Quitar foto" onclick="quitarFotoProducto(${i})" style="position:absolute; top:2px; right:2px; padding:0 6px; min-height:0; line-height:20px;">✕</button>
+      <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
+        ${i === 0 ? '<b style="color:#d3007b;">Principal</b>' : `<a href="#" onclick="event.preventDefault(); moverFotoProducto(${i}, -${i})">Principal</a>`}
+        <span>${i > 0 ? `<a href="#" title="Mover a la izquierda" onclick="event.preventDefault(); moverFotoProducto(${i}, -1)">◀</a>` : ''}${i < editProdFotos.length - 1 ? ` <a href="#" title="Mover a la derecha" onclick="event.preventDefault(); moverFotoProducto(${i}, 1)">▶</a>` : ''}</span>
+      </div>
+    </div>`).join('') : '<div style="font-size:12px; color:var(--text-muted);">Sin fotos todavía.</div>';
+  const file = document.getElementById('editProdImgFile');
+  if (file) file.disabled = editProdFotos.length >= MAX_FOTOS_PRODUCTO;
+}
+function quitarFotoProducto(i) { editProdFotos.splice(i, 1); refreshProductPhotoPreview(); }
+function moverFotoProducto(i, d) {
+  const j = Math.max(0, Math.min(editProdFotos.length - 1, i + d));
+  const [f] = editProdFotos.splice(i, 1); editProdFotos.splice(j, 0, f); refreshProductPhotoPreview();
+}
+function agregarFotoUrl() {
+  const input = document.getElementById('editProdImgUrl');
+  const status = document.getElementById('editProdImgStatus');
+  const url = (input?.value || '').trim();
+  if (!/^https?:\/\//i.test(url)) { status.textContent = 'Pega una liga que empiece con https://'; return; }
+  if (editProdFotos.length >= MAX_FOTOS_PRODUCTO) { status.textContent = `Máximo ${MAX_FOTOS_PRODUCTO} fotos por producto.`; return; }
+  if (!editProdFotos.includes(url)) editProdFotos.push(url);
+  input.value = ''; status.textContent = '';
+  refreshProductPhotoPreview();
 }
 
-// Sube la foto elegida al almacenamiento de Supabase (bucket público "assets")
-// y deja su URL en el campo de imagen, que es lo que guarda el producto.
+// Sube las fotos elegidas (una o varias) al almacenamiento de Supabase (bucket público "assets") y las
+// agrega a la lista; se guardan con el producto al dar Guardar.
 async function uploadProductPhoto(input) {
-  const file = input.files && input.files[0];
+  const files = Array.from(input.files || []);
   const status = document.getElementById('editProdImgStatus');
-  if (!file) return;
-  if (!/^image\//.test(file.type)) { status.textContent = 'El archivo debe ser una imagen.'; input.value = ''; return; }
-  if (file.size > 10 * 1024 * 1024) { status.textContent = 'La foto pesa más de 10 MB. Elige una más ligera.'; input.value = ''; return; }
+  input.value = '';
+  if (!files.length) return;
+  const lugar = MAX_FOTOS_PRODUCTO - editProdFotos.length;
+  if (lugar <= 0) { status.textContent = `Ya tiene ${MAX_FOTOS_PRODUCTO} fotos: quita una para subir otra.`; return; }
+  const elegidas = files.slice(0, lugar);
   productPhotoUploading = true;
-  status.textContent = 'Subiendo foto...';
+  let ok = 0;
   try {
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
-    const path = `productos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${path}`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type || 'image/jpeg' },
-      body: file
-    });
-    if (!r.ok) throw new Error('El servidor rechazó la foto (' + r.status + ')');
-    document.getElementById('editProdImg').value = `${SUPABASE_URL}/storage/v1/object/public/assets/${path}`;
-    refreshProductPhotoPreview();
-    status.textContent = 'Foto subida. Se guardará con el producto.';
+    for (const file of elegidas) {
+      if (!/^image\//.test(file.type)) { status.textContent = `${file.name} no es una imagen.`; continue; }
+      if (file.size > 10 * 1024 * 1024) { status.textContent = `${file.name} pesa más de 10 MB.`; continue; }
+      status.textContent = `Subiendo foto ${ok + 1} de ${elegidas.length}...`;
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = `productos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const r = await fetch(`${SUPABASE_URL}/storage/v1/object/assets/${path}`, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': file.type || 'image/jpeg' },
+        body: file
+      });
+      if (!r.ok) throw new Error('El servidor rechazó la foto (' + r.status + ')');
+      editProdFotos.push(`${SUPABASE_URL}/storage/v1/object/public/assets/${path}`);
+      ok++;
+      refreshProductPhotoPreview();
+    }
+    status.textContent = `${ok} foto(s) subida(s). Se guardan con el producto.` + (files.length > lugar ? ` (Solo caben ${MAX_FOTOS_PRODUCTO} fotos por producto.)` : '');
   } catch (e) {
     status.textContent = 'No se pudo subir la foto: ' + e.message;
   } finally {
@@ -11192,6 +11235,7 @@ async function saveProductChanges() {
       targetProd.competencia = [...competencia, ...compDeML(targetProd)];
       targetProd.status = status;
       targetProd.img = img;
+      targetProd.images = editProdFotos.length ? [...editProdFotos] : undefined;
       targetProd.url = prodUrl;
       targetProd.desc = desc;
     }
@@ -11215,6 +11259,7 @@ async function saveProductChanges() {
       competencia: competencia,
       status: status,
       img: img,
+      images: editProdFotos.length ? [...editProdFotos] : undefined,
       url: prodUrl,
       desc: desc
     };
@@ -11272,7 +11317,7 @@ async function saveProductChanges() {
           sku, barcode, name, description: desc,
           price, priceMayoreo, priceMayoreoDesdeUnidades, priceVolumen, priceDistribuidor, costoCompra,
           codigoProveedor, competencia, regaloResena,
-          categoryLabel: cat, active: status !== 'Inactivo', img,
+          categoryLabel: cat, active: status !== 'Inactivo', img, imagenes: [...editProdFotos],
           lowStockThreshold: targetProd.lowStockThreshold
         }
       })
