@@ -170,6 +170,9 @@
     },
     "api/mcp.js": {
       "maxDuration": 60
+    },
+    "api/dj-puebla.js": {
+      "includeFiles": "scripts/cms-*.html"
     }
   },
   "rewrites": [
@@ -188,6 +191,10 @@
     {
       "source": "/llms.txt",
       "destination": "/api/llms"
+    },
+    {
+      "source": "/articulos-para-dj-puebla",
+      "destination": "/api/dj-puebla"
     },
     {
       "source": "/mcp",

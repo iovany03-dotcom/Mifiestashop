@@ -138,7 +138,7 @@ function hubSecciones(pathDe) {
 <section class="wrap puebla-hub" aria-labelledby="puebla-que">
 <h2 id="puebla-que">Qué encuentras en nuestra tienda de Puebla</h2>
 <p>Somos especialistas en <strong>artículos para batucada y hora loca</strong>: sombreros de hule espuma, lentes, collares hawaianos, pelucas, antifaces, diademas y accesorios luminosos y de neón. También tenemos globos, velas, decoración, pirotecnia fría y todo para bodas, XV años, cumpleaños, graduaciones, Halloween y fiestas temáticas. Puedes comprar por pieza o al mayoreo desde 3 piezas, ideal para organizadores de eventos, salones de fiesta y revendedores de Puebla.</p>
-<div class="puebla-paginas">${PAGINAS.map(([id, t, d]) => `<a class="puebla-card" href="${esc(pathDe(id))}"><strong>${esc(t)}</strong><span>${esc(d)}</span></a>`).join('')}</div>
+<div class="puebla-paginas">${PAGINAS.map(([id, t, d]) => `<a class="puebla-card" href="${esc(pathDe(id))}"><strong>${esc(t)}</strong><span>${esc(d)}</span></a>`).join('')}<a class="puebla-card" href="/articulos-para-dj-puebla"><strong>Artículos para DJs y animadores en Puebla</strong><span>Luminosos, cyalume, neón y bengalas con precio por volumen.</span></a></div>
 </section>
 <section class="wrap puebla-hub" aria-labelledby="puebla-cats">
 <h2 id="puebla-cats">Categorías más buscadas</h2>

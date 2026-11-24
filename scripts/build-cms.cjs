@@ -6,6 +6,7 @@ const { modelFor, esc } = require('./cms-content.cjs');
 const { xvGalleryHtml } = require('./xv-gallery.cjs');
 const { usesBatucadaPackages, batucadaPricingHtml, HEADING } = require('./batucada-packages.cjs');
 const { HUB_ID, CONSOLIDAR, designPueblaHub } = require('./puebla-hub.cjs');
+const { BODA_ID, designPueblaBoda } = require('./puebla-boda.cjs');
 const REVIEWS_MORE_URL={cdmx:'https://maps.app.goo.gl/t9gun227wXwa26Ff6',queretaro:'https://maps.app.goo.gl/ZKjUHHA1SSNaemxv8',puebla:'https://maps.app.goo.gl/Bs3YzM5CA2e39Guw9'};
 const root = path.resolve(__dirname, '..');
 const pages = require('../data/cms-pages.json');
@@ -85,6 +86,7 @@ for (const model of models) {
   let html = render(model);
   if(model.id===410)html=designNeonPage(html,model);
   if(model.id===HUB_ID)html=designPueblaHub(html,model,pathDe);
+  if(model.id===BODA_ID)html=designPueblaBoda(html,model);
   // Revision URLs prevent cached pre-migration JS/CSS from keeping old cards alive.
   html=html.replace(/(src|href)="(\/assets\/[^"?]+\.(?:js|css))"/g,(_,attr,url)=>{
     const hash=crypto.createHash('sha256').update(fs.readFileSync(path.join(root,url))).digest('hex').slice(0,12);

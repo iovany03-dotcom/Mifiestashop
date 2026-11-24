@@ -18,7 +18,7 @@ module.exports = async function handler(req, res) {
   // Las consolidadas (redirectTo, ver scripts/puebla-hub.cjs) tampoco: ya mandan (301) a otra.
   cmsPages.filter(p => Number(p.id) === menorId.get(p.slug) && !p.redirectTo).forEach(page => urls.push({ loc: `${siteOrigin}${page.path}`, priority: '0.7' }));
   // Mayoristas y Contacto: mismas ligas que en PrestaShop.
-  ['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos']
+  ['/content/417-articulos-para-fiesta-mayoreo-en-mexico', '/content/418-contactanos', '/articulos-para-dj-puebla']
     .forEach(path => urls.push({ loc: `${siteOrigin}${path}`, priority: '0.7' }));
 
   // Productos de catalogo_productos que vienen de PrestaShop (los que tienen

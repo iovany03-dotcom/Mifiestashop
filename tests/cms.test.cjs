@@ -6,6 +6,7 @@ const config=require('../vercel.json');
 const {modelFor,sanitize,locationLinks,cityOf}=require('../scripts/cms-content.cjs');
 const handler=require('../api/paginas.js');
 const hub=require('../scripts/puebla-hub.cjs');
+const boda=require('../scripts/puebla-boda.cjs');
 function response(){return {code:0,data:null,headers:{},setHeader(k,v){this.headers[k]=v},status(code){this.code=code;return this},json(data){this.data=data;return this},send(data){this.data=data;return this}};}
 test('every source page has its exact title, slug, original path and static metadata',()=>{
   assert.equal(source.length,139);assert.equal(manifest.length,source.length);
@@ -15,6 +16,7 @@ test('every source page has its exact title, slug, original path and static meta
     const route=config.rewrites.find(r=>r.source===m.path);assert.ok(route,m.path);
     const $=cheerio.load(fs.readFileSync(path.join(root,route.destination),'utf8'));
     assert.equal($('h1').length,1,m.path);if(page.id===hub.HUB_ID){assert.equal($('h1').text(),'Tienda de artículos para fiesta en Puebla');assert.equal($('title').text(),hub.TITLE);continue;}
+    if(page.id===boda.BODA_ID){assert.equal($('h1').text(),boda.H1);assert.equal($('title').text(),boda.TITLE);continue;}
     assert.equal($('h1').text(),page.id===410?page.title.replace(/_+$/,''):page.title);
     assert.equal($('link[rel=canonical]').attr('href'),'https://www.mifiestashop.com'+m.path);
     assert.equal($('title').text(),page.title+' | Mi Fiestashop');
@@ -206,4 +208,16 @@ test('Puebla: la página de la tienda trae ficha completa, mapa, ligas a cada in
   const b=cheerio.load(fs.readFileSync(path.join(root,'cms-pages','289.html'),'utf8'));
   assert.equal(b(`a[href="${m.path}"]`).length>0,true);
   assert.equal($('h1').length,1);
+});
+
+test('Bodas Puebla: paquetes arriba, novios/recuerdos, fotos de clientes, FAQ y datos para Google',()=>{
+  const html=fs.readFileSync(path.join(root,'cms-pages',`${boda.BODA_ID}.html`),'utf8');const $=cheerio.load(html);
+  assert.equal($('h1').length,1);assert.ok(boda.TITLE.length<=60&&boda.DESC.length<=160);
+  assert.equal($('#promociones').length,1,'una sola sección de paquetes');
+  assert.ok(html.indexOf('id="promociones"')<html.indexOf('id="productos"'),'los paquetes van antes del catálogo');
+  assert.deepEqual(JSON.parse($('#cms-promo-pricing').attr('data-packages')).map(p=>p.tier),['Jr','Estándar','VIP']);
+  assert.ok($('.boda-chips a').length>=15);
+  assert.ok($('.gallery-photo').length>=12,'galería de bodas');
+  const ld=JSON.parse($('script[type="application/ld+json"]').text());
+  assert.equal(ld['@graph'].find(x=>x['@type']==='FAQPage').mainEntity.length,$('.cms-faq details').length);
 });
