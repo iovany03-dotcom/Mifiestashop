@@ -3,7 +3,7 @@
 // mientras dure el aviso. Para otro cierre, cambia las constantes de abajo (y la barra superior en
 // scripts/cms-header.html, data-desde / data-hasta) y vuelve a generar las páginas (npm run build:cms).
 const CIUDAD='puebla';
-const DESDE='2026-11-23', HASTA='2026-11-23';   // se muestra de DESDE a HASTA (inclusive), hora de México
+const DESDE='2000-01-01', HASTA='2000-01-01';   // sin aviso activo (el último: Puebla cerrada el 23/11/2026)   // se muestra de DESDE a HASTA (inclusive), hora de México
 const TITULO='Tienda de Puebla cerrada hoy';
 const TEXTO='Hoy <b>23 de noviembre</b> nuestra tienda de Puebla (35 Sur 2901) estará <b>cerrada</b>. Puedes comprar en línea y te lo enviamos, o visitarnos a partir de mañana.';
 const CLAVE='mf_aviso_'+CIUDAD+'_'+HASTA;
