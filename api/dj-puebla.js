@@ -48,13 +48,24 @@ function mayoreo(p) {
   return m > 0 && m < Number(p.price) && d > 1 ? { precio: m, desde: d, ahorro: Math.round((1 - m / Number(p.price)) * 100) } : null;
 }
 
+const foto = p => (Array.isArray(p.images) ? p.images.find(u => /^https?:\/\//.test(u)) : null) || null;
+
+// Catálogo con foto: cada producto con su precio por pieza y, si tiene, el de mayoreo y desde cuántas piezas.
+function tarjeta(p) {
+  const m = mayoreo(p), img = foto(p);
+  return `<a class="dj-card" href="${esc(p.url)}">
+<span class="dj-foto">${img ? `<img src="${esc(img)}" alt="${esc(p.name)}" loading="lazy" decoding="async" width="300" height="300">` : ''}</span>
+<span class="dj-nombre">${esc(p.name)}</span>
+<span class="dj-precio">${dinero(p.price)} <small>por pieza</small></span>
+${m ? `<span class="dj-mayoreo">${dinero(m.precio)} desde ${m.desde} pzas <b>−${m.ahorro}%</b></span>` : ''}
+</a>`;
+}
+
 function tabla(grupo, porId) {
-  const filas = grupo.ids.map(id => porId.get(id)).filter(Boolean);
-  if (!filas.length) return '';
+  const prods = grupo.ids.map(id => porId.get(id)).filter(Boolean);
+  if (!prods.length) return '';
   return `<section class="wrap dj-grupo"><h2>${esc(grupo.titulo)}</h2><p>${esc(grupo.texto)}</p>
-<div class="dj-tabla-wrap"><table class="dj-tabla"><thead><tr><th>Producto</th><th>Por pieza</th><th>Mayoreo</th><th>Desde</th><th>Ahorras</th></tr></thead><tbody>
-${filas.map(p => { const m = mayoreo(p); return `<tr><td><a href="${esc(p.url)}">${esc(p.name)}</a></td><td>${dinero(p.price)}</td><td>${m ? `<b>${dinero(m.precio)}</b><small class="dj-desde">desde ${m.desde} pzas (−${m.ahorro}%)</small>` : '—'}</td><td>${m ? `${m.desde} pzas` : '—'}</td><td>${m ? `${m.ahorro}%` : '—'}</td></tr>`; }).join('\n')}
-</tbody></table></div></section>`;
+<div class="dj-catalogo">${prods.map(tarjeta).join('\n')}</div></section>`;
 }
 
 const FAQ = [
@@ -96,13 +107,13 @@ function pagina(porId) {
 <script defer src="/assets/cms-header.js?v=${v}"></script><script defer src="/assets/cms-pixel.js?v=${v}"></script><script defer src="/assets/cms-whatsapp.js?v=${v}"></script><script defer src="/assets/cms-cart.js?v=${v}"></script>
 <script type="application/ld+json">${JSON.stringify(schema).replace(/</g, '\\u003c')}</script>
 <style>.dj-grupo{margin-block:34px}.dj-grupo>p{color:#5b4b6b;margin:6px 0 12px}
-.dj-tabla-wrap{overflow-x:auto;border:1px solid #f0d6e6;border-radius:14px}
-.dj-tabla{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}.dj-tabla th{background:#fdf0f7;color:#a10060;text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase}
-.dj-tabla td{padding:10px 12px;border-top:1px solid #f6e7f0}.dj-tabla td:nth-child(n+2),.dj-tabla th:nth-child(n+2){text-align:right;white-space:nowrap}.dj-tabla a{color:#2e1065;font-weight:600}
+.dj-catalogo{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.dj-card{display:flex;flex-direction:column;gap:6px;background:#fff;border:1px solid #f0d6e6;border-radius:14px;padding:10px;text-decoration:none;color:#2e1065;transition:box-shadow .15s}
+.dj-card:hover{box-shadow:0 6px 18px rgba(46,16,101,.12)}.dj-foto{display:block;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#faf7fb}
+.dj-foto img{width:100%;height:100%;object-fit:contain;display:block}.dj-nombre{font-weight:600;font-size:14px;line-height:1.3}
+.dj-precio{font-weight:800;color:#2e1065}.dj-precio small{font-weight:500;color:#6b5b78}.dj-mayoreo{font-size:12.5px;color:#a10060;background:#fdf0f7;border-radius:8px;padding:4px 8px}.dj-mayoreo b{color:#15803d}
+@media (max-width:600px){.dj-catalogo{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
 .dj-beneficios{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:16px}.dj-beneficios .dj-cupon{background:#2e1065;color:#fff}.dj-beneficios .dj-cupon b{color:#ffd23f}.dj-beneficios div{background:#fdf0f7;border-radius:14px;padding:16px}.dj-beneficios b{display:block;color:#2e1065;margin-bottom:4px}
-.dj-paquetes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:14px}.dj-paquetes a{display:block;padding:16px;border:1px solid #f0d6e6;border-radius:14px;text-decoration:none;color:#2e1065;background:#fff}.dj-paquetes a span{display:block;font-size:1.3rem;font-weight:800;color:#d3007b;margin-top:6px}
-.dj-desde{display:none;font-size:11px;color:#6b5b78;font-weight:500}
-@media (max-width:600px){.dj-tabla{min-width:0}.dj-tabla th:nth-child(n+4),.dj-tabla td:nth-child(n+4){display:none}.dj-desde{display:block}}
 .dj-cta{background:#2e1065;color:#fff;border-radius:22px;padding:28px;margin:40px auto;text-align:center}.dj-cta p{color:#e9ddff;margin:8px auto 16px;max-width:60ch}</style>
 </head>
 <body data-city="puebla"><a class="skip-link" href="#contenido">Ir al contenido</a>
@@ -123,7 +134,7 @@ ${header}
 <div><b>Pedidos grandes y recurrentes</b>Cotiza por WhatsApp: te confirmamos existencias y fecha de entrega antes de pagar.</div>
 </div></section>
 <div id="precios">${GRUPOS.map(g => tabla(g, porId)).join('\n')}</div>
-${paquetes.length ? `<section class="wrap dj-grupo"><h2>Paquetes listos para la hora loca</h2><p>Kits armados con los artículos más pedidos; conviene cuando necesitas variedad.</p><div class="dj-paquetes">${paquetes.map(p => `<a href="${esc(p.url)}">${esc(p.name)}<span>${dinero(p.price)}</span></a>`).join('')}</div></section>` : ''}
+${paquetes.length ? `<section class="wrap dj-grupo"><h2>Paquetes listos para la hora loca</h2><p>Kits armados con los artículos más pedidos; conviene cuando necesitas variedad.</p><div class="dj-catalogo">${paquetes.map(tarjeta).join('')}</div></section>` : ''}
 <section class="wrap dj-cta"><h2>¿Tienes evento esta semana?</h2><p>Mándanos tu lista por WhatsApp y te la dejamos lista para recoger en Puebla o te la enviamos.</p><a class="button primary" href="${WHATSAPP}" target="_blank" rel="noopener">Cotizar por WhatsApp</a> <a class="button secondary" href="${HUB}" style="background:#fff">Ver la tienda de Puebla</a></section>
 <section class="cms-faq wrap" aria-labelledby="faq-title"><div class="store-section-title"><h2 id="faq-title">Preguntas frecuentes de DJs y animadores</h2></div><div class="faq-list">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div></section>
 </main>${footer}</body></html>
