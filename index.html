@@ -10980,7 +10980,7 @@ function openEditProductModal(pId) {
   if (document.getElementById('editProdCosto')) document.getElementById('editProdCosto').value = prod ? (prod.costoCompra || '') : '';
   // Hasta 5 fotos: las que ya tiene el producto (la tienda usa la lista "images"; las viejas solo "img").
   editProdFotos = (prod ? (Array.isArray(prod.images) && prod.images.length ? prod.images : [prod.img]) : [])
-    .filter(u => /^https?:\/\//i.test(u || '') && !/images\.unsplash\.com/.test(u)).slice(0, MAX_FOTOS_PRODUCTO);
+    .filter(u => /^https?:\/\//i.test(u || '') && !/images\.unsplash\.com/.test(u)); // las que ya tenga se conservan aunque sean más de 5
   const imgUrlInput = document.getElementById('editProdImgUrl');
   if (imgUrlInput) imgUrlInput.value = '';
   const imgFileInput = document.getElementById('editProdImgFile');
@@ -11007,7 +11007,7 @@ function closeEditProductModal() {
 
 let productPhotoUploading = false;
 
-// ---- Fotos del producto (hasta 5). La primera es la principal (tarjetas, carrito, Google). ----
+// ---- Fotos del producto (se pueden agregar hasta 5; si ya tenía más, p. ej. modelos de pantuflas, se conservan). La primera es la principal. ----
 const MAX_FOTOS_PRODUCTO = 5;
 let editProdFotos = [];
 

@@ -14,7 +14,9 @@
 // -> { ok: true, id }
 
 const SUPABASE_URL = 'https://iuoirslxjcyarvmrqyjd.supabase.co';
-const MAX_FOTOS = 5;
+// El panel deja AGREGAR hasta 5 fotos, pero algunos productos ya traen más (modelos/colores, p. ej. pantuflas con 46):
+// esas nunca se recortan. Este tope solo evita listas absurdas.
+const MAX_FOTOS = 60;
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1b2lyc2x4amN5YXJ2bXJxeWpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwOTg3OTUsImV4cCI6MjEwNDY3NDc5NX0.xX4w3DbmPuTenwpZcotLRH_O3YAdRrBdz4gTWviJs5k';
 
 // Genera la "liga corta" (link_rewrite) de la que depende la URL pública

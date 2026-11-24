@@ -137,7 +137,7 @@ test('api/guardar-producto: sin sesión válida no guarda nada', async () => {
   } finally { global.fetch = prev; }
 });
 
-// Fotos: hasta 5 por producto (la primera es la principal).
+// Fotos: el panel deja agregar hasta 5; las que ya tenga el producto se conservan (la primera es la principal).
 function fakeFotos(previas) {
   const st = { posted: null, migrados: null };
   global.fetch = async (url, opts = {}) => {
@@ -151,7 +151,7 @@ function fakeFotos(previas) {
   return st;
 }
 
-test('api/guardar-producto: guarda hasta 5 fotos en orden, sin repetidas ni ligas inválidas, e iguala productos_migrados', async () => {
+test('api/guardar-producto: guarda las fotos en orden, sin repetidas ni ligas inválidas, e iguala productos_migrados', async () => {
   const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr-key';
   try {
     const st = fakeFotos([]);
@@ -160,9 +160,9 @@ test('api/guardar-producto: guarda hasta 5 fotos en orden, sin repetidas ni liga
     await require('../api/guardar-producto.js')({ method: 'POST', body: { p_admin_password: 'x', producto: { id: 83391, sku: 'L', name: 'Lente', price: 17, img: f(2),
       imagenes: [f(2), f(1), f(2), 'no-es-liga', f(3), f(4), f(5), f(6)] } } }, res);
     assert.equal(res.data.ok, true, JSON.stringify(res.data));
-    assert.deepEqual(st.posted.images, [f(2), f(1), f(3), f(4), f(5)]);
+    assert.deepEqual(st.posted.images, [f(2), f(1), f(3), f(4), f(5), f(6)], 'no recorta las que ya tenía (el panel limita lo que se agrega)');
     assert.equal(st.posted.legacy_image_url, f(2));
-    assert.deepEqual(st.migrados, { images: [f(2), f(1), f(3), f(4), f(5)] });
+    assert.deepEqual(st.migrados, { images: [f(2), f(1), f(3), f(4), f(5), f(6)] });
   } finally { global.fetch = prev; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
 });
 
