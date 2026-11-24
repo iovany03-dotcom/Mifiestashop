@@ -62,6 +62,7 @@ const FAQ = [
   ['¿Dónde compro en Puebla?', 'En nuestra tienda de la 35 Sur 2901, col. Santa Cruz Los Ángeles. También puedes pedir en línea y recoger ahí sin costo de envío.'],
   ['¿Hacen envíos?', 'Sí, a todo México. El envío es gratis en compras desde $1,500 MXN; en Puebla llega en 1 a 3 días hábiles.'],
   ['¿Dan factura?', 'Sí. En línea marca "Requiero factura (+16% IVA)" al pagar y después generas tu CFDI en mifiestashop.com/facturar. En tienda pídela en caja.'],
+  ['¿Cómo funciona el 10% en la segunda compra?', 'Después de tu primer pedido en línea pagado, escribe el código DJPUEBLA10 en el checkout con el mismo correo. Te da 10% de descuento en los productos (no en el envío) una sola vez.'],
   ['¿Puedo cotizar un pedido grande o recurrente?', 'Sí. Escríbenos por WhatsApp con la lista de productos y cantidades y te confirmamos existencias y fecha de entrega.']
 ];
 
@@ -98,7 +99,7 @@ function pagina(porId) {
 .dj-tabla-wrap{overflow-x:auto;border:1px solid #f0d6e6;border-radius:14px}
 .dj-tabla{width:100%;border-collapse:collapse;font-size:14px;min-width:520px}.dj-tabla th{background:#fdf0f7;color:#a10060;text-align:left;padding:10px 12px;font-size:12px;text-transform:uppercase}
 .dj-tabla td{padding:10px 12px;border-top:1px solid #f6e7f0}.dj-tabla td:nth-child(n+2),.dj-tabla th:nth-child(n+2){text-align:right;white-space:nowrap}.dj-tabla a{color:#2e1065;font-weight:600}
-.dj-beneficios{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:16px}.dj-beneficios div{background:#fdf0f7;border-radius:14px;padding:16px}.dj-beneficios b{display:block;color:#2e1065;margin-bottom:4px}
+.dj-beneficios{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:16px}.dj-beneficios .dj-cupon{background:#2e1065;color:#fff}.dj-beneficios .dj-cupon b{color:#ffd23f}.dj-beneficios div{background:#fdf0f7;border-radius:14px;padding:16px}.dj-beneficios b{display:block;color:#2e1065;margin-bottom:4px}
 .dj-paquetes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin-top:14px}.dj-paquetes a{display:block;padding:16px;border:1px solid #f0d6e6;border-radius:14px;text-decoration:none;color:#2e1065;background:#fff}.dj-paquetes a span{display:block;font-size:1.3rem;font-weight:800;color:#d3007b;margin-top:6px}
 .dj-desde{display:none;font-size:11px;color:#6b5b78;font-weight:500}
 @media (max-width:600px){.dj-tabla{min-width:0}.dj-tabla th:nth-child(n+4),.dj-tabla td:nth-child(n+4){display:none}.dj-desde{display:block}}
@@ -118,6 +119,7 @@ ${header}
 <div><b>Envío gratis desde $1,500</b>A todo México; en Puebla de 1 a 3 días hábiles.</div>
 <div><b>Recoge en Puebla</b>Pide en línea y recoge en la 35 Sur 2901 sin costo de envío.</div>
 <div><b>Factura (CFDI 4.0)</b>Paga con "Requiero factura (+16% IVA)" y genera tu factura en mifiestashop.com/facturar.</div>
+<div class="dj-cupon"><b>10% en tu segunda compra</b>Después de tu primer pedido en línea, usa el código <b>DJPUEBLA10</b> al pagar con el mismo correo (una vez por cliente).</div>
 <div><b>Pedidos grandes y recurrentes</b>Cotiza por WhatsApp: te confirmamos existencias y fecha de entrega antes de pagar.</div>
 </div></section>
 <div id="precios">${GRUPOS.map(g => tabla(g, porId)).join('\n')}</div>

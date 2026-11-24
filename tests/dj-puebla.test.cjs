@@ -20,3 +20,24 @@ test('página: tabla con precios del catálogo, ligas canónicas, un H1, FAQ y d
   assert.ok(ld['@graph'].some(x => x['@type'] === 'FAQPage'));
   assert.ok(!/<section class="wrap dj-grupo"><h2>Cyalume/.test(html), 'un grupo sin productos no se muestra');
 });
+
+// Cupón DJPUEBLA10: 10% en la segunda compra (lib/cupones.js revisarRecompra).
+test('cupón de segunda compra: pide un pedido pagado previo y se usa una sola vez por correo', async () => {
+  const { revisarRecompra } = require('../lib/cupones.js');
+  const cupon = { codigo: 'DJPUEBLA10', solo_recompra: true, un_uso_por_cliente: true };
+  const prev = global.fetch;
+  let pedidos = [];
+  let url = '';
+  global.fetch = async (u) => { url = decodeURIComponent(String(u)); return { ok: true, json: async () => pedidos }; };
+  try {
+    assert.match((await revisarRecompra('k', cupon, '')).error, /correo/);
+    pedidos = [];
+    assert.match((await revisarRecompra('k', cupon, 'dj@x.mx')).error, /segunda compra/);
+    assert.match(url, /customer_email=ilike\.dj@x\.mx&status=in\.\("Pago aceptado","Pagado"/);
+    pedidos = [{ cupon_codigo: null }];
+    assert.equal((await revisarRecompra('k', cupon, 'dj@x.mx')).ok, true);
+    pedidos = [{ cupon_codigo: null }, { cupon_codigo: 'djpuebla10' }];
+    assert.match((await revisarRecompra('k', cupon, 'dj@x.mx')).error, /Ya usaste/);
+    assert.equal((await revisarRecompra('k', { codigo: 'OTRO' }, '')).ok, true, 'los cupones normales no cambian');
+  } finally { global.fetch = prev; }
+});
