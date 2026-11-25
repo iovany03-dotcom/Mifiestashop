@@ -4,3 +4,8 @@
 -- staff_exigir_bodega(creds, almacen) lanza 'bodega_no_permitida: solo puedes meter mercancía a <sucursal>'.
 -- Se llama en rpc_recep_crear, rpc_recep_autorizar, rpc_mov_doc_save (tipo entrada) y rpc_mov_doc_approve (entrada).
 -- Traspasos y salidas no cambian. Definiciones completas en Supabase (pg_get_functiondef).
+
+-- 2026-11-25 (migración material_decoracion_no_es_venta): método de pago 'material' en el POS (solo CDMX)
+-- para sacar mercancía como material de decoraciones. Descuenta inventario (kardex motivo
+-- 'material_decoracion') pero no es venta: fuera de pos_ventas_producto_mes, asistencia_ventas_pos,
+-- api/ventas, api/v1/branch-sales y del corte de caja (que solo suma cash/card/transfer).

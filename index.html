@@ -6138,7 +6138,11 @@
         <button class="btn" id="payMethodCard" onclick="setPayMethod('card')">Tarjeta</button>
         <button class="btn" id="payMethodTransfer" onclick="setPayMethod('transfer')">Transferencia</button>
         <button class="btn" id="payMethodML" onclick="setPayMethod('mercadolibre')">Mercado Libre</button>
+        <!-- Solo CDMX: sacar mercancía como material para decoraciones. Descuenta inventario, pero NO es venta:
+             no entra en cortes de caja, ventas ni estadísticas. -->
+        <button class="btn hidden" id="payMethodMaterial" onclick="setPayMethod('material')">Material (decoración)</button>
       </div>
+      <div id="materialAviso" class="hidden" style="margin-top:8px; font-size:12.5px; padding:8px 10px; border-radius:8px; background:rgba(245,158,11,0.12); color:var(--text-primary);">Material para decoraciones: la mercancía sale del inventario, pero <b>no es venta</b> y <b>no cuenta en el corte de caja</b>. Te pediremos para qué es.</div>
     </div>
 
     <div id="cashDetailsArea">
@@ -8858,11 +8862,13 @@ async function descargarResumenDia() {
     linea(`Efectivo (${efectivo.length} tickets)`, m(suma(efectivo)));
     linea(`Tarjeta (${tarjeta.length} tickets)`, m(suma(tarjeta)));
     linea(`Transferencia (${transf.length} tickets)`, m(suma(transf)));
-    linea(`Total vendido (${tickets.length} tickets)`, m(suma(tickets)), { bold: true });
+    const material = porMetodo('material'), vendidos = tickets.filter(t => t.metodo !== 'material');
+    linea(`Total vendido (${vendidos.length} tickets)`, m(suma(vendidos)), { bold: true });
+    if (material.length) linea(`Material para decoración — no es venta (${material.length})`, m(suma(material)));
     if (tickets.length) {
       y += 2; salto(); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
       doc.text('Folio', L, y); doc.text('Hora', L + 62, y); doc.text('Pago', L + 82, y); doc.text('Cajero', L + 108, y); doc.text('Total', L + W, y, { align: 'right' }); y += 5;
-      const nombreMetodo = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia' };
+      const nombreMetodo = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', material: 'Material' };
       tickets.forEach(t => {
         salto(); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
         doc.text(String(t.folio || ''), L, y); doc.text(String(t.hora || ''), L + 62, y); doc.text(nombreMetodo[t.metodo] || String(t.metodo || ''), L + 82, y);
@@ -9000,6 +9006,10 @@ async function openCheckoutModal() {
   const total = getCartTotalNum();
   document.getElementById('checkoutTotalAmount').textContent = fmtMoney(total);
   document.getElementById('cashGivenInput').value = Math.ceil(total);
+  // "Material (decoración)" solo existe en CDMX Rumania.
+  const esCdmx = document.getElementById('posWarehouseSelect')?.value === 'rumania';
+  document.getElementById('payMethodMaterial')?.classList.toggle('hidden', !esCdmx);
+  if (!esCdmx && selectedPayMethod === 'material') setPayMethod('cash');
   calculateChange();
   document.getElementById('checkoutModal').classList.remove('hidden');
 }
@@ -9014,6 +9024,9 @@ function setPayMethod(method) {
   document.getElementById('payMethodCard').className = method === 'card' ? 'btn primary' : 'btn';
   document.getElementById('payMethodTransfer').className = method === 'transfer' ? 'btn primary' : 'btn';
   document.getElementById('payMethodML').className = method === 'mercadolibre' ? 'btn primary' : 'btn';
+  const mat = document.getElementById('payMethodMaterial');
+  if (mat) mat.className = (method === 'material' ? 'btn primary' : 'btn') + (mat.classList.contains('hidden') ? ' hidden' : '');
+  document.getElementById('materialAviso')?.classList.toggle('hidden', method !== 'material');
   document.getElementById('cashDetailsArea').style.display = method === 'cash' ? 'block' : 'none';
 }
 
@@ -9021,6 +9034,7 @@ function payMethodTicketLabel(method) {
   if (method === 'card') return 'Pago con Tarjeta';
   if (method === 'transfer') return 'Pago por Transferencia';
   if (method === 'mercadolibre') return 'Mercado Libre';
+  if (method === 'material') return 'Material para decoración (no es venta)';
   if (method === 'cash' || !method) return 'Pago En Efectivo';
   return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
 }
@@ -9047,9 +9061,17 @@ async function confirmPOSSale() {
   const subtotal = cartSubtotal();
   const iva = isIvaApplied() ? subtotal * 0.16 : 0;
   const customerSelect = document.getElementById('posCustomerSelect');
-  const clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
+  let clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
   const almacenSelect = document.getElementById('posWarehouseSelect');
   const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
+  // Material para decoración (solo CDMX): se pide para qué es; queda en el ticket en lugar del cliente.
+  const esMaterial = selectedPayMethod === 'material';
+  if (esMaterial) {
+    if (!almacenSelect || almacenSelect.value !== 'rumania') { alert('"Material (decoración)" solo se usa en CDMX.'); return; }
+    const para = prompt('¿Para qué es el material? (evento, decoración, cliente…)');
+    if (!para || para.trim().length < 3) { alert('Escribe para qué es el material.'); return; }
+    clienteNombre = 'Material decoración: ' + para.trim().slice(0, 120);
+  }
   // product_id: permite sumar esta venta en las ventas por producto (api/ventas-productos.js).
   // Los regalos por reseña van en su propia línea (regalo:true, $0) para poder adjuntarles después la reseña.
   const cartSnapshot = cartLineasTicket(cart);
@@ -9123,7 +9145,7 @@ async function confirmPOSSale() {
   if (['puebla', 'rumania', 'queretaro'].includes(almacenKey)) {
     const moves = cart.map(item => ({
       id_product: item.id, almacen: almacenKey, qty: -Math.abs(item.qty),
-      motivo: 'venta_pos', folio, registrado_por: nombreSesionActual()
+      motivo: esMaterial ? 'material_decoracion' : 'venta_pos', folio, registrado_por: nombreSesionActual()
     }));
     // El carrito ya se vacía (clearCart(), más abajo) antes de que esta
     // promesa resuelva — se guarda una copia mínima aparte para poder
@@ -9381,7 +9403,7 @@ function renderTicketHistorialTable(tickets) {
       <td>${escapeHtml(t.almacen || '—')}</td>
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
-      <td style="font-weight:700; color:var(--series-2);">${/cancel/i.test(t.estado || '') ? `<s style="color:var(--text-muted);">${fmtMoney(t.total)}</s> <span style="font-size:11px; font-weight:700; color:#dc2626;">CANCELADO</span>` : fmtMoney(t.total)}</td>
+      <td style="font-weight:700; color:var(--series-2);">${/cancel/i.test(t.estado || '') ? `<s style="color:var(--text-muted);">${fmtMoney(t.total)}</s> <span style="font-size:11px; font-weight:700; color:#dc2626;">CANCELADO</span>` : t.metodo === 'material' ? `<span style="color:var(--text-muted);">${fmtMoney(t.total)}</span> <span style="font-size:11px; font-weight:700; color:#b45309;">MATERIAL</span>` : fmtMoney(t.total)}</td>
       <td>${resenasPorFolio[String(t.folio).trim()] ? `<a href="${escapeHtml(resenasPorFolio[String(t.folio).trim()].url || '#')}" target="_blank" rel="noopener" title="Subida por ${escapeHtml(resenasPorFolio[String(t.folio).trim()].subido_por)}">✅ Ver</a>` : `<button class="btn small" onclick="resenaDesdeHistorial('${t.id}')">📷 Adjuntar</button>`}</td>
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
@@ -9409,7 +9431,7 @@ function downloadTicketHistorialCSV() {
 
   // Los cancelados no son venta: no van en el archivo (que se usa para sumar).
   const headers = ['Folio', 'Fecha', 'Cliente', 'Almacén', 'Artículos', 'Subtotal', 'IVA', 'Total', 'Pago recibido', 'Cambio'];
-  const rows = ticketHistorialVisible.filter(t => !/cancel/i.test(t.estado || '')).map(t => {
+  const rows = ticketHistorialVisible.filter(t => !/cancel/i.test(t.estado || '') && t.metodo !== 'material').map(t => {
     const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     const items = Array.isArray(t.items) ? t.items.map(i => `${i.qty || 1}x ${i.name || ''}`).join('; ') : '';
     return [
@@ -9946,7 +9968,7 @@ async function loadInformeVentas() {
   try {
     const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
     // Los tickets cancelados no son venta (se rehacen con otro folio): no cuentan en el informe.
-    const propios = (Array.isArray(rows) ? rows : []).filter(t => !t.ps_order_id && !/cancel/i.test(t.estado || '')).map(informeTicketComoPedido);
+    const propios = (Array.isArray(rows) ? rows : []).filter(t => !t.ps_order_id && !/cancel/i.test(t.estado || '') && t.metodo !== 'material').map(informeTicketComoPedido);
     informePedidosCache = [...informePedidosCache, ...propios].sort((a, b) => String(b.date).localeCompare(String(a.date)));
   } catch (e) {
     informeTicketsError = e && e.message === 'unauthorized' ? 'Tu sesión expiró: no se pudieron sumar las ventas del POS. Cierra sesión y vuelve a entrar.' : 'No se pudieron cargar las ventas del POS propio.';

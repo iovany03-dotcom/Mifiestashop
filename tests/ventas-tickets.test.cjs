@@ -23,7 +23,9 @@ test('ventas suma los tickets del POS propio por sucursal y no duplica los que y
       { folio: 'POS-3', total: '170', almacen: 'Querétaro', created_at: '2026-10-02T00:44:59Z' },
       { folio: 'POS-4', total: '10', almacen: 'Sucursal rara', created_at: '2026-10-02T12:00:00Z' },
       // Cancelado (se rehízo con otro folio): no cuenta como venta.
-      { folio: 'POS-5', total: '829.4', almacen: 'Bodega Principal (Rumania)', created_at: '2026-10-02T12:00:00Z', estado: 'Cancelado' }
+      { folio: 'POS-5', total: '829.4', almacen: 'Bodega Principal (Rumania)', created_at: '2026-10-02T12:00:00Z', estado: 'Cancelado' },
+      // Material para decoraciones: sale del inventario pero no es venta.
+      { folio: 'POS-6', total: '2943', almacen: 'Bodega Principal (Rumania)', created_at: '2026-10-02T12:00:00Z', metodo: 'material' }
     ] };
     return { ok: true, json: async () => [] };
   };
