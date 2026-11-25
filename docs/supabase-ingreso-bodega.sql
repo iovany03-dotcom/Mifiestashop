@@ -9,3 +9,9 @@
 -- para sacar mercancía como material de decoraciones. Descuenta inventario (kardex motivo
 -- 'material_decoracion') pero no es venta: fuera de pos_ventas_producto_mes, asistencia_ventas_pos,
 -- api/ventas, api/v1/branch-sales y del corte de caja (que solo suma cash/card/transfer).
+
+-- 2026-11-25 (migración pos_pagos_mixtos): ventas mixtas en el POS.
+-- pos_tickets.pagos = [{metodo: cash|card|transfer, monto}] y metodo = 'mixto' (si solo hay una parte, se
+-- guarda como ese método). rpc_pos_ticket_insert(..., p_pagos jsonb) valida que las partes sumen el total
+-- ('pago_mixto_no_cuadra'). pos_monto_metodo(ticket, metodo) da lo que aporta un ticket a cada método;
+-- rpc_caja_resumen y rpc_resumen_dia (efectivo desde la apertura) ya suman por partes.

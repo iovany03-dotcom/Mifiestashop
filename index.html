@@ -6140,9 +6140,22 @@
         <button class="btn" id="payMethodML" onclick="setPayMethod('mercadolibre')">Mercado Libre</button>
         <!-- Solo CDMX: sacar mercancía como material para decoraciones. Descuenta inventario, pero NO es venta:
              no entra en cortes de caja, ventas ni estadísticas. -->
+        <button class="btn" id="payMethodMixto" onclick="setPayMethod('mixto')">Mixto</button>
         <button class="btn hidden" id="payMethodMaterial" onclick="setPayMethod('material')">Material (decoración)</button>
       </div>
       <div id="materialAviso" class="hidden" style="margin-top:8px; font-size:12.5px; padding:8px 10px; border-radius:8px; background:rgba(245,158,11,0.12); color:var(--text-primary);">Material para decoraciones: la mercancía sale del inventario, pero <b>no es venta</b> y <b>no cuenta en el corte de caja</b>. Te pediremos para qué es.</div>
+    </div>
+
+    <!-- Venta mixta: el total se reparte entre efectivo, tarjeta y transferencia (pos_tickets.pagos). Cada parte
+         cuenta en su método en el corte de caja. -->
+    <div id="mixtoArea" class="hidden" style="margin-bottom:16px;">
+      <label style="font-size:12px; color:var(--text-secondary); display:block; margin-bottom:6px;">¿Cuánto paga con cada forma de pago?</label>
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;">
+        <label style="font-size:12px;">Efectivo<input type="number" id="mixtoCash" min="0" step="0.01" inputmode="decimal" oninput="mixtoActualizar('cash')" style="width:100%; font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--border);"></label>
+        <label style="font-size:12px;">Tarjeta<input type="number" id="mixtoCard" min="0" step="0.01" inputmode="decimal" oninput="mixtoActualizar('card')" style="width:100%; font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--border);"></label>
+        <label style="font-size:12px;">Transferencia<input type="number" id="mixtoTransfer" min="0" step="0.01" inputmode="decimal" oninput="mixtoActualizar('transfer')" style="width:100%; font-size:16px; padding:8px; border-radius:8px; border:1px solid var(--border);"></label>
+      </div>
+      <div id="mixtoEstado" style="font-size:14px; font-weight:700; margin-top:8px;"></div>
     </div>
 
     <div id="cashDetailsArea">
@@ -8841,8 +8854,10 @@ async function descargarResumenDia() {
     if (!r || typeof r !== 'object') throw new Error('No se pudo leer el resumen.');
     const tickets = Array.isArray(r.tickets) ? r.tickets : [], salidas = Array.isArray(r.salidas) ? r.salidas : [];
     const m = v => '$' + (Number(v) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const porMetodo = k => tickets.filter(t => t.metodo === k);
+    // Con ventas mixtas, cada parte suma en su método (montoTicketMetodo).
+    const porMetodo = k => tickets.filter(t => montoTicketMetodo(t, k) > 0);
     const suma = arr => arr.reduce((s, t) => s + (Number(t.total) || 0), 0);
+    const sumaMetodo = (arr, k) => arr.reduce((s, t) => s + montoTicketMetodo(t, k), 0);
     const efectivo = porMetodo('cash'), tarjeta = porMetodo('card'), transf = porMetodo('transfer');
     const totalSalidas = salidas.reduce((s, x) => s + (Number(x.monto) || 0), 0);
 
@@ -8859,16 +8874,16 @@ async function descargarResumenDia() {
     doc.text(`Fecha: ${dia}   ·   Generado: ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}   ·   Por: ${nombreSesionActual()}`, L, y); y += 3;
 
     titulo('Ventas del día');
-    linea(`Efectivo (${efectivo.length} tickets)`, m(suma(efectivo)));
-    linea(`Tarjeta (${tarjeta.length} tickets)`, m(suma(tarjeta)));
-    linea(`Transferencia (${transf.length} tickets)`, m(suma(transf)));
+    linea(`Efectivo (${efectivo.length} tickets)`, m(sumaMetodo(efectivo, 'cash')));
+    linea(`Tarjeta (${tarjeta.length} tickets)`, m(sumaMetodo(tarjeta, 'card')));
+    linea(`Transferencia (${transf.length} tickets)`, m(sumaMetodo(transf, 'transfer')));
     const material = porMetodo('material'), vendidos = tickets.filter(t => t.metodo !== 'material');
     linea(`Total vendido (${vendidos.length} tickets)`, m(suma(vendidos)), { bold: true });
     if (material.length) linea(`Material para decoración — no es venta (${material.length})`, m(suma(material)));
     if (tickets.length) {
       y += 2; salto(); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
       doc.text('Folio', L, y); doc.text('Hora', L + 62, y); doc.text('Pago', L + 82, y); doc.text('Cajero', L + 108, y); doc.text('Total', L + W, y, { align: 'right' }); y += 5;
-      const nombreMetodo = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', material: 'Material' };
+      const nombreMetodo = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia', material: 'Material', mixto: 'Mixto' };
       tickets.forEach(t => {
         salto(); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
         doc.text(String(t.folio || ''), L, y); doc.text(String(t.hora || ''), L + 62, y); doc.text(nombreMetodo[t.metodo] || String(t.metodo || ''), L + 82, y);
@@ -9027,7 +9042,46 @@ function setPayMethod(method) {
   const mat = document.getElementById('payMethodMaterial');
   if (mat) mat.className = (method === 'material' ? 'btn primary' : 'btn') + (mat.classList.contains('hidden') ? ' hidden' : '');
   document.getElementById('materialAviso')?.classList.toggle('hidden', method !== 'material');
+  const mx = document.getElementById('payMethodMixto');
+  if (mx) mx.className = method === 'mixto' ? 'btn primary' : 'btn';
+  document.getElementById('mixtoArea')?.classList.toggle('hidden', method !== 'mixto');
+  if (method === 'mixto') {
+    // Arranca con todo en efectivo; al escribir en tarjeta o transferencia, el efectivo se ajusta solo.
+    ['mixtoCash', 'mixtoCard', 'mixtoTransfer'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    const c = document.getElementById('mixtoCash'); if (c) c.value = getCartTotalNum().toFixed(2);
+    mixtoActualizar();
+  }
   document.getElementById('cashDetailsArea').style.display = method === 'cash' ? 'block' : 'none';
+}
+
+// ---- Venta mixta ----
+function mixtoPagos() {
+  const v = id => Math.round((parseFloat(document.getElementById(id)?.value) || 0) * 100) / 100;
+  return [['cash', v('mixtoCash')], ['card', v('mixtoCard')], ['transfer', v('mixtoTransfer')]]
+    .filter(([, m]) => m > 0).map(([metodo, monto]) => ({ metodo, monto }));
+}
+function mixtoActualizar(editado) {
+  const total = Math.round(getCartTotalNum() * 100) / 100;
+  // Si se escribe en tarjeta o transferencia, el efectivo se recalcula con lo que falta.
+  if (editado === 'card' || editado === 'transfer') {
+    const otros = (parseFloat(document.getElementById('mixtoCard').value) || 0) + (parseFloat(document.getElementById('mixtoTransfer').value) || 0);
+    document.getElementById('mixtoCash').value = Math.max(0, total - otros).toFixed(2);
+  }
+  const suma = mixtoPagos().reduce((s, p) => s + p.monto, 0);
+  const falta = Math.round((total - suma) * 100) / 100;
+  const el = document.getElementById('mixtoEstado');
+  if (!el) return;
+  el.style.color = Math.abs(falta) <= 0.01 ? 'var(--good)' : '#dc2626';
+  el.textContent = Math.abs(falta) <= 0.01 ? `✓ Cuadra con el total (${fmtMoney(total)})` : falta > 0 ? `Faltan ${fmtMoney(falta)}` : `Sobran ${fmtMoney(-falta)}`;
+}
+const NOMBRE_PAGO = { cash: 'Efectivo', card: 'Tarjeta', transfer: 'Transferencia' };
+function pagosTexto(pagos) {
+  return (Array.isArray(pagos) ? pagos : []).map(p => `${NOMBRE_PAGO[p.metodo] || p.metodo} ${fmtMoney(p.monto)}`).join(' + ');
+}
+// Lo que aporta un ticket a un método (cortes y resumen): con pagos mixtos, su parte; si no, el total.
+function montoTicketMetodo(t, metodo) {
+  if (Array.isArray(t.pagos) && t.pagos.length) return t.pagos.filter(p => p.metodo === metodo).reduce((s, p) => s + (Number(p.monto) || 0), 0);
+  return t.metodo === metodo ? (Number(t.total) || 0) : 0;
 }
 
 function payMethodTicketLabel(method) {
@@ -9035,6 +9089,7 @@ function payMethodTicketLabel(method) {
   if (method === 'transfer') return 'Pago por Transferencia';
   if (method === 'mercadolibre') return 'Mercado Libre';
   if (method === 'material') return 'Material para decoración (no es venta)';
+  if (method === 'mixto') return 'Pago mixto';
   if (method === 'cash' || !method) return 'Pago En Efectivo';
   return method; // ya viene como texto real (ej. "Debito / Credito"), no un código interno
 }
@@ -9054,7 +9109,8 @@ function calculateChange() {
 async function confirmPOSSale() {
   if (!(await requireCajaAbierta())) { closeCheckoutModal(); return; }
   const total = getCartTotalNum();
-  const given = parseFloat(document.getElementById('cashGivenInput').value) || total;
+  // Solo en efectivo hay "recibido" y cambio; con tarjeta, transferencia o mixto se recibe justo el total.
+  const given = selectedPayMethod === 'cash' ? (parseFloat(document.getElementById('cashGivenInput').value) || total) : total;
   const change = Math.max(0, given - total);
   const folio = '#POS-' + Math.floor(10000 + Math.random() * 90000);
 
@@ -9064,6 +9120,14 @@ async function confirmPOSSale() {
   let clienteNombre = customerSelect ? customerSelect.options[customerSelect.selectedIndex].text : 'Cliente POS';
   const almacenSelect = document.getElementById('posWarehouseSelect');
   const almacen = almacenSelect ? almacenSelect.options[almacenSelect.selectedIndex].text : '';
+  // Venta mixta: las partes deben sumar el total.
+  const esMixto = selectedPayMethod === 'mixto';
+  const pagosMixtos = esMixto ? mixtoPagos() : null;
+  if (esMixto) {
+    const suma = pagosMixtos.reduce((s, p) => s + p.monto, 0);
+    if (Math.abs(suma - Math.round(total * 100) / 100) > 0.01) { alert(`La venta mixta no cuadra: las partes suman ${fmtMoney(suma)} y el total es ${fmtMoney(total)}.`); return; }
+    if (pagosMixtos.length < 2) { alert('Para una venta mixta usa al menos dos formas de pago (o elige solo una).'); return; }
+  }
   // Material para decoración (solo CDMX): se pide para qué es; queda en el ticket en lugar del cliente.
   const esMaterial = selectedPayMethod === 'material';
   if (esMaterial) {
@@ -9086,7 +9150,7 @@ async function confirmPOSSale() {
   document.getElementById('tTotal').textContent = fmtMoney(total);
   document.getElementById('tPaid').textContent = fmtMoney(given);
   document.getElementById('tChange').textContent = fmtMoney(change);
-  document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(selectedPayMethod);
+  document.getElementById('tMetodoNombre').textContent = esMixto ? 'Mixto: ' + pagosTexto(pagosMixtos) : payMethodTicketLabel(selectedPayMethod);
   document.getElementById('tMetodoValor').textContent = fmtMoney(total);
 
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(cart);
@@ -9121,7 +9185,7 @@ async function confirmPOSSale() {
     ...getSessionCredsParams(),
     p_folio: folio, p_cliente: clienteNombre, p_almacen: almacen, p_items: cartSnapshot,
     p_subtotal: subtotal, p_iva: iva, p_total: total, p_pago_recibido: given, p_cambio: change,
-    p_metodo: selectedPayMethod, p_registrado_por: nombreSesionActual()
+    p_metodo: selectedPayMethod, p_registrado_por: nombreSesionActual(), p_pagos: pagosMixtos
   }).then(rows => {
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (row) ticketHistorialCache.unshift(row);
@@ -9549,7 +9613,7 @@ async function openCerrarCajaModal() {
       sbRpc('rpc_salida_list', getSessionCredsParams()).catch(() => [])
     ]);
     const tk = (Array.isArray(ticketRows) ? ticketRows : []).filter(t => t.almacen === almacen && t.created_at >= desde && t.estado !== 'Cancelado');
-    const suma = m => tk.filter(t => t.metodo === m).reduce((s, t) => s + (parseFloat(t.total) || 0), 0);
+    const suma = m => tk.reduce((s, t) => s + montoTicketMetodo(t, m), 0); // con ventas mixtas, cada parte en su método
     ventasEfectivo = suma('cash'); tarjeta = suma('card'); transfer = suma('transfer');
     salidas = (Array.isArray(salidaRows) ? salidaRows : []).filter(s => s.almacen === almacen && s.created_at >= desde).reduce((s, x) => s + (parseFloat(x.monto) || 0), 0);
   }
@@ -9819,7 +9883,7 @@ function viewPosTicketFromHistorial(id) {
   document.getElementById('tTotal').textContent = fmtMoney(t.total);
   document.getElementById('tPaid').textContent = fmtMoney(t.pago_recibido || t.total);
   document.getElementById('tChange').textContent = fmtMoney(t.cambio || 0);
-  document.getElementById('tMetodoNombre').textContent = payMethodTicketLabel(t.metodo);
+  document.getElementById('tMetodoNombre').textContent = Array.isArray(t.pagos) && t.pagos.length ? 'Mixto: ' + pagosTexto(t.pagos) : payMethodTicketLabel(t.metodo);
   document.getElementById('tMetodoValor').textContent = fmtMoney(t.total);
   document.getElementById('tItemsList').innerHTML = buildTicketItemsHTML(Array.isArray(t.items) ? t.items : []);
   tResenaPreparar(t.folio, t.almacen || null);
