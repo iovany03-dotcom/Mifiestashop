@@ -9315,7 +9315,7 @@ async function loadTicketHistorial() {
       id: `pt-${t.id}`, folio: t.folio, created_at: t.created_at, cliente: t.cliente || 'Cliente POS',
       almacen: t.almacen || '', items: Array.isArray(t.items) ? t.items : [],
       subtotal: t.subtotal, iva: t.iva, total: t.total, pago_recibido: t.pago_recibido, cambio: t.cambio,
-      metodo: t.metodo, registrado_por: t.registrado_por
+      metodo: t.metodo, registrado_por: t.registrado_por, estado: t.estado || ''
     }));
   } catch (e) {
     if (e && e.message === 'unauthorized') sessionInvalid = true;
@@ -9381,7 +9381,7 @@ function renderTicketHistorialTable(tickets) {
       <td>${escapeHtml(t.almacen || '—')}</td>
       <td>${escapeHtml(t.cliente || 'Cliente POS')}</td>
       <td>${itemCount} artículo${itemCount === 1 ? '' : 's'}</td>
-      <td style="font-weight:700; color:var(--series-2);">${fmtMoney(t.total)}</td>
+      <td style="font-weight:700; color:var(--series-2);">${/cancel/i.test(t.estado || '') ? `<s style="color:var(--text-muted);">${fmtMoney(t.total)}</s> <span style="font-size:11px; font-weight:700; color:#dc2626;">CANCELADO</span>` : fmtMoney(t.total)}</td>
       <td>${resenasPorFolio[String(t.folio).trim()] ? `<a href="${escapeHtml(resenasPorFolio[String(t.folio).trim()].url || '#')}" target="_blank" rel="noopener" title="Subida por ${escapeHtml(resenasPorFolio[String(t.folio).trim()].subido_por)}">✅ Ver</a>` : `<button class="btn small" onclick="resenaDesdeHistorial('${t.id}')">📷 Adjuntar</button>`}</td>
       <td><button class="btn small primary" onclick="viewPosTicketFromHistorial('${t.id}')">Ver / Reimprimir</button></td>
     </tr>`;
@@ -9407,8 +9407,9 @@ function downloadTicketHistorialCSV() {
     return;
   }
 
+  // Los cancelados no son venta: no van en el archivo (que se usa para sumar).
   const headers = ['Folio', 'Fecha', 'Cliente', 'Almacén', 'Artículos', 'Subtotal', 'IVA', 'Total', 'Pago recibido', 'Cambio'];
-  const rows = ticketHistorialVisible.map(t => {
+  const rows = ticketHistorialVisible.filter(t => !/cancel/i.test(t.estado || '')).map(t => {
     const fecha = new Date(t.created_at).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
     const items = Array.isArray(t.items) ? t.items.map(i => `${i.qty || 1}x ${i.name || ''}`).join('; ') : '';
     return [
@@ -9944,7 +9945,8 @@ async function loadInformeVentas() {
   // pedido en PrestaShop (ps_order_id) ya están arriba y se omiten.
   try {
     const rows = await sbRpc('rpc_pos_ticket_list', getSessionCredsParams());
-    const propios = (Array.isArray(rows) ? rows : []).filter(t => !t.ps_order_id).map(informeTicketComoPedido);
+    // Los tickets cancelados no son venta (se rehacen con otro folio): no cuentan en el informe.
+    const propios = (Array.isArray(rows) ? rows : []).filter(t => !t.ps_order_id && !/cancel/i.test(t.estado || '')).map(informeTicketComoPedido);
     informePedidosCache = [...informePedidosCache, ...propios].sort((a, b) => String(b.date).localeCompare(String(a.date)));
   } catch (e) {
     informeTicketsError = e && e.message === 'unauthorized' ? 'Tu sesión expiró: no se pudieron sumar las ventas del POS. Cierra sesión y vuelve a entrar.' : 'No se pudieron cargar las ventas del POS propio.';
