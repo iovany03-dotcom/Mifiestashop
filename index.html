@@ -8654,11 +8654,27 @@ function applyWholesalePricing(item) {
 
 // ¿Este producto está marcado "Como regalo" en el editor? La marca vive en el catálogo del panel
 // (adminCatalogProducts, /api/productos-admin); el POS vende con el catálogo público, que no la trae.
+// Además se pide aparte la lista chica de ids de regalo (/api/productos-regalo) al abrir el POS: sin ella,
+// si la cajera agregaba el producto antes de que el catálogo pesado terminara de cargar, se cobraba sin preguntar.
+let regaloIds = null;          // Set de ids, o null mientras no se ha cargado
+let regaloIdsCargando = null;
+function cargarRegaloIds() {
+  if (regaloIds) return Promise.resolve(regaloIds);
+  if (!regaloIdsCargando) {
+    regaloIdsCargando = fetch('/api/productos-regalo').then(r => r.ok ? r.json() : Promise.reject(new Error('regalos')))
+      .then(d => { regaloIds = new Set((d.ids || []).map(String)); return regaloIds; })
+      .catch(() => null).finally(() => { regaloIdsCargando = null; });
+  }
+  return regaloIdsCargando;
+}
 function esRegaloResena(id) {
+  if (regaloIds && regaloIds.has(String(id))) return true;
   const p = adminCatalogProducts.find(x => String(x.id) === String(id));
   return !!(p && p.regaloResena);
 }
 async function posAsegurarRegalos() {
+  const refrescar = () => { updateCartUI(); const g = document.getElementById('posProductGrid'); if (g && typeof renderProducts === 'function') renderProducts(document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all', document.getElementById('posSearchInput')?.value || ''); };
+  if (await cargarRegaloIds()) refrescar(); // la lista chica llega rápido: botones de regalo y categoría 🎁 al momento
   if (!adminCatalogProducts.length) { await loadAdminCatalogProducts(); }
   if (adminCatalogProducts.length) { updateCartUI(); const g = document.getElementById('posProductGrid'); if (g && typeof renderProducts === 'function') renderProducts(document.querySelector('#catPillsContainer .cat-pill.active')?.dataset.cat || 'all', document.getElementById('posSearchInput')?.value || ''); }
 }
@@ -8678,7 +8694,9 @@ function cartRegaloQty(id, delta) {
 }
 
 // Producto marcado "Como regalo": al tocarlo se elige si se vende (cobrado) o sale de regalo ($0).
-function addToCart(product) {
+async function addToCart(product) {
+  // Si todavía no se sabe qué productos son de regalo, se espera la lista (es chica) antes de decidir.
+  if (!regaloIds && !adminCatalogProducts.length) await Promise.race([cargarRegaloIds(), new Promise(r => setTimeout(r, 4000))]);
   if (!esRegaloResena(product.id)) return addToCartCore(product);
   document.getElementById('posRegaloElegir')?.remove();
   const ov = document.createElement('div');

@@ -43,3 +43,15 @@ test('cupón de segunda compra: pide un pedido pagado previo y se usa una sola v
     assert.equal((await revisarRecompra('k', { codigo: 'OTRO' }, '')).ok, true, 'los cupones normales no cambian');
   } finally { global.fetch = prev; }
 });
+
+test('productos-regalo: regresa solo los ids marcados "Como regalo"', async () => {
+  const prev = global.fetch; process.env.SUPABASE_SERVICE_ROLE_KEY = 'sr';
+  let url = '';
+  global.fetch = async u => { url = String(u); return { ok: true, json: async () => [{ id: 83392 }, { id: '84592' }] }; };
+  try {
+    const res = { code: 0, data: null, setHeader() {}, status(c) { this.code = c; return this; }, json(d) { this.data = d; return this; } };
+    await require('../api/productos-regalo.js')({ method: 'GET' }, res);
+    assert.equal(res.code, 200); assert.deepEqual(res.data, { ids: [83392, 84592] });
+    assert.match(url, /producto_privado\?select=id&regalo_resena=is\.true/);
+  } finally { global.fetch = prev; }
+});
