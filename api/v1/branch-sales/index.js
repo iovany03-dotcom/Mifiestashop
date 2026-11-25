@@ -60,13 +60,14 @@ module.exports = async function handler(req, res) {
     // Tickets del POS propio. Los que ya tienen pedido en PrestaShop
     // (ps_order_id) están contados arriba: se excluyen para no duplicar.
     const r2 = await fetch(
-      `${SUPABASE_URL}/rest/v1/pos_tickets?select=total,almacen,created_at&ps_order_id=is.null` +
+      `${SUPABASE_URL}/rest/v1/pos_tickets?select=total,almacen,created_at,estado&ps_order_id=is.null` +
       `&created_at=gte.${encodeURIComponent(from + 'T00:00:00-06:00')}` +
       `&created_at=lte.${encodeURIComponent(to + 'T23:59:59-06:00')}&limit=10000`,
       { headers }
     );
     if (!r2.ok) return sendApiError(res, 502, 'No se pudo consultar pos_tickets.', 'upstream_error');
-    const tickets = await r2.json();
+    // Los tickets cancelados no cuentan como venta.
+    const tickets = (await r2.json()).filter(t => !/cancel/i.test(t.estado || ''));
 
     const buckets = {}; // `${storeId}|${YYYY-MM-DD}` -> revenue
 

@@ -21,7 +21,9 @@ test('ventas suma los tickets del POS propio por sucursal y no duplica los que y
       { folio: 'POS-1', total: '1379.43', almacen: 'Puebla', created_at: '2026-10-02T18:40:20Z' },
       { folio: 'POS-2', total: '500', almacen: 'Bodega Principal (Rumania)', created_at: '2026-10-02T05:30:00Z' },
       { folio: 'POS-3', total: '170', almacen: 'Querétaro', created_at: '2026-10-02T00:44:59Z' },
-      { folio: 'POS-4', total: '10', almacen: 'Sucursal rara', created_at: '2026-10-02T12:00:00Z' }
+      { folio: 'POS-4', total: '10', almacen: 'Sucursal rara', created_at: '2026-10-02T12:00:00Z' },
+      // Cancelado (se rehízo con otro folio): no cuenta como venta.
+      { folio: 'POS-5', total: '829.4', almacen: 'Bodega Principal (Rumania)', created_at: '2026-10-02T12:00:00Z', estado: 'Cancelado' }
     ] };
     return { ok: true, json: async () => [] };
   };

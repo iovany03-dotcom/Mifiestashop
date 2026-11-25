@@ -80,12 +80,13 @@ module.exports = async function handler(req, res) {
       // Ventas del POS propio (pos_tickets). Los tickets que ya tienen pedido en
       // PrestaShop (ps_order_id) están contados arriba: se excluyen para no
       // duplicarlos.
-      const tUrl = `${SUPABASE_URL}/rest/v1/pos_tickets?select=folio,total,almacen,created_at&ps_order_id=is.null` +
+      const tUrl = `${SUPABASE_URL}/rest/v1/pos_tickets?select=folio,total,almacen,created_at,estado&ps_order_id=is.null` +
         `&created_at=gte.${encodeURIComponent(from + 'T00:00:00-06:00')}` +
         `&created_at=lte.${encodeURIComponent(to + 'T23:59:59-06:00')}&order=created_at.asc&limit=10000`;
       const tr = await fetch(tUrl, { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } });
       if (!tr.ok) throw new Error(`pos_tickets error ${tr.status}`);
-      (await tr.json()).forEach(t => {
+      // Un ticket cancelado no es venta (se rehace con otro folio, p. ej. al cambiar de efectivo a tarjeta).
+      (await tr.json()).filter(t => !/cancel/i.test(t.estado || '')).forEach(t => {
         const local = new Date(t.created_at).toLocaleString('sv-SE', { timeZone: 'America/Mexico_City' });
         orders.push({ id: t.folio, total_paid: t.total, date_add: local, id_employee: ticketEmployeeId(t.almacen) });
       });
