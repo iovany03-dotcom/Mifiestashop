@@ -1,0 +1,11 @@
+-- Histórico de PrestaShop cargado el 2026-11-27 SOLO PARA CONSULTA (ningún reporte, inventario, corte ni
+-- nómina lee estas tablas; RLS cerrado, solo la llave de servicio). Origen: respaldos phpMyAdmin
+-- "u889058644_v2" (tienda) y "POS_pedidos_u889058644_v2" (POS). No se importaron clientes, direcciones ni PIN.
+--
+-- historico_ps5_pedidos  25,240 pedidos (2019-03-28 a 2026-06-21) con sus productos en items (105,482 líneas).
+--                        25,163 ya estaban en ps_pedidos (mismo reference); 77 de 2026 solo están aquí.
+-- historico_pos_tickets  22,206 tickets del POS (folio POSP-n, 2022-02 a 2026-03) con desglose de pago
+--                        (pay_cash/pay_card/pay_transfer) e items (88,838 líneas); id_order -> historico_ps5_pedidos.
+-- historico_pos_cortes   384 cortes: 126 del POS viejo (posp_cajas: Caja CDMX/Puebla/Querétaro/Atizapán)
+--                        y 258 sesiones del POS nuevo (superpos_sessions).
+-- Los movimientos de caja del POS viejo (posp_movimientos) venían cifrados en el respaldo y no se cargaron.
